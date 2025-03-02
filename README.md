@@ -1,4 +1,4 @@
-# Earth Data Search (EDS)
+# STAC Explorer
 
 A modern, user-friendly web application for searching and visualizing Earth observation data using STAC APIs. This application provides an intuitive interface for discovering satellite imagery and related Earth observation datasets.
 
@@ -30,32 +30,7 @@ A modern, user-friendly web application for searching and visualizing Earth obse
 
 ## Getting Started
 
-### Prerequisites
-
-- A modern web browser (Chrome, Firefox, Safari, or Edge)
-- Python 3.x (for running the local development server)
-
-### Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/eds.git
-   cd eds
-   ```
-
-2. No additional dependencies are required as the application runs entirely in the browser.
-
-### Running the Application
-
-1. Start the local development server:
-   ```bash
-   python -m http.server 8000
-   ```
-
-2. Open your browser and navigate to:
-   ```
-   http://localhost:8000
-   ```
+See you on : http://nkarasiak.github.io/stacexplorer
 
 ## Usage
 
@@ -107,7 +82,3 @@ eds/
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details. 

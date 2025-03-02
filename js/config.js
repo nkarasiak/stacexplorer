@@ -15,6 +15,11 @@ export const CONFIG = {
             collections: 'https://stac.dataspace.copernicus.eu/v1/collections',
             search: 'https://stac.dataspace.copernicus.eu/v1/search'
         },
+		element84: {
+			root: 'https://earth-search.aws.element84.com/v1/',
+			collections: 'https://earth-search.aws.element84.com/v1/collections',
+			search: 'https://earth-search.aws.element84.com/v1/search'
+		},
         custom: {
             root: '',
             collections: '',

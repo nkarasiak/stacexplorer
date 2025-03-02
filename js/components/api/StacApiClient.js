@@ -170,8 +170,6 @@ export class STACApiClient {
             }
             
             const data = await response.json();
-            console.log('Search response:', JSON.stringify(data, null, 2));
-            
             // Check if the response has a features property (GeoJSON/STAC API spec)
             if (data.features) {
                 return data.features;

@@ -4,10 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STAC Catalog Explorer</title>
-    <!-- Leaflet CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
-    <!-- Leaflet Draw CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css" />
+    <!-- MapLibre GL CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" />
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     <!-- Material Icons -->
@@ -165,9 +163,8 @@
         </main>
     </div>
 
-    <!-- Modular JavaScript -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     
     <!-- Load modules with ES modules -->
     <script type="module" src="js/app.js"></script>
@@ -196,36 +193,10 @@
                             // Access the map manager directly
                             const mapManager = window.stacExplorer.mapManager;
                             
-                            // Clear any existing drawings
-                            if (mapManager.drawnItems) {
-                                mapManager.drawnItems.clearLayers();
-                            }
+                            // Start drawing mode
+                            mapManager.startDrawingBbox();
                             
-                            // Set cursor to crosshair if possible
-                            if (mapManager.map && mapManager.map._container) {
-                                mapManager.map._container.style.cursor = 'crosshair';
-                            }
-                            
-                            // Activate rectangle drawing
-                            if (mapManager.map && mapManager.drawControl) {
-                                // Try to use the existing draw control
-                                try {
-                                    // Add draw control to map if not already added
-                                    mapManager.map.addControl(mapManager.drawControl);
-                                    
-                                    // Create and enable a new rectangle draw handler
-                                    new L.Draw.Rectangle(
-                                        mapManager.map, 
-                                        mapManager.drawControl.options.draw.rectangle
-                                    ).enable();
-                                    
-                                    console.log('Drawing mode activated');
-                                } catch (error) {
-                                    console.error('Error activating drawing mode:', error);
-                                }
-                            } else {
-                                console.error('Map or draw control not available');
-                            }
+                            console.log('Drawing mode activated');
                         } else {
                             console.error('Map manager not available');
                             alert('Drawing functionality is not available. Please refresh the page and try again.');

@@ -1,0 +1,17 @@
+{
+  "name": "stac-proxy-server",
+  "version": "1.0.0",
+  "description": "Proxy server for handling CORS requests",
+  "main": "proxy.js",
+  "scripts": {
+    "start": "node proxy.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "maplibre-gl": "^5.2.0",
+    "mime": "^4.0.6",
+    "mime-db": "^1.53.0",
+    "node-fetch": "^2.6.9"
+  }
+}

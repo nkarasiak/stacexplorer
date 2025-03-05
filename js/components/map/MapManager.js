@@ -1,5 +1,5 @@
 /**
- * MapManager.js - Handles map display and interactions
+ * MapManager.js - Handles map display and interactions using MapLibre GL
  */
 
 export class MapManager {
@@ -12,11 +12,19 @@ export class MapManager {
         this.mapElementId = mapElementId;
         this.config = config;
         this.map = null;
-        this.drawControl = null;
-        this.drawnItems = null;
         this.currentLayer = null;
         this.currentLayerOverlay = null;
         this.currentAssetKey = null;
+        this.mapReady = false;
+        
+        // Drawing state
+        this.isDrawing = false;
+        this.startPoint = null;
+        this.currentBox = null;
+        this.boxSourceId = 'bbox-source';
+        this.boxLayerId = 'bbox-layer';
+        this.boxOutlineLayerId = 'bbox-outline-layer';
+        this.firstClickComplete = false; // Track if first click is done
         
         // Initialize the map
         this.initMap();
@@ -29,52 +37,105 @@ export class MapManager {
      * Initialize the map
      */
     initMap() {
-        // Create map with default settings
-        this.map = L.map(this.mapElementId).setView(
-            this.config.mapSettings.defaultCenter,
-            this.config.mapSettings.defaultZoom
-        );
-        
-        // Add default basemap
-        this.setBasemap(this.config.mapSettings.defaultBasemap);
-        
-        // Initialize draw control
-        this.initDrawControl();
+        try {
+            // Create map with default settings
+            this.map = new maplibregl.Map({
+                container: this.mapElementId,
+                center: this.config.mapSettings.defaultCenter.reverse(), // MapLibre uses [lng, lat] format
+                zoom: this.config.mapSettings.defaultZoom,
+                style: this.getMapStyle(this.config.mapSettings.defaultBasemap)
+            });
+            
+            // Add navigation control
+            this.map.addControl(new maplibregl.NavigationControl(), 'top-right');
+            
+            // Initialize map after it loads
+            this.map.on('load', () => {
+                this.initDrawingSources();
+                this.mapReady = true;
+                console.log('Map is fully loaded and ready');
+            });
+        } catch (error) {
+            console.error('Error initializing map:', error);
+        }
     }
     
     /**
-     * Initialize draw control for bounding box selection
+     * Get the map style based on the basemap name
+     * @param {string} basemapName - Name of the basemap
+     * @returns {Object} - MapLibre style object
      */
-    initDrawControl() {
-        // Create feature group for drawn items
-        this.drawnItems = new L.FeatureGroup();
-        this.map.addLayer(this.drawnItems);
+    getMapStyle(basemapName) {
+        // Get basemap config or use default if not found
+        const basemapConfig = this.config.mapSettings.basemapOptions[basemapName] || 
+                            this.config.mapSettings.basemapOptions.Dark;
         
-        // Initialize draw control with rectangle only
-        const drawOptions = {
-            draw: {
-                polyline: false,
-                circle: false,
-                polygon: false,
-                marker: false,
-                circlemarker: false,
-                rectangle: {
-                    shapeOptions: {
-                        color: '#2196F3',
-                        weight: 2
-                    }
+        // Create a MapLibre style object
+        return {
+            version: 8,
+            sources: {
+                'raster-tiles': {
+                    type: 'raster',
+                    tiles: [basemapConfig.url.replace('{s}', 'a')],
+                    tileSize: 256,
+                    attribution: basemapConfig.attribution
                 }
             },
-            edit: {
-                featureGroup: this.drawnItems,
-                remove: true
-            }
+            layers: [
+                {
+                    id: 'basemap',
+                    type: 'raster',
+                    source: 'raster-tiles',
+                    minzoom: 0,
+                    maxzoom: 19
+                }
+            ]
         };
-        
-        // Create draw control
-        this.drawControl = new L.Control.Draw(drawOptions);
-        
-        // Don't add it yet, will be added when user clicks draw button
+    }
+    
+    /**
+     * Initialize drawing sources and layers
+     */
+    initDrawingSources() {
+        try {
+            // Add source for the bounding box
+            this.map.addSource(this.boxSourceId, {
+                type: 'geojson',
+                data: {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[]]
+                    }
+                }
+            });
+            
+            // Add fill layer for the bounding box
+            this.map.addLayer({
+                id: this.boxLayerId,
+                type: 'fill',
+                source: this.boxSourceId,
+                paint: {
+                    'fill-color': '#2196F3',
+                    'fill-opacity': 0.1
+                }
+            });
+            
+            // Add outline layer for the bounding box
+            this.map.addLayer({
+                id: this.boxOutlineLayerId,
+                type: 'line',
+                source: this.boxSourceId,
+                paint: {
+                    'line-color': '#2196F3',
+                    'line-width': 2
+                }
+            });
+            
+            console.log('Drawing sources and layers initialized');
+        } catch (error) {
+            console.error('Error initializing drawing sources:', error);
+        }
     }
     
     /**
@@ -88,29 +149,73 @@ export class MapManager {
             }
         });
         
-        // Map draw events
-        this.map.on(L.Draw.Event.CREATED, (event) => {
-            const layer = event.layer;
+        // Map drawing events
+        if (this.map) {
+            // Mouse down event - start or complete drawing
+            this.map.on('click', (e) => {
+                if (!this.isDrawing) return;
+                
+                if (!this.firstClickComplete) {
+                    // First click - begin drawing
+                    this.startPoint = [e.lngLat.lng, e.lngLat.lat];
+                    this.firstClickComplete = true;
+                    
+                    // Initialize the box with the starting point
+                    this.updateBox(this.startPoint, this.startPoint);
+                    
+                    console.log('First click at:', this.startPoint);
+                } else {
+                    // Second click - complete drawing
+                    const endPoint = [e.lngLat.lng, e.lngLat.lat];
+                    
+                    // Update the box with final coordinates
+                    this.updateBox(this.startPoint, endPoint);
+                    
+                    // Calculate the bounding box
+                    const minX = Math.min(this.startPoint[0], endPoint[0]);
+                    const minY = Math.min(this.startPoint[1], endPoint[1]);
+                    const maxX = Math.max(this.startPoint[0], endPoint[0]);
+                    const maxY = Math.max(this.startPoint[1], endPoint[1]);
+                    
+                    const bbox = [minX, minY, maxX, maxY];
+                    
+                    // Dispatch event with bbox
+                    document.dispatchEvent(new CustomEvent('bboxDrawn', { 
+                        detail: { 
+                            bbox,
+                            bounds: [[minX, minY], [maxX, maxY]]
+                        } 
+                    }));
+                    
+                    // Reset drawing state
+                    this.isDrawing = false;
+                    this.firstClickComplete = false;
+                    this.map.getCanvas().style.cursor = '';
+                    
+                    // Log the bbox for debugging
+                    console.log('Drawn bbox:', bbox);
+                }
+            });
             
-            // Add drawn layer to feature group
-            this.drawnItems.addLayer(layer);
+            // Mouse move event - update drawing preview
+            this.map.on('mousemove', (e) => {
+                if (!this.isDrawing || !this.firstClickComplete) return;
+                
+                // Update the box preview with current mouse position
+                this.updateBox(this.startPoint, [e.lngLat.lng, e.lngLat.lat]);
+            });
             
-            // Get bounds and convert to STAC bbox format [west, south, east, north]
-            const bounds = layer.getBounds();
-            const bbox = [
-                bounds.getWest(),
-                bounds.getSouth(),
-                bounds.getEast(),
-                bounds.getNorth()
-            ];
-            
-            // Dispatch event with bbox
-            document.dispatchEvent(new CustomEvent('bboxDrawn', { detail: { bbox } }));
-            
-            // Remove draw control and revert to normal cursor
-            this.map.removeControl(this.drawControl);
-            this.map._container.style.cursor = '';
-        });
+            // Key press event - cancel drawing with Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && this.isDrawing) {
+                    this.clearDrawings();
+                    this.isDrawing = false;
+                    this.firstClickComplete = false;
+                    this.startPoint = null;
+                    this.map.getCanvas().style.cursor = '';
+                }
+            });
+        }
         
         // Clear map drawings event
         document.addEventListener('clearMapDrawings', () => {
@@ -120,7 +225,7 @@ export class MapManager {
         // Expand tools panel event
         document.addEventListener('expandToolsPanel', () => {
             const toolsPanel = document.getElementById('tools-panel');
-            if (toolsPanel.classList.contains('collapsed')) {
+            if (toolsPanel && toolsPanel.classList.contains('collapsed')) {
                 document.getElementById('tools-header').click();
             }
         });
@@ -145,65 +250,120 @@ export class MapManager {
     }
     
     /**
+     * Update the bounding box on the map
+     * @param {Array} start - Start point [lng, lat]
+     * @param {Array} end - End point [lng, lat]
+     */
+    updateBox(start, end) {
+        if (!this.map || !this.map.getSource(this.boxSourceId)) return;
+        
+        // Create a rectangle from the start and end points
+        const coordinates = [
+            [start[0], start[1]],
+            [end[0], start[1]],
+            [end[0], end[1]],
+            [start[0], end[1]],
+            [start[0], start[1]] // Close the polygon
+        ];
+        
+        // Update the source data
+        this.map.getSource(this.boxSourceId).setData({
+            type: 'Feature',
+            geometry: {
+                type: 'Polygon',
+                coordinates: [coordinates]
+            }
+        });
+    }
+    
+    /**
      * Set the basemap
      * @param {string} basemapName - Name of the basemap to use
      */
     setBasemap(basemapName) {
-        // Remove current basemap if exists
-        if (this.baseLayer) {
-            this.map.removeLayer(this.baseLayer);
-        }
+        // Get the new style
+        const newStyle = this.getMapStyle(basemapName);
         
-        // Get basemap config or use default if not found
-        const basemapConfig = this.config.mapSettings.basemapOptions[basemapName] || 
-                            this.config.mapSettings.basemapOptions.Dark;
+        // Update the map style
+        this.map.setStyle(newStyle);
         
-        // Create new basemap layer
-        this.baseLayer = L.tileLayer(basemapConfig.url, {
-            attribution: basemapConfig.attribution,
-            maxZoom: 19
+        // Re-initialize drawing sources after style change
+        this.map.once('styledata', () => {
+            this.initDrawingSources();
         });
-        
-        // Add to map
-        this.baseLayer.addTo(this.map);
     }
     
     /**
      * Start the bounding box drawing mode
      */
     startDrawingBbox() {
-        // Clear any existing drawings
-        this.clearDrawings();
-        
-        // Add draw control to map
-        this.map.addControl(this.drawControl);
-        
-        // Set cursor to crosshair
-        this.map._container.style.cursor = 'crosshair';
-        
-        // Activate rectangle drawing
-        new L.Draw.Rectangle(this.map, this.drawControl.options.draw.rectangle).enable();
+        try {
+            // Check if map is ready
+            if (!this.map) {
+                console.error('Map is not initialized');
+                return;
+            }
+            
+            if (!this.mapReady) {
+                console.error('Map is not fully loaded yet');
+                alert('The map is still loading. Please try again in a moment.');
+                return;
+            }
+            
+            // Clear any existing drawings
+            this.clearDrawings();
+            
+            // Set drawing state
+            this.isDrawing = true;
+            this.startPoint = null;
+            this.firstClickComplete = false;
+            
+            // Set cursor to crosshair
+            this.map.getCanvas().style.cursor = 'crosshair';
+            
+            console.log('Drawing mode activated in MapManager');
+        } catch (error) {
+            console.error('Error starting drawing mode:', error);
+            alert('An error occurred while activating drawing mode. Please try again.');
+        }
     }
     
     /**
      * Clear all drawings from the map
      */
     clearDrawings() {
-        // Clear feature group
-        this.drawnItems.clearLayers();
-        
-        // Clear bbox input field
-        document.getElementById('bbox-input').value = '';
-        
-        // Remove draw control if it's on the map
         try {
-            this.map.removeControl(this.drawControl);
-        } catch (e) {
-            // Ignore if control is not on map
+            // Reset drawing state
+            this.isDrawing = false;
+            this.startPoint = null;
+            this.firstClickComplete = false;
+            
+            // Clear the bounding box
+            if (this.map && this.map.getSource(this.boxSourceId)) {
+                this.map.getSource(this.boxSourceId).setData({
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[]]
+                    }
+                });
+            }
+            
+            // Clear bbox input field
+            const bboxInput = document.getElementById('bbox-input');
+            if (bboxInput) {
+                bboxInput.value = '';
+            }
+            
+            // Reset cursor
+            if (this.map && this.map.getCanvas()) {
+                this.map.getCanvas().style.cursor = '';
+            }
+            
+            console.log('Cleared all drawings');
+        } catch (error) {
+            console.error('Error clearing drawings:', error);
         }
-        
-        // Reset cursor
-        this.map._container.style.cursor = '';
     }
     
     /**
@@ -221,25 +381,40 @@ export class MapManager {
             }
             
             // Clear existing drawings
-            this.drawnItems.clearLayers();
+            this.clearDrawings();
             
             // Create a rectangle for the bbox
-            const bounds = L.latLngBounds(
-                [bbox[1], bbox[0]], // Southwest corner [lat, lng]
-                [bbox[3], bbox[2]]  // Northeast corner [lat, lng]
-            );
+            const coordinates = [
+                [bbox[0], bbox[3]], // Northwest
+                [bbox[2], bbox[3]], // Northeast
+                [bbox[2], bbox[1]], // Southeast
+                [bbox[0], bbox[1]], // Southwest
+                [bbox[0], bbox[3]]  // Close the polygon
+            ];
             
-            // Create rectangle layer
-            const rectangle = L.rectangle(bounds, {
-                color: '#2196F3',
-                weight: 2
-            });
-            
-            // Add to drawn items
-            this.drawnItems.addLayer(rectangle);
+            // Update the source data
+            if (this.map && this.map.getSource(this.boxSourceId)) {
+                this.map.getSource(this.boxSourceId).setData({
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [coordinates]
+                    }
+                });
+            }
             
             // Fit map to the bbox
-            this.map.fitBounds(bounds);
+            this.fitMapToBbox(bbox);
+            
+            console.log('Updated bbox from input:', bbox);
+            
+            // Dispatch event with bbox
+            document.dispatchEvent(new CustomEvent('bboxDrawn', { 
+                detail: { 
+                    bbox,
+                    bounds: [[bbox[0], bbox[1]], [bbox[2], bbox[3]]]
+                } 
+            }));
         } catch (error) {
             console.error('Error updating bbox from input:', error);
         }
@@ -248,259 +423,117 @@ export class MapManager {
     /**
      * Find assets with 'visual' roles in a STAC item
      * @param {Object} item - STAC item
-     * @returns {Array} - Array of asset objects with links
+     * @returns {Array} - Array of visual assets
      */
     findVisualAssets(item) {
         const visualAssets = [];
         
-        if (!item.assets) {
-            console.warn('Item has no assets:', item);
-            return visualAssets;
-        }
-        
-        // PRIORITY 1: First check if the thumbnail is already loaded in the results panel
-        // This is the most reliable approach since it's already displayed in the browser
-        try {
-            const resultItem = document.querySelector(`.dataset-item[data-id="${item.id}"]`);
-            if (resultItem) {
-                const thumbnail = resultItem.querySelector('.dataset-thumbnail');
-                if (thumbnail && thumbnail.complete && thumbnail.naturalHeight !== 0 && thumbnail.src && 
-                    !thumbnail.src.includes('placeholder')) {
-                    console.log('Using already loaded thumbnail from results panel:', thumbnail.src);
-                    // Return immediately with just this asset to ensure it's used
-                    return [{
-                        key: 'loaded_thumbnail',
-                        href: thumbnail.src,
-                        type: 'image/jpeg',
-                        roles: ['thumbnail']
-                    }];
+        if (item && item.assets) {
+            // Check each asset
+            for (const [key, asset] of Object.entries(item.assets)) {
+                // Check if asset has visual role
+                if (asset.roles && asset.roles.includes('visual')) {
+                    visualAssets.push({ key, asset });
                 }
             }
-        } catch (error) {
-            console.error('Error checking for loaded thumbnail:', error);
         }
         
-        // Check if any assets are from CREODIAS - if so, don't even try to use them
-        // as they will cause CORS errors
-        const hasCreodiasAssets = Object.values(item.assets).some(asset => 
-            asset.href && (
-                asset.href.includes('datahub.creodias.eu') || 
-                asset.href.endsWith('$value')
-            )
-        );
-        
-        if (hasCreodiasAssets) {
-            console.log('Item has CREODIAS assets that would cause CORS issues - using only the results thumbnail');
-            // Return an empty array so the code will fall back to using the results thumbnail
-            return [];
-        }
-        
-        // PRIORITY 2: Then check specifically for thumbnail asset
-        if (item.assets.thumbnail && item.assets.thumbnail.href) {
-            // Skip CREODIAS URLs that will cause CORS issues
-            if (item.assets.thumbnail.href.includes('datahub.creodias.eu') || 
-                item.assets.thumbnail.href.endsWith('$value')) {
-                console.log('Skipping CREODIAS thumbnail that would cause CORS issues');
-            } else {
-                console.log('Found thumbnail asset:', item.assets.thumbnail);
-                visualAssets.push({
-                    key: 'thumbnail',
-                    ...item.assets.thumbnail
-                });
-                // Return immediately to prioritize thumbnail
-                return visualAssets;
-            }
-        }
-        
-        // Check each asset
-        for (const [key, asset] of Object.entries(item.assets)) {
-            // Skip assets that will cause CORS issues
-            if (asset.href && (
-                asset.href.includes('datahub.creodias.eu') || 
-                asset.href.endsWith('$value')
-            )) {
-                console.log('Skipping CORS-problematic asset:', key, asset.href);
-                continue;
-            }
-            
-            console.log('Checking asset:', key, asset);
-            
-            // Check for visual role
-            if (asset.roles && asset.roles.includes('visual')) {
-                console.log('Found visual role asset:', key, asset);
-                visualAssets.push({
-                    key,
-                    ...asset
-                });
-            }
-            // Also check for common visual asset keys
-            else if (['visual', 'rgb', 'preview', 'browse'].includes(key)) {
-                console.log('Found visual key asset:', key, asset);
-                visualAssets.push({
-                    key,
-                    ...asset
-                });
-            }
-        }
-        
-        console.log('Found visual assets:', visualAssets);
         return visualAssets;
     }
     
     /**
-     * Display a STAC item on the map
-     * @param {Object} item - STAC item to display
-     * @param {string} [preferredAssetKey] - Optional preferred asset key to display
-     * @returns {Promise} - Promise that resolves when the item is displayed
+     * Find result item by trying multiple strategies
+     * @param {string} itemId - Item ID to find
+     * @returns {Element|null} - Found element or null
      */
-    async displayItemOnMap(item, preferredAssetKey = null) {
-        try {
-            console.log('displayItemOnMap called with item:', item.id, 'and preferredAssetKey:', preferredAssetKey);
-            
-            // Remove any existing layer
-            this.removeCurrentLayer();
-            
-            // Check if item has a geometry
-            if (!item.geometry) {
-                console.error('Item has no geometry:', item);
-                throw new Error('Item has no geometry');
-            }
-            
-            // Create GeoJSON layer
-            this.currentLayer = L.geoJSON(item.geometry, {
-                style: {
-                    color: '#4CAF50',
-                    weight: 2,
-                    fillOpacity: 0.2
-                }
-            });
-            
-            // Add to map
-            this.currentLayer.addTo(this.map);
-            console.log('Added GeoJSON layer to map for item:', item.id);
-            
-            // Fit map to layer bounds
-            this.fitToLayerBounds();
-            
-            // If we have a preferred asset key, try to use it first
-            if (preferredAssetKey && item.assets && item.assets[preferredAssetKey]) {
-                console.log(`Using preferred asset: ${preferredAssetKey}`, item.assets[preferredAssetKey]);
-                const asset = item.assets[preferredAssetKey];
-                await this.addAssetOverlay(asset, item, preferredAssetKey);
-                return true;
-            }
-            
-            // SIMPLIFIED APPROACH: Try using the results thumbnail first
-            console.log('Trying to use results thumbnail first');
-            const thumbnailSuccess = this.useResultsThumbnail(item);
-            console.log('useResultsThumbnail result:', thumbnailSuccess);
-            
-            // Only if that fails, try other methods
-            if (!thumbnailSuccess) {
-                console.log('Thumbnail not available, falling back to visual assets');
-                // Find assets with 'visual' roles for preview
-                const visualAssets = this.findVisualAssets(item);
-                console.log('Found visual assets:', visualAssets);
-                
-                // If we have visual assets, try to add them as overlay
-                if (visualAssets.length > 0) {
-                    const asset = visualAssets[0];
-                    const assetKey = Object.keys(item.assets).find(key => item.assets[key] === asset);
-                    console.log('Using visual asset:', assetKey, asset);
-                    await this.addAssetOverlay(asset, item, assetKey);
-                } else {
-                    console.warn('No visual assets found for item:', item);
-                }
-            }
-            
-            return true;
-        } catch (error) {
-            console.error('Error displaying item on map:', error);
-            return false;
+    findResultItemByMultipleStrategies(itemId) {
+        console.log('Finding result item for ID:', itemId);
+        
+        // Strategy 1: Direct query with data-id
+        let resultItem = document.querySelector(`.dataset-item[data-id="${itemId}"]`);
+        if (resultItem) {
+            console.log('Found item using data-id selector');
+            return resultItem;
         }
+        
+        // Strategy 2: Look for item with matching ID attribute
+        resultItem = document.querySelector(`[id="${itemId}"]`);
+        if (resultItem) {
+            console.log('Found item using id attribute selector');
+            return resultItem;
+        }
+        
+        // Strategy 3: Check all dataset items
+        const allItems = document.querySelectorAll('.dataset-item');
+        for (const element of allItems) {
+            if (element.dataset.id === itemId || element.id === itemId) {
+                console.log('Found item by iterating through dataset items');
+                return element;
+            }
+        }
+        
+        // Strategy 4: Look for any elements that contain the ID in their text
+        const elements = document.querySelectorAll('.results-container div, .item-container div');
+        for (const element of elements) {
+            if (element.textContent && element.textContent.includes(itemId)) {
+                // Found an element that mentions the ID, check if it has or is near an image
+                const nearbyImg = element.querySelector('img') || 
+                                  element.parentElement.querySelector('img') ||
+                                  element.closest('.dataset-item, .item');
+                if (nearbyImg) {
+                    console.log('Found item by text content and proximity to image');
+                    return nearbyImg.closest('.dataset-item, .item') || element;
+                }
+            }
+        }
+        
+        console.warn('Could not find item using any strategy');
+        return null;
     }
     
     /**
-     * Use the thumbnail from the results panel as a quick preview
+     * Use thumbnail from results panel
      * @param {Object} item - STAC item
-     * @returns {boolean} - Whether the thumbnail was successfully used
+     * @returns {boolean} - True if successful, false otherwise
      */
     useResultsThumbnail(item) {
         try {
-            console.log('Using simplified thumbnail approach for item:', item.id);
+            console.log('Trying to use results thumbnail for item:', item.id);
             
-            // Find the thumbnail in the results panel - try both data-id and dataset.id
-            let resultItem = document.querySelector(`.dataset-item[data-id="${item.id}"]`);
-            
-            // If not found, try with the id attribute directly
-            if (!resultItem) {
-                console.log('Trying to find result item by iterating through all dataset items');
-                const allItems = document.querySelectorAll('.dataset-item');
-                for (const element of allItems) {
-                    if (element.dataset.id === item.id) {
-                        resultItem = element;
-                        break;
-                    }
-                }
-            }
+            // Find the item in the results panel using multiple strategies
+            let resultItem = this.findResultItemByMultipleStrategies(item.id);
             
             if (!resultItem) {
-                console.warn('Could not find result item in the panel for:', item.id);
+                console.warn('Could not find item in results panel');
                 return false;
             }
             
-            const thumbnail = resultItem.querySelector('.dataset-thumbnail');
-            if (!thumbnail || !thumbnail.src || thumbnail.src.includes('placeholder')) {
-                console.warn('No valid thumbnail found for item:', item.id);
+            // Find the thumbnail
+            const thumbnail = resultItem.querySelector('.dataset-thumbnail, img');
+            if (!thumbnail) {
+                console.warn('No thumbnail element found in results panel');
                 return false;
             }
             
-            console.log('Found thumbnail:', thumbnail.src);
+            if (!thumbnail.src || thumbnail.src.includes('placeholder')) {
+                console.warn('No valid thumbnail source found in results panel');
+                return false;
+            }
             
-            // Set the current asset key to 'thumbnail'
-            this.currentAssetKey = 'thumbnail';
+            // Ensure we have an absolute URL
+            const absoluteUrl = this.ensureAbsoluteUrl(thumbnail.src);
+            console.log('Found thumbnail in results panel:', absoluteUrl);
             
-            // Get bounds from item
-            let bounds;
-            if (item.bbox && item.bbox.length === 4) {
-                bounds = L.latLngBounds(
-                    [item.bbox[1], item.bbox[0]], // Southwest corner [lat, lng]
-                    [item.bbox[3], item.bbox[2]]  // Northeast corner [lat, lng]
-                );
-            } else if (item.geometry && item.geometry.type === 'Polygon') {
-                // Extract bounds from polygon coordinates
-                const coords = item.geometry.coordinates[0];
-                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                
-                coords.forEach(coord => {
-                    minX = Math.min(minX, coord[0]);
-                    minY = Math.min(minY, coord[1]);
-                    maxX = Math.max(maxX, coord[0]);
-                    maxY = Math.max(maxY, coord[1]);
-                });
-                
-                bounds = L.latLngBounds(
-                    [minY, minX], // Southwest corner [lat, lng]
-                    [maxY, maxX]  // Northeast corner [lat, lng]
-                );
-            } else {
+            // Get bounds
+            let bbox = this.getBoundingBox(item);
+            if (!bbox) {
                 console.warn('Item has no valid bbox or geometry for overlay');
                 return false;
             }
             
-            // Create image overlay with the thumbnail's src directly
-            const overlay = L.imageOverlay(thumbnail.src, bounds, {
-                opacity: 1.0,
-                interactive: false // Prevent interaction issues
-            });
+            // Add image to map
+            this.addImageOverlay(absoluteUrl, bbox, item);
             
-            // Add to map
-            overlay.addTo(this.map);
-            
-            // Store as part of current layer
-            this.currentLayerOverlay = overlay;
-            
-            console.log('Results thumbnail overlay created successfully');
             return true;
         } catch (error) {
             console.error('Error using results thumbnail:', error);
@@ -509,470 +542,342 @@ export class MapManager {
     }
     
     /**
-     * Add an asset as an overlay on the map
-     * @param {Object} asset - STAC asset to display
-     * @param {Object} item - Parent STAC item
-     * @param {string} assetKey - The key of the asset in the item's assets object
-     * @returns {Promise} - Promise that resolves when the overlay is added
+     * Display an item on the map
+     * @param {Object} item - STAC item to display
+     * @param {string} preferredAssetKey - Preferred asset key to display
+     */
+    async displayItemOnMap(item, preferredAssetKey = null) {
+        try {
+            console.log('Displaying item on map:', item.id);
+            
+            // Remove any existing layers
+            this.removeCurrentLayer();
+            
+            // Get bounding box
+            const bbox = this.getBoundingBox(item);
+            if (!bbox) {
+                console.warn('Item has no valid bbox or geometry');
+                return;
+            }
+            
+            // Fit map to item bounds
+            this.fitMapToBbox(bbox);
+            
+            // Show loading indicator
+            const loadingIndicator = document.getElementById('loading');
+            if (loadingIndicator) loadingIndicator.style.display = 'block';
+            
+            // Try to find visual assets
+            const visualAssets = this.findVisualAssets(item);
+            
+            // If we have a preferred asset key and it exists, use it
+            if (preferredAssetKey && item.assets && item.assets[preferredAssetKey]) {
+                await this.addAssetOverlay(item.assets[preferredAssetKey], item, preferredAssetKey);
+                return;
+            }
+            
+            // If we have visual assets, use the first one
+            if (visualAssets.length > 0) {
+                await this.addAssetOverlay(visualAssets[0].asset, item, visualAssets[0].key);
+                return;
+            }
+            
+            // If we have a thumbnail, use it
+            if (item.assets && item.assets.thumbnail) {
+                await this.addAssetOverlay(item.assets.thumbnail, item, 'thumbnail');
+                return;
+            }
+            
+            // If we have a preview, use it
+            if (item.assets && item.assets.preview) {
+                await this.addAssetOverlay(item.assets.preview, item, 'preview');
+                return;
+            }
+            
+            // If we have an overview, use it
+            if (item.assets && item.assets.overview) {
+                await this.addAssetOverlay(item.assets.overview, item, 'overview');
+                return;
+            }
+            
+            // If we have a thumbnail in the results panel, use it
+            if (this.useResultsThumbnail(item)) {
+                return;
+            }
+            
+            // If all else fails, just show the bounding box
+            this.addGeoJsonLayerWithoutTooltip(bbox, item);
+            
+            // Hide loading indicator
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+        } catch (error) {
+            console.error('Error displaying item on map:', error);
+            
+            // Hide loading indicator
+            const loadingIndicator = document.getElementById('loading');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Get bounding box from item
+     * @param {Object} item - STAC item
+     * @returns {Array|null} - Bounding box [west, south, east, north] or null
+     */
+    getBoundingBox(item) {
+        // If item has bbox, use it
+        if (item.bbox && item.bbox.length === 4) {
+            return item.bbox;
+        }
+        
+        // If item has geometry, calculate bbox
+        if (item.geometry && item.geometry.type === 'Polygon') {
+            // Extract bounds from polygon coordinates
+            const coords = item.geometry.coordinates[0];
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            
+            coords.forEach(coord => {
+                minX = Math.min(minX, coord[0]);
+                minY = Math.min(minY, coord[1]);
+                maxX = Math.max(maxX, coord[0]);
+                maxY = Math.max(maxY, coord[1]);
+            });
+            
+            return [minX, minY, maxX, maxY];
+        }
+        
+        return null;
+    }
+    
+    /**
+     * Fit map to bounding box
+     * @param {Array} bbox - Bounding box [west, south, east, north]
+     */
+    fitMapToBbox(bbox) {
+        if (bbox && bbox.length === 4) {
+            this.map.fitBounds([
+                [bbox[0], bbox[1]], // Southwest
+                [bbox[2], bbox[3]]  // Northeast
+            ], { padding: 50 });
+        }
+    }
+    
+    /**
+     * Add asset overlay to map
+     * @param {Object} asset - Asset object
+     * @param {Object} item - STAC item
+     * @param {string} assetKey - Asset key
      */
     async addAssetOverlay(asset, item, assetKey) {
         try {
-            // Store the asset key for state management
+            console.log(`Adding asset overlay for ${assetKey}:`, asset);
+            
+            // Store current asset key
             this.currentAssetKey = assetKey;
             
-            // Check if asset has a href
+            // Check if asset has href
             if (!asset.href) {
-                throw new Error('Asset has no href');
+                console.warn('Asset has no href');
+                return false;
             }
             
-            // Determine if this is a COG or other type of visual asset
-            const isCOG = this.isCOGAsset(asset);
+            // Add visual overlay
+            await this.addVisualOverlay(asset, item);
             
-            if (isCOG) {
-                // Handle COG assets with special rendering
-                await this.addCOGOverlay(asset, item);
-            } else {
-                // Handle regular image assets
-                await this.addImageOverlay(asset, item);
-            }
-            
-            // Dispatch event that an item has been displayed with a specific asset
-            document.dispatchEvent(new CustomEvent('assetDisplayed', {
-                detail: {
-                    itemId: item.id,
-                    assetKey: assetKey
-                }
-            }));
+            // Hide loading indicator
+            const loadingIndicator = document.getElementById('loading');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
             
             return true;
         } catch (error) {
             console.error('Error adding asset overlay:', error);
+            
+            // Hide loading indicator
+            const loadingIndicator = document.getElementById('loading');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+            
             return false;
         }
     }
     
     /**
-     * Add a visual overlay to the map
-     * @param {Object} asset - Asset object with href
-     * @param {Object} item - Parent STAC item
+     * Add visual overlay to map
+     * @param {Object} asset - Asset object
+     * @param {Object} item - STAC item
      */
     async addVisualOverlay(asset, item) {
         try {
-            console.log('Adding visual overlay for asset:',  asset);
-            console.log('Item:', item);
+            console.log('Adding visual overlay for asset:', asset);
             
-            // Skip if no href
-            if (!asset.href) {
-                console.warn('Asset has no href:', asset);
-                // Try using the thumbnail from results as fallback
-                return this.useResultsThumbnail(item);
-            }
-
-            // Process the href - keep as is even if it ends with $value (it's still a valid JPG)
-            let imageUrl = asset.href;
-            console.log('Using image URL:', imageUrl);
-
-            // Get bounds from item
-            let bounds;
-            if (item.bbox && item.bbox.length === 4) {
-                console.log('Using bbox for bounds:', item.bbox);
-                bounds = L.latLngBounds(
-                    [item.bbox[1], item.bbox[0]], // Southwest corner [lat, lng]
-                    [item.bbox[3], item.bbox[2]]  // Northeast corner [lat, lng]
-                );
-            } else if (item.geometry && item.geometry.type === 'Polygon') {
-                console.log('Using geometry for bounds:', item.geometry);
-                // Extract bounds from polygon coordinates
-                const coords = item.geometry.coordinates[0];
-                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                
-                coords.forEach(coord => {
-                    minX = Math.min(minX, coord[0]);
-                    minY = Math.min(minY, coord[1]);
-                    maxX = Math.max(maxX, coord[0]);
-                    maxY = Math.max(maxY, coord[1]);
-                });
-                
-                bounds = L.latLngBounds(
-                    [minY, minX], // Southwest corner [lat, lng]
-                    [maxY, maxX]  // Northeast corner [lat, lng]
-                );
-                console.log('Calculated bounds:', bounds);
-            } else {
+            // Get image URL
+            const imageUrl = asset.href;
+            
+            // Get bounds
+            let bbox = this.getBoundingBox(item);
+            if (!bbox) {
                 console.warn('Item has no valid bbox or geometry for overlay');
-                return this.useResultsThumbnail(item);
+                return false;
             }
-
-            // Log the URL we're trying to load
-            console.log('Attempting to load image from URL:', imageUrl);
-
-            // Check for CREODIAS URLs or URLs with $value - these will likely have CORS issues
-            if (imageUrl.includes('datahub.creodias.eu') || imageUrl.endsWith('$value')) {
-                console.log('Detected CREODIAS or $value URL, using results thumbnail to avoid CORS issues');
-                // For CREODIAS URLs, go straight to using the results thumbnail
-                // as we know direct fetch will fail due to CORS
-                return this.useResultsThumbnail(item);
-            }
-
-            // For URLs with $value but not from CREODIAS, try direct fetch
-            if (imageUrl.includes('/$value')) {
-                console.log('URL contains $value, trying direct fetch first');
-                const fetchResult = await this.fetchImageDirectly(imageUrl, bounds, item);
-                if (fetchResult) {
-                    return true;
-                }
-                // If direct fetch fails, fall back to results thumbnail
-                return this.useResultsThumbnail(item);
-            }
-
-            // For other URLs, try standard image overlay first
-            // Create image overlay with appropriate options
-            const overlayOptions = {
-                opacity: 1.0,
-                crossOrigin: true
-            };
-
-            // Create image overlay
-            const overlay = L.imageOverlay(imageUrl, bounds, overlayOptions);
-
-            // Add load event handler
-            overlay.on('load', () => {
-                console.log('Image overlay loaded successfully');
-            });
-
-            // Add error handling for the image load
-            overlay.on('error', (error) => {
-                console.error('Error loading image overlay:', error);
-                console.error('Failed URL:', imageUrl);
-                this.notificationService?.showNotification('Error loading image overlay. Trying alternative method...', 'warning');
-                
-                // Try using the results thumbnail first as it's most reliable
-                if (!this.useResultsThumbnail(item)) {
-                    // If that fails, try direct fetch
-                    this.fetchImageDirectly(imageUrl, bounds, item);
-                }
-            });
-
-            // Add to map
-            overlay.addTo(this.map);
             
-            // Store as part of current layer
-            this.currentLayerOverlay = overlay;
+            // Add image to map
+            await this.addImageOverlay(imageUrl, bbox, item);
             
             return true;
         } catch (error) {
             console.error('Error adding visual overlay:', error);
-            console.error('Asset:', asset);
-            console.error('Item:', item);
-            this.notificationService?.showNotification('Error adding visual overlay to map', 'error');
-            
-            // Try using the results thumbnail as a last resort
-            return this.useResultsThumbnail(item);
-        }
-    }
-    
-    /**
-     * Add an image overlay to the map
-     * @param {Object} asset - Asset object with href
-     * @param {Object} item - Parent STAC item
-     */
-    async addImageOverlay(asset, item) {
-        try {
-            console.log('Adding image overlay for asset:', asset);
-            console.log('Item:', item);
-
-            // Skip if no href
-            if (!asset.href) {
-                console.warn('Asset has no href:', asset);
-                return false;
-            }
-
-            // Process the href
-            let imageUrl = asset.href;
-            console.log('Using image URL:', imageUrl);
-
-            // Get bounds from item
-            let bounds;
-            if (item.bbox && item.bbox.length === 4) {
-                console.log('Using bbox for bounds:', item.bbox);
-                bounds = L.latLngBounds(
-                    [item.bbox[1], item.bbox[0]], // Southwest corner [lat, lng]
-                    [item.bbox[3], item.bbox[2]]  // Northeast corner [lat, lng]
-                );
-            } else if (item.geometry && item.geometry.type === 'Polygon') {
-                console.log('Using geometry for bounds:', item.geometry);
-                // Extract bounds from polygon coordinates
-                const coords = item.geometry.coordinates[0];
-                let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-
-                coords.forEach(coord => {
-                    minX = Math.min(minX, coord[0]);
-                    minY = Math.min(minY, coord[1]);
-                    maxX = Math.max(maxX, coord[0]);
-                    maxY = Math.max(maxY, coord[1]);
-                });
-
-                bounds = L.latLngBounds(
-                    [minY, minX], // Southwest corner [lat, lng]
-                    [maxY, maxX]  // Northeast corner [lat, lng]
-                );
-                console.log('Calculated bounds:', bounds);
-            } else {
-                console.warn('Item has no valid bbox or geometry for overlay');
-                return false;
-            }
-
-            // Create image overlay with appropriate options
-            const overlayOptions = {
-                opacity: 1.0,
-                crossOrigin: true
-            };
-
-            // Create image overlay
-            const overlay = L.imageOverlay(imageUrl, bounds, overlayOptions);
-
-            // Add load event handler
-            overlay.on('load', () => {
-                console.log('Image overlay loaded successfully');
-            });
-
-            // Add error handling for the image load
-            overlay.on('error', (error) => {
-                console.error('Error loading image overlay:', error);
-                console.error('Failed URL:', imageUrl);
-                this.notificationService?.showNotification('Error loading image overlay. Trying alternative method...', 'warning');
-
-                // Try using the results thumbnail first as it's most reliable
-                if (!this.useResultsThumbnail(item)) {
-                    // If that fails, try direct fetch
-                    this.fetchImageDirectly(imageUrl, bounds, item);
-                }
-            });
-
-            // Add to map
-            overlay.addTo(this.map);
-
-            // Store as part of current layer
-            this.currentLayerOverlay = overlay;
-
-            return true;
-        } catch (error) {
-            console.error('Error adding image overlay:', error);
-            console.error('Asset:', asset);
-            console.error('Item:', item);
-            this.notificationService?.showNotification('Error adding image overlay to map', 'error');
-
-            // Try using the results thumbnail as a last resort
-            return this.useResultsThumbnail(item);
-        }
-    }
-    
-    /**
-     * Create a canvas-based overlay as a fallback for CORS issues
-     * @param {string} imageUrl - URL of the image
-     * @param {L.LatLngBounds} bounds - Bounds for the overlay
-     * @param {Object} item - STAC item
-     */
-    createCanvasOverlay(imageUrl, bounds, item) {
-        try {
-            console.log('Attempting canvas-based overlay as fallback for:', imageUrl);
-            
-            // For regular STAC items, try using the results thumbnail first as it's most reliable
-            if (item.id !== 'direct-url-image' && this.useResultsThumbnail(item)) {
-                console.log('Successfully used results thumbnail instead of canvas overlay');
-                return true;
-            }
-            
-            // For direct URL inputs, we need to try harder with the canvas approach
-            // Create an image element to load the image
-            const img = new Image();
-            img.crossOrigin = 'Anonymous';
-            
-            // Use the image URL directly
-            let srcUrl = imageUrl;
-            
-            // For direct URL inputs, try to use a CORS proxy
-            if (item.id === 'direct-url-image') {
-                // Try using a different CORS proxy as a last resort
-                srcUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(imageUrl)}`;
-                console.log('Using AllOrigins proxy for canvas approach:', srcUrl);
-            }
-            
-            img.onload = () => {
-                // Create a canvas element
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                
-                // Draw the image on the canvas
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0);
-                
-                // Convert canvas to data URL
-                const dataUrl = canvas.toDataURL('image/jpeg');
-                
-                // Create image overlay with data URL
-                const overlay = L.imageOverlay(dataUrl, bounds, {
-                    opacity: 1.0
-                });
-                
-                // Add to map
-                overlay.addTo(this.map);
-                
-                // Store as part of current layer
-                if (this.currentLayerOverlay) {
-                    this.map.removeLayer(this.currentLayerOverlay);
-                }
-                this.currentLayerOverlay = overlay;
-                
-                console.log('Canvas overlay created successfully');
-                
-                // For direct URL inputs, show a success notification
-                if (item.id === 'direct-url-image') {
-                    this.notificationService?.showNotification('Image loaded successfully using canvas method', 'success');
-                }
-            };
-            
-            img.onerror = () => {
-                console.error('Failed to load image for canvas overlay');
-                
-                if (item.id === 'direct-url-image') {
-                    // For direct URL inputs, show an error notification
-                    this.notificationService?.showNotification('Could not load image. The URL may be invalid or blocked by CORS policy.', 'error');
-                    
-                    // Try one more approach - using an iframe proxy
-                    this.tryIframeProxy(imageUrl, bounds);
-                } else {
-                    // For regular STAC items, try to use the thumbnail from the results panel as a fallback
-                    this.useResultsThumbnail(item);
-                }
-            };
-            
-            // Set the source to start loading
-            img.src = srcUrl;
-            return true;
-        } catch (error) {
-            console.error('Error creating canvas overlay:', error);
-            
-            // For direct URL inputs, show an error notification
-            if (item.id === 'direct-url-image') {
-                this.notificationService?.showNotification('Could not load image. The URL may be invalid or blocked by CORS policy.', 'error');
-                return false;
-            }
-            
-            // Try using the results thumbnail as a last resort
-            return this.useResultsThumbnail(item);
-        }
-    }
-    
-    /**
-     * Try using an iframe proxy as a last resort for direct URLs
-     * @param {string} imageUrl - URL of the image
-     * @param {L.LatLngBounds} bounds - Bounds for the overlay
-     */
-    tryIframeProxy(imageUrl, bounds) {
-        try {
-            console.log('Attempting iframe proxy as last resort for:', imageUrl);
-            
-            // Create a notification to inform the user
-            this.notificationService?.showNotification('Trying alternative method to load image...', 'info');
-            
-            // Create a hidden iframe to load the image
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-            
-            // Create a simple HTML document with the image
-            const html = `
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Image Proxy</title>
-                    <style>
-                        body { margin: 0; padding: 0; }
-                        img { max-width: 100%; }
-                    </style>
-                </head>
-                <body>
-                    <img src="${imageUrl}" id="proxyImage" crossorigin="anonymous">
-                    <script>
-                        const img = document.getElementById('proxyImage');
-                        img.onload = function() {
-                            window.parent.postMessage({
-                                type: 'imageLoaded',
-                                width: img.naturalWidth,
-                                height: img.naturalHeight
-                            }, '*');
-                        };
-                        img.onerror = function() {
-                            window.parent.postMessage({
-                                type: 'imageError'
-                            }, '*');
-                        };
-                    </script>
-                </body>
-                </html>
-            `;
-            
-            // Listen for messages from the iframe
-            const messageHandler = (event) => {
-                if (event.data && event.data.type === 'imageLoaded') {
-                    console.log('Image loaded in iframe proxy');
-                    
-                    // Create a message to inform the user
-                    this.notificationService?.showNotification('Image loaded in proxy frame. Using screenshot method.', 'success');
-                    
-                    // Clean up
-                    window.removeEventListener('message', messageHandler);
-                    document.body.removeChild(iframe);
-                } else if (event.data && event.data.type === 'imageError') {
-                    console.error('Image failed to load in iframe proxy');
-                    
-                    // Create an error notification
-                    this.notificationService?.showNotification('All methods failed to load the image. Please check the URL.', 'error');
-                    
-                    // Clean up
-                    window.removeEventListener('message', messageHandler);
-                    document.body.removeChild(iframe);
-                }
-            };
-            
-            window.addEventListener('message', messageHandler);
-            
-            // Write the HTML to the iframe
-            iframe.contentWindow.document.open();
-            iframe.contentWindow.document.write(html);
-            iframe.contentWindow.document.close();
-            
-            return true;
-        } catch (error) {
-            console.error('Error with iframe proxy:', error);
-            this.notificationService?.showNotification('All methods failed to load the image. Please check the URL.', 'error');
             return false;
         }
     }
     
     /**
-     * Remove the current layer from the map
+     * Add GeoJSON layer without tooltip
+     * @param {Array} bbox - Bounding box
+     * @param {Object} item - STAC item
+     */
+    addGeoJsonLayerWithoutTooltip(bbox, item) {
+        // Just show the bounding box outline without any tooltip
+        this.addGeoJsonLayer({
+            type: 'Feature',
+            properties: {
+                title: item.title || item.id || 'Unknown Item',
+                description: item.description || ''
+            },
+            geometry: {
+                type: 'Polygon',
+                coordinates: [[
+                    [bbox[0], bbox[3]],
+                    [bbox[2], bbox[3]],
+                    [bbox[2], bbox[1]],
+                    [bbox[0], bbox[1]],
+                    [bbox[0], bbox[3]]
+                ]]
+            }
+        });
+    }
+    
+    /**
+     * Try alternative methods to display an image if the primary method fails
+     * @param {string} imageUrl - Image URL
+     * @param {Array} bbox - Bounding box [west, south, east, north]
+     * @param {Object} item - STAC item
+     * @returns {boolean} - True if successful, false otherwise
+     */
+    tryAlternativeImageDisplay(imageUrl, bbox, item) {
+        try {
+            console.log('Trying alternative image display method');
+            
+            // Show GeoJSON without any tooltip
+            this.addGeoJsonLayerWithoutTooltip(bbox, item);
+            return true;
+        } catch (error) {
+            console.error('Error in alternative image display:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Add GeoJSON layer to map
+     * @param {Object} geojson - GeoJSON object
+     * @param {string} sourceId - Source ID
+     */
+    addGeoJsonLayer(geojson, sourceId = 'item-geometry') {
+        // Remove existing source and layers if they exist
+        if (this.map.getSource(sourceId)) {
+            // First remove any layers that use this source
+            this.map.getStyle().layers.forEach(layer => {
+                if (layer.source === sourceId) {
+                    this.map.removeLayer(layer.id);
+                }
+            });
+            
+            // Then remove the source
+            this.map.removeSource(sourceId);
+        }
+        
+        // Add source
+        this.map.addSource(sourceId, {
+            type: 'geojson',
+            data: geojson
+        });
+        
+        // Add fill layer
+        this.map.addLayer({
+            id: `${sourceId}-fill`,
+            type: 'fill',
+            source: sourceId,
+            paint: {
+                'fill-color': '#2196F3',
+                'fill-opacity': 0.1
+            }
+        });
+        
+        // Add line layer
+        this.map.addLayer({
+            id: `${sourceId}-line`,
+            type: 'line',
+            source: sourceId,
+            paint: {
+                'line-color': '#2196F3',
+                'line-width': 2
+            }
+        });
+        
+        // Store as current layer
+        this.currentLayer = {
+            sourceId,
+            getBounds: () => {
+                // Calculate bounds from GeoJSON
+                if (geojson.type === 'Feature' && geojson.geometry) {
+                    if (geojson.geometry.type === 'Polygon') {
+                        const coords = geojson.geometry.coordinates[0];
+                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                        
+                        coords.forEach(coord => {
+                            minX = Math.min(minX, coord[0]);
+                            minY = Math.min(minY, coord[1]);
+                            maxX = Math.max(maxX, coord[0]);
+                            maxY = Math.max(maxY, coord[1]);
+                        });
+                        
+                        return [[minX, minY], [maxX, maxY]];
+                    }
+                }
+                return null;
+            }
+        };
+    }
+    
+    /**
+     * Remove current layer from map
      */
     removeCurrentLayer() {
-        if (this.currentLayer) {
-            this.map.removeLayer(this.currentLayer);
-            this.currentLayer = null;
-        }
-        
-        if (this.currentLayerOverlay) {
-            this.map.removeLayer(this.currentLayerOverlay);
-            this.currentLayerOverlay = null;
-        }
-        
-        // Reset the current asset key
-        this.currentAssetKey = null;
-        
-        // Clean up any blob URLs
-        if (this.currentBlobUrl) {
-            URL.revokeObjectURL(this.currentBlobUrl);
-            this.currentBlobUrl = null;
+        try {
+            // If we have a current layer, remove it
+            if (this.currentLayer && this.currentLayer.sourceId) {
+                // Get all layers that use this source
+                const layers = this.map.getStyle().layers.filter(layer => 
+                    layer.source === this.currentLayer.sourceId
+                );
+                
+                // Remove each layer
+                layers.forEach(layer => {
+                    if (this.map.getLayer(layer.id)) {
+                        this.map.removeLayer(layer.id);
+                    }
+                });
+                
+                // Remove the source
+                if (this.map.getSource(this.currentLayer.sourceId)) {
+                    this.map.removeSource(this.currentLayer.sourceId);
+                }
+                
+                // Clear current layer
+                this.currentLayer = null;
+                this.currentLayerOverlay = null;
+                this.currentAssetKey = null;
+            }
+        } catch (error) {
+            console.error('Error removing current layer:', error);
         }
     }
     
@@ -980,11 +885,11 @@ export class MapManager {
      * Fit the map view to the current layer bounds
      */
     fitToLayerBounds() {
-        if (this.currentLayer) {
+        if (this.currentLayer && this.currentLayer.getBounds) {
             const bounds = this.currentLayer.getBounds();
-            if (bounds.isValid()) {
+            if (bounds) {
                 this.map.fitBounds(bounds, {
-                    padding: [50, 50]
+                    padding: 50
                 });
             }
         }
@@ -995,271 +900,79 @@ export class MapManager {
      * @param {number} opacity - Opacity value (0-1)
      */
     setLayerOpacity(opacity) {
-        if (this.currentLayerOverlay) {
+        if (this.currentLayerOverlay && this.currentLayerOverlay.setOpacity) {
             this.currentLayerOverlay.setOpacity(opacity);
         }
     }
     
     /**
-     * Fetch an image directly using fetch API
-     * @param {string} url - URL of the image
-     * @param {L.LatLngBounds} bounds - Bounds for the overlay
-     * @param {Object} item - STAC item
-     */
-    async fetchImageDirectly(url, bounds, item) {
-        try {
-            console.log('Fetching image directly:', url);
-            
-            // Check if this is a CREODIAS URL
-            const isCreodiasUrl = url.includes('datahub.creodias.eu');
-            
-            // For direct URL inputs, try a simpler approach first
-            if (item.id === 'direct-url-image') {
-                try {
-                    console.log('Using direct image overlay for pasted URL');
-                    
-                    // Create image overlay with direct URL
-                    const overlay = L.imageOverlay(url, bounds, {
-                        opacity: 1.0,
-                        crossOrigin: 'anonymous'
-                    });
-                    
-                    // Add load event handler
-                    overlay.on('load', () => {
-                        console.log('Direct URL image overlay loaded successfully');
-                    });
-                    
-                    // Add error handling for the image load
-                    overlay.on('error', (error) => {
-                        console.error('Error loading direct URL image overlay:', error);
-                        throw new Error('Failed to load image directly');
-                    });
-                    
-                    // Add to map
-                    overlay.addTo(this.map);
-                    
-                    // Store as part of current layer
-                    if (this.currentLayerOverlay) {
-                        this.map.removeLayer(this.currentLayerOverlay);
-                    }
-                    this.currentLayerOverlay = overlay;
-                    
-                    return true;
-                } catch (directError) {
-                    console.error('Error with direct overlay approach:', directError);
-                    // Continue to the fetch approach
-                }
-            }
-            
-            // First try with regular CORS mode
-            try {
-                const response = await fetch(url, {
-                    method: 'GET',
-                    mode: 'cors',
-                    credentials: 'omit',
-                    headers: {
-                        'Accept': 'image/jpeg,image/png,*/*'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                // Get the blob
-                const blob = await response.blob();
-                
-                // Create a blob URL
-                const blobUrl = URL.createObjectURL(blob);
-                console.log('Created blob URL:', blobUrl);
-                
-                // Create image overlay with blob URL
-                const overlay = L.imageOverlay(blobUrl, bounds, {
-                    opacity: 1.0
-                });
-                
-                // Add to map
-                overlay.addTo(this.map);
-                
-                // Store as part of current layer
-                if (this.currentLayerOverlay) {
-                    this.map.removeLayer(this.currentLayerOverlay);
-                }
-                this.currentLayerOverlay = overlay;
-                
-                // Add cleanup for blob URL
-                this.currentBlobUrl = blobUrl;
-                
-                console.log('Image overlay created successfully');
-                return true;
-            } catch (corsError) {
-                console.error('CORS error fetching image:', corsError);
-                
-                // If this is a direct URL input, try no-cors mode
-                if (item.id === 'direct-url-image') {
-                    try {
-                        console.log('Trying no-cors mode for direct URL');
-                        
-                        // Try using a proxy service if available
-                        const proxyUrl = `https://cors-anywhere.herokuapp.com/${url}`;
-                        console.log('Using proxy URL:', proxyUrl);
-                        
-                        const response = await fetch(proxyUrl, {
-                            method: 'GET',
-                            mode: 'cors',
-                            credentials: 'omit',
-                            headers: {
-                                'Accept': 'image/jpeg,image/png,*/*',
-                                'X-Requested-With': 'XMLHttpRequest'
-                            }
-                        });
-                        
-                        if (!response.ok) {
-                            throw new Error(`HTTP error with proxy! status: ${response.status}`);
-                        }
-                        
-                        // Get the blob
-                        const blob = await response.blob();
-                        
-                        // Create a blob URL
-                        const blobUrl = URL.createObjectURL(blob);
-                        console.log('Created blob URL from proxy:', blobUrl);
-                        
-                        // Create image overlay with blob URL
-                        const overlay = L.imageOverlay(blobUrl, bounds, {
-                            opacity: 1.0
-                        });
-                        
-                        // Add to map
-                        overlay.addTo(this.map);
-                        
-                        // Store as part of current layer
-                        if (this.currentLayerOverlay) {
-                            this.map.removeLayer(this.currentLayerOverlay);
-                        }
-                        this.currentLayerOverlay = overlay;
-                        
-                        // Add cleanup for blob URL
-                        this.currentBlobUrl = blobUrl;
-                        
-                        console.log('Image overlay created successfully with proxy');
-                        return true;
-                    } catch (proxyError) {
-                        console.error('Error with proxy approach:', proxyError);
-                        // Fall back to canvas method
-                    }
-                }
-                
-                // If this is a CREODIAS URL, try using the results thumbnail as it's most reliable
-                if (isCreodiasUrl) {
-                    console.log('CREODIAS URL detected, using results thumbnail instead');
-                    return this.useResultsThumbnail(item);
-                }
-                
-                // For other URLs, try canvas method as a last resort
-                return this.createCanvasOverlay(url, bounds, item);
-            }
-        } catch (error) {
-            console.error('Error in fetchImageDirectly:', error);
-            // Try using the results thumbnail as a fallback
-            if (this.useResultsThumbnail(item)) {
-                return true;
-            }
-            // If that fails, try canvas method as a last resort
-            return this.createCanvasOverlay(url, bounds, item);
-        }
-    }
-    
-    /**
-     * Load an image from a direct URL input
+     * Load image from direct URL
      */
     async loadImageFromDirectUrl() {
         try {
-            // Get the URL from the input field
+            // Get URL from input
             const urlInput = document.getElementById('direct-image-url');
-            const imageUrl = urlInput.value.trim();
-            
-            if (!imageUrl) {
+            if (!urlInput || !urlInput.value) {
                 console.warn('No URL provided');
-                this.notificationService?.showNotification('Please enter a valid image URL', 'warning');
                 return;
             }
             
+            const imageUrl = urlInput.value.trim();
             console.log('Loading image from direct URL:', imageUrl);
             
-            // Show loading indicator
-            document.getElementById('loading').style.display = 'flex';
-            
-            // Remove any existing layer
-            this.removeCurrentLayer();
-            
-            // Get the current map bounds
-            const mapBounds = this.map.getBounds();
-            
-            // Create a dummy item with the current map bounds
-            const dummyItem = {
-                id: 'direct-url-image',
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [[
-                        [mapBounds.getWest(), mapBounds.getSouth()],
-                        [mapBounds.getEast(), mapBounds.getSouth()],
-                        [mapBounds.getEast(), mapBounds.getNorth()],
-                        [mapBounds.getWest(), mapBounds.getNorth()],
-                        [mapBounds.getWest(), mapBounds.getSouth()]
-                    ]]
-                },
-                bbox: [
-                    mapBounds.getWest(),
-                    mapBounds.getSouth(),
-                    mapBounds.getEast(),
-                    mapBounds.getNorth()
-                ]
-            };
-            
-            // Create GeoJSON layer for the bounds
-            this.currentLayer = L.geoJSON(dummyItem.geometry, {
-                style: {
-                    color: '#4CAF50',
-                    weight: 2,
-                    fillOpacity: 0.2
-                }
-            });
-            
-            // Add to map
-            this.currentLayer.addTo(this.map);
-            
-            // Try to fetch and display the image
-            const success = await this.fetchImageDirectly(imageUrl, mapBounds, dummyItem);
-            
-            if (success) {
-                console.log('Successfully loaded image from direct URL');
-                this.notificationService?.showNotification('Image loaded successfully', 'success');
-                
-                // Set the current asset key
-                this.currentAssetKey = 'direct-url';
-                
-                // Dispatch event that an asset has been displayed
-                document.dispatchEvent(new CustomEvent('assetDisplayed', {
-                    detail: {
-                        itemId: 'direct-url-image',
-                        assetKey: 'direct-url'
-                    }
-                }));
-            } else {
-                console.error('Failed to load image from direct URL');
-                this.notificationService?.showNotification('Failed to load image. Please check the URL and try again.', 'error');
+            // Get bounds from input
+            const boundsInput = document.getElementById('direct-image-bounds');
+            if (!boundsInput || !boundsInput.value) {
+                console.warn('No bounds provided');
+                return;
             }
+            
+            // Parse bounds
+            const boundsString = boundsInput.value.trim();
+            const bounds = boundsString.split(',').map(Number);
+            
+            if (bounds.length !== 4 || bounds.some(isNaN)) {
+                console.warn('Invalid bounds format');
+                return;
+            }
+            
+            // Show loading indicator
+            document.getElementById('loading').style.display = 'block';
+            
+            // Add image overlay
+            await this.addImageOverlay(imageUrl, bounds, { id: 'direct-url-image' });
             
             // Hide loading indicator
             document.getElementById('loading').style.display = 'none';
         } catch (error) {
             console.error('Error loading image from direct URL:', error);
-            this.notificationService?.showNotification(`Error loading image: ${error.message}`, 'error');
             
             // Hide loading indicator
             document.getElementById('loading').style.display = 'none';
         }
+    }
+    
+    /**
+     * Ensure a URL is absolute
+     * @param {string} url - URL to process
+     * @returns {string} - Absolute URL
+     */
+    ensureAbsoluteUrl(url) {
+        if (!url) return url;
+        
+        // If the URL is already absolute, return it
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+            return url;
+        }
+        
+        // If it's a root-relative URL, add the origin
+        if (url.startsWith('/')) {
+            return window.location.origin + url;
+        }
+        
+        // If it's a relative URL, resolve it against the current page
+        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+        return new URL(url, baseUrl).href;
     }
     
     /**
@@ -1270,5 +983,373 @@ export class MapManager {
     isCOGAsset(asset) {
         // Check if the asset type is 'image/tiff; application=geotiff; profile=cloud-optimized'
         return asset.type === 'image/tiff; application=geotiff; profile=cloud-optimized';
+    }
+    
+    /**
+     * Add image overlay to map
+     * @param {string} imageUrl - Image URL
+     * @param {Array} bbox - Bounding box [west, south, east, north]
+     * @param {Object} item - STAC item
+     */
+    async addImageOverlay(imageUrl, bbox, item) {
+        try {
+            console.log('Adding image overlay:', imageUrl);
+            
+            // Remove existing overlay if any
+            this.removeCurrentLayer();
+
+            // 1. Ensure proper URL handling
+            let absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
+            console.log('Absolute URL:', absoluteUrl);
+            
+            // Create a unique ID for this image source
+            const sourceId = `image-overlay-${Date.now()}`;
+            
+            // 2. Try direct approach first - this is better for CORS issues
+            // with MapLibre handling the image directly
+            try {
+                // Apply coordinates directly
+                const coordinates = [
+                    [bbox[0], bbox[3]], // top-left (northwest)
+                    [bbox[2], bbox[3]], // top-right (northeast)
+                    [bbox[2], bbox[1]], // bottom-right (southeast)
+                    [bbox[0], bbox[1]]  // bottom-left (southwest)
+                ];
+                
+                // Add source without pre-validation
+                this.map.addSource(sourceId, {
+                    type: 'image',
+                    url: absoluteUrl,
+                    coordinates: coordinates
+                });
+                
+                // Add image layer
+                this.map.addLayer({
+                    id: `${sourceId}-layer`,
+                    type: 'raster',
+                    source: sourceId,
+                    paint: {
+                        'raster-opacity': 1.0,
+                        'raster-resampling': 'linear'
+                    }
+                });
+                
+                // Store as current layer
+                this.currentLayer = {
+                    sourceId,
+                    getBounds: () => {
+                        return [
+                            [bbox[0], bbox[1]], // Southwest
+                            [bbox[2], bbox[3]]  // Northeast
+                        ];
+                    }
+                };
+                
+                // Store overlay for opacity control
+                this.currentLayerOverlay = {
+                    setOpacity: (opacity) => {
+                        this.map.setPaintProperty(`${sourceId}-layer`, 'raster-opacity', opacity);
+                    }
+                };
+                
+                console.log('Direct image placement successful');
+                
+                // Register error handler for post-adding errors
+                this.map.once('error', (e) => {
+                    if (e.sourceId === sourceId) {
+                        console.error('Error with direct image overlay, trying alternative:', e);
+                        this.handleImageError(sourceId, absoluteUrl, bbox, item);
+                    }
+                });
+                
+                return true;
+            } catch (directError) {
+                // If direct approach fails, try the more involved approach
+                console.error('Direct image placement failed:', directError);
+                return await this.addImageWithValidation(absoluteUrl, bbox, item);
+            }
+        } catch (error) {
+            console.error('Error in addImageOverlay:', error);
+            
+            // Use GeoJSON fallback without tooltip
+            this.addGeoJsonLayerWithoutTooltip(bbox, item);
+            return false;
+        }
+    }
+    
+    /**
+     * Handle image loading error
+     * @param {string} sourceId - Source ID
+     * @param {string} url - Image URL 
+     * @param {Array} bbox - Bounding box
+     * @param {Object} item - STAC item
+     */
+    async handleImageError(sourceId, url, bbox, item) {
+        // Cleanup failed attempt
+        try {
+            if (this.map.getLayer(`${sourceId}-layer`)) {
+                this.map.removeLayer(`${sourceId}-layer`);
+            }
+            if (this.map.getSource(sourceId)) {
+                this.map.removeSource(sourceId);
+            }
+        } catch (removeError) {
+            console.warn('Error cleaning up failed layer:', removeError);
+        }
+        
+        // Try again with the validated approach
+        try {
+            await this.addImageWithValidation(url, bbox, item);
+        } catch (validationError) {
+            console.error('Validation approach also failed:', validationError);
+            
+            // Try with proxy if available
+            const proxyUrl = this.getProxyUrl(url);
+            if (proxyUrl !== url) {
+                try {
+                    await this.addImageWithValidation(proxyUrl, bbox, item);
+                } catch (proxyError) {
+                    console.error('Proxy approach also failed:', proxyError);
+                    this.addGeoJsonLayerWithoutTooltip(bbox, item);
+                }
+            } else {
+                this.addGeoJsonLayerWithoutTooltip(bbox, item);
+            }
+        }
+    }
+    
+    /**
+     * Try to get a proxy URL for CORS issues
+     * @param {string} url - Original URL
+     * @returns {string} - Proxy URL or original URL
+     */
+    getProxyUrl(url) {
+        // Check if we're on the same origin
+        if (url.startsWith(window.location.origin)) {
+            return url; // No need for proxy
+        }
+        
+        // Try to use a CORS proxy if available
+        // Modify this based on your available proxies
+        
+        // Option 1: Use a built-in proxy (if your server has one)
+        // return `/proxy?url=${encodeURIComponent(url)}`;
+        
+        // Option 2: Use a public CORS proxy (be careful with these)
+        // return `https://cors-anywhere.herokuapp.com/${url}`;
+        
+        // Option 3: Use relative path if image is on the server
+        if (url.startsWith('http') && url.includes('/') && !url.startsWith(window.location.origin)) {
+            // Extract just the filename and try as relative
+            const filename = url.substring(url.lastIndexOf('/') + 1);
+            return `./images/${filename}`;
+        }
+        
+        // No proxy available, return original
+        return url;
+    }
+    
+    /**
+     * Add image with pre-validation
+     * @param {string} url - Image URL
+     * @param {Array} bbox - Bounding box
+     * @param {Object} item - STAC item
+     * @returns {Promise<boolean>} - Success status
+     */
+    async addImageWithValidation(url, bbox, item) {
+        // Create a unique ID for this image source
+        const sourceId = `image-overlay-validated-${Date.now()}`;
+        
+        try {
+            // Pre-load and validate the image
+            const imageData = await this.loadAndValidateImage(url);
+            console.log('Image validated successfully:', imageData);
+            
+            // If we have a data URL from validation, use it instead
+            const finalUrl = imageData.dataUrl || url;
+            
+            // Calculate optimal coordinates based on image dimensions
+            const coordinates = await this.calculateOptimalCoordinates(
+                imageData, 
+                bbox
+            );
+            
+            // Add image source
+            this.map.addSource(sourceId, {
+                type: 'image',
+                url: finalUrl,
+                coordinates: coordinates
+            });
+            
+            // Add image layer
+            this.map.addLayer({
+                id: `${sourceId}-layer`,
+                type: 'raster',
+                source: sourceId,
+                paint: {
+                    'raster-opacity': 1.0,
+                    'raster-resampling': 'linear'
+                }
+            });
+            
+            // Store as current layer
+            this.currentLayer = {
+                sourceId,
+                getBounds: () => {
+                    return [
+                        [bbox[0], bbox[1]], // Southwest
+                        [bbox[2], bbox[3]]  // Northeast
+                    ];
+                }
+            };
+            
+            // Store overlay for opacity control
+            this.currentLayerOverlay = {
+                setOpacity: (opacity) => {
+                    this.map.setPaintProperty(`${sourceId}-layer`, 'raster-opacity', opacity);
+                }
+            };
+            
+            console.log('Validated image placement successful');
+            return true;
+        } catch (error) {
+            console.error('Error with validated image placement:', error);
+            this.addGeoJsonLayerWithoutTooltip(bbox, item);
+            return false;
+        }
+    }
+    
+    /**
+     * Load and validate image, optionally converting to data URL
+     * @param {string} url - Image URL
+     * @returns {Promise<Object>} - Image data with dimensions and optional dataUrl
+     */
+    async loadAndValidateImage(url) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            
+            img.onload = () => {
+                // For images that might have CORS issues, try to convert to data URL
+                try {
+                    // Create a canvas
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    
+                    // Draw image to canvas
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    
+                    // Try to get data URL (will fail if tainted by CORS)
+                    try {
+                        const dataUrl = canvas.toDataURL('image/png');
+                        resolve({
+                            width: img.width,
+                            height: img.height,
+                            aspectRatio: img.width / img.height,
+                            dataUrl: dataUrl
+                        });
+                    } catch (corsError) {
+                        // If we can't get data URL due to CORS, just return dimensions
+                        console.warn('Could not create data URL due to CORS, using original URL');
+                        resolve({
+                            width: img.width,
+                            height: img.height, 
+                            aspectRatio: img.width / img.height
+                        });
+                    }
+                } catch (canvasError) {
+                    console.warn('Error using canvas:', canvasError);
+                    resolve({
+                        width: img.width,
+                        height: img.height,
+                        aspectRatio: img.width / img.height
+                    });
+                }
+            };
+            
+            img.onerror = () => {
+                reject(new Error(`Failed to load image: ${url}`));
+            };
+            
+            // Set crossOrigin to anonymous to avoid CORS issues if possible
+            img.crossOrigin = "anonymous";
+            img.src = url;
+            
+            // Set a timeout in case the image hangs
+            setTimeout(() => {
+                reject(new Error(`Timeout loading image: ${url}`));
+            }, 10000); // 10 second timeout
+        });
+    }
+    
+    /**
+     * Calculate optimal coordinates based on image dimensions
+     * @param {Object} imageData - Image data with dimensions
+     * @param {Array} bbox - Bounding box [west, south, east, north]
+     * @returns {Array} - Array of coordinate pairs
+     */
+    async calculateOptimalCoordinates(imageData, bbox) {
+        // If we don't have image dimensions, use the bbox directly
+        if (!imageData || !imageData.width || !imageData.height) {
+            return [
+                [bbox[0], bbox[3]], // top-left (northwest)
+                [bbox[2], bbox[3]], // top-right (northeast)
+                [bbox[2], bbox[1]], // bottom-right (southeast)
+                [bbox[0], bbox[1]]  // bottom-left (southwest)
+            ];
+        }
+        
+        // Calculate aspect ratios
+        const imgAspectRatio = imageData.width / imageData.height;
+        const bboxWidth = Math.abs(bbox[2] - bbox[0]);
+        const bboxHeight = Math.abs(bbox[3] - bbox[1]);
+        const bboxAspectRatio = bboxWidth / bboxHeight;
+        
+        // If aspects are very close, no need to adjust
+        if (Math.abs(imgAspectRatio - bboxAspectRatio) < 0.1) {
+            return [
+                [bbox[0], bbox[3]], // top-left
+                [bbox[2], bbox[3]], // top-right
+                [bbox[2], bbox[1]], // bottom-right
+                [bbox[0], bbox[1]]  // bottom-left
+            ];
+        }
+        
+        // Adjust coordinates to match image aspect ratio while centering in bbox
+        let adjustedBbox;
+        
+        if (imgAspectRatio > bboxAspectRatio) {
+            // Image is wider than bbox
+            const adjustedHeight = bboxWidth / imgAspectRatio;
+            const heightDiff = bboxHeight - adjustedHeight;
+            const midY = (bbox[1] + bbox[3]) / 2;
+            
+            adjustedBbox = [
+                bbox[0],
+                midY - (adjustedHeight / 2),
+                bbox[2],
+                midY + (adjustedHeight / 2)
+            ];
+        } else {
+            // Image is taller than bbox
+            const adjustedWidth = bboxHeight * imgAspectRatio;
+            const widthDiff = bboxWidth - adjustedWidth;
+            const midX = (bbox[0] + bbox[2]) / 2;
+            
+            adjustedBbox = [
+                midX - (adjustedWidth / 2),
+                bbox[1],
+                midX + (adjustedWidth / 2),
+                bbox[3]
+            ];
+        }
+        
+        return [
+            [adjustedBbox[0], adjustedBbox[3]], // top-left
+            [adjustedBbox[2], adjustedBbox[3]], // top-right
+            [adjustedBbox[2], adjustedBbox[1]], // bottom-right
+            [adjustedBbox[0], adjustedBbox[1]]  // bottom-left
+        ];
     }
 }

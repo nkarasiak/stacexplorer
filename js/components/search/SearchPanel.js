@@ -119,11 +119,13 @@ export class SearchPanel {
                 searchParams.collections = [selectedCollection];
             }
             
-            console.log('Final search parameters:', JSON.stringify(searchParams, null, 2));
+            // console.log('Final search parameters:', JSON.stringify(searchParams, null, 2));
             
             // Perform the search
             const items = await this.apiClient.searchItems(searchParams);
             
+			// console.log('Results:', JSON.stringify(items, null, 2));
+
             // Update results panel
             this.resultsPanel.setItems(items);
             

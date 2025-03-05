@@ -47,7 +47,11 @@ export class MapManager {
             });
             
             // Add navigation control
-            this.map.addControl(new maplibregl.NavigationControl(), 'top-right');
+            this.map.addControl(new maplibregl.NavigationControl({        visualizePitch: true,
+        visualizeRoll: false,
+        showZoom: true,
+        showCompass: false
+			}), 'top-right');
             
             // Initialize map after it loads
             this.map.on('load', () => {
@@ -1162,7 +1166,7 @@ export class MapManager {
         
         try {
             // Pre-load and validate the image
-            const imageData = await this.loadAndValidateImage(url);
+            const imageData = await this.loadAndValidateImage(`https://corsproxy.io/?url=${url}`);
             console.log('Image validated successfully:', imageData);
             
             // If we have a data URL from validation, use it instead

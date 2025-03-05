@@ -396,13 +396,12 @@ export class ResultsPanel {
                 <pre class="json-content">${formattedJson}</pre>
             </div>
         `);
-        
         // Construct html
         li.innerHTML = `
             <div class="dataset-content">
                 <div class="thumbnail-container">
                     <div class="dataset-metadata">
-                        <div class="dataset-date"><i class="material-icons">event</i> ${itemDate}${cloudIcon}</div>
+                        <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                     </div>
                     <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" onerror="this.src=''">
                     <div class="thumbnail-overlay">

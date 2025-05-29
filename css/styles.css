@@ -1442,7 +1442,7 @@ select.form-control {
     right: 12px;
     width: 32px;
     height: 32px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
     border: none;
     border-radius: 50%;
     color: white;
@@ -1455,8 +1455,12 @@ select.form-control {
 }
 
 .mobile-close-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.2);
     transform: scale(1.1);
+}
+
+.mobile-close-btn:active {
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .mobile-close-btn i {

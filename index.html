@@ -233,11 +233,6 @@
                     this.mobileCloseBtn.setAttribute('aria-label', 'Close navigation menu');
                     this.mobileCloseBtn.addEventListener('click', () => this.closeSidebar());
                     
-                    // Add some debug styling to make it more visible
-                    this.mobileCloseBtn.style.backgroundColor = 'rgba(255, 0, 0, 0.8)'; // Red background
-                    this.mobileCloseBtn.style.border = '2px solid white';
-                    this.mobileCloseBtn.style.zIndex = '9999'; // Ensure it's on top
-                    
                     sidebarHeader.appendChild(this.mobileCloseBtn);
                     
                     console.log('Mobile close button created:', this.mobileCloseBtn);

@@ -1450,7 +1450,7 @@ select.form-control {
     display: none; /* Initially hidden */
     align-items: center;
     justify-content: center;
-    z-index: 1003;
+    z-index: 9999; /* Higher than theme toggle */
     transition: background-color var(--transition-speed) ease, transform 0.2s ease;
 }
 

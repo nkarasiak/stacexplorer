@@ -962,15 +962,7 @@ select.form-control {
 
 /* Enhanced Mobile Responsive Styles */
 @media (max-width: 768px) {
-    /* Show mobile menu button */
-    .mobile-menu-btn {
-        display: flex !important;
-    }
-    
-    /* Show mobile close button when sidebar is open */
-    .sidebar.mobile-open .mobile-close-btn {
-        display: flex !important;
-    }
+    /* Mobile elements are controlled by JavaScript - no blanket display rules */
     
     /* Update sidebar for mobile */
     .sidebar {
@@ -1008,12 +1000,9 @@ select.form-control {
         margin-right: 12px;
     }
     
-    /* Hide desktop toggle on mobile */
-    .sidebar-toggle {
-        display: none !important;
-    }
+    /* Desktop toggle is hidden on mobile (controlled by JavaScript) */
     
-    /* Adjust theme toggle position on mobile */
+    /* Adjust theme toggle position on mobile to make space for close button */
     .theme-toggle {
         right: 56px; /* Make space for close button */
     }
@@ -1417,7 +1406,7 @@ select.form-control {
     opacity: 1;
 }
 
-/* Mobile Menu Button (Hamburger) */
+/* Mobile Menu Button (Hamburger) - Initially hidden, only shown when sidebar is closed on mobile */
 .mobile-menu-btn {
     position: fixed;
     top: 12px;
@@ -1429,7 +1418,7 @@ select.form-control {
     border-radius: 4px;
     color: white;
     cursor: pointer;
-    display: none;
+    display: none; /* Initially hidden */
     align-items: center;
     justify-content: center;
     z-index: 3001;
@@ -1446,7 +1435,7 @@ select.form-control {
     font-size: 24px;
 }
 
-/* Mobile Close Button */
+/* Mobile Close Button - Only shown when sidebar is open on mobile */
 .mobile-close-btn {
     position: absolute;
     top: 12px;
@@ -1458,7 +1447,7 @@ select.form-control {
     border-radius: 50%;
     color: white;
     cursor: pointer;
-    display: none;
+    display: none; /* Initially hidden */
     align-items: center;
     justify-content: center;
     z-index: 1003;

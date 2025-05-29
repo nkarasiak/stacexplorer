@@ -233,7 +233,16 @@
                     this.mobileCloseBtn.setAttribute('aria-label', 'Close navigation menu');
                     this.mobileCloseBtn.addEventListener('click', () => this.closeSidebar());
                     
+                    // Add some debug styling to make it more visible
+                    this.mobileCloseBtn.style.backgroundColor = 'rgba(255, 0, 0, 0.8)'; // Red background
+                    this.mobileCloseBtn.style.border = '2px solid white';
+                    
                     sidebarHeader.appendChild(this.mobileCloseBtn);
+                    
+                    console.log('Mobile close button created:', this.mobileCloseBtn);
+                    console.log('Close button position:', this.mobileCloseBtn.getBoundingClientRect());
+                } else {
+                    console.error('Sidebar header not found!');
                 }
             }
             
@@ -308,6 +317,9 @@
             openSidebar() {
                 if (this.isDesktop) return;
                 
+                console.log('Opening sidebar...');
+                console.log('Close button exists:', !!this.mobileCloseBtn);
+                
                 this.isOpen = true;
                 this.sidebar.classList.add('mobile-open');
                 this.backdrop.classList.add('active');
@@ -315,9 +327,21 @@
                 
                 // Hide hamburger menu when sidebar is open
                 this.mobileMenuBtn.style.display = 'none';
+                console.log('Hamburger hidden');
+                
+                // Show mobile close button when sidebar is open
+                if (this.mobileCloseBtn) {
+                    this.mobileCloseBtn.style.display = 'flex';
+                    console.log('Close button shown, display:', this.mobileCloseBtn.style.display);
+                    console.log('Close button computed style:', window.getComputedStyle(this.mobileCloseBtn).display);
+                } else {
+                    console.error('No close button to show!');
+                }
                 
                 // Update ARIA attributes
                 this.sidebar.setAttribute('aria-hidden', 'false');
+                
+                console.log('Sidebar opened, close button should be visible:', this.mobileCloseBtn);
                 
                 // Focus first focusable element in sidebar
                 setTimeout(() => {
@@ -343,8 +367,15 @@
                 // Show hamburger menu when sidebar is closed
                 this.mobileMenuBtn.style.display = 'flex';
                 
+                // Hide mobile close button when sidebar is closed
+                if (this.mobileCloseBtn) {
+                    this.mobileCloseBtn.style.display = 'none';
+                }
+                
                 // Update ARIA attributes
                 this.sidebar.setAttribute('aria-hidden', 'true');
+                
+                console.log('Sidebar closed, hamburger should be visible');
                 
                 // Return focus to menu button
                 this.mobileMenuBtn.focus();

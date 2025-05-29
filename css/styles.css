@@ -960,18 +960,38 @@ select.form-control {
 .hidden { display: none; }
 .w-100 { width: 100%; }
 
-/* Responsive Styles */
+/* Enhanced Mobile Responsive Styles */
 @media (max-width: 768px) {
-    .sidebar {
-        position: absolute;
-        height: 100%;
-        transform: translateX(0);
-        z-index: 2000;
+    /* Show mobile menu button */
+    .mobile-menu-btn {
+        display: flex !important;
     }
     
-    .sidebar.collapsed {
-        transform: translateX(calc(-1 * var(--sidebar-width) + var(--sidebar-collapsed-width)));
+    /* Show mobile close button when sidebar is open */
+    .sidebar.mobile-open .mobile-close-btn {
+        display: flex !important;
+    }
+    
+    /* Update sidebar for mobile */
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        height: 100vh;
         width: var(--sidebar-width);
+        max-width: 85vw;
+        transform: translateX(-100%);
+        transition: transform var(--transition-speed) ease;
+        z-index: 2000;
+        resize: none;
+    }
+    
+    /* Reset collapsed state on mobile */
+    .sidebar.collapsed {
+        width: var(--sidebar-width);
+        max-width: 85vw;
+        transform: translateX(-100%);
+        resize: none;
     }
     
     .sidebar.collapsed .sidebar-content {
@@ -979,32 +999,115 @@ select.form-control {
         visibility: visible;
     }
     
-    .tools-panel {
+    .sidebar.collapsed .sidebar-header h1 span {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .sidebar.collapsed .sidebar-header h1 i {
+        margin-right: 12px;
+    }
+    
+    /* Hide desktop toggle on mobile */
+    .sidebar-toggle {
+        display: none !important;
+    }
+    
+    /* Adjust theme toggle position on mobile */
+    .theme-toggle {
+        right: 56px; /* Make space for close button */
+    }
+    
+    /* Ensure proper sidebar header layout on mobile */
+    .sidebar-header {
+        position: relative;
+        padding-right: 56px; /* Make space for close button */
+    }
+    
+    /* Map container adjustments */
+    .map-container {
         width: 100%;
-        max-width: 320px;
-        right: 0;
-        top: 0;
-        height: auto;
-        border-radius: 0;
-        border-top-left-radius: 4px;
-        border-bottom-left-radius: 4px;
+        margin-left: 0;
+    }
+    
+    /* Tools panel adjustments for mobile */
+    .tools-panel {
+        top: 70px; /* Below the mobile menu button */
+        right: 12px;
+        left: 12px;
+        width: auto;
+        max-width: none;
     }
     
     .tools-panel.collapsed {
         width: 48px;
+        right: 12px;
+        left: auto;
     }
     
-    /* Adjust toggle button for mobile */
-    .sidebar-toggle {
-        right: -12px;
+    /* Ensure proper stacking order */
+    .sidebar-backdrop {
+        z-index: 1999;
     }
     
-    .sidebar-toggle i {
-        transform: rotate(0);
+    .sidebar {
+        z-index: 2000;
     }
     
-    .sidebar.collapsed .sidebar-toggle i {
-        transform: rotate(180deg);
+    .mobile-menu-btn {
+        z-index: 3001;
+    }
+}
+
+/* Very small screens (phones in portrait) */
+@media (max-width: 480px) {
+    .sidebar {
+        width: 100vw;
+        max-width: 100vw;
+    }
+    
+    .sidebar.collapsed {
+        width: 100vw;
+        max-width: 100vw;
+    }
+    
+    /* Adjust header for very small screens */
+    .sidebar-header h1 {
+        font-size: 1.1rem;
+    }
+    
+    .mobile-menu-btn {
+        width: 44px;
+        height: 44px;
+    }
+    
+    .mobile-menu-btn i {
+        font-size: 22px;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .mobile-menu-btn {
+        border: 2px solid white;
+    }
+    
+    .mobile-close-btn {
+        border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+    
+    .sidebar-backdrop {
+        background-color: rgba(0, 0, 0, 0.8);
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .sidebar,
+    .sidebar-backdrop,
+    .mobile-menu-btn,
+    .mobile-close-btn {
+        transition: none;
     }
 }
 
@@ -1312,4 +1415,107 @@ select.form-control {
 
 #cloud-cover-controls.enabled {
     opacity: 1;
+}
+
+/* Mobile Menu Button (Hamburger) */
+.mobile-menu-btn {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    width: 48px;
+    height: 48px;
+    background-color: var(--md-primary);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3001;
+    box-shadow: var(--elevation-2);
+    transition: background-color var(--transition-speed) ease, transform 0.2s ease;
+}
+
+.mobile-menu-btn:hover {
+    background-color: var(--md-primary-dark);
+    transform: scale(1.05);
+}
+
+.mobile-menu-btn i {
+    font-size: 24px;
+}
+
+/* Mobile Close Button */
+.mobile-close-btn {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1003;
+    transition: background-color var(--transition-speed) ease, transform 0.2s ease;
+}
+
+.mobile-close-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.mobile-close-btn i {
+    font-size: 20px;
+}
+
+/* Sidebar Backdrop */
+.sidebar-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1999;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--transition-speed) ease, visibility var(--transition-speed) ease;
+    backdrop-filter: blur(2px);
+}
+
+.sidebar-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Mobile Sidebar States */
+.sidebar.mobile-open {
+    transform: translateX(0) !important;
+}
+
+/* Prevent body scroll when sidebar is open on mobile */
+body.sidebar-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    height: 100%;
+}
+
+/* Screen reader only class */
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
 }

@@ -483,15 +483,31 @@ export class CardSearchPanel {
      * Initialize search buttons
      */
     initSearchButtons() {
-        // Summary search button (now primary)
+        // Main search buttons
         document.getElementById('execute-search').addEventListener('click', () => {
             this.performSearch();
         });
         
-        // Clear all button (now reset)
+        // Clear all button
         document.getElementById('clear-all').addEventListener('click', () => {
             this.resetSearch();
         });
+        
+        // Summary search button
+        const summarySearchBtn = document.getElementById('summary-search-btn');
+        if (summarySearchBtn) {
+            summarySearchBtn.addEventListener('click', () => {
+                this.performSearch();
+            });
+        }
+        
+        // Summary reset button
+        const summaryResetBtn = document.getElementById('summary-reset-btn');
+        if (summaryResetBtn) {
+            summaryResetBtn.addEventListener('click', () => {
+                this.resetSearch();
+            });
+        }
     }
     
     /**

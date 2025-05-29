@@ -12,11 +12,12 @@ import { StateManager } from './utils/StateManager.js';
 import { ShareManager } from './utils/ShareManager.js';
 
 // Import UI components
-import { SearchPanel } from './components/search/CardSearchPanel.js';
+import { SearchPanel } from './components/search/SearchPanel.js';
 import { CatalogSelector } from './components/search/CatalogSelector.js';
 import { CollectionManager } from './components/search/CollectionManager.js';
 import { SearchForm } from './components/search/SearchForm.js';
 import { ResultsPanel } from './components/results/ResultsPanel.js';
+import { AISmartSearch } from './components/search/AISmartSearch.js';
 
 // Import configuration
 import { CONFIG } from './config.js';
@@ -59,6 +60,15 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
+        // Initialize AI Smart Search component
+        const aiSmartSearch = new AISmartSearch(
+            apiClient,
+            searchPanel,
+            collectionManager,
+            mapManager,
+            notificationService
+        );
+        
         // Initialize state manager after all components are ready
         const stateManager = new StateManager(catalogSelector, mapManager, searchPanel);
         
@@ -98,6 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
             resultsPanel,
             stateManager,
             shareManager,
+            aiSmartSearch,
             config: CONFIG
         };
     } catch (error) {

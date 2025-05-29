@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en" class="dark-theme">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>STAC Catalog Explorer</title>
+    <!-- MapLibre GL CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" />
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
+    <!-- Material Icons -->
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <!-- Google Fonts - Roboto for Material Design -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Enhanced CSS with mobile improvements -->
+    <link rel="stylesheet" href="css/styles.enhanced.css">
+    <!-- Fallback to original styles -->
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Mobile Hamburger Menu Button (created dynamically) -->
+        
+        <!-- Sidebar Backdrop (created dynamically) -->
+        
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar" aria-hidden="true">
+            <div class="sidebar-header">
+                <h1><i class="material-icons">satellite_alt</i> <span>STAC Explorer</span></h1>
+                <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme">
+                    <i class="material-icons">light_mode</i>
+                </button>
+                <!-- Mobile close button (added dynamically) -->
+                <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+                    <i class="material-icons">chevron_left</i>
+                </button>
+            </div>
+            <div class="sidebar-content">
+                <!-- Unified Search Container with Tabs -->
+                <div class="md-card" id="search-container">
+                    <div class="md-card-header" id="search-container-header">
+                        <h2><i class="material-icons">search</i> Search</h2>
+                        <i class="material-icons toggle-icon">expand_more</i>
+                    </div>
+                    <div class="md-card-body">
+                        <!-- Tabs for different search sections -->
+                        <div class="search-tabs" role="tablist">
+                            <div class="tab active" data-target="catalog-tab" role="tab" aria-selected="true" tabindex="0">Catalog</div>
+                            <div class="tab" data-target="collections-tab" role="tab" aria-selected="false" tabindex="-1">Collections</div>
+                            <div class="tab" data-target="criteria-tab" role="tab" aria-selected="false" tabindex="-1">Criteria</div>
+                        </div>
+                        
+                        <!-- Tab content sections -->
+                        <div class="tab-content">
+                            <!-- Catalog Tab -->
+                            <div id="catalog-tab" class="tab-pane active" role="tabpanel">
+                                <div class="form-group">
+                                    <label for="catalog-select" class="form-label">STAC Catalog</label>
+                                    <select id="catalog-select" class="form-control" aria-describedby="catalog-help">
+                                        <option value="copernicus">Copernicus Data Space</option>
+                                        <option value="element84">Element84 Catalog</option>
+                                        <option value="custom">Custom STAC Catalog</option>
+                                    </select>
+                                    <small id="catalog-help" class="form-text">Choose a STAC catalog to explore</small>
+                                </div>
+                                <div id="custom-catalog-container" class="form-group mt-2" style="display: none;">
+                                    <label for="custom-catalog-url" class="form-label">Custom Catalog URL</label>
+                                    <input type="url" id="custom-catalog-url" class="form-control" 
+                                        placeholder="https://example.com/stac" 
+                                        aria-describedby="custom-url-help">
+                                    <small id="custom-url-help" class="form-text">Enter a valid STAC catalog URL</small>
+                                    <button id="connect-catalog-btn" class="md-btn md-btn-primary mt-2">
+                                        <i class="material-icons">link</i> Connect
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Collections Tab -->
+                            <div id="collections-tab" class="tab-pane" role="tabpanel">
+                                <div class="form-group">
+                                    <label for="collection-select" class="form-label">Collection</label>
+                                    <select id="collection-select" class="form-control" aria-describedby="collection-help">
+                                        <option value="">Loading collections...</option>
+                                    </select>
+                                    <small id="collection-help" class="form-text">Select a specific collection to search</small>
+                                </div>
+                            </div>
+                            
+                            <!-- Search Criteria Tab -->
+                            <div id="criteria-tab" class="tab-pane" role="tabpanel">
+                                <div class="form-group">
+                                    <button id="criteria-draw-bbox-btn" class="md-btn md-btn-primary w-100" aria-describedby="bbox-help">
+                                        <i class="material-icons">crop_square</i> Draw Bounding Box
+                                    </button>
+                                    <small id="bbox-help" class="form-text">Click to draw a search area on the map</small>
+                                </div>
+                                
+                                <!-- Date Range -->
+                                <div class="form-group mt-2">
+                                    <label for="date-start" class="form-label">Start Date</label>
+                                    <input type="date" id="date-start" class="form-control" aria-describedby="date-help">
+                                </div>
+                                <div class="form-group mt-2">
+                                    <label for="date-end" class="form-label">End Date</label>
+                                    <input type="date" id="date-end" class="form-control" aria-describedby="date-help">
+                                    <small id="date-help" class="form-text">Filter results by date range</small>
+                                </div>
+                                
+                                <!-- Cloud Cover -->
+                                <div class="form-group mt-2">
+                                    <div class="cloud-cover-toggle">
+                                        <input type="checkbox" id="cloud-cover-enabled" class="form-check-input">
+                                        <label for="cloud-cover-enabled" class="form-check-label">Filter by Cloud Cover</label>
+                                    </div>
+                                    <div id="cloud-cover-controls" class="mt-2" style="display: none;">
+                                        <label for="cloud-cover" class="form-label">Max Cloud Cover: <span id="cloud-cover-value">100%</span></label>
+                                        <input type="range" id="cloud-cover" class="form-range" min="0" max="100" value="100" disabled aria-describedby="cloud-help">
+                                        <small id="cloud-help" class="form-text">Filter by maximum cloud cover percentage</small>
+                                    </div>
+                                </div>
+                                
+                                <!-- Hidden inputs for internal use -->
+                                <input type="hidden" id="bbox-input">
+                                <input type="hidden" id="search-input">
+                            </div>
+                        </div>
+                        
+                        <!-- Search buttons -->
+                        <div class="button-group mt-3">
+                            <button id="search-btn" class="md-btn md-btn-primary">
+                                <i class="material-icons">search</i> Search
+                            </button>
+                            <button id="reset-btn" class="md-btn md-btn-secondary">
+                                <i class="material-icons">refresh</i> Reset
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results with pagination -->
+                <div class="md-card results-card" id="results-card">
+                    <div class="md-card-header" id="results-header">
+                        <h2><i class="material-icons">list</i> Results</h2>
+                        <div class="header-content">
+                            <span id="results-count" class="md-badge" aria-label="Results count">0</span>
+                            <i class="material-icons toggle-icon">expand_more</i>
+                        </div>
+                    </div>
+                    <div class="md-card-body">
+                        <ul id="dataset-list" class="dataset-list" role="list" aria-label="Search results">
+                            <!-- Dataset items will be added here dynamically -->
+                        </ul>
+                        
+                        <!-- Pagination -->
+                        <nav class="pagination" aria-label="Results pagination">
+                            <button class="md-btn md-btn-secondary pagination-prev" disabled aria-label="Previous page">
+                                <i class="material-icons">navigate_before</i>
+                            </button>
+                            <span class="pagination-info" aria-live="polite">
+                                Page <span id="current-page">1</span> of <span id="total-pages">1</span>
+                            </span>
+                            <button class="md-btn md-btn-secondary pagination-next" disabled aria-label="Next page">
+                                <i class="material-icons">navigate_next</i>
+                            </button>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Map Container -->
+        <main class="map-container">
+            <div id="map" role="application" aria-label="Interactive map"></div>
+                        
+            <!-- Loading Indicator -->
+            <div class="loading" id="loading" role="status" aria-live="polite">
+                <div class="spinner" aria-hidden="true"></div>
+                <span>Loading data...</span>
+            </div>
+        </main>
+    </div>
+
+    <!-- MapLibre GL JS -->
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    
+    <!-- Load enhanced mobile sidebar manager -->
+    <script type="module">
+        import { MobileSidebarManager } from './js/utils/MobileSidebarManager.js';
+        
+        // Initialize mobile sidebar management
+        document.addEventListener('DOMContentLoaded', () => {
+            window.mobileSidebarManager = new MobileSidebarManager();
+        });
+    </script>
+    
+    <!-- Load main application modules -->
+    <script type="module" src="js/app.js"></script>
+    
+    <!-- Enhanced Draw Bounding Box functionality -->
+    <script type="module">
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for the application to be fully loaded
+            setTimeout(function() {
+                const criteriaBboxBtn = document.getElementById('criteria-draw-bbox-btn');
+                
+                if (criteriaBboxBtn) {
+                    // Remove any existing event listeners
+                    const newBtn = criteriaBboxBtn.cloneNode(true);
+                    criteriaBboxBtn.parentNode.replaceChild(newBtn, criteriaBboxBtn);
+                    
+                    // Add enhanced event listener with mobile support
+                    newBtn.addEventListener('click', function() {
+                        console.log('Criteria Draw Bbox button clicked');
+                        
+                        // Close mobile sidebar when starting to draw (better UX)
+                        if (window.mobileSidebarManager && window.mobileSidebarManager.isMobileSidebarOpen()) {
+                            window.mobileSidebarManager.forceClose();
+                        }
+                        
+                        if (window.stacExplorer && window.stacExplorer.mapManager) {
+                            console.log('Starting drawing mode...');
+                            
+                            const mapManager = window.stacExplorer.mapManager;
+                            mapManager.startDrawingBbox();
+                            
+                            // Provide user feedback
+                            newBtn.innerHTML = '<i class="material-icons">edit</i> Draw on Map';
+                            newBtn.setAttribute('aria-pressed', 'true');
+                            
+                            // Reset button after a delay
+                            setTimeout(() => {
+                                newBtn.innerHTML = '<i class="material-icons">crop_square</i> Draw Bounding Box';
+                                newBtn.setAttribute('aria-pressed', 'false');
+                            }, 3000);
+                            
+                            console.log('Drawing mode activated');
+                        } else {
+                            console.error('Map manager not available');
+                            
+                            // Better error handling for mobile
+                            const errorMsg = 'Drawing functionality is not available. Please refresh the page and try again.';
+                            
+                            if (window.mobileSidebarManager && window.mobileSidebarManager.isMobile()) {
+                                // Use a more mobile-friendly notification
+                                const notification = document.createElement('div');
+                                notification.className = 'notification error';
+                                notification.innerHTML = `
+                                    <i class="material-icons">error</i>
+                                    <span>${errorMsg}</span>
+                                `;
+                                
+                                document.body.appendChild(notification);
+                                
+                                setTimeout(() => {
+                                    notification.remove();
+                                }, 5000);
+                            } else {
+                                alert(errorMsg);
+                            }
+                        }
+                    });
+                    
+                    console.log('Enhanced Draw Bounding Box button initialized');
+                } else {
+                    console.error('Could not find the criteria-draw-bbox-btn element');
+                }
+            }, 1000);
+        });
+    </script>
+
+    <!-- Additional form interaction improvements -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enhanced tab navigation with keyboard support
+            const tabs = document.querySelectorAll('.tab');
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            
+            tabs.forEach((tab, index) => {
+                tab.addEventListener('click', () => activateTab(index));
+                tab.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        activateTab(index);
+                    } else if (e.key === 'ArrowRight') {
+                        e.preventDefault();
+                        const nextIndex = (index + 1) % tabs.length;
+                        tabs[nextIndex].focus();
+                        activateTab(nextIndex);
+                    } else if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        const prevIndex = (index - 1 + tabs.length) % tabs.length;
+                        tabs[prevIndex].focus();
+                        activateTab(prevIndex);
+                    }
+                });
+            });
+            
+            function activateTab(activeIndex) {
+                tabs.forEach((tab, index) => {
+                    const isActive = index === activeIndex;
+                    tab.classList.toggle('active', isActive);
+                    tab.setAttribute('aria-selected', isActive);
+                    tab.setAttribute('tabindex', isActive ? '0' : '-1');
+                });
+                
+                tabPanes.forEach((pane, index) => {
+                    pane.classList.toggle('active', index === activeIndex);
+                });
+            }
+            
+            // Enhanced cloud cover controls
+            const cloudCoverEnabled = document.getElementById('cloud-cover-enabled');
+            const cloudCoverControls = document.getElementById('cloud-cover-controls');
+            const cloudCoverSlider = document.getElementById('cloud-cover');
+            const cloudCoverValue = document.getElementById('cloud-cover-value');
+            
+            cloudCoverEnabled.addEventListener('change', function() {
+                const isEnabled = this.checked;
+                cloudCoverControls.style.display = isEnabled ? 'block' : 'none';
+                cloudCoverControls.classList.toggle('enabled', isEnabled);
+                cloudCoverSlider.disabled = !isEnabled;
+                
+                // Announce change to screen readers
+                const message = isEnabled ? 'Cloud cover filter enabled' : 'Cloud cover filter disabled';
+                announceToScreenReader(message);
+            });
+            
+            cloudCoverSlider.addEventListener('input', function() {
+                cloudCoverValue.textContent = this.value + '%';
+            });
+            
+            // Theme toggle enhancement
+            const themeToggle = document.getElementById('theme-toggle');
+            themeToggle.addEventListener('click', function() {
+                const html = document.documentElement;
+                const isDark = html.classList.contains('dark-theme');
+                
+                if (isDark) {
+                    html.classList.remove('dark-theme');
+                    html.classList.add('light-theme');
+                    this.innerHTML = '<i class="material-icons">dark_mode</i>';
+                    this.setAttribute('aria-label', 'Switch to dark theme');
+                    announceToScreenReader('Switched to light theme');
+                } else {
+                    html.classList.remove('light-theme');
+                    html.classList.add('dark-theme');
+                    this.innerHTML = '<i class="material-icons">light_mode</i>';
+                    this.setAttribute('aria-label', 'Switch to light theme');
+                    announceToScreenReader('Switched to dark theme');
+                }
+            });
+            
+            // Utility function for screen reader announcements
+            function announceToScreenReader(message) {
+                const announcement = document.createElement('div');
+                announcement.setAttribute('aria-live', 'polite');
+                announcement.setAttribute('aria-atomic', 'true');
+                announcement.className = 'sr-only';
+                announcement.style.position = 'absolute';
+                announcement.style.left = '-10000px';
+                announcement.style.width = '1px';
+                announcement.style.height = '1px';
+                announcement.style.overflow = 'hidden';
+                
+                document.body.appendChild(announcement);
+                announcement.textContent = message;
+                
+                setTimeout(() => {
+                    document.body.removeChild(announcement);
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,53 @@
+/* Solution 1: Floating Action Bar at Bottom */
+.search-action-bar {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: linear-gradient(to right, #2c3e50, #4a69bd);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+    margin-top: 20px;
+}
+
+.search-status {
+    color: white;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.search-status i {
+    font-size: 18px;
+}
+
+.search-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.search-action-bar .md-btn {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.search-action-bar .md-btn-primary {
+    background-color: white;
+    color: #4a69bd;
+}
+
+.search-action-bar .md-btn-secondary {
+    background-color: transparent;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}

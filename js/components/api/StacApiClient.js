@@ -5,10 +5,18 @@
 export class STACApiClient {
     /**
      * Create a new STAC API client
-     * @param {Object} endpoints - Object containing API endpoints
+     * @param {Object} endpoints - Object containing API endpoints (optional)
      */
     constructor(endpoints) {
-        this.setEndpoints(endpoints);
+        this.endpoints = {
+            root: '',
+            collections: '',
+            search: ''
+        };
+        
+        if (endpoints) {
+            this.setEndpoints(endpoints);
+        }
     }
     
     /**
@@ -16,6 +24,8 @@ export class STACApiClient {
      * @param {Object} endpoints - Object containing API endpoints
      */
     setEndpoints(endpoints) {
+        if (!endpoints) return;
+        
         this.endpoints = {
             root: endpoints.root || '',
             collections: endpoints.collections || '',
@@ -85,7 +95,7 @@ export class STACApiClient {
     async fetchCollections() {
         try {
             if (!this.endpoints.collections) {
-                throw new Error('Collections endpoint not defined');
+                return [];
             }
             
             const response = await fetch(this.endpoints.collections);
@@ -120,7 +130,7 @@ export class STACApiClient {
     async fetchCollection(collectionId) {
         try {
             if (!this.endpoints.collections) {
-                throw new Error('Collections endpoint not defined');
+                return null;
             }
             
             const url = `${this.endpoints.collections}/${collectionId}`;
@@ -145,7 +155,7 @@ export class STACApiClient {
     async searchItems(params = {}) {
         try {
             if (!this.endpoints.search) {
-                throw new Error('Search endpoint not defined');
+                return [];
             }
             
             console.log('Making search request to:', this.endpoints.search);
@@ -195,7 +205,7 @@ export class STACApiClient {
     async fetchItem(collectionId, itemId) {
         try {
             if (!this.endpoints.collections) {
-                throw new Error('Collections endpoint not defined');
+                return null;
             }
             
             const url = `${this.endpoints.collections}/${collectionId}/items/${itemId}`;

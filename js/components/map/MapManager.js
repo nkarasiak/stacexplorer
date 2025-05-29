@@ -26,6 +26,11 @@ export class MapManager {
         this.boxOutlineLayerId = 'bbox-outline-layer';
         this.firstClickComplete = false; // Track if first click is done
         
+        // Geometry display
+        this.geometrySourceId = 'geometry-source';
+        this.geometryLayerId = 'geometry-layer';
+        this.geometryOutlineLayerId = 'geometry-outline-layer';
+        
         // Initialize the map
         this.initMap();
         
@@ -56,6 +61,7 @@ export class MapManager {
             // Initialize map after it loads
             this.map.on('load', () => {
                 this.initDrawingSources();
+                this.initGeometrySources();
                 this.mapReady = true;
                 console.log('Map is fully loaded and ready');
             });
@@ -143,6 +149,51 @@ export class MapManager {
     }
     
     /**
+     * Initialize sources and layers for displaying custom geometry
+     */
+    initGeometrySources() {
+        try {
+            // Add source for custom geometry
+            this.map.addSource(this.geometrySourceId, {
+                type: 'geojson',
+                data: {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[]]
+                    }
+                }
+            });
+            
+            // Add fill layer for the geometry
+            this.map.addLayer({
+                id: this.geometryLayerId,
+                type: 'fill',
+                source: this.geometrySourceId,
+                paint: {
+                    'fill-color': '#4CAF50',
+                    'fill-opacity': 0.1
+                }
+            });
+            
+            // Add outline layer for the geometry
+            this.map.addLayer({
+                id: this.geometryOutlineLayerId,
+                type: 'line',
+                source: this.geometrySourceId,
+                paint: {
+                    'line-color': '#4CAF50',
+                    'line-width': 2
+                }
+            });
+            
+            console.log('Geometry sources and layers initialized');
+        } catch (error) {
+            console.error('Error initializing geometry sources:', error);
+        }
+    }
+    
+    /**
      * Initialize event listeners
      */
     initEventListeners() {
@@ -198,6 +249,9 @@ export class MapManager {
                     
                     // Log the bbox for debugging
                     console.log('Drawn bbox:', bbox);
+                    
+                    // Clear any custom geometry when drawing a new bbox
+                    this.clearGeometry();
                 }
             });
             
@@ -224,6 +278,7 @@ export class MapManager {
         // Clear map drawings event
         document.addEventListener('clearMapDrawings', () => {
             this.clearDrawings();
+            this.clearGeometry();
         });
         
         // Expand tools panel event
@@ -250,6 +305,56 @@ export class MapManager {
                     }
                 });
             }
+        }
+    }
+    
+    /**
+     * Display a GeoJSON geometry on the map
+     * 
+     * @param {Object} geojson - GeoJSON object to display
+     * @param {Array} bbox - Bounding box to fit map to [west, south, east, north]
+     */
+    displayGeometry(geojson, bbox) {
+        try {
+            console.log('Displaying geometry:', geojson);
+            
+            if (!this.map || !this.map.getSource(this.geometrySourceId)) {
+                console.error('Map or geometry source not initialized');
+                return;
+            }
+            
+            // Update geometry source with new GeoJSON
+            this.map.getSource(this.geometrySourceId).setData(geojson);
+            
+            // Fit map to the bounding box
+            if (bbox && bbox.length === 4) {
+                this.fitMapToBbox(bbox);
+            }
+            
+            // Clear any existing bbox drawings
+            this.clearDrawings();
+        } catch (error) {
+            console.error('Error displaying geometry:', error);
+        }
+    }
+    
+    /**
+     * Clear the custom geometry from the map
+     */
+    clearGeometry() {
+        try {
+            if (this.map && this.map.getSource(this.geometrySourceId)) {
+                // Reset geometry to empty
+                this.map.getSource(this.geometrySourceId).setData({
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[]]
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Error clearing geometry:', error);
         }
     }
     
@@ -294,6 +399,7 @@ export class MapManager {
         // Re-initialize drawing sources after style change
         this.map.once('styledata', () => {
             this.initDrawingSources();
+            this.initGeometrySources();
         });
     }
     
@@ -316,6 +422,9 @@ export class MapManager {
             
             // Clear any existing drawings
             this.clearDrawings();
+            
+            // Clear any custom geometry
+            this.clearGeometry();
             
             // Set drawing state
             this.isDrawing = true;

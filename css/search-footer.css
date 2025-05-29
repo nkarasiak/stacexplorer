@@ -1,0 +1,68 @@
+/**
+ * Sidebar Footer for Search/Reset actions
+ */
+.sidebar-footer {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--card-bg, #fff);
+    border-top: 1px solid var(--border-color, #ddd);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 10;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+    margin-top: 20px;
+}
+
+.search-summary-pill {
+    background-color: var(--primary-color-light, #e3f2fd);
+    color: var(--primary-color, #2196F3);
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: all 0.2s ease;
+}
+
+.search-summary-pill.ready {
+    background-color: var(--success-color-light, #e8f5e9);
+    color: var(--success-color, #4CAF50);
+}
+
+.sidebar-footer-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.sidebar-footer .md-btn {
+    padding: 6px 12px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sidebar-footer .md-btn i {
+    font-size: 16px;
+}
+
+/* Dark theme */
+.dark-theme .sidebar-footer {
+    background-color: var(--card-bg, #242424);
+    border-top: 1px solid var(--border-color, #444);
+}
+
+.dark-theme .search-summary-pill {
+    background-color: rgba(33, 150, 243, 0.15);
+}
+
+/* Hide the global search summary since we're using the footer instead */
+.global-search-summary {
+    display: none;
+}

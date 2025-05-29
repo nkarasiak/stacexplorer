@@ -1,0 +1,128 @@
+/**
+ * Floating Action Buttons for Search/Reset
+ */
+.floating-actions {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 1000;
+}
+
+.floating-actions .fab {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    transition: transform 0.2s, background-color 0.2s;
+    border: none;
+}
+
+.floating-actions .fab:hover {
+    transform: scale(1.05);
+}
+
+.floating-actions .fab-primary {
+    background-color: #2196F3;
+    color: white;
+}
+
+.floating-actions .fab-secondary {
+    background-color: #f44336;
+    color: white;
+}
+
+.floating-actions .fab i {
+    font-size: 24px;
+}
+
+.floating-actions .tooltip {
+    position: absolute;
+    right: 70px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.floating-actions .fab:hover .tooltip {
+    opacity: 1;
+}
+
+.floating-actions .search-tooltip {
+    top: 18px;
+}
+
+.floating-actions .reset-tooltip {
+    bottom: 18px;
+}
+
+/* Status tooltip to show current search configuration */
+.floating-actions .status-tooltip {
+    position: absolute;
+    right: 70px;
+    top: -40px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    opacity: 0;
+    transition: opacity 0.3s;
+    pointer-events: none;
+}
+
+.floating-actions .status-tooltip.active {
+    background-color: rgba(76, 175, 80, 0.9);
+}
+
+.floating-actions:hover .status-tooltip {
+    opacity: 1;
+}
+
+/* Dark theme enhancements */
+.dark-theme .floating-actions .fab-primary {
+    background-color: #2196F3;
+}
+
+.dark-theme .floating-actions .fab-secondary {
+    background-color: #f44336;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .floating-actions {
+        bottom: 16px;
+        right: 16px;
+    }
+    
+    .floating-actions .fab {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .floating-actions .fab i {
+        font-size: 20px;
+    }
+}
+
+/* Hide both the global search summary and sidebar footer */
+.global-search-summary,
+.sidebar-footer {
+    display: none;
+}

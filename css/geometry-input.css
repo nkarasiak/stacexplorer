@@ -1,0 +1,274 @@
+/* Required card highlighting */
+.highlight-required {
+    position: relative;
+    box-shadow: 0 0 0 2px var(--primary-color, #2196F3);
+}
+/* Tooltip indicator */
+.tooltip-indicator {
+    display: inline-block;
+    font-size: 14px;
+    color: var(--primary-color, #2196F3);
+    margin-left: 4px;
+    cursor: help;
+    vertical-align: super;
+    font-size: 12px;
+}
+
+/* Tooltip styles */
+.card-title {
+    position: relative;
+}
+
+.tooltip-indicator:hover::after {
+    content: attr(title);
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: var(--tooltip-bg, rgba(0, 0, 0, 0.8));
+    color: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    white-space: nowrap;
+    z-index: 100;
+    margin-top: 5px;
+    font-weight: normal;
+}
+/**
+ * geometry-input.css - Styles for geometry input components
+ */
+
+/* Geometry Button Container */
+.geometry-button-container {
+    margin-top: 12px;
+    display: flex;
+    justify-content: flex-start;
+}
+
+/* Add Geometry Button */
+#add-geometry-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background-color: var(--accent-color, #FF9800);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+}
+
+#add-geometry-btn:hover {
+    background-color: var(--accent-hover-color, #F57C00);
+}
+
+#add-geometry-btn i {
+    font-size: 18px;
+}
+
+/* Geometry Notification */
+.geometry-notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: var(--success-color, #4CAF50);
+    color: white;
+    padding: 12px 16px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.close-notification {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 0;
+    margin-left: 8px;
+}
+
+.close-notification i {
+    font-size: 16px;
+}
+
+/* Geometry Modal */
+.geometry-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.geometry-modal-content {
+    background-color: var(--card-bg, #fff);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+}
+
+.geometry-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border-bottom: 1px solid var(--border-color, #ddd);
+}
+
+.geometry-modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--text-color, #333);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-color, #333);
+}
+
+.geometry-modal-body {
+    padding: 16px;
+    overflow-y: auto;
+}
+
+.modal-instruction {
+    margin-top: 0;
+    margin-bottom: 12px;
+    color: var(--text-color, #333);
+}
+
+#geometry-input {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 4px;
+    background-color: var(--input-bg, #f5f5f5);
+    color: var(--text-color, #333);
+    font-family: monospace;
+    resize: vertical;
+}
+
+.geometry-format-tabs {
+    display: flex;
+    margin-top: 12px;
+}
+
+.format-tab {
+    padding: 8px 16px;
+    background: none;
+    border: 1px solid var(--border-color, #ddd);
+    cursor: pointer;
+    color: var(--text-color, #333);
+}
+
+.format-tab:first-child {
+    border-radius: 4px 0 0 4px;
+}
+
+.format-tab:last-child {
+    border-radius: 0 4px 4px 0;
+}
+
+.format-tab.active {
+    background-color: var(--primary-color, #2196F3);
+    color: white;
+    border-color: var(--primary-color, #2196F3);
+}
+
+.format-help {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-muted, #666);
+}
+
+.format-help code {
+    display: block;
+    padding: 8px;
+    background-color: var(--code-bg, #f0f0f0);
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-top: 4px;
+    font-size: 11px;
+}
+
+.geometry-modal-footer {
+    padding: 16px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    border-top: 1px solid var(--border-color, #ddd);
+}
+
+/* Dark mode adjustments */
+.dark-theme .geometry-modal-content {
+    background-color: var(--card-bg, #242424);
+}
+
+.dark-theme .geometry-modal-header h3,
+.dark-theme .close-btn,
+.dark-theme .modal-instruction {
+    color: var(--text-color, #e0e0e0);
+}
+
+.dark-theme .geometry-modal-header,
+.dark-theme .geometry-modal-footer {
+    border-color: var(--border-color, #444);
+}
+
+.dark-theme #geometry-input {
+    background-color: var(--input-bg, #333);
+    color: var(--text-color, #e0e0e0);
+    border-color: var(--border-color, #444);
+}
+
+.dark-theme .format-tab {
+    border-color: var(--border-color, #444);
+    color: var(--text-color, #e0e0e0);
+}
+
+.dark-theme .format-help {
+    color: var(--text-muted, #999);
+}
+
+.dark-theme .format-help code {
+    background-color: var(--code-bg, #333);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .geometry-modal-content {
+        width: 95%;
+        max-height: 90vh;
+    }
+    
+    .geometry-modal-body {
+        max-height: 60vh;
+        overflow-y: auto;
+    }
+    
+    #geometry-input {
+        height: 120px;
+    }
+}

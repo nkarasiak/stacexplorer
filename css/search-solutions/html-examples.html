@@ -1,0 +1,64 @@
+<!-- Solution 1: Floating Action Bar at Bottom -->
+<div class="search-action-bar">
+  <div class="search-status">
+    <i class="material-icons">info</i>
+    <span id="summary-details">Configure your search</span>
+  </div>
+  <div class="search-actions">
+    <button id="clear-all" class="md-btn md-btn-secondary">Reset</button>
+    <button id="execute-search" class="md-btn md-btn-primary">Search</button>
+  </div>
+</div>
+
+<!-- Solution 2: Minimalist Top Navbar -->
+<div class="search-navbar">
+  <div class="search-navbar-title">
+    <i class="material-icons">search</i>
+    <span id="summary-details">Configure your search</span>
+  </div>
+  <div class="search-navbar-actions">
+    <button id="clear-all" class="md-btn md-btn-secondary">Reset</button>
+    <button id="execute-search" class="md-btn md-btn-primary">Search</button>
+  </div>
+</div>
+
+<!-- Solution 3: Sidebar Footer -->
+<div class="sidebar-footer">
+  <div class="search-summary-pill" id="summary-details">Configure search</div>
+  <div class="sidebar-footer-actions">
+    <button id="clear-all" class="md-btn md-btn-secondary">
+      <i class="material-icons">refresh</i>
+      Reset
+    </button>
+    <button id="execute-search" class="md-btn md-btn-primary">
+      <i class="material-icons">search</i>
+      Search
+    </button>
+  </div>
+</div>
+
+<!-- Solution 4: Floating Action Buttons -->
+<div class="floating-actions">
+  <div id="execute-search" class="fab fab-primary">
+    <i class="material-icons">search</i>
+    <span class="tooltip search-tooltip">Search</span>
+  </div>
+  <div id="clear-all" class="fab fab-secondary">
+    <i class="material-icons">refresh</i>
+    <span class="tooltip reset-tooltip">Reset</span>
+  </div>
+</div>
+
+<!-- Solution 5: Inline Card Actions -->
+<div class="card-inline-actions">
+  <button id="clear-all" class="card-btn">
+    <i class="material-icons">refresh</i>
+  </button>
+  <button id="execute-search" class="card-btn card-btn-search">
+    <i class="material-icons">search</i>
+  </button>
+</div>
+<div class="search-status-badge">
+  <i class="material-icons">check_circle</i>
+  <span id="summary-details">Ready</span>
+</div>

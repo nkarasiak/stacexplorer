@@ -1,0 +1,105 @@
+/**
+ * Enhanced Search Summary - Beautiful design
+ */
+.global-search-summary {
+    background: linear-gradient(135deg, #6a4de0 0%, #4a8cda 100%);
+    border-radius: 12px;
+    margin: 0 0 20px;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    position: relative;
+}
+
+.summary-text {
+    display: none; /* Hide the search text */
+}
+
+.summary-details-container {
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.small-summary {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 400;
+    line-height: 1.4;
+    display: block;
+    text-align: center;
+    padding-bottom: 8px;
+}
+
+.button-group {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Override button styles specifically for the search panel */
+.global-search-summary .md-btn {
+    font-weight: 500;
+    font-size: 14px;
+    min-width: 100px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.global-search-summary .md-btn-primary {
+    background-color: #ffffff;
+    color: #4a4de0;
+    border: none;
+}
+
+.global-search-summary .md-btn-primary:hover {
+    background-color: #f0f0f0;
+    transform: translateY(-1px);
+}
+
+.global-search-summary .md-btn-secondary {
+    background-color: rgba(0, 0, 0, 0.25);
+    color: #ffffff;
+    border: none;
+}
+
+.global-search-summary .md-btn-secondary:hover {
+    background-color: rgba(0, 0, 0, 0.35);
+    transform: translateY(-1px);
+}
+
+/* When summary has details */
+.global-search-summary.visible .small-summary {
+    opacity: 1;
+}
+
+/* Add some subtle animated gradients */
+.global-search-summary::before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+    opacity: 0.5;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* Media query for mobile */
+@media (max-width: 600px) {
+    .global-search-summary {
+        padding: 12px 16px;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .global-search-summary .md-btn {
+        width: 100%;
+    }
+}

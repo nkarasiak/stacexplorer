@@ -11,15 +11,10 @@ export class CatalogSelector {
     constructor(apiClient, notificationService) {
         this.apiClient = apiClient;
         this.notificationService = notificationService;
-        this.currentCatalog = 'copernicus';
+        this.currentCatalog = '';
         
         // Initialize event listeners
         this.initEventListeners();
-
-        // Trigger initial catalog load
-        setTimeout(() => {
-            this.handleCatalogChange('copernicus');
-        }, 100);
     }
     
     /**

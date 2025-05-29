@@ -67,7 +67,9 @@ export class CollectionManager {
      * @returns {string} Selected collection ID or empty string if none selected
      */
     getSelectedCollection() {
-        return this.selectedCollection;
+        // Always get the current value from the DOM to ensure accuracy
+        const select = document.getElementById('collection-select');
+        return select ? select.value : '';
     }
     
     /**

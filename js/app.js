@@ -12,7 +12,7 @@ import { StateManager } from './utils/StateManager.js';
 import { ShareManager } from './utils/ShareManager.js';
 
 // Import UI components
-import { SearchPanel } from './components/search/SearchPanel.js';
+import { SearchPanel } from './components/search/CardSearchPanel.js';
 import { CatalogSelector } from './components/search/CatalogSelector.js';
 import { CollectionManager } from './components/search/CollectionManager.js';
 import { SearchForm } from './components/search/SearchForm.js';
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize core services
         const notificationService = new NotificationService();
         const mapManager = new MapManager('map', CONFIG);
-        const apiClient = new STACApiClient(CONFIG.stacEndpoints.copernicus);
+        const apiClient = new STACApiClient(); // Initialize without any endpoint
         
         // Initialize UI manager
         const uiManager = new UIManager();
@@ -82,6 +82,11 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show welcome notification
         notificationService.showNotification('Welcome to the STAC Catalog Explorer', 'info');
+        
+        // After a short delay, show a hint about the required data source
+        setTimeout(() => {
+            notificationService.showNotification('Please select a Data Source to begin', 'info');
+        }, 1500);
         
         console.log('STAC Catalog Explorer - Initialization complete');
         

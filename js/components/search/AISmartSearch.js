@@ -1,6 +1,6 @@
 /**
- * AISmartSearch.js - Component for AI-powered natural language search
- * Allows users to describe what they want in natural language
+ * AISmartSearch.js - Minimalist sentence-based search interface
+ * Provides a streamlined "I want {collections} over {location} at {date} with {parameters}" interface
  */
 
 export class AISmartSearch {
@@ -19,9 +19,24 @@ export class AISmartSearch {
         this.mapManager = mapManager;
         this.notificationService = notificationService;
         
-        this.selectedDatePreset = null;
-        this.modalElement = null;
+        this.fullscreenElement = null;
         this.escapeListener = null;
+        
+        // Selected parameters
+        this.selectedCollection = "";
+        this.selectedLocation = "everywhere";
+        this.selectedDate = {
+            type: "anytime", // "anytime", "last7", "last30", "custom"
+            start: null,
+            end: null
+        };
+        this.cloudCover = 20;
+        
+        this.activeField = null;
+        
+        // Flag to track if we're returning from map drawing
+        this.returningFromMapDrawing = false;
+        this.drawnBbox = null;
         
         this.initAIButton();
         
@@ -31,16 +46,26 @@ export class AISmartSearch {
         });
     }
     
+
+    
     /**
      * Clean up resources when component is destroyed
      */
     cleanup() {
-        if (this.modalElement && document.body.contains(this.modalElement)) {
-            document.body.removeChild(this.modalElement);
+        if (this.fullscreenElement && document.body.contains(this.fullscreenElement)) {
+            document.body.removeChild(this.fullscreenElement);
+            this.fullscreenElement = null;
         }
         
+        // Remove all event listeners
         if (this.escapeListener) {
             document.removeEventListener('keydown', this.escapeListener);
+            this.escapeListener = null;
+        }
+        
+        if (this.globalClickHandler) {
+            document.removeEventListener('click', this.globalClickHandler);
+            this.globalClickHandler = null;
         }
     }
     
@@ -51,7 +76,7 @@ export class AISmartSearch {
         const aiButton = document.getElementById('ai-search-btn');
         if (aiButton) {
             aiButton.addEventListener('click', () => {
-                this.showAIModal();
+                this.showMinimalistSearch();
             });
             console.log('AI Smart Search button initialized');
         } else {
@@ -60,222 +85,519 @@ export class AISmartSearch {
     }
     
     /**
-     * Create and show the AI search modal
+     * Create and show the minimalist search interface
      */
-    showAIModal() {
+    showMinimalistSearch() {
         try {
-            // Create modal element
-            this.modalElement = document.createElement('div');
-            this.modalElement.className = 'ai-modal';
+            // Create fullscreen element
+            this.fullscreenElement = document.createElement('div');
+            this.fullscreenElement.className = 'ai-fullscreen';
             
-            // Get all available collections
-            const collections = this.collectionManager.collections;
-            const collectionOptions = collections.map(collection => 
-                `<option value="${collection.id}">${collection.title || collection.id}</option>`
+            // Get available collections
+            const collections = this.collectionManager.collections || [];
+            
+            // Common collection types
+            const commonCollections = [
+                { id: 'sentinel-s2-l2a-cogs', title: 'Sentinel-2' },
+                { id: 'sentinel-s1-grd', title: 'Sentinel-1' },
+                { id: 'landsat-c2-l2', title: 'Landsat' }
+            ];
+            
+            // Create the collection options
+            const collectionItems = commonCollections.map(collection => 
+                `<div class="ai-dropdown-item" data-value="${collection.id}">${collection.title}</div>`
             ).join('');
             
-            // Build modal content
-            this.modalElement.innerHTML = `
-                <div class="ai-modal-content">
-                    <div class="ai-modal-header">
-                        <h3><i class="material-icons">psychology</i> AI Smart Search</h3>
-                        <button class="ai-modal-close"><i class="material-icons">close</i></button>
-                    </div>
-                    <div class="ai-modal-body">
-                        <p class="ai-help-text">
-                            Describe what you're looking for in natural language, and I'll help you find it.
-                        </p>
-                        <div class="ai-query-form">
-                            <div class="ai-query-input">
-                                <textarea id="ai-query-text" placeholder="I want Sentinel-2 imagery from the last 30 days over New York with less than 20% cloud cover..."></textarea>
-                            </div>
-                            
-                            <div class="ai-query-examples">
-                                <h4>Examples:</h4>
-                                <div class="example-queries">
-                                    <div class="example-query">Sentinel-2 images from last month over Paris</div>
-                                    <div class="example-query">Landsat imagery with low cloud cover in California</div>
-                                    <div class="example-query">All collections from 2023 in the Amazon rainforest</div>
-                                    <div class="example-query">Recent Sentinel-1 radar data for flood monitoring</div>
+            // Set current date for datepickers
+            const today = new Date();
+            const formattedToday = this.formatDate(today);
+            
+            const last7Days = new Date();
+            last7Days.setDate(last7Days.getDate() - 7);
+            const formattedLast7Days = this.formatDate(last7Days);
+            
+            const last30Days = new Date();
+            last30Days.setDate(last30Days.getDate() - 30);
+            const formattedLast30Days = this.formatDate(last30Days);
+            
+            // Build fullscreen content
+            this.fullscreenElement.innerHTML = `
+                <div class="ai-fullscreen-header">
+                    <button class="ai-fullscreen-close" aria-label="Close search">
+                        <i class="material-icons">close</i>
+                    </button>
+                </div>
+                
+                <div class="ai-fullscreen-content">
+                    <div class="ai-sentence-container">
+                        I want 
+                        <span class="ai-field empty" id="ai-field-collection" data-placeholder="COLLECTIONS">
+                            <div class="ai-dropdown" id="ai-dropdown-collection">
+                                <div class="ai-collection-search">
+                                    <input type="text" class="ai-collection-search-input" 
+                                        placeholder="Search for collections...">
+                                </div>
+                                <div class="ai-collections-list">
+                                    ${collectionItems}
                                 </div>
                             </div>
-                            
-                            <div class="ai-query-filters">
-                                <div class="filter-section">
-                                    <h4><i class="material-icons">calendar_today</i> Time Range</h4>
-                                    <div class="date-presets">
-                                        <div class="date-preset" data-days="7">Last 7 days</div>
-                                        <div class="date-preset" data-days="30">Last 30 days</div>
-                                        <div class="date-preset" data-days="90">Last 3 months</div>
-                                        <div class="date-preset" data-days="365">Last year</div>
-                                        <div class="date-preset" data-days="custom">Custom range</div>
+                        </span> 
+                        over 
+                        <span class="ai-field" id="ai-field-location" data-placeholder="LOCATION">EVERYWHERE
+                            <div class="ai-dropdown" id="ai-dropdown-location">
+                                <div class="ai-dropdown-item" data-value="everywhere">EVERYWHERE</div>
+                                <div class="ai-location-input">
+                                    <textarea class="ai-location-textarea" 
+                                        placeholder="Paste WKT or GeoJSON polygon..."></textarea>
+                                    <div class="ai-location-actions">
+                                        <button class="ai-location-action" id="ai-draw-on-map">
+                                            <i class="material-icons">edit</i> Draw on Map
+                                        </button>
+                                        <button class="ai-location-action" id="ai-clear-location">
+                                            <i class="material-icons">clear</i> Clear
+                                        </button>
                                     </div>
-                                    <div id="custom-date-inputs" style="display: none; margin-top: 10px;">
-                                        <div class="date-range-inline">
-                                            <input type="date" id="ai-date-start" class="form-control">
-                                            <span class="date-separator">to</span>
-                                            <input type="date" id="ai-date-end" class="form-control">
+                                </div>
+                            </div>
+                        </span> 
+                        at 
+                        <span class="ai-field" id="ai-field-date" data-placeholder="DATE">ANYTIME
+                            <div class="ai-dropdown" id="ai-dropdown-date">
+                                <div class="ai-date-presets">
+                                    <div class="ai-date-preset" data-type="anytime">ANYTIME</div>
+                                    <div class="ai-date-preset" data-type="last7">Last 7 days</div>
+                                    <div class="ai-date-preset" data-type="last30">Last 30 days</div>
+                                    <div class="ai-date-preset" data-type="last90">Last 3 months</div>
+                                </div>
+                                <div class="ai-date-custom">
+                                    <div>Custom range:</div>
+                                    <div class="ai-date-custom-inputs">
+                                        <input type="date" class="ai-date-input" id="ai-date-start" 
+                                            value="${formattedLast7Days}">
+                                        <span>to</span>
+                                        <input type="date" class="ai-date-input" id="ai-date-end" 
+                                            value="${formattedToday}">
+                                        <button class="ai-location-action" id="ai-apply-custom-date">
+                                            Apply
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </span> 
+                        with 
+                        <span class="ai-field" id="ai-field-params" data-placeholder="PARAMETERS">CLOUD COVER: 20%
+                            <div class="ai-dropdown" id="ai-dropdown-params">
+                                <div class="ai-custom-params">
+                                    <div class="ai-param-slider">
+                                        <div class="ai-param-slider-header">
+                                            <span class="ai-param-slider-label">Maximum Cloud Cover</span>
+                                            <span class="ai-param-slider-value" id="ai-cloud-value">20%</span>
                                         </div>
+                                        <input type="range" class="ai-param-slider-input" id="ai-cloud-slider"
+                                            min="0" max="100" value="20">
                                     </div>
-                                </div>
-                                
-                                <div class="filter-section">
-                                    <h4><i class="material-icons">layers</i> Collections</h4>
-                                    <select id="ai-collection-select" class="form-control">
-                                        <option value="">All available collections</option>
-                                        ${collectionOptions}
-                                    </select>
+                                    <button class="ai-location-action" id="ai-apply-params">
+                                        Apply Parameters
+                                    </button>
                                 </div>
                             </div>
-                        </div>
+                        </span>
                     </div>
-                    <div class="ai-modal-footer">
-                        <button id="ai-search-execute" class="md-btn md-btn-primary">
+                    
+                    <div class="ai-execute-container">
+                        <button class="ai-execute-btn" id="ai-execute-search">
                             <i class="material-icons">search</i> Search
-                        </button>
-                        <button id="ai-search-cancel" class="md-btn md-btn-secondary">
-                            Cancel
                         </button>
                     </div>
                 </div>
             `;
             
-            // Add modal to document
-            document.body.appendChild(this.modalElement);
+            // Add fullscreen to document
+            document.body.appendChild(this.fullscreenElement);
             
-            // Set up event listeners for the modal
-            this.setupModalEventListeners();
+            // Set up event listeners
+            this.setupMinimalistEventListeners();
             
-            // Focus the query input
-            setTimeout(() => {
-                document.getElementById('ai-query-text').focus();
-            }, 100);
+            // If we have a drawn bbox, update the location field
+            if (this.selectedLocation && this.selectedLocation !== 'everywhere') {
+                const locationField = document.getElementById('ai-field-location');
+                if (locationField) {
+                    locationField.textContent = "Map Selection";
+                    locationField.classList.remove('empty');
+                }
+            }
             
-            console.log('AI Smart Search modal displayed');
+            console.log('AI Smart Search minimalist displayed');
         } catch (error) {
-            console.error('Error showing AI modal:', error);
+            console.error('Error showing AI minimalist search:', error);
             this.notificationService.showNotification('Error showing AI search interface', 'error');
         }
     }
     
     /**
-     * Set up event listeners for the modal
+     * Set up event listeners for the minimalist interface
      */
-    setupModalEventListeners() {
+    setupMinimalistEventListeners() {
         // Close button
-        const closeButton = this.modalElement.querySelector('.ai-modal-close');
-        closeButton.addEventListener('click', () => this.closeModal());
+        const closeButton = this.fullscreenElement.querySelector('.ai-fullscreen-close');
+        closeButton.addEventListener('click', () => this.closeFullscreen());
         
-        // Cancel button
-        const cancelButton = this.modalElement.querySelector('#ai-search-cancel');
-        cancelButton.addEventListener('click', () => this.closeModal());
+        // Collection field
+        const collectionField = document.getElementById('ai-field-collection');
+        collectionField.addEventListener('click', (e) => {
+            this.toggleField('collection');
+            e.stopPropagation();
+        });
         
-        // Execute search button
-        const searchButton = this.modalElement.querySelector('#ai-search-execute');
-        searchButton.addEventListener('click', () => this.executeAISearch());
+        // Collection search input
+        const collectionSearch = this.fullscreenElement.querySelector('.ai-collection-search-input');
+        collectionSearch.addEventListener('input', (e) => {
+            this.filterCollections(e.target.value);
+        });
         
-        // Example queries
-        const exampleQueries = this.modalElement.querySelectorAll('.example-query');
-        exampleQueries.forEach(example => {
-            example.addEventListener('click', () => {
-                document.getElementById('ai-query-text').value = example.textContent;
+        // Collection items
+        const collectionItems = this.fullscreenElement.querySelectorAll('#ai-dropdown-collection .ai-dropdown-item');
+        collectionItems.forEach(item => {
+            item.addEventListener('click', (e) => {
+                this.selectedCollection = item.dataset.value;
+                collectionField.textContent = item.textContent;
+                collectionField.classList.remove('empty');
+                this.closeDropdowns();
+                e.stopPropagation();
             });
+        });
+        
+        // Location field
+        const locationField = document.getElementById('ai-field-location');
+        locationField.addEventListener('click', (e) => {
+            this.toggleField('location');
+            e.stopPropagation();
+        });
+        
+        // Everywhere option
+        const everywhereOption = this.fullscreenElement.querySelector('#ai-dropdown-location .ai-dropdown-item');
+        everywhereOption.addEventListener('click', (e) => {
+            this.selectedLocation = "everywhere";
+            locationField.textContent = "EVERYWHERE";
+            this.closeDropdowns();
+            e.stopPropagation();
+        });
+        
+        // Draw on map button
+        const drawOnMapBtn = document.getElementById('ai-draw-on-map');
+        drawOnMapBtn.addEventListener('click', () => {
+            // Temporarily close the fullscreen to allow drawing on the map
+            this.closeFullscreen();
+            
+            // Start drawing mode with a callback function
+            if (this.mapManager) {
+                this.mapManager.startDrawingBbox((bbox) => {
+                    // After drawing is complete, this callback will be called
+                    console.log('Drawing callback received bbox:', bbox);
+                    
+                    // Convert bbox to WKT and store it
+                    const wkt = this.bboxToWkt(bbox);
+                    this.selectedLocation = wkt;
+                    
+                    // Show the AI Search interface again
+                    this.showMinimalistSearch();
+                    
+                    // Update the location field after the interface is shown
+                    setTimeout(() => {
+                        const locationField = document.getElementById('ai-field-location');
+                        if (locationField) {
+                            locationField.textContent = "Map Selection";
+                            locationField.classList.remove('empty');
+                        }
+                    }, 100);
+                });
+                
+                this.notificationService.showNotification('Draw a bounding box on the map', 'info');
+            }
+        });
+        
+        // Clear location button
+        const clearLocationBtn = document.getElementById('ai-clear-location');
+        clearLocationBtn.addEventListener('click', (e) => {
+            const locationTextarea = this.fullscreenElement.querySelector('.ai-location-textarea');
+            locationTextarea.value = '';
+            e.stopPropagation();
+        });
+        
+        // Location textarea
+        const locationTextarea = this.fullscreenElement.querySelector('.ai-location-textarea');
+        locationTextarea.addEventListener('input', () => {
+            if (locationTextarea.value.trim()) {
+                this.selectedLocation = locationTextarea.value.trim();
+                locationField.textContent = "Custom Location";
+                locationField.classList.remove('empty');
+            }
+        });
+        
+        // Date field
+        const dateField = document.getElementById('ai-field-date');
+        dateField.addEventListener('click', (e) => {
+            this.toggleField('date');
+            e.stopPropagation();
         });
         
         // Date presets
-        const datePresets = this.modalElement.querySelectorAll('.date-preset');
+        const datePresets = this.fullscreenElement.querySelectorAll('.ai-date-preset');
         datePresets.forEach(preset => {
-            preset.addEventListener('click', () => {
-                // Remove selected class from all presets
-                datePresets.forEach(p => p.classList.remove('selected'));
+            preset.addEventListener('click', (e) => {
+                const presetType = preset.dataset.type;
+                this.selectedDate.type = presetType;
                 
-                // Add selected class to clicked preset
-                preset.classList.add('selected');
-                this.selectedDatePreset = preset.dataset.days;
+                // Set the display text
+                dateField.textContent = preset.textContent;
                 
-                // Handle custom date range
-                const customDateInputs = document.getElementById('custom-date-inputs');
-                if (preset.dataset.days === 'custom') {
-                    customDateInputs.style.display = 'block';
+                // Calculate actual dates except for 'anytime'
+                if (presetType !== 'anytime') {
+                    const today = new Date();
+                    let startDate = new Date();
+                    
+                    if (presetType === 'last7') {
+                        startDate.setDate(today.getDate() - 7);
+                    } else if (presetType === 'last30') {
+                        startDate.setDate(today.getDate() - 30);
+                    } else if (presetType === 'last90') {
+                        startDate.setDate(today.getDate() - 90);
+                    }
+                    
+                    this.selectedDate.start = this.formatDate(startDate);
+                    this.selectedDate.end = this.formatDate(today);
                 } else {
-                    customDateInputs.style.display = 'none';
+                    // For 'anytime', set start and end to null
+                    this.selectedDate.start = null;
+                    this.selectedDate.end = null;
                 }
+                
+                this.closeDropdowns();
+                e.stopPropagation();
             });
         });
         
-        // Close modal when clicking outside
-        this.modalElement.addEventListener('click', (event) => {
-            if (event.target === this.modalElement) {
-                this.closeModal();
-            }
+        // Apply custom date button
+        const applyCustomDateBtn = document.getElementById('ai-apply-custom-date');
+        applyCustomDateBtn.addEventListener('click', (e) => {
+            const startInput = document.getElementById('ai-date-start');
+            const endInput = document.getElementById('ai-date-end');
+            
+            this.selectedDate.type = 'custom';
+            this.selectedDate.start = startInput.value;
+            this.selectedDate.end = endInput.value;
+            
+            dateField.textContent = `${startInput.value} to ${endInput.value}`;
+            dateField.classList.remove('empty');
+            
+            this.closeDropdowns();
+            e.stopPropagation();
         });
         
-        // Handle keyboard shortcuts
-        const queryTextarea = document.getElementById('ai-query-text');
-        queryTextarea.addEventListener('keydown', (event) => {
-            // Ctrl+Enter to execute search
-            if (event.key === 'Enter' && event.ctrlKey) {
-                event.preventDefault();
-                this.executeAISearch();
-            }
+        // Parameters field
+        const paramsField = document.getElementById('ai-field-params');
+        paramsField.addEventListener('click', (e) => {
+            this.toggleField('params');
+            e.stopPropagation();
         });
         
-        // Global escape key handler for modal
+        // Cloud cover slider
+        const cloudSlider = document.getElementById('ai-cloud-slider');
+        const cloudValue = document.getElementById('ai-cloud-value');
+        
+        cloudSlider.addEventListener('input', () => {
+            this.cloudCover = cloudSlider.value;
+            cloudValue.textContent = `${this.cloudCover}%`;
+        });
+        
+        // Apply parameters button
+        const applyParamsBtn = document.getElementById('ai-apply-params');
+        applyParamsBtn.addEventListener('click', (e) => {
+            paramsField.textContent = `Cloud Cover: ${this.cloudCover}%`;
+            paramsField.classList.remove('empty');
+            
+            this.closeDropdowns();
+            e.stopPropagation();
+        });
+        
+        // Execute Search button
+        const executeSearchBtn = document.getElementById('ai-execute-search');
+        executeSearchBtn.addEventListener('click', () => {
+            this.executeSearch();
+        });
+        
+        // Global click handler to close dropdowns when clicking outside
+        const globalClickHandler = () => {
+            if (this.fullscreenElement) {
+                this.closeDropdowns();
+            }
+        };
+        document.addEventListener('click', globalClickHandler);
+        
+        // Store the reference so we can remove it when closing
+        this.globalClickHandler = globalClickHandler;
+        
+        // Global escape key handler
         this.escapeListener = (event) => {
-            if (event.key === 'Escape' && this.modalElement) {
-                this.closeModal();
+            if (event.key === 'Escape') {
+                if (this.activeField) {
+                    this.closeDropdowns();
+                } else if (this.fullscreenElement) {
+                    this.closeFullscreen();
+                }
             }
         };
         document.addEventListener('keydown', this.escapeListener);
     }
     
     /**
-     * Close the AI modal
+     * Toggle a field's dropdown open/closed
+     * @param {string} fieldId - The ID of the field to toggle
      */
-    closeModal() {
-        if (this.modalElement && document.body.contains(this.modalElement)) {
-            // Remove escape key listener
+    toggleField(fieldId) {
+        // Close any open dropdown first
+        this.closeDropdowns();
+        
+        // Then open the clicked one
+        const field = document.getElementById(`ai-field-${fieldId}`);
+        if (field) {
+            field.classList.add('active');
+            this.activeField = fieldId;
+            
+            // If it's the collection field, focus the search input
+            if (fieldId === 'collection') {
+                setTimeout(() => {
+                    const searchInput = this.fullscreenElement.querySelector('.ai-collection-search-input');
+                    if (searchInput) {
+                        searchInput.focus();
+                    }
+                }, 100);
+            }
+        }
+    }
+    
+    /**
+     * Close all open dropdowns
+     */
+    closeDropdowns() {
+        if (!this.fullscreenElement) return;
+        
+        const activeFields = this.fullscreenElement.querySelectorAll('.ai-field.active');
+        activeFields.forEach(field => {
+            field.classList.remove('active');
+        });
+        this.activeField = null;
+    }
+    
+    /**
+     * Filter the collections list based on search input
+     * @param {string} query - The search query
+     */
+    filterCollections(query) {
+        const collectionItems = this.fullscreenElement.querySelectorAll('#ai-dropdown-collection .ai-dropdown-item');
+        const normalizedQuery = query.toLowerCase().trim();
+        
+        collectionItems.forEach(item => {
+            const text = item.textContent.toLowerCase();
+            if (normalizedQuery === '' || text.includes(normalizedQuery)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    /**
+     * Close the fullscreen search interface
+     */
+    closeFullscreen() {
+        if (this.fullscreenElement && document.body.contains(this.fullscreenElement)) {
+            // Remove event listeners
             if (this.escapeListener) {
                 document.removeEventListener('keydown', this.escapeListener);
                 this.escapeListener = null;
             }
             
-            // Remove the modal from the DOM
-            document.body.removeChild(this.modalElement);
-            this.modalElement = null;
+            if (this.globalClickHandler) {
+                document.removeEventListener('click', this.globalClickHandler);
+                this.globalClickHandler = null;
+            }
             
-            // Reset any selections
-            this.selectedDatePreset = null;
+            // Remove the fullscreen from the DOM
+            document.body.removeChild(this.fullscreenElement);
+            this.fullscreenElement = null;
+            
+            // Reset active field
+            this.activeField = null;
         }
     }
     
     /**
-     * Execute the AI search based on natural language query and selected filters
+     * Execute search with the selected parameters
      */
-    executeAISearch() {
+    executeSearch() {
         try {
-            // Get query text
-            const queryText = document.getElementById('ai-query-text').value.trim();
+            // Check if we have the minimum required parameters
+            let missingFields = [];
             
-            if (!queryText) {
-                this.notificationService.showNotification('Please enter a search query', 'warning');
+            if (!this.selectedCollection) {
+                const collectionField = document.getElementById('ai-field-collection');
+                collectionField.classList.add('error');
+                missingFields.push('collections');
+            }
+            
+            if (missingFields.length > 0) {
+                this.notificationService.showNotification(`Please select ${missingFields.join(' and ')}`, 'warning');
                 return;
             }
             
-            // Collect parameters from UI
-            const params = this.extractSearchParameters();
+            // Collect parameters
+            const params = {
+                collections: [this.selectedCollection],
+                cloudCover: this.cloudCover
+            };
             
-            // Show notification that we're processing the query
-            this.notificationService.showNotification('Processing your natural language query...', 'info');
+            // Add date range if not "anytime"
+            if (this.selectedDate.type !== 'anytime' && this.selectedDate.start && this.selectedDate.end) {
+                params.dateRange = {
+                    start: this.selectedDate.start,
+                    end: this.selectedDate.end
+                };
+            }
             
-            // Log the query
-            console.log('AI Smart Search Query:', queryText);
-            console.log('Search Parameters:', params);
+            // Add location if not "everywhere"
+            if (this.selectedLocation && this.selectedLocation !== 'everywhere') {
+                if (this.selectedLocation.startsWith('POLYGON')) {
+                    try {
+                        // Try to extract a rough bbox for compatibility
+                        const coords = this.selectedLocation.match(/\(([^)]+)\)/)[1].split(',');
+                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                        
+                        coords.forEach(coord => {
+                            const [x, y] = coord.trim().split(' ').map(parseFloat);
+                            minX = Math.min(minX, x);
+                            minY = Math.min(minY, y);
+                            maxX = Math.max(maxX, x);
+                            maxY = Math.max(maxY, y);
+                        });
+                        
+                        params.bbox = [minX, minY, maxX, maxY];
+                    } catch (e) {
+                        console.warn('Could not parse WKT polygon to bbox:', e);
+                    }
+                }
+            }
             
-            // Close the modal
-            this.closeModal();
+            // Show notification
+            this.notificationService.showNotification('Processing your search request...', 'info');
             
-            // Apply extracted parameters to the search form
+            // Log the parameters
+            console.log('AI Smart Search Parameters:', params);
+            
+            // Close the fullscreen
+            this.closeFullscreen();
+            
+            // Apply parameters to the search form
             this.applySearchParameters(params);
             
             // Execute the search
@@ -284,102 +606,11 @@ export class AISmartSearch {
             }
             
             // Show success notification
-            this.notificationService.showNotification('AI Smart Search executed successfully', 'success');
+            this.notificationService.showNotification('Search executed successfully', 'success');
         } catch (error) {
-            console.error('Error executing AI search:', error);
-            this.notificationService.showNotification('Error processing your search query', 'error');
+            console.error('Error executing search:', error);
+            this.notificationService.showNotification('Error processing your search request', 'error');
         }
-    }
-    
-    /**
-     * Extract search parameters from the natural language query and UI controls
-     * @returns {Object} Search parameters
-     */
-    extractSearchParameters() {
-        // Get the raw query text
-        const queryText = document.getElementById('ai-query-text').value.trim();
-        
-        // Initialize parameters object
-        const params = {
-            query: queryText,
-            collections: [],
-            dateRange: null,
-            bbox: null,
-            cloudCover: null
-        };
-        
-        // Extract collection selection from dropdown
-        const collectionSelect = document.getElementById('ai-collection-select');
-        if (collectionSelect && collectionSelect.value) {
-            params.collections.push(collectionSelect.value);
-        }
-        
-        // Extract date range based on selected preset
-        if (this.selectedDatePreset) {
-            if (this.selectedDatePreset === 'custom') {
-                const startDate = document.getElementById('ai-date-start').value;
-                const endDate = document.getElementById('ai-date-end').value;
-                
-                if (startDate || endDate) {
-                    params.dateRange = {
-                        start: startDate,
-                        end: endDate
-                    };
-                }
-            } else {
-                // Calculate date range based on preset days
-                const days = parseInt(this.selectedDatePreset);
-                if (!isNaN(days)) {
-                    const endDate = new Date();
-                    const startDate = new Date();
-                    startDate.setDate(startDate.getDate() - days);
-                    
-                    params.dateRange = {
-                        start: this.formatDate(startDate),
-                        end: this.formatDate(endDate)
-                    };
-                }
-            }
-        }
-        
-        // Simple natural language parsing for additional parameters
-        
-        // Check for collection mentions
-        const collectionTypes = [
-            { keywords: ['sentinel-2', 'sentinel 2', 's2', 's-2'], id: 'sentinel-s2-l2a-cogs' },
-            { keywords: ['sentinel-1', 'sentinel 1', 's1', 's-1', 'radar'], id: 'sentinel-s1-grd' },
-            { keywords: ['landsat'], id: 'landsat-c2-l2' }
-        ];
-        
-        // Only add collection if not already selected in dropdown
-        if (params.collections.length === 0) {
-            for (const collection of collectionTypes) {
-                if (collection.keywords.some(keyword => 
-                    queryText.toLowerCase().includes(keyword))) {
-                    params.collections.push(collection.id);
-                    break; // Only add the first matching collection
-                }
-            }
-        }
-        
-        // Check for cloud cover mentions
-        const cloudMatch = queryText.match(/(?:less than|<|under|max|maximum|up to)\s*(\d+)(?:\s*%|\s*percent)?\s*cloud/i);
-        if (cloudMatch && cloudMatch[1]) {
-            const cloudCover = parseInt(cloudMatch[1]);
-            if (!isNaN(cloudCover) && cloudCover >= 0 && cloudCover <= 100) {
-                params.cloudCover = cloudCover;
-            }
-        }
-        
-        // For more complex location parsing, we would need a geocoding service
-        // But we can look for some common location names
-        const locationMatch = queryText.match(/over\s+([A-Za-z\s]+)(?:[,.]|$)/i);
-        if (locationMatch && locationMatch[1]) {
-            params.locationName = locationMatch[1].trim();
-            // In a real implementation, we would use a geocoding service to convert the name to coordinates
-        }
-        
-        return params;
     }
     
     /**
@@ -388,8 +619,11 @@ export class AISmartSearch {
      */
     applySearchParameters(params) {
         try {
+            // Reset all form elements first to clear previous selections
+            this.resetSearchForm();
+            
             // Apply date range if provided
-            if (params.dateRange) {
+            if (params.dateRange && params.dateRange.start && params.dateRange.end) {
                 document.getElementById('date-start').value = params.dateRange.start;
                 document.getElementById('date-end').value = params.dateRange.end;
             }
@@ -405,7 +639,7 @@ export class AISmartSearch {
             }
             
             // Apply cloud cover if provided
-            if (params.cloudCover !== null) {
+            if (params.cloudCover !== null && params.cloudCover !== undefined) {
                 const cloudCoverEnabled = document.getElementById('cloud-cover-enabled');
                 const cloudCoverInput = document.getElementById('cloud-cover');
                 const cloudCoverValue = document.getElementById('cloud-cover-value');
@@ -425,13 +659,95 @@ export class AISmartSearch {
                 }
             }
             
-            // If we have a location name but no coordinates, we would need to handle this
-            // In a real implementation, we would use a geocoding service
+            // Apply bbox if provided
+            if (params.bbox) {
+                const bboxInput = document.getElementById('bbox-input');
+                if (bboxInput) {
+                    bboxInput.value = params.bbox.join(',');
+                }
+                
+                // If we have map manager and bbox, update the map
+                if (this.mapManager && params.bbox && params.bbox.length === 4) {
+                    this.mapManager.setBboxFromCoordinates(params.bbox);
+                }
+            }
+            
+            // Update summary display
+            this.updateSearchSummary();
             
             console.log('Applied search parameters:', params);
         } catch (error) {
             console.error('Error applying search parameters:', error);
         }
+    }
+    
+    /**
+     * Reset the search form to default values
+     */
+    resetSearchForm() {
+        // Reset date range
+        const dateStart = document.getElementById('date-start');
+        const dateEnd = document.getElementById('date-end');
+        if (dateStart) dateStart.value = '';
+        if (dateEnd) dateEnd.value = '';
+        
+        // Reset bbox
+        const bboxInput = document.getElementById('bbox-input');
+        if (bboxInput) bboxInput.value = '';
+        
+        // Reset map if available
+        if (this.mapManager && typeof this.mapManager.clearDrawings === 'function') {
+            this.mapManager.clearDrawings();
+        }
+        
+        // Reset cloud cover
+        const cloudCoverEnabled = document.getElementById('cloud-cover-enabled');
+        if (cloudCoverEnabled) cloudCoverEnabled.checked = false;
+    }
+    
+    /**
+     * Update the search summary in the dashboard
+     */
+    updateSearchSummary() {
+        const summaryDetails = document.getElementById('summary-details');
+        if (!summaryDetails) return;
+        
+        // Create summary text
+        let summary = '';
+        
+        // Add collection if selected
+        const collectionSelect = document.getElementById('collection-select');
+        if (collectionSelect && collectionSelect.value) {
+            const selectedOption = collectionSelect.options[collectionSelect.selectedIndex];
+            const collectionName = selectedOption.textContent || collectionSelect.value;
+            summary += `Collection: ${collectionName}, `;
+        }
+        
+        // Add date range if set
+        const dateStart = document.getElementById('date-start');
+        const dateEnd = document.getElementById('date-end');
+        if (dateStart && dateStart.value && dateEnd && dateEnd.value) {
+            summary += `Date: ${dateStart.value} to ${dateEnd.value}, `;
+        }
+        
+        // Add location if set
+        const bboxInput = document.getElementById('bbox-input');
+        if (bboxInput && bboxInput.value) {
+            summary += 'Location: Custom area, ';
+        }
+        
+        // Add cloud cover if enabled
+        const cloudCoverEnabled = document.getElementById('cloud-cover-enabled');
+        const cloudCoverInput = document.getElementById('cloud-cover');
+        if (cloudCoverEnabled && cloudCoverEnabled.checked && cloudCoverInput) {
+            summary += `Cloud Cover: Max ${cloudCoverInput.value}%, `;
+        }
+        
+        // Trim trailing comma and space
+        summary = summary.replace(/, $/, '');
+        
+        // Set summary text or default
+        summaryDetails.textContent = summary || 'Configure your search';
     }
     
     /**
@@ -441,5 +757,21 @@ export class AISmartSearch {
      */
     formatDate(date) {
         return date.toISOString().split('T')[0];
+    }
+    
+    /**
+     * Convert a bounding box to WKT polygon
+     * @param {Array} bbox - Bounding box [minX, minY, maxX, maxY]
+     * @returns {string} WKT polygon
+     */
+    bboxToWkt(bbox) {
+        if (!bbox || bbox.length !== 4) {
+            return '';
+        }
+        
+        const [minX, minY, maxX, maxY] = bbox;
+        
+        // Create a WKT polygon from the bounding box
+        return `POLYGON((${minX} ${minY}, ${maxX} ${minY}, ${maxX} ${maxY}, ${minX} ${maxY}, ${minX} ${minY}))`;
     }
 }

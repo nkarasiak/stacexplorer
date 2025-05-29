@@ -250,6 +250,12 @@ export class MapManager {
                     // Log the bbox for debugging
                     console.log('Drawn bbox:', bbox);
                     
+                    // Call the callback function if provided
+                    if (typeof this.drawingCallback === 'function') {
+                        this.drawingCallback(bbox);
+                        this.drawingCallback = null; // Reset after use
+                    }
+                    
                     // Clear any custom geometry when drawing a new bbox
                     this.clearGeometry();
                 }
@@ -405,8 +411,9 @@ export class MapManager {
     
     /**
      * Start the bounding box drawing mode
+     * @param {Function} callback - Optional callback function to call after drawing is complete
      */
-    startDrawingBbox() {
+    startDrawingBbox(callback) {
         try {
             // Check if map is ready
             if (!this.map) {
@@ -419,6 +426,9 @@ export class MapManager {
                 alert('The map is still loading. Please try again in a moment.');
                 return;
             }
+            
+            // Store the callback
+            this.drawingCallback = callback;
             
             // Clear any existing drawings
             this.clearDrawings();

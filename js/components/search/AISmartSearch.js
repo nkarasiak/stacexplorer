@@ -382,16 +382,19 @@ setupMinimalistEventListeners() {
 }
 
 /**
- * Set up field click handlers - simplified single-click to edit
+ * Set up field click handlers - hybrid approach
+ * - DATA field: Shows dropdown with collections
+ * - Other fields: Direct editing
  */
 setupFieldClickHandlers() {
-    // Simplified: single click starts editing directly
+    // DATA field: Show dropdown with collections (not direct editing)
     const collectionField = document.getElementById('ai-field-collection');
     collectionField.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.startDirectEdit(collectionField, 'collection');
+        this.toggleField('collection');
     });
     
+    // Other fields: Direct editing as implemented
     const locationField = document.getElementById('ai-field-location');
     locationField.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -981,29 +984,49 @@ setupDropdownEditInputs() {
     }
     
     /**
-     * Set up collection field handlers
+     * Set up collection field handlers - enhanced dropdown with all collections
      */
     setupCollectionField() {
         // Collection search input
         const collectionSearch = this.fullscreenElement.querySelector('.ai-collection-search-input');
-        collectionSearch.addEventListener('input', (e) => {
-            this.filterCollections(e.target.value);
-        });
+        if (collectionSearch) {
+            collectionSearch.addEventListener('input', (e) => {
+                this.filterCollections(e.target.value);
+            });
+        }
         
-        // Collection items
+        // Collection items - ensure all collections are clickable
         const collectionItems = this.fullscreenElement.querySelectorAll('#ai-dropdown-collection .ai-dropdown-item');
-        collectionItems.forEach(item => {
+        console.log(`🗂️ Found ${collectionItems.length} collection items to set up`);
+        
+        collectionItems.forEach((item, index) => {
             item.addEventListener('click', (e) => {
-                this.selectedCollection = item.dataset.value;
+                const collectionId = item.dataset.value;
+                console.log(`💆 Clicked collection: ${collectionId}`);
+                
+                if (!collectionId) {
+                    console.error('⚠️ Collection item missing data-value:', item);
+                    return;
+                }
+                
+                this.selectedCollection = collectionId;
+                
                 const collectionField = document.getElementById('ai-field-collection');
-                const displayName = this.getCollectionDisplayName(this.selectedCollection);
+                const displayName = this.getCollectionDisplayName(collectionId);
+                
                 collectionField.textContent = displayName;
-                collectionField.dataset.originalText = displayName;
                 collectionField.classList.remove('empty');
+                
+                console.log(`📋 Selected collection: ${collectionId} (${displayName})`);
+                
                 this.closeDropdowns();
                 e.stopPropagation();
             });
+            
+            console.log(`  - Set up collection item ${index + 1}: ${item.dataset.value}`);
         });
+        
+        console.log(`✅ Set up ${collectionItems.length} collection items for selection`);
     }
     
     /**

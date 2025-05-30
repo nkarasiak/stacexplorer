@@ -187,7 +187,7 @@
     0%, 100% { transform: translateX(0); }
     20%, 60% { transform: translateX(-6px); }
 
-/* Visual interaction hints for fields - simplified */
+/* Visual interaction hints for fields - field-specific */
 .ai-field:hover::after {
     content: " (click to edit)";
     font-size: 11px;
@@ -197,6 +197,11 @@
     text-transform: none;
     margin-left: 8px;
     pointer-events: none;
+}
+
+/* Special hint for DATA field - shows dropdown */
+#ai-field-collection:hover::after {
+    content: " (click to select)";
 }
 
 .dark-theme .ai-field:hover::after {

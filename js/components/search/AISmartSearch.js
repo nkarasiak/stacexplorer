@@ -1267,42 +1267,100 @@ setupDropdownEditInputs() {
     }
     
     /**
-     * Toggle a field's dropdown open/closed
+     * Toggle a field's dropdown open/closed - enhanced with debugging
      * @param {string} fieldId - The ID of the field to toggle
      */
     toggleField(fieldId) {
+        console.log(`🔄 Toggling field: ${fieldId}`);
+        
         // Close any open dropdown first
         this.closeDropdowns();
         
         // Then open the clicked one
         const field = document.getElementById(`ai-field-${fieldId}`);
-        if (field) {
-            field.classList.add('active');
-            this.activeField = fieldId;
+        const dropdown = document.getElementById(`ai-dropdown-${fieldId}`);
+        
+        if (!field) {
+            console.error(`❌ Field ai-field-${fieldId} not found`);
+            return;
+        }
+        
+        if (!dropdown) {
+            console.error(`❌ Dropdown ai-dropdown-${fieldId} not found`);
+            return;
+        }
+        
+        // Add active class to field
+        field.classList.add('active');
+        this.activeField = fieldId;
+        
+        // Force show dropdown with inline styles as backup
+        dropdown.style.display = 'block';
+        dropdown.style.visibility = 'visible';
+        dropdown.style.opacity = '1';
+        dropdown.style.zIndex = '1001';
+        
+        console.log(`✅ Field ${fieldId} activated`);
+        console.log(`  - Field has active class: ${field.classList.contains('active')}`);
+        console.log(`  - Dropdown display: ${window.getComputedStyle(dropdown).display}`);
+        console.log(`  - Dropdown visibility: ${window.getComputedStyle(dropdown).visibility}`);
+        
+        // If it's the collection field, focus the search input and show collection count
+        if (fieldId === 'collection') {
+            const collectionItems = dropdown.querySelectorAll('.ai-dropdown-item');
+            console.log(`🗂️ Collection dropdown opened with ${collectionItems.length} items`);
             
-            // If it's the collection field, focus the search input
-            if (fieldId === 'collection') {
-                setTimeout(() => {
-                    const searchInput = this.fullscreenElement.querySelector('.ai-collection-search-input');
-                    if (searchInput) {
-                        searchInput.focus();
-                    }
-                }, 100);
+            setTimeout(() => {
+                const searchInput = this.fullscreenElement.querySelector('.ai-collection-search-input');
+                if (searchInput) {
+                    searchInput.focus();
+                    console.log('🔍 Search input focused');
+                } else {
+                    console.warn('⚠️ Search input not found');
+                }
+            }, 100);
+            
+            // Show a few example collections
+            if (collectionItems.length > 0) {
+                console.log('📋 Available collections (first 5):');
+                for (let i = 0; i < Math.min(5, collectionItems.length); i++) {
+                    const title = collectionItems[i].querySelector('.collection-title')?.textContent;
+                    const id = collectionItems[i].querySelector('.collection-id')?.textContent;
+                    console.log(`  ${i + 1}. ${title} (${id})`);
+                }
+            } else {
+                console.error('❌ No collection items found - collections may not have loaded properly');
             }
         }
     }
     
     /**
-     * Close all open dropdowns
+     * Close all open dropdowns - enhanced cleanup
      */
     closeDropdowns() {
         if (!this.fullscreenElement) {return;}
         
         const activeFields = this.fullscreenElement.querySelectorAll('.ai-field.active');
+        console.log(`🔄 Closing ${activeFields.length} active dropdowns`);
+        
         activeFields.forEach(field => {
             field.classList.remove('active');
+            
+            // Find and clean up corresponding dropdown
+            const fieldId = field.id.replace('ai-field-', '');
+            const dropdown = document.getElementById(`ai-dropdown-${fieldId}`);
+            
+            if (dropdown) {
+                // Remove inline styles that were added as backup
+                dropdown.style.display = '';
+                dropdown.style.visibility = '';
+                dropdown.style.opacity = '';
+                dropdown.style.zIndex = '';
+            }
         });
+        
         this.activeField = null;
+        console.log('✅ All dropdowns closed');
     }
     
     /**

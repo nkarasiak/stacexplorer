@@ -227,22 +227,22 @@
     40%, 80% { transform: translateX(6px); }
 }
 
-/* Dropdown menus */
+/* Dropdown menus - enhanced visibility */
 .ai-dropdown {
     position: absolute;
-    top: 100%;
+    top: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%);
-    margin-top: 12px;
     background-color: var(--surface-primary, #fff);
     border-radius: 12px;
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
-    z-index: 10;
+    z-index: 1000 !important;
     max-height: 400px;
     overflow-y: auto;
     display: none;
-    min-width: 320px;
+    min-width: 400px;
     text-transform: none;
+    border: 1px solid var(--border-color, #e0e0e0);
 }
 
 .dark-theme .ai-dropdown {
@@ -251,8 +251,18 @@
     border: 1px solid var(--border-color, #444);
 }
 
+/* Force show dropdown when field is active */
 .ai-field.active .ai-dropdown {
-    display: block;
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Additional fallback for collection dropdown specifically */
+#ai-field-collection.active #ai-dropdown-collection {
+    display: block !important;
+    position: absolute !important;
+    z-index: 1001 !important;
 }
 
 .ai-dropdown-item {

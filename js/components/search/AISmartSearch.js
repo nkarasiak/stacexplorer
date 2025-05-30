@@ -325,6 +325,9 @@ async showMinimalistSearch() {
     /**
  * Set up event listeners for the minimalist interface
  */
+/**
+ * Set up event listeners for the minimalist interface
+ */
 setupMinimalistEventListeners() {
     // Close button
     const closeButton = this.fullscreenElement.querySelector('.ai-fullscreen-close');
@@ -370,122 +373,6 @@ setupMinimalistEventListeners() {
         if (event.key === 'Escape') {
             if (this.activeField) {
                 this.closeDropdowns();
-    /**
-     * Set up field click handlers (restored original behavior)
-     */
-    setupFieldClickHandlers() {
-        // Restore original click-to-dropdown behavior
-        const collectionField = document.getElementById('ai-field-collection');
-        collectionField.addEventListener('click', (e) => {
-            this.toggleField('collection');
-            e.stopPropagation();
-        });
-        
-        const locationField = document.getElementById('ai-field-location');
-        locationField.addEventListener('click', (e) => {
-            this.toggleField('location');
-            e.stopPropagation();
-        });
-        
-        const dateField = document.getElementById('ai-field-date');
-        dateField.addEventListener('click', (e) => {
-            this.toggleField('date');
-            e.stopPropagation();
-        });
-        
-        const paramsField = document.getElementById('ai-field-params');
-        paramsField.addEventListener('click', (e) => {
-            this.toggleField('params');
-            e.stopPropagation();
-        });
-    }
-    
-    /**
-     * Set up dropdown edit inputs for direct typing
-     */
-    setupDropdownEditInputs() {
-        // Collection edit input
-        const collectionEditInput = document.getElementById('ai-collection-edit-input');
-        if (collectionEditInput) {
-            collectionEditInput.addEventListener('input', (e) => {
-                this.handleCollectionTextChange(e.target.value);
-                this.filterCollections(e.target.value);
-            });
-            
-            collectionEditInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    const text = e.target.value.trim();
-                    if (text) {
-                        const collectionField = document.getElementById('ai-field-collection');
-                        collectionField.textContent = text;
-                        collectionField.classList.remove('empty');
-                        this.closeDropdowns();
-                    }
-                }
-            });
-        }
-        
-        // Location edit input
-        const locationEditInput = document.getElementById('ai-location-edit-input');
-        if (locationEditInput) {
-            locationEditInput.addEventListener('input', (e) => {
-                this.selectedLocation = e.target.value.trim() || 'everywhere';
-            });
-            
-            locationEditInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    const text = e.target.value.trim();
-                    const locationField = document.getElementById('ai-field-location');
-                    if (text) {
-                        locationField.textContent = text;
-                        this.selectedLocation = text;
-                    } else {
-                        locationField.textContent = 'EVERYWHERE';
-                        this.selectedLocation = 'everywhere';
-                    }
-                    locationField.classList.remove('empty');
-                    this.closeDropdowns();
-                }
-            });
-        }
-        
-        // Date edit input
-        const dateEditInput = document.getElementById('ai-date-edit-input');
-        if (dateEditInput) {
-            dateEditInput.addEventListener('input', (e) => {
-                this.handleDateTextChange(e.target.value);
-            });
-            
-            dateEditInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    this.handleDateTextChange(e.target.value);
-                    const dateField = document.getElementById('ai-field-date');
-                    dateField.textContent = this.getDateDisplayText();
-                    dateField.classList.remove('empty');
-                    this.closeDropdowns();
-                }
-            });
-        }
-        
-        // Parameters edit input
-        const paramsEditInput = document.getElementById('ai-params-edit-input');
-        if (paramsEditInput) {
-            paramsEditInput.addEventListener('input', (e) => {
-                this.handleParametersTextChange(e.target.value);
-            });
-            
-            paramsEditInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    this.handleParametersTextChange(e.target.value);
-                    const paramsField = document.getElementById('ai-field-params');
-                    paramsField.textContent = `Cloud Cover: ${this.cloudCover}%`;
-                    paramsField.classList.remove('empty');
-                    this.closeDropdowns();
-                }
-            });
-        }
-    }
-    
             } else if (this.fullscreenElement) {
                 this.closeFullscreen();
             }
@@ -494,36 +381,123 @@ setupMinimalistEventListeners() {
     document.addEventListener('keydown', this.escapeListener);
 }
 
+/**
+ * Set up field click handlers (restored original behavior)
+ */
+setupFieldClickHandlers() {
+    // Restore original click-to-dropdown behavior
+    const collectionField = document.getElementById('ai-field-collection');
+    collectionField.addEventListener('click', (e) => {
+        this.toggleField('collection');
+        e.stopPropagation();
+    });
     
-    /**
-     * Handle text changes in editable fields
-     * @param {HTMLElement} field - The field element that changed
-     */
-    handleFieldTextChange(field) {
-        const fieldId = field.id.replace('ai-field-', '');
-        const text = field.textContent.trim();
+    const locationField = document.getElementById('ai-field-location');
+    locationField.addEventListener('click', (e) => {
+        this.toggleField('location');
+        e.stopPropagation();
+    });
+    
+    const dateField = document.getElementById('ai-field-date');
+    dateField.addEventListener('click', (e) => {
+        this.toggleField('date');
+        e.stopPropagation();
+    });
+    
+    const paramsField = document.getElementById('ai-field-params');
+    paramsField.addEventListener('click', (e) => {
+        this.toggleField('params');
+        e.stopPropagation();
+    });
+}
+
+/**
+ * Set up dropdown edit inputs for direct typing
+ */
+setupDropdownEditInputs() {
+    // Collection edit input
+    const collectionEditInput = document.getElementById('ai-collection-edit-input');
+    if (collectionEditInput) {
+        collectionEditInput.addEventListener('input', (e) => {
+            this.handleCollectionTextChange(e.target.value);
+            this.filterCollections(e.target.value);
+        });
         
-        // Update internal state based on field type
-        switch (fieldId) {
-            case 'collection':
-                // For collection, try to match text to available collections
-                this.handleCollectionTextChange(text);
-                break;
-            case 'location':
-                // For location, update selected location
-                this.selectedLocation = text || 'everywhere';
-                break;
-            case 'date':
-                // For date, try to parse natural language
-                this.handleDateTextChange(text);
-                break;
-            case 'params':
-                // For parameters, try to parse parameters
-                this.handleParametersTextChange(text);
-                break;
-        }
+        collectionEditInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const text = e.target.value.trim();
+                if (text) {
+                    const collectionField = document.getElementById('ai-field-collection');
+                    collectionField.textContent = text;
+                    collectionField.classList.remove('empty');
+                    this.closeDropdowns();
+                }
+            }
+        });
     }
     
+    // Location edit input
+    const locationEditInput = document.getElementById('ai-location-edit-input');
+    if (locationEditInput) {
+        locationEditInput.addEventListener('input', (e) => {
+            this.selectedLocation = e.target.value.trim() || 'everywhere';
+        });
+        
+        locationEditInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const text = e.target.value.trim();
+                const locationField = document.getElementById('ai-field-location');
+                if (text) {
+                    locationField.textContent = text;
+                    this.selectedLocation = text;
+                } else {
+                    locationField.textContent = 'EVERYWHERE';
+                    this.selectedLocation = 'everywhere';
+                }
+                locationField.classList.remove('empty');
+                this.closeDropdowns();
+            }
+        });
+    }
+    
+    // Date edit input
+    const dateEditInput = document.getElementById('ai-date-edit-input');
+    if (dateEditInput) {
+        dateEditInput.addEventListener('input', (e) => {
+            this.handleDateTextChange(e.target.value);
+        });
+        
+        dateEditInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.handleDateTextChange(e.target.value);
+                const dateField = document.getElementById('ai-field-date');
+                dateField.textContent = this.getDateDisplayText();
+                dateField.classList.remove('empty');
+                this.closeDropdowns();
+            }
+        });
+    }
+    
+    // Parameters edit input
+    const paramsEditInput = document.getElementById('ai-params-edit-input');
+    if (paramsEditInput) {
+        paramsEditInput.addEventListener('input', (e) => {
+            this.handleParametersTextChange(e.target.value);
+        });
+        
+        paramsEditInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.handleParametersTextChange(e.target.value);
+                const paramsField = document.getElementById('ai-field-params');
+                paramsField.textContent = `Cloud Cover: ${this.cloudCover}%`;
+                paramsField.classList.remove('empty');
+                this.closeDropdowns();
+            }
+        });
+    }
+}
+
+
     /**
      * Handle collection text changes
      * @param {string} text - The entered text

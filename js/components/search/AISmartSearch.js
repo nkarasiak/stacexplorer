@@ -1,8 +1,11 @@
 /**
  * AISmartSearch.js - Minimalist sentence-based search interface
  * Provides a streamlined "I want {collections} over {location} at {date} with {parameters}" interface
- * Enhanced with editable placeholders and improved collection management
+ * Enhanced with editable placeholders, improved collection management, and advanced location search
  */
+
+import { defaultGeocodingService } from '../../utils/GeocodingService.js';
+import { isWKT, isGeoJSON, wktToGeoJSON, parseGeoJSON, geojsonToBbox } from '../../utils/GeometryUtils.js';
 
 export class AISmartSearch {
     /**
@@ -19,9 +22,15 @@ export class AISmartSearch {
         this.collectionManager = collectionManager;
         this.mapManager = mapManager;
         this.notificationService = notificationService;
+        this.geocodingService = defaultGeocodingService;
         
         this.fullscreenElement = null;
         this.escapeListener = null;
+        
+        // Location search state
+        this.locationSearchResults = [];
+        this.selectedLocationResult = null;
+        this.locationSearchTimeout = null;
         
         // Selected parameters
         this.selectedCollection = "";
@@ -256,20 +265,53 @@ async showMinimalistSearch() {
                     <div class="ai-dropdown" id="ai-dropdown-location">
                         <div class="ai-dropdown-edit-section">
                             <input type="text" class="ai-dropdown-edit-input" 
-                                placeholder="Type location description..." 
-                                id="ai-location-edit-input">
+                                placeholder="Search for places (e.g., Paris, France, New York)..." 
+                                id="ai-location-search-input">
                         </div>
-                        <div class="ai-dropdown-item" data-value="everywhere">EVERYWHERE</div>
-                        <div class="ai-location-input">
-                            <textarea class="ai-location-textarea" 
-                                placeholder="Paste WKT or GeoJSON polygon..."></textarea>
-                            <div class="ai-location-actions">
+                        
+                        <!-- Location Search Results -->
+                        <div class="ai-location-search-results" id="ai-location-search-results">
+                            <!-- Search results will be populated here -->
+                        </div>
+                        
+                        <!-- Quick Options -->
+                        <div class="ai-location-quick-options">
+                            <div class="ai-dropdown-item" data-value="everywhere">
+                                <i class="material-icons">public</i>
+                                <span>EVERYWHERE</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Manual Input Options -->
+                        <div class="ai-location-manual-input">
+                            <div class="ai-location-section-header">
+                                <i class="material-icons">my_location</i>
+                                <span>Manual Input</span>
+                            </div>
+                            
+                            <!-- Drawing Option -->
+                            <div class="ai-location-option">
                                 <button class="ai-location-action" id="ai-draw-on-map">
                                     <i class="material-icons">edit</i> Draw on Map
                                 </button>
-                                <button class="ai-location-action" id="ai-clear-location">
-                                    <i class="material-icons">clear</i> Clear
-                                </button>
+                                <span class="ai-location-option-desc">Draw a bounding box on the map</span>
+                            </div>
+                            
+                            <!-- WKT/GeoJSON Input -->
+                            <div class="ai-location-option">
+                                <div class="ai-location-geometry-input">
+                                    <textarea class="ai-location-textarea" 
+                                        placeholder="Paste WKT or GeoJSON polygon..." 
+                                        id="ai-location-geometry-input"></textarea>
+                                    <div class="ai-location-geometry-actions">
+                                        <button class="ai-location-action ai-location-action-small" id="ai-parse-geometry">
+                                            <i class="material-icons">check</i> Apply
+                                        </button>
+                                        <button class="ai-location-action ai-location-action-small" id="ai-clear-geometry">
+                                            <i class="material-icons">clear</i> Clear
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -454,6 +496,7 @@ setupMinimalistEventListeners() {
 /**
  * Set up field click handlers - hybrid approach
  * - DATA field: Shows dropdown with collections
+ * - LOCATION field: Shows dropdown with location search (FIXED)
  * - Other fields: Direct editing
  */
 setupFieldClickHandlers() {
@@ -464,13 +507,14 @@ setupFieldClickHandlers() {
         this.toggleField('collection');
     });
     
-    // Other fields: Direct editing as implemented
+    // LOCATION field: Show dropdown with location search (FIXED)
     const locationField = document.getElementById('ai-field-location');
     locationField.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.startDirectEdit(locationField, 'location');
+        this.toggleField('location');
     });
     
+    // Other fields: Direct editing as implemented
     const dateField = document.getElementById('ai-field-date');
     dateField.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1106,73 +1150,312 @@ setupDropdownEditInputs() {
     }
     
     /**
-     * Set up location field handlers
+     * Set up location field handlers with enhanced geocoding functionality
      */
     setupLocationField() {
+        // Location search input with autocomplete
+        const locationSearchInput = document.getElementById('ai-location-search-input');
+        if (locationSearchInput) {
+            locationSearchInput.addEventListener('input', (e) => {
+                this.handleLocationSearch(e.target.value);
+            });
+            
+            locationSearchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const firstResult = document.querySelector('.ai-location-result-item');
+                    if (firstResult) {
+                        firstResult.click();
+                    }
+                }
+            });
+        }
+        
         // Everywhere option
-        const everywhereOption = this.fullscreenElement.querySelector('#ai-dropdown-location .ai-dropdown-item');
-        everywhereOption.addEventListener('click', (e) => {
-            this.selectedLocation = "everywhere";
-            const locationField = document.getElementById('ai-field-location');
-            locationField.textContent = "EVERYWHERE";
-            locationField.dataset.originalText = "EVERYWHERE";
-            this.closeDropdowns();
-            e.stopPropagation();
-        });
+        const everywhereOption = this.fullscreenElement.querySelector('#ai-dropdown-location .ai-dropdown-item[data-value="everywhere"]');
+        if (everywhereOption) {
+            everywhereOption.addEventListener('click', (e) => {
+                this.selectedLocation = "everywhere";
+                this.selectedLocationResult = null;
+                const locationField = document.getElementById('ai-field-location');
+                locationField.textContent = "EVERYWHERE";
+                locationField.classList.add('empty');
+                this.closeDropdowns();
+                e.stopPropagation();
+            });
+        }
         
         // Draw on map button
         const drawOnMapBtn = document.getElementById('ai-draw-on-map');
-        drawOnMapBtn.addEventListener('click', () => {
-            // Temporarily close the fullscreen to allow drawing on the map
-            this.closeFullscreen();
+        if (drawOnMapBtn) {
+            drawOnMapBtn.addEventListener('click', () => {
+                this.handleDrawOnMap();
+            });
+        }
+        
+        // Geometry input handling
+        const geometryInput = document.getElementById('ai-location-geometry-input');
+        const parseGeometryBtn = document.getElementById('ai-parse-geometry');
+        const clearGeometryBtn = document.getElementById('ai-clear-geometry');
+        
+        if (parseGeometryBtn) {
+            parseGeometryBtn.addEventListener('click', () => {
+                this.handleGeometryInput(geometryInput.value);
+            });
+        }
+        
+        if (clearGeometryBtn) {
+            clearGeometryBtn.addEventListener('click', () => {
+                geometryInput.value = '';
+                this.resetLocationSelection();
+            });
+        }
+    }
+    
+    /**
+     * Handle location search with geocoding service
+     * @param {string} query - Search query
+     */
+    handleLocationSearch(query) {
+        const resultsContainer = document.getElementById('ai-location-search-results');
+        
+        if (!query || query.trim().length < 2) {
+            resultsContainer.innerHTML = '';
+            return;
+        }
+        
+        // Show loading indicator
+        resultsContainer.innerHTML = '<div class="ai-location-loading"><i class="material-icons">search</i> Searching...</div>';
+        
+        // Use geocoding service with debouncing
+        this.geocodingService.searchLocations(query, (results, error) => {
+            if (error) {
+                resultsContainer.innerHTML = '<div class="ai-location-error"><i class="material-icons">error</i> Search failed</div>';
+                console.error('Location search error:', error);
+                return;
+            }
             
-            // Start drawing mode with a callback function
-            if (this.mapManager) {
-                this.mapManager.startDrawingBbox((bbox) => {
-                    // After drawing is complete, this callback will be called
-                    console.log('🗺️ Drawing callback received bbox:', bbox);
-                    
-                    // Convert bbox to WKT and store it
-                    const wkt = this.bboxToWkt(bbox);
-                    this.selectedLocation = wkt;
-                    
-                    // Show the AI Search interface again
-                    this.showMinimalistSearch();
-                    
-                    // Update the location field after the interface is shown
-                    setTimeout(() => {
-                        const locationField = document.getElementById('ai-field-location');
-                        if (locationField) {
-                            locationField.textContent = "Map Selection";
-                            locationField.dataset.originalText = "Map Selection";
-                            locationField.classList.remove('empty');
-                        }
-                    }, 100);
-                });
+            this.displayLocationResults(results);
+        });
+    }
+    
+    /**
+     * Display location search results
+     * @param {Array} results - Search results from geocoding service
+     */
+    displayLocationResults(results) {
+        const resultsContainer = document.getElementById('ai-location-search-results');
+        
+        if (!results || results.length === 0) {
+            resultsContainer.innerHTML = '<div class="ai-location-no-results"><i class="material-icons">location_off</i> No results found</div>';
+            return;
+        }
+        
+        // Sort results by relevance score
+        const sortedResults = results.sort((a, b) => b.relevanceScore - a.relevanceScore);
+        
+        const resultItems = sortedResults.map((result, index) => {
+            const categoryIcon = this.getLocationCategoryIcon(result.category);
+            const bbox = result.bbox ? `${result.bbox[0].toFixed(2)}, ${result.bbox[1].toFixed(2)}, ${result.bbox[2].toFixed(2)}, ${result.bbox[3].toFixed(2)}` : 'No bbox';
+            
+            return `
+                <div class="ai-location-result-item" data-index="${index}">
+                    <div class="ai-location-result-main">
+                        <i class="material-icons ai-location-result-icon">${categoryIcon}</i>
+                        <div class="ai-location-result-info">
+                            <div class="ai-location-result-name">${result.formattedName}</div>
+                            <div class="ai-location-result-details">
+                                <span class="ai-location-result-category">${result.category}</span>
+                                ${result.bbox ? `<span class="ai-location-result-bbox">bbox: ${bbox}</span>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ai-location-result-actions">
+                        <button class="ai-location-result-select" title="Select this location">
+                            <i class="material-icons">check</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+        
+        resultsContainer.innerHTML = resultItems;
+        
+        // Add click handlers to result items
+        const resultElements = resultsContainer.querySelectorAll('.ai-location-result-item');
+        resultElements.forEach((element, index) => {
+            element.addEventListener('click', () => {
+                this.selectLocationResult(sortedResults[index]);
+            });
+        });
+    }
+    
+    /**
+     * Get icon for location category
+     * @param {string} category - Location category
+     * @returns {string} Material icon name
+     */
+    getLocationCategoryIcon(category) {
+        const icons = {
+            'country': 'flag',
+            'state': 'map',
+            'city': 'location_city',
+            'town': 'home',
+            'village': 'cottage',
+            'neighborhood': 'neighborhood',
+            'administrative': 'account_balance',
+            'natural': 'nature',
+            'address': 'home',
+            'other': 'place'
+        };
+        return icons[category] || 'place';
+    }
+    
+    /**
+     * Select a location result
+     * @param {Object} locationResult - Selected location result
+     */
+    selectLocationResult(locationResult) {
+        this.selectedLocationResult = locationResult;
+        this.selectedLocation = locationResult.bbox || locationResult.coordinates;
+        
+        const locationField = document.getElementById('ai-field-location');
+        locationField.textContent = locationResult.shortName || locationResult.formattedName;
+        locationField.classList.remove('empty');
+        
+        console.log('📍 Selected location:', locationResult);
+        
+        this.closeDropdowns();
+    }
+    
+    /**
+     * Handle draw on map functionality
+     */
+    handleDrawOnMap() {
+        // Temporarily close the fullscreen to allow drawing on the map
+        this.closeFullscreen();
+        
+        // Start drawing mode with a callback function
+        if (this.mapManager) {
+            this.mapManager.startDrawingBbox((bbox) => {
+                // After drawing is complete, this callback will be called
+                console.log('🗺️ Drawing callback received bbox:', bbox);
                 
-                this.notificationService.showNotification('Draw a bounding box on the map', 'info');
+                // Store the bbox
+                this.selectedLocation = bbox;
+                this.selectedLocationResult = {
+                    formattedName: 'Map Selection',
+                    shortName: 'Map Selection',
+                    bbox: bbox,
+                    category: 'drawn'
+                };
+                
+                // Show the AI Search interface again
+                this.showMinimalistSearch();
+                
+                // Update the location field after the interface is shown
+                setTimeout(() => {
+                    const locationField = document.getElementById('ai-field-location');
+                    if (locationField) {
+                        locationField.textContent = "Map Selection";
+                        locationField.classList.remove('empty');
+                    }
+                }, 100);
+            });
+            
+            this.notificationService.showNotification('Draw a bounding box on the map', 'info');
+        }
+    }
+    
+    /**
+     * Handle geometry input (WKT/GeoJSON)
+     * @param {string} geometryText - Input geometry text
+     */
+    handleGeometryInput(geometryText) {
+        if (!geometryText || !geometryText.trim()) {
+            this.notificationService.showNotification('Please enter WKT or GeoJSON', 'warning');
+            return;
+        }
+        
+        const text = geometryText.trim();
+        let geojson = null;
+        let bbox = null;
+        
+        try {
+            // Try to parse as GeoJSON first
+            if (isGeoJSON(text)) {
+                geojson = parseGeoJSON(text);
+                bbox = geojsonToBbox(geojson);
+            } else if (isWKT(text)) {
+                // Try to parse as WKT
+                geojson = wktToGeoJSON(text);
+                bbox = geojsonToBbox(geojson);
+            } else {
+                throw new Error('Invalid geometry format');
             }
-        });
+            
+            if (!bbox) {
+                throw new Error('Could not extract bounding box from geometry');
+            }
+            
+            // Store the result
+            this.selectedLocation = bbox;
+            this.selectedLocationResult = {
+                formattedName: 'Custom Geometry',
+                shortName: 'Custom Geometry',
+                bbox: bbox,
+                category: 'geometry',
+                geojson: geojson
+            };
+            
+            const locationField = document.getElementById('ai-field-location');
+            locationField.textContent = "Custom Geometry";
+            locationField.classList.remove('empty');
+            
+            this.notificationService.showNotification('Geometry parsed successfully!', 'success');
+            console.log('📐 Parsed geometry:', { geojson, bbox });
+            
+        } catch (error) {
+            console.error('❌ Error parsing geometry:', error);
+            this.notificationService.showNotification('Invalid WKT or GeoJSON format', 'error');
+        }
+    }
+    
+    /**
+     * Update the location field display (called by GeometrySync)
+     * @param {string} displayName - Display name for the location
+     * @param {string} category - Category of location
+     */
+    updateLocationFieldDisplay(displayName, category) {
+        // This can be called even when the AI Search interface is not open
+        // It updates the internal state so when AI Search opens, it shows the correct location
         
-        // Clear location button
-        const clearLocationBtn = document.getElementById('ai-clear-location');
-        clearLocationBtn.addEventListener('click', (e) => {
-            const locationTextarea = this.fullscreenElement.querySelector('.ai-location-textarea');
-            locationTextarea.value = '';
-            e.stopPropagation();
-        });
+        this.selectedLocation = this.selectedLocationResult?.bbox || this.selectedLocation;
         
-        // Location textarea
-        const locationTextarea = this.fullscreenElement.querySelector('.ai-location-textarea');
-        locationTextarea.addEventListener('input', () => {
-            if (locationTextarea.value.trim()) {
-                this.selectedLocation = locationTextarea.value.trim();
-                const locationField = document.getElementById('ai-field-location');
-                locationField.textContent = "Custom Location";
-                locationField.dataset.originalText = "Custom Location";
+        console.log(`📍 AI Search location updated: ${displayName} (${category})`);
+        
+        // If AI Search is currently open, update the field immediately
+        if (this.fullscreenElement && document.body.contains(this.fullscreenElement)) {
+            const locationField = document.getElementById('ai-field-location');
+            if (locationField) {
+                locationField.textContent = displayName;
                 locationField.classList.remove('empty');
+                console.log('✅ AI Search location field updated in real-time');
             }
-        });
+        }
+    }
+    
+    /**
+     * Reset location selection to default
+     */
+    resetLocationSelection() {
+        this.selectedLocation = "everywhere";
+        this.selectedLocationResult = null;
+        const locationField = document.getElementById('ai-field-location');
+        if (locationField) {
+            locationField.textContent = "EVERYWHERE";
+            locationField.classList.add('empty');
+        }
     }
     
     /**
@@ -1267,7 +1550,7 @@ setupDropdownEditInputs() {
     }
     
     /**
-     * Toggle a field's dropdown open/closed - enhanced with debugging
+     * Toggle a field's dropdown open/closed - enhanced with debugging and location support
      * @param {string} fieldId - The ID of the field to toggle
      */
     toggleField(fieldId) {
@@ -1305,8 +1588,9 @@ setupDropdownEditInputs() {
         console.log(`  - Dropdown display: ${window.getComputedStyle(dropdown).display}`);
         console.log(`  - Dropdown visibility: ${window.getComputedStyle(dropdown).visibility}`);
         
-        // If it's the collection field, focus the search input and show collection count
+        // Handle field-specific functionality
         if (fieldId === 'collection') {
+            // Collection-specific setup
             const collectionItems = dropdown.querySelectorAll('.ai-dropdown-item');
             console.log(`🗂️ Collection dropdown opened with ${collectionItems.length} items`);
             
@@ -1314,9 +1598,9 @@ setupDropdownEditInputs() {
                 const searchInput = this.fullscreenElement.querySelector('.ai-collection-search-input');
                 if (searchInput) {
                     searchInput.focus();
-                    console.log('🔍 Search input focused');
+                    console.log('🔍 Collection search input focused');
                 } else {
-                    console.warn('⚠️ Search input not found');
+                    console.warn('⚠️ Collection search input not found');
                 }
             }, 100);
             
@@ -1330,6 +1614,26 @@ setupDropdownEditInputs() {
                 }
             } else {
                 console.error('❌ No collection items found - collections may not have loaded properly');
+            }
+        } else if (fieldId === 'location') {
+            // Location-specific setup
+            console.log('🌍 Location dropdown opened');
+            
+            setTimeout(() => {
+                const locationSearchInput = document.getElementById('ai-location-search-input');
+                if (locationSearchInput) {
+                    locationSearchInput.focus();
+                    console.log('🔍 Location search input focused');
+                } else {
+                    console.warn('⚠️ Location search input not found');
+                }
+            }, 100);
+            
+            // Clear any previous search results
+            const resultsContainer = document.getElementById('ai-location-search-results');
+            if (resultsContainer) {
+                resultsContainer.innerHTML = '';
+                console.log('🧹 Location search results cleared');
             }
         }
     }
@@ -1450,23 +1754,31 @@ setupDropdownEditInputs() {
             
             // Add location if not "everywhere"
             if (this.selectedLocation && this.selectedLocation !== 'everywhere') {
-                if (this.selectedLocation.startsWith('POLYGON')) {
+                if (Array.isArray(this.selectedLocation) && this.selectedLocation.length === 4) {
+                    // Direct bbox array
+                    params.bbox = this.selectedLocation;
+                } else if (this.selectedLocationResult && this.selectedLocationResult.bbox) {
+                    // From geocoding result
+                    params.bbox = this.selectedLocationResult.bbox;
+                } else if (typeof this.selectedLocation === 'string') {
+                    // Try to parse geometry string
                     try {
-                        // Try to extract a rough bbox for compatibility
-                        const coords = this.selectedLocation.match(/\(([^)]+)\)/)[1].split(',');
-                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                        let geojson = null;
                         
-                        coords.forEach(coord => {
-                            const [x, y] = coord.trim().split(' ').map(parseFloat);
-                            minX = Math.min(minX, x);
-                            minY = Math.min(minY, y);
-                            maxX = Math.max(maxX, x);
-                            maxY = Math.max(maxY, y);
-                        });
+                        if (isGeoJSON(this.selectedLocation)) {
+                            geojson = parseGeoJSON(this.selectedLocation);
+                        } else if (isWKT(this.selectedLocation)) {
+                            geojson = wktToGeoJSON(this.selectedLocation);
+                        }
                         
-                        params.bbox = [minX, minY, maxX, maxY];
+                        if (geojson) {
+                            const bbox = geojsonToBbox(geojson);
+                            if (bbox) {
+                                params.bbox = bbox;
+                            }
+                        }
                     } catch (e) {
-                        console.warn('⚠️ Could not parse WKT polygon to bbox:', e);
+                        console.warn('⚠️ Could not parse location geometry:', e);
                     }
                 }
             }
@@ -1479,6 +1791,9 @@ setupDropdownEditInputs() {
             
             // Close the fullscreen
             this.closeFullscreen();
+            
+            // Ensure sidebar is visible after search execution
+            this.ensureSidebarVisible();
             
             // Apply parameters to the search form
             this.applySearchParameters(params);
@@ -1648,6 +1963,58 @@ setupDropdownEditInputs() {
         
         // Set summary text or default
         summaryDetails.textContent = summary || 'Configure your search';
+    }
+    
+    /**
+     * Ensure sidebar is visible after AI search execution
+     * Handles both mobile and desktop scenarios
+     */
+    ensureSidebarVisible() {
+        try {
+            console.log('🔄 Ensuring sidebar is visible after AI search...');
+            
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) {
+                console.warn('⚠️ Sidebar element not found');
+                return;
+            }
+            
+            // Check if we're on mobile (using the same breakpoint as the CSS)
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // On mobile, use the mobile sidebar manager to show the sidebar
+                if (window.mobileSidebarManager && typeof window.mobileSidebarManager.openSidebar === 'function') {
+                    window.mobileSidebarManager.openSidebar();
+                    console.log('📱 Mobile sidebar opened via mobileSidebarManager');
+                } else {
+                    // Fallback: manually show mobile sidebar
+                    sidebar.classList.add('mobile-open');
+                    document.body.classList.add('sidebar-open');
+                    console.log('📱 Mobile sidebar opened via fallback');
+                }
+            } else {
+                // On desktop, ensure sidebar is expanded (not collapsed)
+                if (sidebar.classList.contains('collapsed')) {
+                    sidebar.classList.remove('collapsed');
+                    console.log('💻 Desktop sidebar expanded');
+                } else {
+                    console.log('💻 Desktop sidebar already visible');
+                }
+            }
+            
+            // Add a slight delay to ensure smooth transition and then scroll results into view
+            setTimeout(() => {
+                const resultsCard = document.getElementById('results-card');
+                if (resultsCard) {
+                    resultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    console.log('📜 Scrolled to results section');
+                }
+            }, 300);
+            
+        } catch (error) {
+            console.error('❌ Error ensuring sidebar visibility:', error);
+        }
     }
     
     /**

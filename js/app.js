@@ -10,6 +10,7 @@ import { MapManager } from './components/map/MapManager.js';
 import { STACApiClient } from './components/api/StacApiClient.js';
 import { StateManager } from './utils/StateManager.js';
 import { ShareManager } from './utils/ShareManager.js';
+import { initializeGeometrySync } from './utils/GeometrySync.js';
 
 // Import UI components
 import { CardSearchPanel } from './components/search/CardSearchPanel.js';
@@ -69,6 +70,14 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
+        // Initialize geometry sync for seamless integration
+        const geometrySync = initializeGeometrySync({
+            aiSmartSearch,
+            mapManager,
+            notificationService
+        });
+        console.log('🔄 GeometrySync initialized - main interface will sync with AI Search');
+        
         // Initialize state manager after all components are ready
         const stateManager = new StateManager(catalogSelector, mapManager, searchPanel);
         
@@ -93,10 +102,14 @@ document.addEventListener('DOMContentLoaded', function() {
         // Show welcome notification
         notificationService.showNotification('Welcome to the STAC Catalog Explorer', 'info');
         
-        // After a short delay, show a hint about the required data source
+        // Auto-launch AI Smart Search after a short delay to ensure all components are ready
         setTimeout(() => {
-            notificationService.showNotification('Please select a Data Source to begin', 'info');
-        }, 1500);
+            notificationService.showNotification('🤖 AI Smart Search is ready! Start by describing what you want to find.', 'success');
+            // Auto-show AI Smart Search interface
+            if (aiSmartSearch && typeof aiSmartSearch.showMinimalistSearch === 'function') {
+                aiSmartSearch.showMinimalistSearch();
+            }
+        }, 2000);
         
         console.log('STAC Catalog Explorer - Initialization complete');
         
@@ -109,6 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
             stateManager,
             shareManager,
             aiSmartSearch,
+            geometrySync,
             config: CONFIG
         };
     } catch (error) {

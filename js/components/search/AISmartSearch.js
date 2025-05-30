@@ -35,6 +35,10 @@ export class AISmartSearch {
         
         this.activeField = null;
         
+        // Collections loaded from all data sources
+        this.allAvailableCollections = null;
+        this.selectedCollectionSource = null;
+        
         // Flag to track if we're returning from map drawing
         this.returningFromMapDrawing = false;
         this.drawnBbox = null;
@@ -84,37 +88,85 @@ export class AISmartSearch {
     }
     
     /**
-     * Ensure a data source is selected and collections are available
+     * Load collections from all available data sources
+     * @returns {Promise<Array>} Combined collections from all sources
+     */
+    async loadAllCollections() {
+        const allCollections = [];
+        const dataSources = ['copernicus', 'element84'];
+        
+        console.log('🔄 Loading collections from all data sources...');
+        
+        for (const source of dataSources) {
+            try {
+                console.log(`🔍 Loading collections from ${source}...`);
+                
+                // Get endpoints for this source
+                const endpoints = window.stacExplorer.config.stacEndpoints[source];
+                if (!endpoints) {
+                    console.warn(`⚠️ No endpoints configured for ${source}`);
+                    continue;
+                }
+                
+                // Set API client to use this source
+                this.apiClient.setEndpoints(endpoints);
+                
+                // Fetch collections from this source
+                const collections = await this.apiClient.fetchCollections();
+                
+                // Add source information to each collection
+                const collectionsWithSource = collections.map(collection => ({
+                    ...collection,
+                    source: source,
+                    sourceLabel: source === 'copernicus' ? 'Copernicus' : 'Element84',
+                    displayTitle: `${collection.title || collection.id} (${source === 'copernicus' ? 'Copernicus' : 'Element84'})`
+                }));
+                
+                allCollections.push(...collectionsWithSource);
+                console.log(`✅ Loaded ${collections.length} collections from ${source}`);
+                
+            } catch (error) {
+                console.error(`❌ Error loading collections from ${source}:`, error);
+                // Continue with other sources even if one fails
+            }
+        }
+        
+        console.log(`🗂️ Total collections loaded: ${allCollections.length}`);
+        return allCollections;
+    }
+    /**
+     * Ensure collections are available from all data sources
      * @returns {Promise<boolean>} True if collections are available
      */
     async ensureDataSourceSelected() {
         try {
-            // Check if we already have collections
-            if (this.collectionManager.collections && this.collectionManager.collections.length > 0) {
+            // Check if we already have collections loaded in the AI search context
+            if (this.allAvailableCollections && this.allAvailableCollections.length > 0) {
+                console.log(`🗂️ Using cached collections: ${this.allAvailableCollections.length}`);
                 return true;
             }
             
-            // Check if a catalog is already selected
-            const catalogSelect = document.getElementById('catalog-select');
-            if (!catalogSelect || !catalogSelect.value || catalogSelect.value === 'custom') {
-                // Auto-select a default catalog (Element84 as it has comprehensive collections)
-                console.log('🔄 Auto-selecting default data source...');
-                catalogSelect.value = 'element84';
-                
-                // Trigger the catalog change event
-                const catalogChangeEvent = new Event('change');
-                catalogSelect.dispatchEvent(catalogChangeEvent);
-                
-                // Wait a moment for the collections to load
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Check if collections are now available
-                return this.collectionManager.collections && this.collectionManager.collections.length > 0;
+            // Load collections from all data sources
+            console.log('🔄 Loading collections from all data sources for AI Search...');
+            this.allAvailableCollections = await this.loadAllCollections();
+            
+            // Update the collection manager with all collections for compatibility
+            if (this.collectionManager) {
+                this.collectionManager.collections = this.allAvailableCollections;
             }
             
-            return this.collectionManager.collections && this.collectionManager.collections.length > 0;
+            const hasCollections = this.allAvailableCollections && this.allAvailableCollections.length > 0;
+            
+            if (hasCollections) {
+                console.log(`✅ Successfully loaded ${this.allAvailableCollections.length} collections from all sources`);
+            } else {
+                console.warn('⚠️ No collections could be loaded from any data source');
+            }
+            
+            return hasCollections;
+            
         } catch (error) {
-            console.error('❌ Error ensuring data source selection:', error);
+            console.error('❌ Error ensuring collections are loaded:', error);
             return false;
         }
     }
@@ -127,26 +179,35 @@ export class AISmartSearch {
  */
 async showMinimalistSearch() {
     try {
-        // Ensure we have a data source selected
+        // Show loading notification while collections are being loaded
+        this.notificationService.showNotification('Loading collections from all data sources...', 'info');
+        
+        // Ensure we have collections from all data sources
         const hasCollections = await this.ensureDataSourceSelected();
         
         if (!hasCollections) {
-            this.notificationService.showNotification('Please select a data source first from the search panel', 'warning');
+            this.notificationService.showNotification('Could not load collections from any data source. Please check your internet connection.', 'error');
             return;
         }
+        
+        // Clear the loading notification after a brief delay
+        setTimeout(() => {
+            this.notificationService.showNotification(`Loaded ${this.allAvailableCollections.length} collections from all sources! 🎉`, 'success');
+        }, 500);
         
         // Create fullscreen element
         this.fullscreenElement = document.createElement('div');
         this.fullscreenElement.className = 'ai-fullscreen';
         
-        // Get available collections from the collection manager
-        const collections = this.collectionManager.collections || [];
+        // Get available collections from all data sources
+        const collections = this.allAvailableCollections || [];
+        console.log(`🗂️ Using ${collections.length} collections for AI search interface`);
         
-        // Create the collection options
+        // Create the collection options with source information
         const collectionItems = collections.map(collection => 
-            `<div class="ai-dropdown-item" data-value="${collection.id}">
+            `<div class="ai-dropdown-item" data-value="${collection.id}" data-source="${collection.source}">
                 <div class="collection-item-content">
-                    <div class="collection-title">${collection.title || collection.id}</div>
+                    <div class="collection-title">${collection.displayTitle || collection.title || collection.id}</div>
                     <div class="collection-id">${collection.id}</div>
                 </div>
             </div>`
@@ -291,11 +352,20 @@ async showMinimalistSearch() {
 
     
     /**
-     * Get display name for a collection
+     * Get display name for a collection from all available collections
      * @param {string} collectionId - Collection ID
      * @returns {string} Display name
      */
     getCollectionDisplayName(collectionId) {
+        // First try to find in our loaded collections
+        if (this.allAvailableCollections) {
+            const collection = this.allAvailableCollections.find(c => c.id === collectionId);
+            if (collection) {
+                return collection.displayTitle || collection.title || collectionId;
+            }
+        }
+        
+        // Fallback to collection manager
         const collection = this.collectionManager.getCollectionById(collectionId);
         return collection ? (collection.title || collectionId) : collectionId;
     }
@@ -533,25 +603,28 @@ processFieldEdit(type, text, field) {
  * Handle collection field editing
  */
 handleCollectionEdit(text, field) {
-    // Try to find matching collection
-    const collections = this.collectionManager.collections || [];
+    // Try to find matching collection from all available collections
+    const collections = this.allAvailableCollections || [];
     const match = collections.find(c => 
         c.title?.toLowerCase().includes(text.toLowerCase()) ||
         c.id?.toLowerCase().includes(text.toLowerCase()) ||
         text.toLowerCase().includes(c.title?.toLowerCase()) ||
-        text.toLowerCase().includes(c.id?.toLowerCase())
+        text.toLowerCase().includes(c.id?.toLowerCase()) ||
+        c.displayTitle?.toLowerCase().includes(text.toLowerCase())
     );
     
     if (match) {
         this.selectedCollection = match.id;
-        field.textContent = match.title || match.id;
+        this.selectedCollectionSource = match.source;
+        field.textContent = match.displayTitle || match.title || match.id;
     } else {
         // Use the text as-is and try to find it later
         this.selectedCollection = text;
+        this.selectedCollectionSource = null;
         field.textContent = text;
     }
     
-    console.log(`📋 Collection set to: ${this.selectedCollection}`);
+    console.log(`📋 Collection set to: ${this.selectedCollection} from ${this.selectedCollectionSource || 'unknown source'}`);
 }
 
 /**
@@ -1002,14 +1075,17 @@ setupDropdownEditInputs() {
         collectionItems.forEach((item, index) => {
             item.addEventListener('click', (e) => {
                 const collectionId = item.dataset.value;
-                console.log(`💆 Clicked collection: ${collectionId}`);
+                const collectionSource = item.dataset.source;
+                console.log(`💆 Clicked collection: ${collectionId} from ${collectionSource}`);
                 
                 if (!collectionId) {
                     console.error('⚠️ Collection item missing data-value:', item);
                     return;
                 }
                 
+                // Store both collection ID and source for later API calls
                 this.selectedCollection = collectionId;
+                this.selectedCollectionSource = collectionSource;
                 
                 const collectionField = document.getElementById('ai-field-collection');
                 const displayName = this.getCollectionDisplayName(collectionId);
@@ -1017,13 +1093,13 @@ setupDropdownEditInputs() {
                 collectionField.textContent = displayName;
                 collectionField.classList.remove('empty');
                 
-                console.log(`📋 Selected collection: ${collectionId} (${displayName})`);
+                console.log(`📋 Selected collection: ${collectionId} from ${collectionSource} (${displayName})`);
                 
                 this.closeDropdowns();
                 e.stopPropagation();
             });
             
-            console.log(`  - Set up collection item ${index + 1}: ${item.dataset.value}`);
+            console.log(`  - Set up collection item ${index + 1}: ${item.dataset.value} (${item.dataset.source})`);
         });
         
         console.log(`✅ Set up ${collectionItems.length} collection items for selection`);
@@ -1239,7 +1315,16 @@ setupDropdownEditInputs() {
         
         collectionItems.forEach(item => {
             const text = item.textContent.toLowerCase();
-            if (normalizedQuery === '' || text.includes(normalizedQuery)) {
+            const collectionId = item.dataset.value?.toLowerCase() || '';
+            const source = item.dataset.source?.toLowerCase() || '';
+            
+            // Search in title, ID, and source
+            const matches = normalizedQuery === '' || 
+                           text.includes(normalizedQuery) ||
+                           collectionId.includes(normalizedQuery) ||
+                           source.includes(normalizedQuery);
+            
+            if (matches) {
                 item.style.display = 'block';
             } else {
                 item.style.display = 'none';
@@ -1361,6 +1446,23 @@ setupDropdownEditInputs() {
         try {
             // Reset all form elements first to clear previous selections
             this.resetSearchForm();
+            
+            // If we have a selected collection with source info, set the API client accordingly
+            if (this.selectedCollectionSource && this.selectedCollection) {
+                console.log(`🔌 Setting API client to use ${this.selectedCollectionSource} for collection ${this.selectedCollection}`);
+                const endpoints = window.stacExplorer.config.stacEndpoints[this.selectedCollectionSource];
+                if (endpoints) {
+                    this.apiClient.setEndpoints(endpoints);
+                    
+                    // Also update the catalog selector to reflect the current source
+                    const catalogSelect = document.getElementById('catalog-select');
+                    if (catalogSelect) {
+                        catalogSelect.value = this.selectedCollectionSource;
+                        // Trigger change event to update UI
+                        catalogSelect.dispatchEvent(new Event('change'));
+                    }
+                }
+            }
             
             // Apply date range if provided
             if (params.dateRange && params.dateRange.start && params.dateRange.end) {

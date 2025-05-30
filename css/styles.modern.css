@@ -133,7 +133,9 @@ body, html {
 
 /* Modern Glassmorphism Sidebar - Reduced Spacing */
 .sidebar {
-    width: var(--sidebar-width);
+    width: var(--sidebar-width);  /* Default: 380px - FULL WIDTH */
+    min-width: var(--sidebar-width); /* Ensure minimum width */
+    max-width: var(--sidebar-width); /* Ensure maximum width */
     background: var(--surface-primary);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
@@ -145,21 +147,25 @@ body, html {
     overflow: hidden;
     position: relative;
     box-shadow: var(--shadow-xl);
+    transform: translateX(0); /* Default: fully visible */
 }
 
 /* Hidden sidebar - completely invisible */
 .sidebar.hidden {
-    transform: translateX(-100%);
-    width: 0;
-    min-width: 0;
-    border: none;
-    box-shadow: none;
+    transform: translateX(-100%) !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* Collapsed sidebar - narrow but visible (keeping for potential future use) */
 .sidebar.collapsed {
-    width: var(--sidebar-collapsed-width);
-    min-width: var(--sidebar-collapsed-width);
+    width: var(--sidebar-collapsed-width) !important;  /* 70px */
+    min-width: var(--sidebar-collapsed-width) !important;
+    max-width: var(--sidebar-collapsed-width) !important;
+    transform: translateX(0); /* Still visible, just narrow */
 }
 
 /* Modern Gradient Header - Reduced Height */
@@ -197,6 +203,8 @@ body, html {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     position: relative;
     z-index: 1;
+    opacity: 1;  /* Default: visible */
+    visibility: visible;
 }
 
 .sidebar-header h1 i {
@@ -212,6 +220,11 @@ body, html {
 
 .sidebar.collapsed .sidebar-header h1 i {
     margin-right: 0;
+}
+
+.sidebar.hidden .sidebar-header h1 {
+    opacity: 0;
+    visibility: hidden;
 }
 
 /* Modern Toggle Button - now outside sidebar */
@@ -300,6 +313,8 @@ body, html {
     flex-direction: column;
     gap: 16px;  /* Reduced from 20px */
     transition: var(--transition-all);
+    opacity: 1;  /* Default: visible */
+    visibility: visible;
 }
 
 .sidebar.collapsed .sidebar-content {
@@ -1055,6 +1070,17 @@ select.form-control {
     }
 }
 
+/* Desktop-specific sidebar rules */
+@media (min-width: 769px) {
+    .sidebar:not(.hidden):not(.collapsed) {
+        width: var(--sidebar-width) !important;  /* 380px */
+        min-width: var(--sidebar-width) !important;
+        max-width: var(--sidebar-width) !important;
+        transform: translateX(0) !important;
+        position: relative !important;
+    }
+}
+
 /* Mobile Responsive Improvements */
 @media (max-width: 768px) {
     .sidebar {
@@ -1062,7 +1088,8 @@ select.form-control {
         left: 0;
         top: 0;
         height: 100vh;
-        width: var(--sidebar-width);
+        width: var(--sidebar-width) !important;
+        min-width: var(--sidebar-width) !important;
         max-width: 85vw;
         transform: translateX(-100%);
         transition: var(--transition-all);
@@ -1074,13 +1101,15 @@ select.form-control {
     }
     
     .sidebar.collapsed {
-        width: var(--sidebar-width);
+        width: var(--sidebar-width) !important;
+        min-width: var(--sidebar-width) !important;
         max-width: 85vw;
         transform: translateX(-100%);
     }
     
     .sidebar.hidden {
-        width: var(--sidebar-width);
+        width: var(--sidebar-width) !important;
+        min-width: var(--sidebar-width) !important;
         max-width: 85vw;
         transform: translateX(-100%);
     }

@@ -94,18 +94,17 @@ export class AISmartSearch {
             this.fullscreenElement.className = 'ai-fullscreen';
             
             // Get available collections
-            const collections = this.collectionManager.collections || [];
-            
-            // Common collection types
-            const commonCollections = [
-                { id: 'sentinel-s2-l2a-cogs', title: 'Sentinel-2' },
-                { id: 'sentinel-s1-grd', title: 'Sentinel-1' },
-                { id: 'landsat-c2-l2', title: 'Landsat' }
-            ];
+            // Get available collections from both data sources
+            const collections = this.getComprehensiveCollections();
             
             // Create the collection options
-            const collectionItems = commonCollections.map(collection => 
-                `<div class="ai-dropdown-item" data-value="${collection.id}">${collection.title}</div>`
+            const collectionItems = collections.map(collection => 
+                `<div class="ai-dropdown-item" data-value="${collection.id}" data-source="${collection.source}">
+                    <div class="collection-item-content">
+                        <div class="collection-title">${collection.title}</div>
+                        <div class="collection-source">${collection.source}</div>
+                    </div>
+                </div>`
             ).join('');
             
             // Set current date for datepickers
@@ -131,11 +130,11 @@ export class AISmartSearch {
                 <div class="ai-fullscreen-content">
                     <div class="ai-sentence-container">
                         I want 
-                        <span class="ai-field empty" id="ai-field-collection" data-placeholder="COLLECTIONS">
+                        <span class="ai-field empty" id="ai-field-collection" data-placeholder="DATA">
                             <div class="ai-dropdown" id="ai-dropdown-collection">
                                 <div class="ai-collection-search">
                                     <input type="text" class="ai-collection-search-input" 
-                                        placeholder="Search for collections...">
+                                        placeholder="Search for datasets...">
                                 </div>
                                 <div class="ai-collections-list">
                                     ${collectionItems}
@@ -773,5 +772,254 @@ export class AISmartSearch {
         
         // Create a WKT polygon from the bounding box
         return `POLYGON((${minX} ${minY}, ${maxX} ${minY}, ${maxX} ${maxY}, ${minX} ${maxY}, ${minX} ${minY}))`;
+    }
+
+    /**
+     * Get comprehensive collections from both data sources
+     * @returns {Array} Array of collection objects from all sources
+     */
+    getComprehensiveCollections() {
+        // First try to get collections from the current selected source
+        const currentCollections = this.collectionManager.collections || [];
+        
+        if (currentCollections.length > 0) {
+            // If we have current collections, use them and add source info
+            const catalogSelect = document.getElementById('catalog-select');
+            const selectedCatalog = catalogSelect ? catalogSelect.value : '';
+            const sourceName = this.getSourceName(selectedCatalog);
+            
+            return currentCollections.map(collection => ({
+                ...collection,
+                source: sourceName
+            }));
+        }
+        
+        // If no current collections, provide comprehensive collection from both sources
+        return [
+            // Copernicus Marine Collections
+            { 
+                id: 'cmems_mod_ibi_phy_my_0.083deg-3D_P1M-m', 
+                title: 'Atlantic-Iberian Ocean Physics Reanalysis',
+                source: 'Copernicus Marine'
+            },
+            { 
+                id: 'cmems_mod_glo_phy_my_0.083deg_P1M-m', 
+                title: 'Global Ocean Physics Reanalysis',
+                source: 'Copernicus Marine'
+            },
+            { 
+                id: 'cmems_obs-sl_glo_phy-ssh_my_allsat-l4-duacs-0.25deg_P1D', 
+                title: 'Global Ocean Sea Surface Heights',
+                source: 'Copernicus Marine'
+            },
+            { 
+                id: 'cmems_obs_glo_phy_sss_l3_my_multi-oi_P1M', 
+                title: 'Global Ocean Sea Surface Salinity',
+                source: 'Copernicus Marine'
+            },
+            
+            // Element84 Collections (Satellite Imagery)
+            { 
+                id: 'sentinel-s2-l2a-cogs', 
+                title: 'Sentinel-2 Collection 2 Level-2A',
+                source: 'Element84'
+            },
+            { 
+                id: 'sentinel-s1-grd', 
+                title: 'Sentinel-1 Ground Range Detected',
+                source: 'Element84'
+            },
+            { 
+                id: 'landsat-c2-l2', 
+                title: 'Landsat Collection 2 Level-2',
+                source: 'Element84'
+            },
+            { 
+                id: 'cop-dem-glo-30', 
+                title: 'Copernicus DEM GLO-30',
+                source: 'Element84'
+            },
+            { 
+                id: 'noaa-climate-data-cdr', 
+                title: 'NOAA Climate Data Record',
+                source: 'Element84'
+            }
+        ];
+    }
+    
+    /**
+     * Get human-readable source name
+     * @param {string} catalogType - The catalog type
+     * @returns {string} Human-readable source name
+     */
+    getSourceName(catalogType) {
+        switch (catalogType) {
+            case 'copernicus':
+                return 'Copernicus Marine';
+            case 'element84':
+                return 'Element84';
+            case 'custom':
+                return 'Custom';
+            default:
+                return 'Various Sources';
+        }
+    }
+    
+    /**
+     * Get all available collections from both data sources
+     * @returns {Array} Array of collection objects with source information
+     */
+    getAllAvailableCollections() {
+        // Check if we have collections from the current selected catalog
+        const currentCollections = this.collectionManager.collections || [];
+        
+        if (currentCollections.length > 0) {
+            // If we have current collections, use them
+            return currentCollections.map(collection => ({
+                ...collection,
+                source: this.getCurrentDataSourceName()
+            }));
+        }
+        
+        // If no current collections, provide a comprehensive set from both sources
+        return [
+            // Copernicus Marine Collections
+            { 
+                id: 'cmems_mod_ibi_phy_my_0.083deg-3D_P1M-m', 
+                title: 'Atlantic-Iberian Biscay Irish Ocean Physics Reanalysis',
+                source: 'Copernicus Marine',
+                category: 'Ocean Physics'
+            },
+            { 
+                id: 'cmems_mod_glo_phy_my_0.083deg_P1M-m', 
+                title: 'Global Ocean Physics Reanalysis',
+                source: 'Copernicus Marine',
+                category: 'Ocean Physics'
+            },
+            { 
+                id: 'cmems_obs-sl_glo_phy-ssh_my_allsat-l4-duacs-0.25deg_P1D', 
+                title: 'Global Ocean Gridded L4 Sea Surface Heights',
+                source: 'Copernicus Marine',
+                category: 'Sea Level'
+            },
+            { 
+                id: 'cmems_obs_glo_phy_sss_l3_my_multi-oi_P1M', 
+                title: 'Global Ocean Sea Surface Salinity L3',
+                source: 'Copernicus Marine',
+                category: 'Sea Surface'
+            },
+            
+            // Element84 Collections (Satellite Imagery)
+            { 
+                id: 'sentinel-s2-l2a-cogs', 
+                title: 'Sentinel-2 Collection 2 Level-2A',
+                source: 'Element84',
+                category: 'Optical Imagery'
+            },
+            { 
+                id: 'sentinel-s1-grd', 
+                title: 'Sentinel-1 Ground Range Detected (GRD)',
+                source: 'Element84',
+                category: 'SAR Imagery'
+            },
+            { 
+                id: 'landsat-c2-l2', 
+                title: 'Landsat Collection 2 Level-2',
+                source: 'Element84',
+                category: 'Optical Imagery'
+            },
+            { 
+                id: 'cop-dem-glo-30', 
+                title: 'Copernicus DEM GLO-30',
+                source: 'Element84',
+                category: 'Elevation'
+            },
+            { 
+                id: 'naip', 
+                title: 'National Agriculture Imagery Program',
+                source: 'Element84',
+                category: 'Aerial Imagery'
+            }
+        ];
+    }
+    
+    /**
+     * Get the current data source name
+     * @returns {string} Human-readable data source name
+     */
+    getCurrentDataSourceName() {
+        const catalogSelect = document.getElementById('catalog-select');
+        const selectedCatalog = catalogSelect ? catalogSelect.value : '';
+        
+        switch (selectedCatalog) {
+            case 'copernicus':
+                return 'Copernicus Marine';
+            case 'element84':
+                return 'Element84';
+            case 'custom':
+                return 'Custom';
+            default:
+                return 'Unknown';
+        }
+    }
+    
+    /**
+     * Create collection dropdown items with source grouping
+     * @param {Array} collections - Array of collection objects
+     * @returns {string} HTML string for collection items
+     */
+    createCollectionItems(collections) {
+        // Group collections by source
+        const groupedCollections = {};
+        collections.forEach(collection => {
+            const source = collection.source || 'Other';
+            if (!groupedCollections[source]) {
+                groupedCollections[source] = [];
+            }
+            groupedCollections[source].push(collection);
+        });
+        
+        let html = '<div class="ai-collection-search">';
+        html += '<input type="text" class="ai-collection-search-input" placeholder="Search datasets...">';
+        html += '</div>';
+        
+        html += '<div class="ai-collections-list">';
+        
+        // Create grouped items
+        Object.keys(groupedCollections).forEach(source => {
+            if (Object.keys(groupedCollections).length > 1) {
+                html += `<div class="ai-collection-group-header">${source}</div>`;
+            }
+            
+            groupedCollections[source].forEach(collection => {
+                const isSelected = this.selectedCollection === collection.id;
+                const selectedClass = isSelected ? 'selected' : '';
+                const checkIcon = isSelected ? '<i class="material-icons">check</i>' : '';
+                const categoryBadge = collection.category ? `<span class="ai-collection-category">${collection.category}</span>` : '';
+                
+                html += `
+                    <div class="ai-dropdown-item ai-collection-item ${selectedClass}" data-value="${collection.id}" data-source="${source}">
+                        <div class="ai-collection-item-content">
+                            ${checkIcon}
+                            <div class="ai-collection-item-details">
+                                <div class="ai-collection-item-title">${collection.title || collection.id}</div>
+                                ${categoryBadge}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        });
+        
+        html += '</div>';
+        
+        // Add clear selection option if something is selected
+        if (this.selectedCollection) {
+            html += '<div class="ai-dropdown-item ai-clear-selection" data-action="clear">';
+            html += '<i class="material-icons">clear</i> Clear Selection';
+            html += '</div>';
+        }
+        
+        return html;
     }
 }

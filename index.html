@@ -64,14 +64,14 @@
 <body>
     <div class="app-container">
         <!-- Sidebar -->
-        <aside class="sidebar collapsed" id="sidebar">
+        <aside class="sidebar hidden" id="sidebar">
             <div class="sidebar-header">
                 <h1><i class="material-icons">satellite_alt</i> <span>STAC Explorer</span></h1>
                 <button id="theme-toggle" class="theme-toggle">
                     <i class="material-icons">light_mode</i>
                 </button>
                 <div class="sidebar-toggle" id="sidebar-toggle">
-                    <i class="material-icons">chevron_left</i>
+                    <i class="material-icons">chevron_right</i>
                 </div>
             </div>
             <div class="sidebar-content">
@@ -565,12 +565,22 @@
             toggleDesktopSidebar() {
                 if (!this.isDesktop) return;
                 
-                const isCollapsed = this.sidebar.classList.contains('collapsed');
+                const isHidden = this.sidebar.classList.contains('hidden');
                 
-                if (isCollapsed) {
-                    this.sidebar.classList.remove('collapsed');
+                if (isHidden) {
+                    this.sidebar.classList.remove('hidden');
+                    // Update toggle button icon
+                    const toggleIcon = this.sidebarToggle.querySelector('i');
+                    if (toggleIcon) {
+                        toggleIcon.textContent = 'chevron_left';
+                    }
                 } else {
-                    this.sidebar.classList.add('collapsed');
+                    this.sidebar.classList.add('hidden');
+                    // Update toggle button icon  
+                    const toggleIcon = this.sidebarToggle.querySelector('i');
+                    if (toggleIcon) {
+                        toggleIcon.textContent = 'chevron_right';
+                    }
                 }
             }
             
@@ -599,6 +609,7 @@
                 } else {
                     // Mobile layout
                     this.sidebar.classList.remove('collapsed'); // Remove desktop collapsed state
+                    this.sidebar.classList.remove('hidden'); // Remove desktop hidden state
                     
                     // Show hamburger menu only when sidebar is closed
                     if (!this.isOpen) {

@@ -147,6 +147,16 @@ body, html {
     box-shadow: var(--shadow-xl);
 }
 
+/* Hidden sidebar - completely invisible */
+.sidebar.hidden {
+    transform: translateX(-100%);
+    width: 0;
+    min-width: 0;
+    border: none;
+    box-shadow: none;
+}
+
+/* Collapsed sidebar - narrow but visible (keeping for potential future use) */
 .sidebar.collapsed {
     width: var(--sidebar-collapsed-width);
     min-width: var(--sidebar-collapsed-width);
@@ -233,8 +243,23 @@ body, html {
     background: var(--surface-elevated);
 }
 
+/* When sidebar is hidden - position toggle at left edge */
+.sidebar.hidden .sidebar-toggle {
+    left: 20px;
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: var(--shadow-xl);
+}
+
+.sidebar.hidden .sidebar-toggle:hover {
+    left: 20px;
+    transform: translateY(-50%) scale(1.1);
+    background: var(--primary-gradient);
+}
+
+/* When sidebar is collapsed - position outside collapsed sidebar */
 .sidebar.collapsed .sidebar-toggle {
-    left: calc(var(--sidebar-collapsed-width) + 10px); /* Position outside collapsed sidebar */
+    left: calc(var(--sidebar-collapsed-width) + 10px);
 }
 
 /* Modern Theme Toggle */
@@ -277,6 +302,11 @@ body, html {
 }
 
 .sidebar.collapsed .sidebar-content {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.sidebar.hidden .sidebar-content {
     opacity: 0;
     visibility: hidden;
 }
@@ -1048,7 +1078,14 @@ select.form-control {
         transform: translateX(-100%);
     }
     
-    .sidebar.collapsed .sidebar-content {
+    .sidebar.hidden {
+        width: var(--sidebar-width);
+        max-width: 85vw;
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.collapsed .sidebar-content,
+    .sidebar.hidden .sidebar-content {
         opacity: 1;
         visibility: visible;
     }

@@ -1994,10 +1994,10 @@ setupDropdownEditInputs() {
                     console.log('📱 Mobile sidebar opened via fallback');
                 }
             } else {
-                // On desktop, ensure sidebar is expanded (not collapsed)
-                if (sidebar.classList.contains('collapsed')) {
-                    sidebar.classList.remove('collapsed');
-                    console.log('💻 Desktop sidebar expanded');
+                // On desktop, ensure sidebar is visible (not hidden)
+                if (sidebar.classList.contains('hidden')) {
+                    sidebar.classList.remove('hidden');
+                    console.log('💻 Desktop sidebar shown');
                 } else {
                     console.log('💻 Desktop sidebar already visible');
                 }

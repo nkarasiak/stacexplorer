@@ -100,16 +100,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Show welcome notification
-        notificationService.showNotification('Welcome to the STAC Catalog Explorer', 'info');
+        notificationService.showNotification('🤖 AI Smart Search is ready! Start by describing what you want to find.', 'success');
         
-        // Auto-launch AI Smart Search after a short delay to ensure all components are ready
-        setTimeout(() => {
-            notificationService.showNotification('🤖 AI Smart Search is ready! Start by describing what you want to find.', 'success');
-            // Auto-show AI Smart Search interface
-            if (aiSmartSearch && typeof aiSmartSearch.showMinimalistSearch === 'function') {
+        // Show AI Smart Search immediately (no delay)
+        if (aiSmartSearch && typeof aiSmartSearch.showMinimalistSearch === 'function') {
+            // Small delay to ensure DOM is ready, but not visible to user
+            setTimeout(() => {
                 aiSmartSearch.showMinimalistSearch();
-            }
-        }, 2000);
+            }, 100);
+        }
         
         console.log('STAC Catalog Explorer - Initialization complete');
         

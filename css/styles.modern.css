@@ -234,7 +234,7 @@ body, html {
 }
 
 .sidebar.collapsed .sidebar-toggle {
-    left: calc(var(--sidebar-collapsed-width) - 20px);
+    left: calc(var(--sidebar-collapsed-width) + 10px); /* Position outside collapsed sidebar */
 }
 
 /* Modern Theme Toggle */
@@ -1114,6 +1114,16 @@ select.form-control {
     transition: var(--transition-all);
     backdrop-filter: var(--glass-blur-sm);
     -webkit-backdrop-filter: var(--glass-blur-sm);
+}
+
+@media (max-width: 768px) {
+    .sidebar-toggle {
+        display: none !important; /* Hide desktop toggle on mobile */
+    }
+    
+    .mobile-menu-btn {
+        display: flex;
+    }
 }
 
 .mobile-menu-btn:hover {

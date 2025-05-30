@@ -392,10 +392,22 @@ setupFieldClickHandlers() {
         e.stopPropagation();
     });
     
+    // Add double-click to edit for collection field
+    collectionField.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        this.editField(collectionField, 'collection');
+    });
+    
     const locationField = document.getElementById('ai-field-location');
     locationField.addEventListener('click', (e) => {
         this.toggleField('location');
         e.stopPropagation();
+    });
+    
+    // Add double-click to edit for location field
+    locationField.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        this.editField(locationField, 'location');
     });
     
     const dateField = document.getElementById('ai-field-date');
@@ -404,12 +416,159 @@ setupFieldClickHandlers() {
         e.stopPropagation();
     });
     
+    // Add double-click to edit for date field
+    dateField.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        this.editField(dateField, 'date');
+    });
+    
     const paramsField = document.getElementById('ai-field-params');
     paramsField.addEventListener('click', (e) => {
         this.toggleField('params');
         e.stopPropagation();
     });
+    
+    // Add double-click to edit for params field
+    paramsField.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        this.editField(paramsField, 'params');
+    });
 }
+
+/**
+ * Enable editing mode for a field
+ * @param {HTMLElement} field - The field element
+ * @param {string} type - Field type
+ */
+editField(field, type) {
+    const originalText = field.textContent.trim();
+    
+    // Enable editing
+    field.contentEditable = 'true';
+    field.classList.add('ai-field-editing');
+    field.focus();
+    
+    // Select all text
+    setTimeout(() => {
+        const range = document.createRange();
+        range.selectNodeContents(field);
+        const selection = window.getSelection();
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }, 10);
+    
+    // Finish editing function
+    const finishEdit = () => {
+        field.contentEditable = 'false';
+        field.classList.remove('ai-field-editing');
+        
+        const newText = field.textContent.trim();
+        if (newText && newText !== originalText) {
+            this.processEditedField(type, newText, field);
+        } else if (!newText) {
+            field.textContent = originalText;
+        }
+        
+        field.removeEventListener('blur', finishEdit);
+        field.removeEventListener('keydown', keyHandler);
+    };
+    
+    const keyHandler = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            finishEdit();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            field.textContent = originalText;
+            finishEdit();
+        }
+    };
+    
+    field.addEventListener('blur', finishEdit);
+    field.addEventListener('keydown', keyHandler);
+}
+
+/**
+ * Process edited field content
+ * @param {string} type - Field type
+ * @param {string} text - New text
+ * @param {HTMLElement} field - Field element
+ */
+processEditedField(type, text, field) {
+    switch (type) {
+        case 'collection':
+            const collections = this.collectionManager.collections || [];
+            const match = collections.find(c => 
+                c.title?.toLowerCase().includes(text.toLowerCase()) ||
+                c.id?.toLowerCase().includes(text.toLowerCase())
+            );
+            
+            if (match) {
+                this.selectedCollection = match.id;
+                field.textContent = match.title || match.id;
+            } else {
+                this.selectedCollection = text;
+                field.textContent = text;
+            }
+            break;
+            
+        case 'location':
+            if (text.toLowerCase().includes('everywhere') || text.toLowerCase().includes('global')) {
+                this.selectedLocation = 'everywhere';
+                field.textContent = 'EVERYWHERE';
+            } else {
+                this.selectedLocation = text;
+                field.textContent = text;
+            }
+            break;
+            
+        case 'date':
+            const lowerText = text.toLowerCase();
+            if (lowerText.includes('anytime')) {
+                this.selectedDate = { type: 'anytime', start: null, end: null };
+                field.textContent = 'ANYTIME';
+            } else if (lowerText.includes('week') || lowerText.includes('7')) {
+                const today = new Date();
+                const start = new Date();
+                start.setDate(today.getDate() - 7);
+                this.selectedDate = {
+                    type: 'last7',
+                    start: this.formatDate(start),
+                    end: this.formatDate(today)
+                };
+                field.textContent = 'Last 7 days';
+            } else if (lowerText.includes('month') || lowerText.includes('30')) {
+                const today = new Date();
+                const start = new Date();
+                start.setDate(today.getDate() - 30);
+                this.selectedDate = {
+                    type: 'last30',
+                    start: this.formatDate(start),
+                    end: this.formatDate(today)
+                };
+                field.textContent = 'Last 30 days';
+            } else {
+                field.textContent = text;
+            }
+            break;
+            
+        case 'params':
+            const cloudMatch = text.match(/(\d+)%?/);
+            if (cloudMatch) {
+                const value = parseInt(cloudMatch[1]);
+                if (value >= 0 && value <= 100) {
+                    this.cloudCover = value;
+                    field.textContent = `Cloud Cover: ${value}%`;
+                    return;
+                }
+            }
+            field.textContent = text;
+            break;
+    }
+    
+    field.classList.remove('empty');
+}
+
 
 /**
  * Set up dropdown edit inputs for direct typing

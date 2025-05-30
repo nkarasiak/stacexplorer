@@ -12,7 +12,7 @@ import { StateManager } from './utils/StateManager.js';
 import { ShareManager } from './utils/ShareManager.js';
 
 // Import UI components
-import { SearchPanel } from './components/search/SearchPanel.js';
+import { CardSearchPanel } from './components/search/CardSearchPanel.js';
 import { CatalogSelector } from './components/search/CatalogSelector.js';
 import { CollectionManager } from './components/search/CollectionManager.js';
 import { SearchForm } from './components/search/SearchForm.js';
@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const searchForm = new SearchForm(mapManager);
         
         // Initialize search panel with all required components
-        const searchPanel = new SearchPanel(
+        const searchPanel = new CardSearchPanel(
             apiClient, 
             resultsPanel, 
             catalogSelector,

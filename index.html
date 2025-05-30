@@ -567,22 +567,37 @@
             toggleDesktopSidebar() {
                 if (!this.isDesktop) return;
                 
+                console.log('🔄 Toggle clicked! Current classes:', this.sidebar.className);
+                console.log('🔄 Current computed width:', window.getComputedStyle(this.sidebar).width);
+                
                 const isHidden = this.sidebar.classList.contains('hidden');
+                console.log('🔄 Is hidden?', isHidden);
                 
                 if (isHidden) {
+                    console.log('🔄 Removing hidden class...');
                     this.sidebar.classList.remove('hidden');
                     // Update toggle button icon
                     const toggleIcon = this.sidebarToggle.querySelector('i');
                     if (toggleIcon) {
                         toggleIcon.textContent = 'chevron_left';
                     }
+                    console.log('🔄 After remove - classes:', this.sidebar.className);
+                    
+                    // Force a recompute
+                    setTimeout(() => {
+                        console.log('🔄 New computed width:', window.getComputedStyle(this.sidebar).width);
+                        console.log('🔄 New computed transform:', window.getComputedStyle(this.sidebar).transform);
+                    }, 100);
+                    
                 } else {
+                    console.log('🔄 Adding hidden class...');
                     this.sidebar.classList.add('hidden');
                     // Update toggle button icon  
                     const toggleIcon = this.sidebarToggle.querySelector('i');
                     if (toggleIcon) {
                         toggleIcon.textContent = 'chevron_right';
                     }
+                    console.log('🔄 After add - classes:', this.sidebar.className);
                 }
             }
             

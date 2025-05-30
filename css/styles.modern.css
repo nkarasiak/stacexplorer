@@ -1070,14 +1070,39 @@ select.form-control {
     }
 }
 
-/* Desktop-specific sidebar rules */
+/* Desktop-specific sidebar rules - DEBUGGING VERSION */
 @media (min-width: 769px) {
-    .sidebar:not(.hidden):not(.collapsed) {
-        width: var(--sidebar-width) !important;  /* 380px */
-        min-width: var(--sidebar-width) !important;
-        max-width: var(--sidebar-width) !important;
+    /* When sidebar is visible (not hidden) - FORCE full width */
+    .sidebar:not(.hidden) {
+        width: 380px !important;
+        min-width: 380px !important;
+        max-width: 380px !important;
         transform: translateX(0) !important;
         position: relative !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: flex !important;
+        background: rgba(30, 30, 50, 0.85) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+    
+    /* When sidebar is hidden - FORCE hidden */
+    .sidebar.hidden {
+        width: 0px !important;
+        min-width: 0px !important;
+        max-width: 0px !important;
+        transform: translateX(-100%) !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+    
+    /* Debug: Add visible border to see what's happening */
+    .sidebar {
+        border: 3px solid red !important;
+    }
+    
+    .sidebar:not(.hidden) {
+        border: 3px solid green !important;
     }
 }
 

@@ -1,6 +1,7 @@
 /**
  * AISmartSearch.js - Minimalist sentence-based search interface
  * Provides a streamlined "I want {collections} over {location} at {date} with {parameters}" interface
+ * Enhanced with editable placeholders and improved collection management
  */
 
 export class AISmartSearch {
@@ -46,8 +47,6 @@ export class AISmartSearch {
         });
     }
     
-
-    
     /**
      * Clean up resources when component is destroyed
      */
@@ -78,31 +77,74 @@ export class AISmartSearch {
             aiButton.addEventListener('click', () => {
                 this.showMinimalistSearch();
             });
-            console.log('AI Smart Search button initialized');
+            console.log('🤖 AI Smart Search button initialized');
         } else {
-            console.error('AI Smart Search button not found');
+            console.error('❌ AI Smart Search button not found');
+        }
+    }
+    
+    /**
+     * Ensure a data source is selected and collections are available
+     * @returns {Promise<boolean>} True if collections are available
+     */
+    async ensureDataSourceSelected() {
+        try {
+            // Check if we already have collections
+            if (this.collectionManager.collections && this.collectionManager.collections.length > 0) {
+                return true;
+            }
+            
+            // Check if a catalog is already selected
+            const catalogSelect = document.getElementById('catalog-select');
+            if (!catalogSelect || !catalogSelect.value || catalogSelect.value === 'custom') {
+                // Auto-select a default catalog (Element84 as it has comprehensive collections)
+                console.log('🔄 Auto-selecting default data source...');
+                catalogSelect.value = 'element84';
+                
+                // Trigger the catalog change event
+                const catalogChangeEvent = new Event('change');
+                catalogSelect.dispatchEvent(catalogChangeEvent);
+                
+                // Wait a moment for the collections to load
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Check if collections are now available
+                return this.collectionManager.collections && this.collectionManager.collections.length > 0;
+            }
+            
+            return this.collectionManager.collections && this.collectionManager.collections.length > 0;
+        } catch (error) {
+            console.error('❌ Error ensuring data source selection:', error);
+            return false;
         }
     }
     
     /**
      * Create and show the minimalist search interface
      */
-    showMinimalistSearch() {
+    async showMinimalistSearch() {
         try {
+            // Ensure we have a data source selected
+            const hasCollections = await this.ensureDataSourceSelected();
+            
+            if (!hasCollections) {
+                this.notificationService.showNotification('Please select a data source first from the search panel', 'warning');
+                return;
+            }
+            
             // Create fullscreen element
             this.fullscreenElement = document.createElement('div');
             this.fullscreenElement.className = 'ai-fullscreen';
             
-            // Get available collections
-            // Get available collections from both data sources
-            const collections = this.getComprehensiveCollections();
+            // Get available collections from the collection manager
+            const collections = this.collectionManager.collections || [];
             
             // Create the collection options
             const collectionItems = collections.map(collection => 
-                `<div class="ai-dropdown-item" data-value="${collection.id}" data-source="${collection.source}">
+                `<div class="ai-dropdown-item" data-value="${collection.id}">
                     <div class="collection-item-content">
-                        <div class="collection-title">${collection.title}</div>
-                        <div class="collection-source">${collection.source}</div>
+                        <div class="collection-title">${collection.title || collection.id}</div>
+                        <div class="collection-id">${collection.id}</div>
                     </div>
                 </div>`
             ).join('');
@@ -115,11 +157,7 @@ export class AISmartSearch {
             last7Days.setDate(last7Days.getDate() - 7);
             const formattedLast7Days = this.formatDate(last7Days);
             
-            const last30Days = new Date();
-            last30Days.setDate(last30Days.getDate() - 30);
-            const formattedLast30Days = this.formatDate(last30Days);
-            
-            // Build fullscreen content
+            // Build fullscreen content with editable fields
             this.fullscreenElement.innerHTML = `
                 <div class="ai-fullscreen-header">
                     <button class="ai-fullscreen-close" aria-label="Close search">
@@ -130,77 +168,89 @@ export class AISmartSearch {
                 <div class="ai-fullscreen-content">
                     <div class="ai-sentence-container">
                         I want 
-                        <span class="ai-field empty" id="ai-field-collection" data-placeholder="DATA">
-                            <div class="ai-dropdown" id="ai-dropdown-collection">
-                                <div class="ai-collection-search">
-                                    <input type="text" class="ai-collection-search-input" 
-                                        placeholder="Search for datasets...">
-                                </div>
-                                <div class="ai-collections-list">
-                                    ${collectionItems}
-                                </div>
+                        <span class="ai-field editable-field ${this.selectedCollection ? '' : 'empty'}" 
+                              id="ai-field-collection" 
+                              data-placeholder="DATA"
+                              contenteditable="true"
+                              data-original-text="${this.selectedCollection ? this.getCollectionDisplayName(this.selectedCollection) : 'DATA'}">${this.selectedCollection ? this.getCollectionDisplayName(this.selectedCollection) : 'DATA'}</span>
+                        <div class="ai-dropdown" id="ai-dropdown-collection">
+                            <div class="ai-collection-search">
+                                <input type="text" class="ai-collection-search-input" 
+                                    placeholder="Search for datasets...">
                             </div>
-                        </span> 
+                            <div class="ai-collections-list">
+                                ${collectionItems}
+                            </div>
+                        </div>
                         over 
-                        <span class="ai-field" id="ai-field-location" data-placeholder="LOCATION">EVERYWHERE
-                            <div class="ai-dropdown" id="ai-dropdown-location">
-                                <div class="ai-dropdown-item" data-value="everywhere">EVERYWHERE</div>
-                                <div class="ai-location-input">
-                                    <textarea class="ai-location-textarea" 
-                                        placeholder="Paste WKT or GeoJSON polygon..."></textarea>
-                                    <div class="ai-location-actions">
-                                        <button class="ai-location-action" id="ai-draw-on-map">
-                                            <i class="material-icons">edit</i> Draw on Map
-                                        </button>
-                                        <button class="ai-location-action" id="ai-clear-location">
-                                            <i class="material-icons">clear</i> Clear
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </span> 
-                        at 
-                        <span class="ai-field" id="ai-field-date" data-placeholder="DATE">ANYTIME
-                            <div class="ai-dropdown" id="ai-dropdown-date">
-                                <div class="ai-date-presets">
-                                    <div class="ai-date-preset" data-type="anytime">ANYTIME</div>
-                                    <div class="ai-date-preset" data-type="last7">Last 7 days</div>
-                                    <div class="ai-date-preset" data-type="last30">Last 30 days</div>
-                                    <div class="ai-date-preset" data-type="last90">Last 3 months</div>
-                                </div>
-                                <div class="ai-date-custom">
-                                    <div>Custom range:</div>
-                                    <div class="ai-date-custom-inputs">
-                                        <input type="date" class="ai-date-input" id="ai-date-start" 
-                                            value="${formattedLast7Days}">
-                                        <span>to</span>
-                                        <input type="date" class="ai-date-input" id="ai-date-end" 
-                                            value="${formattedToday}">
-                                        <button class="ai-location-action" id="ai-apply-custom-date">
-                                            Apply
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </span> 
-                        with 
-                        <span class="ai-field" id="ai-field-params" data-placeholder="PARAMETERS">CLOUD COVER: 20%
-                            <div class="ai-dropdown" id="ai-dropdown-params">
-                                <div class="ai-custom-params">
-                                    <div class="ai-param-slider">
-                                        <div class="ai-param-slider-header">
-                                            <span class="ai-param-slider-label">Maximum Cloud Cover</span>
-                                            <span class="ai-param-slider-value" id="ai-cloud-value">20%</span>
-                                        </div>
-                                        <input type="range" class="ai-param-slider-input" id="ai-cloud-slider"
-                                            min="0" max="100" value="20">
-                                    </div>
-                                    <button class="ai-location-action" id="ai-apply-params">
-                                        Apply Parameters
+                        <span class="ai-field editable-field" 
+                              id="ai-field-location" 
+                              data-placeholder="EVERYWHERE"
+                              contenteditable="true"
+                              data-original-text="${this.selectedLocation === 'everywhere' ? 'EVERYWHERE' : 'Custom Location'}">${this.selectedLocation === 'everywhere' ? 'EVERYWHERE' : 'Custom Location'}</span>
+                        <div class="ai-dropdown" id="ai-dropdown-location">
+                            <div class="ai-dropdown-item" data-value="everywhere">EVERYWHERE</div>
+                            <div class="ai-location-input">
+                                <textarea class="ai-location-textarea" 
+                                    placeholder="Paste WKT or GeoJSON polygon..."></textarea>
+                                <div class="ai-location-actions">
+                                    <button class="ai-location-action" id="ai-draw-on-map">
+                                        <i class="material-icons">edit</i> Draw on Map
+                                    </button>
+                                    <button class="ai-location-action" id="ai-clear-location">
+                                        <i class="material-icons">clear</i> Clear
                                     </button>
                                 </div>
                             </div>
-                        </span>
+                        </div>
+                        at 
+                        <span class="ai-field editable-field" 
+                              id="ai-field-date" 
+                              data-placeholder="ANYTIME"
+                              contenteditable="true"
+                              data-original-text="ANYTIME">ANYTIME</span>
+                        <div class="ai-dropdown" id="ai-dropdown-date">
+                            <div class="ai-date-presets">
+                                <div class="ai-date-preset" data-type="anytime">ANYTIME</div>
+                                <div class="ai-date-preset" data-type="last7">Last 7 days</div>
+                                <div class="ai-date-preset" data-type="last30">Last 30 days</div>
+                                <div class="ai-date-preset" data-type="last90">Last 3 months</div>
+                            </div>
+                            <div class="ai-date-custom">
+                                <div>Custom range:</div>
+                                <div class="ai-date-custom-inputs">
+                                    <input type="date" class="ai-date-input" id="ai-date-start" 
+                                        value="${formattedLast7Days}">
+                                    <span>to</span>
+                                    <input type="date" class="ai-date-input" id="ai-date-end" 
+                                        value="${formattedToday}">
+                                    <button class="ai-location-action" id="ai-apply-custom-date">
+                                        Apply
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        with 
+                        <span class="ai-field editable-field" 
+                              id="ai-field-params" 
+                              data-placeholder="PARAMETERS"
+                              contenteditable="true"
+                              data-original-text="CLOUD COVER: ${this.cloudCover}%">CLOUD COVER: ${this.cloudCover}%</span>
+                        <div class="ai-dropdown" id="ai-dropdown-params">
+                            <div class="ai-custom-params">
+                                <div class="ai-param-slider">
+                                    <div class="ai-param-slider-header">
+                                        <span class="ai-param-slider-label">Maximum Cloud Cover</span>
+                                        <span class="ai-param-slider-value" id="ai-cloud-value">${this.cloudCover}%</span>
+                                    </div>
+                                    <input type="range" class="ai-param-slider-input" id="ai-cloud-slider"
+                                        min="0" max="100" value="${this.cloudCover}">
+                                </div>
+                                <button class="ai-location-action" id="ai-apply-params">
+                                    Apply Parameters
+                                </button>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="ai-execute-container">
@@ -217,20 +267,21 @@ export class AISmartSearch {
             // Set up event listeners
             this.setupMinimalistEventListeners();
             
-            // If we have a drawn bbox, update the location field
-            if (this.selectedLocation && this.selectedLocation !== 'everywhere') {
-                const locationField = document.getElementById('ai-field-location');
-                if (locationField) {
-                    locationField.textContent = "Map Selection";
-                    locationField.classList.remove('empty');
-                }
-            }
-            
-            console.log('AI Smart Search minimalist displayed');
+            console.log('🤖 AI Smart Search minimalist displayed with collections:', collections.length);
         } catch (error) {
-            console.error('Error showing AI minimalist search:', error);
+            console.error('❌ Error showing AI minimalist search:', error);
             this.notificationService.showNotification('Error showing AI search interface', 'error');
         }
+    }
+    
+    /**
+     * Get display name for a collection
+     * @param {string} collectionId - Collection ID
+     * @returns {string} Display name
+     */
+    getCollectionDisplayName(collectionId) {
+        const collection = this.collectionManager.getCollectionById(collectionId);
+        return collection ? (collection.title || collectionId) : collectionId;
     }
     
     /**
@@ -241,13 +292,195 @@ export class AISmartSearch {
         const closeButton = this.fullscreenElement.querySelector('.ai-fullscreen-close');
         closeButton.addEventListener('click', () => this.closeFullscreen());
         
-        // Collection field
-        const collectionField = document.getElementById('ai-field-collection');
-        collectionField.addEventListener('click', (e) => {
-            this.toggleField('collection');
-            e.stopPropagation();
+        // Set up editable field handlers
+        this.setupEditableFieldHandlers();
+        
+        // Collection field specific
+        this.setupCollectionField();
+        
+        // Location field specific
+        this.setupLocationField();
+        
+        // Date field specific
+        this.setupDateField();
+        
+        // Parameters field specific
+        this.setupParametersField();
+        
+        // Execute Search button
+        const executeSearchBtn = document.getElementById('ai-execute-search');
+        executeSearchBtn.addEventListener('click', () => {
+            this.executeSearch();
         });
         
+        // Global click handler to close dropdowns when clicking outside
+        const globalClickHandler = (event) => {
+            if (this.fullscreenElement && !event.target.closest('.ai-field') && !event.target.closest('.ai-dropdown')) {
+                this.closeDropdowns();
+            }
+        };
+        document.addEventListener('click', globalClickHandler);
+        
+        // Store the reference so we can remove it when closing
+        this.globalClickHandler = globalClickHandler;
+        
+        // Global escape key handler
+        this.escapeListener = (event) => {
+            if (event.key === 'Escape') {
+                if (this.activeField) {
+                    this.closeDropdowns();
+                } else if (this.fullscreenElement) {
+                    this.closeFullscreen();
+                }
+            }
+        };
+        document.addEventListener('keydown', this.escapeListener);
+    }
+    
+    /**
+     * Set up handlers for editable fields
+     */
+    setupEditableFieldHandlers() {
+        const editableFields = this.fullscreenElement.querySelectorAll('.editable-field');
+        
+        editableFields.forEach(field => {
+            // Handle clicking to show dropdown or edit
+            field.addEventListener('click', (e) => {
+                const fieldId = field.id.replace('ai-field-', '');
+                this.toggleField(fieldId);
+                e.stopPropagation();
+            });
+            
+            // Handle text editing
+            field.addEventListener('input', (e) => {
+                this.handleFieldTextChange(field);
+            });
+            
+            // Handle focus and blur for better UX
+            field.addEventListener('focus', (e) => {
+                field.classList.remove('empty');
+                if (field.textContent === field.dataset.originalText) {
+                    field.textContent = '';
+                }
+            });
+            
+            field.addEventListener('blur', (e) => {
+                if (field.textContent.trim() === '') {
+                    field.textContent = field.dataset.originalText;
+                    field.classList.add('empty');
+                } else {
+                    field.classList.remove('empty');
+                }
+            });
+            
+            // Handle Enter key to confirm edit
+            field.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    field.blur();
+                    this.closeDropdowns();
+                }
+            });
+        });
+    }
+    
+    /**
+     * Handle text changes in editable fields
+     * @param {HTMLElement} field - The field element that changed
+     */
+    handleFieldTextChange(field) {
+        const fieldId = field.id.replace('ai-field-', '');
+        const text = field.textContent.trim();
+        
+        // Update internal state based on field type
+        switch (fieldId) {
+            case 'collection':
+                // For collection, try to match text to available collections
+                this.handleCollectionTextChange(text);
+                break;
+            case 'location':
+                // For location, update selected location
+                this.selectedLocation = text || 'everywhere';
+                break;
+            case 'date':
+                // For date, try to parse natural language
+                this.handleDateTextChange(text);
+                break;
+            case 'params':
+                // For parameters, try to parse parameters
+                this.handleParametersTextChange(text);
+                break;
+        }
+    }
+    
+    /**
+     * Handle collection text changes
+     * @param {string} text - The entered text
+     */
+    handleCollectionTextChange(text) {
+        if (!text) return;
+        
+        // Try to find a matching collection
+        const collections = this.collectionManager.collections || [];
+        const matchingCollection = collections.find(collection => 
+            collection.title.toLowerCase().includes(text.toLowerCase()) ||
+            collection.id.toLowerCase().includes(text.toLowerCase())
+        );
+        
+        if (matchingCollection) {
+            this.selectedCollection = matchingCollection.id;
+        }
+    }
+    
+    /**
+     * Handle date text changes
+     * @param {string} text - The entered text
+     */
+    handleDateTextChange(text) {
+        const lowerText = text.toLowerCase();
+        
+        if (lowerText.includes('anytime') || lowerText.includes('any time')) {
+            this.selectedDate = { type: 'anytime', start: null, end: null };
+        } else if (lowerText.includes('last 7') || lowerText.includes('week')) {
+            const today = new Date();
+            const lastWeek = new Date();
+            lastWeek.setDate(today.getDate() - 7);
+            this.selectedDate = {
+                type: 'last7',
+                start: this.formatDate(lastWeek),
+                end: this.formatDate(today)
+            };
+        } else if (lowerText.includes('last 30') || lowerText.includes('month')) {
+            const today = new Date();
+            const lastMonth = new Date();
+            lastMonth.setDate(today.getDate() - 30);
+            this.selectedDate = {
+                type: 'last30',
+                start: this.formatDate(lastMonth),
+                end: this.formatDate(today)
+            };
+        }
+    }
+    
+    /**
+     * Handle parameters text changes
+     * @param {string} text - The entered text
+     */
+    handleParametersTextChange(text) {
+        // Try to extract cloud cover percentage
+        const cloudMatch = text.match(/(\d+)%?/);
+        if (cloudMatch) {
+            const cloudValue = parseInt(cloudMatch[1]);
+            if (cloudValue >= 0 && cloudValue <= 100) {
+                this.cloudCover = cloudValue;
+            }
+        }
+    }
+    
+    /**
+     * Set up collection field handlers
+     */
+    setupCollectionField() {
         // Collection search input
         const collectionSearch = this.fullscreenElement.querySelector('.ai-collection-search-input');
         collectionSearch.addEventListener('input', (e) => {
@@ -259,25 +492,28 @@ export class AISmartSearch {
         collectionItems.forEach(item => {
             item.addEventListener('click', (e) => {
                 this.selectedCollection = item.dataset.value;
-                collectionField.textContent = item.textContent;
+                const collectionField = document.getElementById('ai-field-collection');
+                const displayName = this.getCollectionDisplayName(this.selectedCollection);
+                collectionField.textContent = displayName;
+                collectionField.dataset.originalText = displayName;
                 collectionField.classList.remove('empty');
                 this.closeDropdowns();
                 e.stopPropagation();
             });
         });
-        
-        // Location field
-        const locationField = document.getElementById('ai-field-location');
-        locationField.addEventListener('click', (e) => {
-            this.toggleField('location');
-            e.stopPropagation();
-        });
-        
+    }
+    
+    /**
+     * Set up location field handlers
+     */
+    setupLocationField() {
         // Everywhere option
         const everywhereOption = this.fullscreenElement.querySelector('#ai-dropdown-location .ai-dropdown-item');
         everywhereOption.addEventListener('click', (e) => {
             this.selectedLocation = "everywhere";
+            const locationField = document.getElementById('ai-field-location');
             locationField.textContent = "EVERYWHERE";
+            locationField.dataset.originalText = "EVERYWHERE";
             this.closeDropdowns();
             e.stopPropagation();
         });
@@ -292,7 +528,7 @@ export class AISmartSearch {
             if (this.mapManager) {
                 this.mapManager.startDrawingBbox((bbox) => {
                     // After drawing is complete, this callback will be called
-                    console.log('Drawing callback received bbox:', bbox);
+                    console.log('🗺️ Drawing callback received bbox:', bbox);
                     
                     // Convert bbox to WKT and store it
                     const wkt = this.bboxToWkt(bbox);
@@ -306,6 +542,7 @@ export class AISmartSearch {
                         const locationField = document.getElementById('ai-field-location');
                         if (locationField) {
                             locationField.textContent = "Map Selection";
+                            locationField.dataset.originalText = "Map Selection";
                             locationField.classList.remove('empty');
                         }
                     }, 100);
@@ -328,17 +565,19 @@ export class AISmartSearch {
         locationTextarea.addEventListener('input', () => {
             if (locationTextarea.value.trim()) {
                 this.selectedLocation = locationTextarea.value.trim();
+                const locationField = document.getElementById('ai-field-location');
                 locationField.textContent = "Custom Location";
+                locationField.dataset.originalText = "Custom Location";
                 locationField.classList.remove('empty');
             }
         });
-        
-        // Date field
+    }
+    
+    /**
+     * Set up date field handlers
+     */
+    setupDateField() {
         const dateField = document.getElementById('ai-field-date');
-        dateField.addEventListener('click', (e) => {
-            this.toggleField('date');
-            e.stopPropagation();
-        });
         
         // Date presets
         const datePresets = this.fullscreenElement.querySelectorAll('.ai-date-preset');
@@ -349,6 +588,7 @@ export class AISmartSearch {
                 
                 // Set the display text
                 dateField.textContent = preset.textContent;
+                dateField.dataset.originalText = preset.textContent;
                 
                 // Calculate actual dates except for 'anytime'
                 if (presetType !== 'anytime') {
@@ -386,19 +626,21 @@ export class AISmartSearch {
             this.selectedDate.start = startInput.value;
             this.selectedDate.end = endInput.value;
             
-            dateField.textContent = `${startInput.value} to ${endInput.value}`;
+            const displayText = `${startInput.value} to ${endInput.value}`;
+            dateField.textContent = displayText;
+            dateField.dataset.originalText = displayText;
             dateField.classList.remove('empty');
             
             this.closeDropdowns();
             e.stopPropagation();
         });
-        
-        // Parameters field
+    }
+    
+    /**
+     * Set up parameters field handlers
+     */
+    setupParametersField() {
         const paramsField = document.getElementById('ai-field-params');
-        paramsField.addEventListener('click', (e) => {
-            this.toggleField('params');
-            e.stopPropagation();
-        });
         
         // Cloud cover slider
         const cloudSlider = document.getElementById('ai-cloud-slider');
@@ -412,41 +654,14 @@ export class AISmartSearch {
         // Apply parameters button
         const applyParamsBtn = document.getElementById('ai-apply-params');
         applyParamsBtn.addEventListener('click', (e) => {
-            paramsField.textContent = `Cloud Cover: ${this.cloudCover}%`;
+            const displayText = `Cloud Cover: ${this.cloudCover}%`;
+            paramsField.textContent = displayText;
+            paramsField.dataset.originalText = displayText;
             paramsField.classList.remove('empty');
             
             this.closeDropdowns();
             e.stopPropagation();
         });
-        
-        // Execute Search button
-        const executeSearchBtn = document.getElementById('ai-execute-search');
-        executeSearchBtn.addEventListener('click', () => {
-            this.executeSearch();
-        });
-        
-        // Global click handler to close dropdowns when clicking outside
-        const globalClickHandler = () => {
-            if (this.fullscreenElement) {
-                this.closeDropdowns();
-            }
-        };
-        document.addEventListener('click', globalClickHandler);
-        
-        // Store the reference so we can remove it when closing
-        this.globalClickHandler = globalClickHandler;
-        
-        // Global escape key handler
-        this.escapeListener = (event) => {
-            if (event.key === 'Escape') {
-                if (this.activeField) {
-                    this.closeDropdowns();
-                } else if (this.fullscreenElement) {
-                    this.closeFullscreen();
-                }
-            }
-        };
-        document.addEventListener('keydown', this.escapeListener);
     }
     
     /**
@@ -582,7 +797,7 @@ export class AISmartSearch {
                         
                         params.bbox = [minX, minY, maxX, maxY];
                     } catch (e) {
-                        console.warn('Could not parse WKT polygon to bbox:', e);
+                        console.warn('⚠️ Could not parse WKT polygon to bbox:', e);
                     }
                 }
             }
@@ -591,7 +806,7 @@ export class AISmartSearch {
             this.notificationService.showNotification('Processing your search request...', 'info');
             
             // Log the parameters
-            console.log('AI Smart Search Parameters:', params);
+            console.log('🔍 AI Smart Search Parameters:', params);
             
             // Close the fullscreen
             this.closeFullscreen();
@@ -605,9 +820,9 @@ export class AISmartSearch {
             }
             
             // Show success notification
-            this.notificationService.showNotification('Search executed successfully', 'success');
+            this.notificationService.showNotification('Search executed successfully! 🎉', 'success');
         } catch (error) {
-            console.error('Error executing search:', error);
+            console.error('❌ Error executing search:', error);
             this.notificationService.showNotification('Error processing your search request', 'error');
         }
     }
@@ -674,9 +889,9 @@ export class AISmartSearch {
             // Update summary display
             this.updateSearchSummary();
             
-            console.log('Applied search parameters:', params);
+            console.log('✅ Applied search parameters:', params);
         } catch (error) {
-            console.error('Error applying search parameters:', error);
+            console.error('❌ Error applying search parameters:', error);
         }
     }
     
@@ -772,254 +987,5 @@ export class AISmartSearch {
         
         // Create a WKT polygon from the bounding box
         return `POLYGON((${minX} ${minY}, ${maxX} ${minY}, ${maxX} ${maxY}, ${minX} ${maxY}, ${minX} ${minY}))`;
-    }
-
-    /**
-     * Get comprehensive collections from both data sources
-     * @returns {Array} Array of collection objects from all sources
-     */
-    getComprehensiveCollections() {
-        // First try to get collections from the current selected source
-        const currentCollections = this.collectionManager.collections || [];
-        
-        if (currentCollections.length > 0) {
-            // If we have current collections, use them and add source info
-            const catalogSelect = document.getElementById('catalog-select');
-            const selectedCatalog = catalogSelect ? catalogSelect.value : '';
-            const sourceName = this.getSourceName(selectedCatalog);
-            
-            return currentCollections.map(collection => ({
-                ...collection,
-                source: sourceName
-            }));
-        }
-        
-        // If no current collections, provide comprehensive collection from both sources
-        return [
-            // Copernicus Marine Collections
-            { 
-                id: 'cmems_mod_ibi_phy_my_0.083deg-3D_P1M-m', 
-                title: 'Atlantic-Iberian Ocean Physics Reanalysis',
-                source: 'Copernicus Marine'
-            },
-            { 
-                id: 'cmems_mod_glo_phy_my_0.083deg_P1M-m', 
-                title: 'Global Ocean Physics Reanalysis',
-                source: 'Copernicus Marine'
-            },
-            { 
-                id: 'cmems_obs-sl_glo_phy-ssh_my_allsat-l4-duacs-0.25deg_P1D', 
-                title: 'Global Ocean Sea Surface Heights',
-                source: 'Copernicus Marine'
-            },
-            { 
-                id: 'cmems_obs_glo_phy_sss_l3_my_multi-oi_P1M', 
-                title: 'Global Ocean Sea Surface Salinity',
-                source: 'Copernicus Marine'
-            },
-            
-            // Element84 Collections (Satellite Imagery)
-            { 
-                id: 'sentinel-s2-l2a-cogs', 
-                title: 'Sentinel-2 Collection 2 Level-2A',
-                source: 'Element84'
-            },
-            { 
-                id: 'sentinel-s1-grd', 
-                title: 'Sentinel-1 Ground Range Detected',
-                source: 'Element84'
-            },
-            { 
-                id: 'landsat-c2-l2', 
-                title: 'Landsat Collection 2 Level-2',
-                source: 'Element84'
-            },
-            { 
-                id: 'cop-dem-glo-30', 
-                title: 'Copernicus DEM GLO-30',
-                source: 'Element84'
-            },
-            { 
-                id: 'noaa-climate-data-cdr', 
-                title: 'NOAA Climate Data Record',
-                source: 'Element84'
-            }
-        ];
-    }
-    
-    /**
-     * Get human-readable source name
-     * @param {string} catalogType - The catalog type
-     * @returns {string} Human-readable source name
-     */
-    getSourceName(catalogType) {
-        switch (catalogType) {
-            case 'copernicus':
-                return 'Copernicus Marine';
-            case 'element84':
-                return 'Element84';
-            case 'custom':
-                return 'Custom';
-            default:
-                return 'Various Sources';
-        }
-    }
-    
-    /**
-     * Get all available collections from both data sources
-     * @returns {Array} Array of collection objects with source information
-     */
-    getAllAvailableCollections() {
-        // Check if we have collections from the current selected catalog
-        const currentCollections = this.collectionManager.collections || [];
-        
-        if (currentCollections.length > 0) {
-            // If we have current collections, use them
-            return currentCollections.map(collection => ({
-                ...collection,
-                source: this.getCurrentDataSourceName()
-            }));
-        }
-        
-        // If no current collections, provide a comprehensive set from both sources
-        return [
-            // Copernicus Marine Collections
-            { 
-                id: 'cmems_mod_ibi_phy_my_0.083deg-3D_P1M-m', 
-                title: 'Atlantic-Iberian Biscay Irish Ocean Physics Reanalysis',
-                source: 'Copernicus Marine',
-                category: 'Ocean Physics'
-            },
-            { 
-                id: 'cmems_mod_glo_phy_my_0.083deg_P1M-m', 
-                title: 'Global Ocean Physics Reanalysis',
-                source: 'Copernicus Marine',
-                category: 'Ocean Physics'
-            },
-            { 
-                id: 'cmems_obs-sl_glo_phy-ssh_my_allsat-l4-duacs-0.25deg_P1D', 
-                title: 'Global Ocean Gridded L4 Sea Surface Heights',
-                source: 'Copernicus Marine',
-                category: 'Sea Level'
-            },
-            { 
-                id: 'cmems_obs_glo_phy_sss_l3_my_multi-oi_P1M', 
-                title: 'Global Ocean Sea Surface Salinity L3',
-                source: 'Copernicus Marine',
-                category: 'Sea Surface'
-            },
-            
-            // Element84 Collections (Satellite Imagery)
-            { 
-                id: 'sentinel-s2-l2a-cogs', 
-                title: 'Sentinel-2 Collection 2 Level-2A',
-                source: 'Element84',
-                category: 'Optical Imagery'
-            },
-            { 
-                id: 'sentinel-s1-grd', 
-                title: 'Sentinel-1 Ground Range Detected (GRD)',
-                source: 'Element84',
-                category: 'SAR Imagery'
-            },
-            { 
-                id: 'landsat-c2-l2', 
-                title: 'Landsat Collection 2 Level-2',
-                source: 'Element84',
-                category: 'Optical Imagery'
-            },
-            { 
-                id: 'cop-dem-glo-30', 
-                title: 'Copernicus DEM GLO-30',
-                source: 'Element84',
-                category: 'Elevation'
-            },
-            { 
-                id: 'naip', 
-                title: 'National Agriculture Imagery Program',
-                source: 'Element84',
-                category: 'Aerial Imagery'
-            }
-        ];
-    }
-    
-    /**
-     * Get the current data source name
-     * @returns {string} Human-readable data source name
-     */
-    getCurrentDataSourceName() {
-        const catalogSelect = document.getElementById('catalog-select');
-        const selectedCatalog = catalogSelect ? catalogSelect.value : '';
-        
-        switch (selectedCatalog) {
-            case 'copernicus':
-                return 'Copernicus Marine';
-            case 'element84':
-                return 'Element84';
-            case 'custom':
-                return 'Custom';
-            default:
-                return 'Unknown';
-        }
-    }
-    
-    /**
-     * Create collection dropdown items with source grouping
-     * @param {Array} collections - Array of collection objects
-     * @returns {string} HTML string for collection items
-     */
-    createCollectionItems(collections) {
-        // Group collections by source
-        const groupedCollections = {};
-        collections.forEach(collection => {
-            const source = collection.source || 'Other';
-            if (!groupedCollections[source]) {
-                groupedCollections[source] = [];
-            }
-            groupedCollections[source].push(collection);
-        });
-        
-        let html = '<div class="ai-collection-search">';
-        html += '<input type="text" class="ai-collection-search-input" placeholder="Search datasets...">';
-        html += '</div>';
-        
-        html += '<div class="ai-collections-list">';
-        
-        // Create grouped items
-        Object.keys(groupedCollections).forEach(source => {
-            if (Object.keys(groupedCollections).length > 1) {
-                html += `<div class="ai-collection-group-header">${source}</div>`;
-            }
-            
-            groupedCollections[source].forEach(collection => {
-                const isSelected = this.selectedCollection === collection.id;
-                const selectedClass = isSelected ? 'selected' : '';
-                const checkIcon = isSelected ? '<i class="material-icons">check</i>' : '';
-                const categoryBadge = collection.category ? `<span class="ai-collection-category">${collection.category}</span>` : '';
-                
-                html += `
-                    <div class="ai-dropdown-item ai-collection-item ${selectedClass}" data-value="${collection.id}" data-source="${source}">
-                        <div class="ai-collection-item-content">
-                            ${checkIcon}
-                            <div class="ai-collection-item-details">
-                                <div class="ai-collection-item-title">${collection.title || collection.id}</div>
-                                ${categoryBadge}
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-        });
-        
-        html += '</div>';
-        
-        // Add clear selection option if something is selected
-        if (this.selectedCollection) {
-            html += '<div class="ai-dropdown-item ai-clear-selection" data-action="clear">';
-            html += '<i class="material-icons">clear</i> Clear Selection';
-            html += '</div>';
-        }
-        
-        return html;
     }
 }

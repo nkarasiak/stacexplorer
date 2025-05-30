@@ -515,6 +515,58 @@
     
     .ai-dropdown {
         width: 100%;
+
+/* Enhanced styles for editable fields */
+.ai-field.editable-field {
+    outline: none;
+    user-select: text;
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+}
+
+.ai-field.editable-field:focus {
+    background-color: var(--primary-50, #eef2ff);
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px var(--primary-200, #c7d2fe);
+}
+
+.dark-theme .ai-field.editable-field:focus {
+    background-color: var(--primary-900, #312e81);
+    box-shadow: 0 0 0 2px var(--primary-700, #4338ca);
+}
+
+.ai-field.editable-field.empty:focus::before {
+    opacity: 0.3;
+}
+
+/* Collection item improvements */
+.collection-item-content {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.collection-title {
+    font-weight: 500;
+    font-size: 16px;
+    color: var(--text-color, #333);
+}
+
+.dark-theme .collection-title {
+    color: #ddd;
+}
+
+.collection-id {
+    font-size: 14px;
+    color: var(--text-secondary, #666);
+    font-family: 'Courier New', monospace;
+}
+
+.dark-theme .collection-id {
+    color: #aaa;
+}
+
         min-width: 280px;
     }
 }

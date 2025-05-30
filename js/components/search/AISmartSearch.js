@@ -189,7 +189,7 @@ async showMinimalistSearch() {
                         </div>
                     </div>
                     over 
-                    <span class="ai-field" 
+                    <span class="ai-field ${this.selectedLocation === 'everywhere' ? 'empty' : ''}" 
                           id="ai-field-location" 
                           data-placeholder="EVERYWHERE">${this.selectedLocation === 'everywhere' ? 'EVERYWHERE' : 'Custom Location'}</span>
                     <div class="ai-dropdown" id="ai-dropdown-location">
@@ -213,7 +213,7 @@ async showMinimalistSearch() {
                         </div>
                     </div>
                     at 
-                    <span class="ai-field" 
+                    <span class="ai-field ${this.selectedDate.type === 'anytime' ? 'empty' : ''}" 
                           id="ai-field-date" 
                           data-placeholder="ANYTIME">${this.getDateDisplayText()}</span>
                     <div class="ai-dropdown" id="ai-dropdown-date">
@@ -382,80 +382,317 @@ setupMinimalistEventListeners() {
 }
 
 /**
- * Set up field click handlers (restored original behavior)
+ * Set up field click handlers - simplified single-click to edit
  */
 setupFieldClickHandlers() {
-    // Restore original click-to-dropdown behavior
+    // Simplified: single click starts editing directly
     const collectionField = document.getElementById('ai-field-collection');
     collectionField.addEventListener('click', (e) => {
-        this.toggleField('collection');
         e.stopPropagation();
-    });
-    
-    // Add double-click to edit for collection field
-    collectionField.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        this.editField(collectionField, 'collection');
+        this.startDirectEdit(collectionField, 'collection');
     });
     
     const locationField = document.getElementById('ai-field-location');
     locationField.addEventListener('click', (e) => {
-        this.toggleField('location');
         e.stopPropagation();
-    });
-    
-    // Add double-click to edit for location field
-    locationField.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        this.editField(locationField, 'location');
+        this.startDirectEdit(locationField, 'location');
     });
     
     const dateField = document.getElementById('ai-field-date');
     dateField.addEventListener('click', (e) => {
-        this.toggleField('date');
         e.stopPropagation();
-    });
-    
-    // Add double-click to edit for date field
-    dateField.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        this.editField(dateField, 'date');
+        this.startDirectEdit(dateField, 'date');
     });
     
     const paramsField = document.getElementById('ai-field-params');
     paramsField.addEventListener('click', (e) => {
-        this.toggleField('params');
         e.stopPropagation();
-    });
-    
-    // Add double-click to edit for params field
-    paramsField.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        this.editField(paramsField, 'params');
+        this.startDirectEdit(paramsField, 'params');
     });
 }
 
 /**
- * Enable editing mode for a field
+ * Start direct editing of a field (simplified approach)
+ * @param {HTMLElement} field - The field element
+ * @param {string} type - Field type
+ */
+startDirectEdit(field, type) {
+    // Prevent multiple edit sessions
+    if (field.contentEditable === 'true') {
+        return;
+    }
+    
+    console.log(`🖋️ Starting direct edit for ${type} field`);
+    
+    // Store original content
+    const originalText = field.textContent.trim();
+    const isEmptyField = field.classList.contains('empty');
+    const placeholder = field.getAttribute('data-placeholder');
+    
+    // Clear field if it contains placeholder text
+    if (isEmptyField || originalText === placeholder) {
+        field.textContent = '';
+    }
+    
+    // Enable editing
+    field.contentEditable = 'true';
+    field.classList.add('ai-field-editing');
+    field.classList.remove('empty');
+    field.focus();
+    
+    // Select all text if there's existing content
+    if (!isEmptyField && originalText !== placeholder) {
+        setTimeout(() => {
+            const range = document.createRange();
+            range.selectNodeContents(field);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }, 10);
+    }
+    
+    // Create finish editing function
+    const finishEdit = () => {
+        const newText = field.textContent.trim();
+        
+        field.contentEditable = 'false';
+        field.classList.remove('ai-field-editing');
+        
+        if (newText && newText !== placeholder) {
+            // Process the entered text
+            this.processFieldEdit(type, newText, field);
+            field.classList.remove('empty');
+        } else {
+            // Restore to empty state
+            field.textContent = placeholder;
+            field.classList.add('empty');
+            this.resetFieldValue(type);
+        }
+        
+        // Clean up event listeners
+        field.removeEventListener('blur', finishEdit);
+        field.removeEventListener('keydown', keyHandler);
+    };
+    
+    const keyHandler = (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            finishEdit();
+        } else if (e.key === 'Escape') {
+            e.preventDefault();
+            // Restore original state
+            field.contentEditable = 'false';
+            field.classList.remove('ai-field-editing');
+            
+            if (isEmptyField) {
+                field.textContent = placeholder;
+                field.classList.add('empty');
+            } else {
+                field.textContent = originalText;
+                field.classList.remove('empty');
+            }
+            
+            // Clean up
+            field.removeEventListener('blur', finishEdit);
+            field.removeEventListener('keydown', keyHandler);
+        }
+    };
+    
+    // Add event listeners
+    field.addEventListener('blur', finishEdit);
+    field.addEventListener('keydown', keyHandler);
+}
+
+/**
+ * Process field edit and update internal state
+ * @param {string} type - Field type
+ * @param {string} text - New text
+ * @param {HTMLElement} field - Field element
+ */
+processFieldEdit(type, text, field) {
+    switch (type) {
+        case 'collection':
+            this.handleCollectionEdit(text, field);
+            break;
+        case 'location':
+            this.handleLocationEdit(text, field);
+            break;
+        case 'date':
+            this.handleDateEdit(text, field);
+            break;
+        case 'params':
+            this.handleParamsEdit(text, field);
+            break;
+    }
+}
+
+/**
+ * Handle collection field editing
+ */
+handleCollectionEdit(text, field) {
+    // Try to find matching collection
+    const collections = this.collectionManager.collections || [];
+    const match = collections.find(c => 
+        c.title?.toLowerCase().includes(text.toLowerCase()) ||
+        c.id?.toLowerCase().includes(text.toLowerCase()) ||
+        text.toLowerCase().includes(c.title?.toLowerCase()) ||
+        text.toLowerCase().includes(c.id?.toLowerCase())
+    );
+    
+    if (match) {
+        this.selectedCollection = match.id;
+        field.textContent = match.title || match.id;
+    } else {
+        // Use the text as-is and try to find it later
+        this.selectedCollection = text;
+        field.textContent = text;
+    }
+    
+    console.log(`📋 Collection set to: ${this.selectedCollection}`);
+}
+
+/**
+ * Handle location field editing
+ */
+handleLocationEdit(text, field) {
+    const lowerText = text.toLowerCase();
+    
+    if (lowerText.includes('everywhere') || lowerText.includes('global') || lowerText.includes('world')) {
+        this.selectedLocation = 'everywhere';
+        field.textContent = 'EVERYWHERE';
+    } else if (lowerText.includes('polygon') || lowerText.includes('point') || lowerText.includes('geojson')) {
+        // Assume it's geometry data
+        this.selectedLocation = text;
+        field.textContent = 'Custom Geometry';
+    } else {
+        // Treat as location description
+        this.selectedLocation = text;
+        field.textContent = text;
+    }
+    
+    console.log(`🗺️ Location set to: ${this.selectedLocation}`);
+}
+
+/**
+ * Handle date field editing
+ */
+handleDateEdit(text, field) {
+    const lowerText = text.toLowerCase();
+    
+    if (lowerText.includes('anytime') || lowerText.includes('any time') || lowerText.includes('all')) {
+        this.selectedDate = { type: 'anytime', start: null, end: null };
+        field.textContent = 'ANYTIME';
+    } else if (lowerText.includes('week') || lowerText.includes('7 day')) {
+        const today = new Date();
+        const start = new Date();
+        start.setDate(today.getDate() - 7);
+        this.selectedDate = {
+            type: 'last7',
+            start: this.formatDate(start),
+            end: this.formatDate(today)
+        };
+        field.textContent = 'Last 7 days';
+    } else if (lowerText.includes('month') || lowerText.includes('30 day')) {
+        const today = new Date();
+        const start = new Date();
+        start.setDate(today.getDate() - 30);
+        this.selectedDate = {
+            type: 'last30',
+            start: this.formatDate(start),
+            end: this.formatDate(today)
+        };
+        field.textContent = 'Last 30 days';
+    } else if (lowerText.includes('3 month') || lowerText.includes('90 day') || lowerText.includes('quarter')) {
+        const today = new Date();
+        const start = new Date();
+        start.setDate(today.getDate() - 90);
+        this.selectedDate = {
+            type: 'last90',
+            start: this.formatDate(start),
+            end: this.formatDate(today)
+        };
+        field.textContent = 'Last 3 months';
+    } else {
+        // Try to parse as custom date or keep as-is
+        field.textContent = text;
+        console.log('📅 Custom date text:', text);
+    }
+    
+    console.log(`📅 Date set to:`, this.selectedDate);
+}
+
+/**
+ * Handle parameters field editing
+ */
+handleParamsEdit(text, field) {
+    // Try to extract cloud cover percentage
+    const cloudMatch = text.match(/(\d+)%?/);
+    if (cloudMatch) {
+        const value = parseInt(cloudMatch[1]);
+        if (value >= 0 && value <= 100) {
+            this.cloudCover = value;
+            field.textContent = `Cloud Cover: ${value}%`;
+            console.log(`☁️ Cloud cover set to: ${value}%`);
+            return;
+        }
+    }
+    
+    // If no cloud cover found, keep the text as-is
+    field.textContent = text;
+    console.log('⚙️ Custom parameters:', text);
+}
+
+/**
+ * Reset field value to default
+ */
+resetFieldValue(type) {
+    switch (type) {
+        case 'collection':
+            this.selectedCollection = '';
+            break;
+        case 'location':
+            this.selectedLocation = 'everywhere';
+            break;
+        case 'date':
+            this.selectedDate = { type: 'anytime', start: null, end: null };
+            break;
+        case 'params':
+            this.cloudCover = 20;
+            break;
+    }
+}
+
+/**
+ * Enable editing mode for a field (DEPRECATED - keeping for compatibility)
  * @param {HTMLElement} field - The field element
  * @param {string} type - Field type
  */
 editField(field, type) {
     const originalText = field.textContent.trim();
+    const wasEmpty = field.classList.contains('empty');
+    const placeholder = field.getAttribute('data-placeholder');
     
-    // Enable editing
+    // Clear the field content for editing
+    if (wasEmpty || originalText === placeholder) {
+        field.textContent = '';
+    }
+    
+    // Remove empty class and enable editing
+    field.classList.remove('empty');
     field.contentEditable = 'true';
     field.classList.add('ai-field-editing');
     field.focus();
     
-    // Select all text
-    setTimeout(() => {
-        const range = document.createRange();
-        range.selectNodeContents(field);
-        const selection = window.getSelection();
-        selection.removeAllRanges();
-        selection.addRange(range);
-    }, 10);
+    // If there's existing content (not placeholder), select it
+    if (!wasEmpty && originalText !== placeholder) {
+        setTimeout(() => {
+            const range = document.createRange();
+            range.selectNodeContents(field);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }, 10);
+    }
     
     // Finish editing function
     const finishEdit = () => {
@@ -463,10 +700,21 @@ editField(field, type) {
         field.classList.remove('ai-field-editing');
         
         const newText = field.textContent.trim();
-        if (newText && newText !== originalText) {
+        
+        if (newText && newText !== placeholder) {
+            // User entered meaningful text
             this.processEditedField(type, newText, field);
-        } else if (!newText) {
-            field.textContent = originalText;
+            field.classList.remove('empty');
+        } else {
+            // No meaningful text entered, restore empty state
+            field.textContent = placeholder;
+            field.classList.add('empty');
+            
+            // If we had original content and user cleared it, restore original
+            if (!wasEmpty && originalText !== placeholder) {
+                field.textContent = originalText;
+                field.classList.remove('empty');
+            }
         }
         
         field.removeEventListener('blur', finishEdit);
@@ -479,14 +727,25 @@ editField(field, type) {
             finishEdit();
         } else if (e.key === 'Escape') {
             e.preventDefault();
-            field.textContent = originalText;
+            // Restore original state on escape
+            if (wasEmpty) {
+                field.textContent = placeholder;
+                field.classList.add('empty');
+            } else {
+                field.textContent = originalText;
+                field.classList.remove('empty');
+            }
             finishEdit();
         }
     };
     
     field.addEventListener('blur', finishEdit);
     field.addEventListener('keydown', keyHandler);
+    
+    console.log(`✏️ Started editing ${type} field`);
 }
+
+
 
 /**
  * Process edited field content

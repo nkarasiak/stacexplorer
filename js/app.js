@@ -6,7 +6,7 @@
 // Import core modules
 import { UIManager } from './components/common/UIManager.js';
 import { NotificationService } from './components/common/NotificationService.js';
-import { MapManager } from './components/map/MapManager.js';
+import { MapManager, getMapManager } from './components/map/MapManager.js';
 import { STACApiClient } from './components/api/StacApiClient.js';
 import { StateManager } from './utils/StateManager.js';
 import { ShareManager } from './utils/ShareManager.js';
@@ -35,7 +35,13 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Initialize core services
         const notificationService = new NotificationService();
-        const mapManager = new MapManager('map', CONFIG);
+        
+        // Use the global MapManager instance to prevent duplicates
+        const mapManager = getMapManager('map', CONFIG);
+        mapManager.initialize('map').catch(error => {
+            console.error('Failed to initialize map:', error);
+        });
+        
         const apiClient = new STACApiClient(); // Initialize without any endpoint
         
         // Initialize UI manager

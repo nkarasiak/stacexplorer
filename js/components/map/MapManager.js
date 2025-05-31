@@ -21,10 +21,8 @@ class MapManager {
         this.initializationPromise = null;
         this.currentTheme = 'dark'; // Default theme
         
-        // Auto-initialize if container is provided
-        if (containerId) {
-            this.initialize(containerId);
-        }
+        // Don't auto-initialize here - let app.js control initialization
+        // This prevents duplicate map instances
     }
 
     /**
@@ -56,6 +54,16 @@ class MapManager {
                 if (!element) {
                     throw new Error(`Map container element '${container}' not found`);
                 }
+                
+                // Check if this element already has a map and clean it up
+                if (element._maplibregl_map) {
+                    console.warn('🧽 Cleaning up existing map instance on container:', container);
+                    const existingMap = element._maplibregl_map;
+                    existingMap.remove();
+                    // Small delay to ensure cleanup completes
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
                 container = container;
             }
 
@@ -836,6 +844,12 @@ function getMapManager(containerId, config) {
  * Initialize MapManager automatically when DOM is ready
  */
 function initializeMapManagerOnLoad() {
+    // Check if map is already initialized via app.js
+    if (globalMapManager && globalMapManager.isInitialized) {
+        console.log('✓ MapManager already initialized via app.js');
+        return;
+    }
+    
     console.log('🚀 Auto-initializing MapManager...');
     
     // Try to get config from global scope if available
@@ -843,16 +857,19 @@ function initializeMapManagerOnLoad() {
     
     const mapManager = getMapManager(null, config);
     
-    // Try to auto-initialize
-    mapManager.autoInitialize().then(success => {
-        if (success) {
-            console.log('✅ MapManager auto-initialized successfully');
-        } else {
-            console.warn('⚠️ MapManager auto-initialization failed - no suitable container found');
-        }
-    }).catch(error => {
-        console.error('❌ MapManager auto-initialization error:', error);
-    });
+    // Only auto-initialize if not already initialized
+    if (!mapManager.isInitialized) {
+        // Try to auto-initialize
+        mapManager.autoInitialize().then(success => {
+            if (success) {
+                console.log('✅ MapManager auto-initialized successfully');
+            } else {
+                console.warn('⚠️ MapManager auto-initialization failed - no suitable container found');
+            }
+        }).catch(error => {
+            console.error('❌ MapManager auto-initialization error:', error);
+        });
+    }
 }
 
 // Auto-initialize when DOM is ready

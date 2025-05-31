@@ -1197,17 +1197,17 @@ export class MapManager {
                 console.log('✅ Using preloaded thumbnail from results panel');
                 finalUrl = thumbnailDataUrl;
             } else {
-                console.log('⚠️ Could not get preloaded thumbnail, checking if external URL is safe...');
+                console.log('⚠️ Could not get preloaded thumbnail, trying direct image URL...');
                 
                 // Check if the external URL is likely to cause CORS issues
                 const absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
                 if (this.isLikelyCORSBlocked(absoluteUrl)) {
-                    console.log('🚫 External URL likely blocked by CORS, showing bounding box instead');
+                    console.log('🚫 External URL contains known problematic pattern, showing bounding box instead');
                     this.addGeoJsonLayerWithoutTooltip(bbox, item);
                     return true;
                 }
                 
-                console.log('🌐 Using direct image URL (might fail due to CORS):', absoluteUrl);
+                console.log('🌐 Attempting to load external image URL:', absoluteUrl);
                 finalUrl = absoluteUrl;
             }
             
@@ -1271,6 +1271,14 @@ export class MapManager {
                 }
             });
             
+            // Also listen for source data events to catch loading failures
+            this.map.once('sourcedata', (e) => {
+                if (e.sourceId === sourceId && e.isSourceLoaded === false) {
+                    console.warn('⚠️ Image source failed to load, using fallback');
+                    this.handleImageError(sourceId, finalUrl, bbox, item);
+                }
+            });
+            
             return true;
         } catch (error) {
             console.error('❌ Error in addImageOverlay:', error);
@@ -1319,60 +1327,10 @@ export class MapManager {
             return true;
         }
         
-        // All other external URLs are potentially problematic
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-            console.log('⚠️ External URL detected, might have CORS issues:', url);
-            return true; // Conservative approach - assume external URLs might have CORS issues
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Check if a URL is likely to be blocked by CORS
-     * @param {string} url - URL to check
-     * @returns {boolean} - True if likely to be CORS blocked
-     */
-    isLikelyCORSBlocked(url) {
-        if (!url) return true;
-        
-        // If it's the same origin, it should be fine
-        if (url.startsWith(window.location.origin)) {
-            return false;
-        }
-        
-        // If it's a data URL, it should be fine
-        if (url.startsWith('data:')) {
-            return false;
-        }
-        
-        // Known CORS-problematic domains/patterns
-        const corsProblematicPatterns = [
-            'datahub.creodias.eu',
-            'odata/v1/Assets',
-            '/$value',
-            'earthdata.nasa.gov',
-            'ladsweb.modaps.eosdis.nasa.gov',
-            'archive.usgs.gov'
-        ];
-        
-        // Check if URL contains any problematic patterns
-        const hasProblematicPattern = corsProblematicPatterns.some(pattern => 
-            url.toLowerCase().includes(pattern.toLowerCase())
-        );
-        
-        if (hasProblematicPattern) {
-            console.log('🚫 URL contains CORS-problematic pattern:', url);
-            return true;
-        }
-        
-        // All other external URLs are potentially problematic
-        if (url.startsWith('http://') || url.startsWith('https://')) {
-            console.log('⚠️ External URL detected, might have CORS issues:', url);
-            return true; // Conservative approach - assume external URLs might have CORS issues
-        }
-        
-        return false;
+        // Only block URLs with known problematic patterns
+        // Most external URLs should be allowed to try loading
+        console.log('🌐 External URL detected, will attempt to load:', url);
+        return false; // Allow external URLs to be attempted
     }
     
     /**

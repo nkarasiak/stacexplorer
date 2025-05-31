@@ -264,7 +264,7 @@ class MapManager {
             }
         });
 
-        // Add layer for drawing
+        // Add layer for drawing polygons
         this.map.addLayer({
             id: 'drawing-layer',
             type: 'fill',
@@ -272,9 +272,11 @@ class MapManager {
             paint: {
                 'fill-color': '#2196F3',
                 'fill-opacity': 0.2
-            }
+            },
+            filter: ['==', '$type', 'Polygon']
         });
 
+        // Add layer for drawing outlines
         this.map.addLayer({
             id: 'drawing-outline',
             type: 'line',
@@ -282,7 +284,22 @@ class MapManager {
             paint: {
                 'line-color': '#2196F3',
                 'line-width': 2
-            }
+            },
+            filter: ['in', '$type', 'Polygon', 'LineString']
+        });
+
+        // Add layer for drawing points (first corner marker)
+        this.map.addLayer({
+            id: 'drawing-points',
+            type: 'circle',
+            source: 'drawing-source',
+            paint: {
+                'circle-radius': 6,
+                'circle-color': '#2196F3',
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#FFFFFF'
+            },
+            filter: ['==', '$type', 'Point']
         });
 
         console.log('🎨 Drawing functionality initialized');
@@ -345,48 +362,85 @@ class MapManager {
     }
 
     /**
-     * Setup bbox drawing with mouse events
+     * Setup bbox drawing with two-click method
      */
     setupBboxDrawing() {
-        let startPoint = null;
-        let isDragging = false;
+        let firstPoint = null;
+        let isDrawing = false;
 
-        const onMouseDown = (e) => {
+        const onClick = (e) => {
             if (!this.drawingMode) return;
             
-            startPoint = [e.lngLat.lng, e.lngLat.lat];
-            isDragging = true;
-            this.map.dragPan.disable();
+            if (!isDrawing) {
+                // First click - set the starting point
+                firstPoint = [e.lngLat.lng, e.lngLat.lat];
+                isDrawing = true;
+                console.log('🎯 First corner set at:', firstPoint);
+                
+                // Add a marker at the first point for visual feedback
+                const marker = {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Point',
+                        coordinates: firstPoint
+                    }
+                };
+                
+                this.map.getSource('drawing-source').setData({
+                    type: 'FeatureCollection',
+                    features: [marker]
+                });
+                
+            } else {
+                // Second click - complete the rectangle
+                const secondPoint = [e.lngLat.lng, e.lngLat.lat];
+                const bbox = this.createBboxFromPoints(firstPoint, secondPoint);
+                
+                console.log('🎯 Second corner set at:', secondPoint);
+                console.log('📦 Bounding box created:', bbox);
+                
+                this.finishDrawing(bbox);
+                
+                // Reset for next drawing
+                firstPoint = null;
+                isDrawing = false;
+            }
         };
 
         const onMouseMove = (e) => {
-            if (!isDragging || !startPoint) return;
+            if (!isDrawing || !firstPoint) return;
             
-            const endPoint = [e.lngLat.lng, e.lngLat.lat];
-            this.updateBboxPreview(startPoint, endPoint);
+            // Show preview of the rectangle as mouse moves
+            const currentPoint = [e.lngLat.lng, e.lngLat.lat];
+            this.updateBboxPreview(firstPoint, currentPoint);
         };
 
-        const onMouseUp = (e) => {
-            if (!isDragging || !startPoint) return;
-            
-            const endPoint = [e.lngLat.lng, e.lngLat.lat];
-            const bbox = this.createBboxFromPoints(startPoint, endPoint);
-            
-            this.finishDrawing(bbox);
-            
-            // Cleanup
-            isDragging = false;
-            startPoint = null;
-            this.map.dragPan.enable();
+        const onRightClick = (e) => {
+            // Cancel drawing on right click
+            if (isDrawing) {
+                e.preventDefault();
+                console.log('❌ Drawing cancelled');
+                isDrawing = false;
+                firstPoint = null;
+                this.clearDrawing();
+            }
         };
 
         // Add event listeners
-        this.map.on('mousedown', onMouseDown);
+        this.map.on('click', onClick);
         this.map.on('mousemove', onMouseMove);
-        this.map.on('mouseup', onMouseUp);
+        this.map.on('contextmenu', onRightClick);
 
         // Store references for cleanup
-        this._drawingListeners = { onMouseDown, onMouseMove, onMouseUp };
+        this._drawingListeners = { onClick, onMouseMove, onRightClick };
+        
+        // Show instructions to user
+        if (window.stacExplorer?.notificationService) {
+            window.stacExplorer.notificationService.showNotification(
+                '📍 Click to set first corner, then click again to complete the rectangle. Right-click to cancel.',
+                'info'
+            );
+        }
     }
 
     /**
@@ -422,7 +476,19 @@ class MapManager {
      */
     updateBboxPreview(startPoint, endPoint) {
         const bbox = this.createBboxFromPoints(startPoint, endPoint);
-        const feature = {
+        const features = [];
+        
+        // Add the first point marker
+        features.push({
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: startPoint
+            }
+        });
+        
+        // Add the preview rectangle
+        features.push({
             type: 'Feature',
             geometry: {
                 type: 'Polygon',
@@ -434,11 +500,11 @@ class MapManager {
                     [bbox[0], bbox[1]]  // close
                 ]]
             }
-        };
+        });
 
         this.map.getSource('drawing-source').setData({
             type: 'FeatureCollection',
-            features: [feature]
+            features: features
         });
     }
 
@@ -503,12 +569,18 @@ class MapManager {
         
         // Remove event listeners
         if (this._drawingListeners) {
-            const { onMouseDown, onMouseMove, onMouseUp, onClick } = this._drawingListeners;
+            const { onMouseDown, onMouseMove, onMouseUp, onClick, onRightClick } = this._drawingListeners;
             
+            // Remove old drag-style listeners if they exist
             if (onMouseDown) this.map.off('mousedown', onMouseDown);
-            if (onMouseMove) this.map.off('mousemove', onMouseMove);
             if (onMouseUp) this.map.off('mouseup', onMouseUp);
+            
+            // Remove click-style listeners
             if (onClick) this.map.off('click', onClick);
+            if (onRightClick) this.map.off('contextmenu', onRightClick);
+            
+            // Remove common listeners
+            if (onMouseMove) this.map.off('mousemove', onMouseMove);
             
             this._drawingListeners = null;
         }

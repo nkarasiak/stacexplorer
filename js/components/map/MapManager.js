@@ -1183,190 +1183,33 @@ export class MapManager {
     async addImageOverlay(imageUrl, bbox, item) {
         try {
             console.log('Adding image overlay:', imageUrl);
+            console.log('Using full bounding box:', bbox);
             
             // Remove existing overlay if any
             this.removeCurrentLayer();
 
-            // 1. Ensure proper URL handling
+            // Ensure proper URL handling
             let absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
             console.log('Absolute URL:', absoluteUrl);
             
             // Create a unique ID for this image source
             const sourceId = `image-overlay-${Date.now()}`;
             
-            // 2. Try direct approach first - this is better for CORS issues
-            // with MapLibre handling the image directly
-            try {
-                // Apply coordinates directly
-                const coordinates = [
-                    [bbox[0], bbox[3]], // top-left (northwest)
-                    [bbox[2], bbox[3]], // top-right (northeast)
-                    [bbox[2], bbox[1]], // bottom-right (southeast)
-                    [bbox[0], bbox[1]]  // bottom-left (southwest)
-                ];
-                
-                // Add source without pre-validation
-                this.map.addSource(sourceId, {
-                    type: 'image',
-                    url: absoluteUrl,
-                    coordinates: coordinates
-                });
-                
-                // Add image layer
-                this.map.addLayer({
-                    id: `${sourceId}-layer`,
-                    type: 'raster',
-                    source: sourceId,
-                    paint: {
-                        'raster-opacity': 1.0,
-                        'raster-resampling': 'linear'
-                    }
-                });
-                
-                // Store as current layer
-                this.currentLayer = {
-                    sourceId,
-                    getBounds: () => {
-                        return [
-                            [bbox[0], bbox[1]], // Southwest
-                            [bbox[2], bbox[3]]  // Northeast
-                        ];
-                    }
-                };
-                
-                // Store overlay for opacity control
-                this.currentLayerOverlay = {
-                    setOpacity: (opacity) => {
-                        this.map.setPaintProperty(`${sourceId}-layer`, 'raster-opacity', opacity);
-                    }
-                };
-                
-                console.log('Direct image placement successful');
-                
-                // Register error handler for post-adding errors
-                this.map.once('error', (e) => {
-                    if (e.sourceId === sourceId) {
-                        console.error('Error with direct image overlay, trying alternative:', e);
-                        this.handleImageError(sourceId, absoluteUrl, bbox, item);
-                    }
-                });
-                
-                return true;
-            } catch (directError) {
-                // If direct approach fails, try the more involved approach
-                console.error('Direct image placement failed:', directError);
-                return await this.addImageWithValidation(absoluteUrl, bbox, item);
-            }
-        } catch (error) {
-            console.error('Error in addImageOverlay:', error);
+            // Use the FULL bounding box coordinates without aspect ratio adjustments
+            // This ensures the image covers 100% of the geographic extent
+            const coordinates = [
+                [bbox[0], bbox[3]], // top-left (northwest)
+                [bbox[2], bbox[3]], // top-right (northeast)
+                [bbox[2], bbox[1]], // bottom-right (southeast)
+                [bbox[0], bbox[1]]  // bottom-left (southwest)
+            ];
             
-            // Use GeoJSON fallback without tooltip
-            this.addGeoJsonLayerWithoutTooltip(bbox, item);
-            return false;
-        }
-    }
-    
-    /**
-     * Handle image loading error
-     * @param {string} sourceId - Source ID
-     * @param {string} url - Image URL 
-     * @param {Array} bbox - Bounding box
-     * @param {Object} item - STAC item
-     */
-    async handleImageError(sourceId, url, bbox, item) {
-        // Cleanup failed attempt
-        try {
-            if (this.map.getLayer(`${sourceId}-layer`)) {
-                this.map.removeLayer(`${sourceId}-layer`);
-            }
-            if (this.map.getSource(sourceId)) {
-                this.map.removeSource(sourceId);
-            }
-        } catch (removeError) {
-            console.warn('Error cleaning up failed layer:', removeError);
-        }
-        
-        // Try again with the validated approach
-        try {
-            await this.addImageWithValidation(url, bbox, item);
-        } catch (validationError) {
-            console.error('Validation approach also failed:', validationError);
+            console.log('Using full bbox coordinates:', coordinates);
             
-            // Try with proxy if available
-            const proxyUrl = this.getProxyUrl(url);
-            if (proxyUrl !== url) {
-                try {
-                    await this.addImageWithValidation(proxyUrl, bbox, item);
-                } catch (proxyError) {
-                    console.error('Proxy approach also failed:', proxyError);
-                    this.addGeoJsonLayerWithoutTooltip(bbox, item);
-                }
-            } else {
-                this.addGeoJsonLayerWithoutTooltip(bbox, item);
-            }
-        }
-    }
-    
-    /**
-     * Try to get a proxy URL for CORS issues
-     * @param {string} url - Original URL
-     * @returns {string} - Proxy URL or original URL
-     */
-    getProxyUrl(url) {
-        // Check if we're on the same origin
-        if (url.startsWith(window.location.origin)) {
-            return url; // No need for proxy
-        }
-        
-        // Try to use a CORS proxy if available
-        // Modify this based on your available proxies
-        
-        // Option 1: Use a built-in proxy (if your server has one)
-        // return `/proxy?url=${encodeURIComponent(url)}`;
-        
-        // Option 2: Use a public CORS proxy (be careful with these)
-        // return `https://cors-anywhere.herokuapp.com/${url}`;
-        
-        // Option 3: Use relative path if image is on the server
-        if (url.startsWith('http') && url.includes('/') && !url.startsWith(window.location.origin)) {
-            // Extract just the filename and try as relative
-            const filename = url.substring(url.lastIndexOf('/') + 1);
-            return `./images/${filename}`;
-        }
-        
-        // No proxy available, return original
-        return url;
-    }
-    
-    /**
-     * Add image with pre-validation
-     * @param {string} url - Image URL
-     * @param {Array} bbox - Bounding box
-     * @param {Object} item - STAC item
-     * @returns {Promise<boolean>} - Success status
-     */
-    async addImageWithValidation(url, bbox, item) {
-        // Create a unique ID for this image source
-        const sourceId = `image-overlay-validated-${Date.now()}`;
-        
-        try {
-            // Pre-load and validate the image
-            const imageData = await this.loadAndValidateImage(`https://corsproxy.io/?url=${url}`);
-            console.log('Image validated successfully:', imageData);
-            
-            // If we have a data URL from validation, use it instead
-            const finalUrl = imageData.dataUrl || url;
-            
-            // Calculate optimal coordinates based on image dimensions
-            const coordinates = await this.calculateOptimalCoordinates(
-                imageData, 
-                bbox
-            );
-            
-            // Add image source
+            // Add source with full bounding box coverage
             this.map.addSource(sourceId, {
                 type: 'image',
-                url: finalUrl,
+                url: absoluteUrl,
                 coordinates: coordinates
             });
             
@@ -1399,146 +1242,74 @@ export class MapManager {
                 }
             };
             
-            console.log('Validated image placement successful');
+            console.log('Image overlay added successfully with full bbox coverage');
+            
+            // Register error handler for post-adding errors
+            this.map.once('error', (e) => {
+                if (e.sourceId === sourceId) {
+                    console.error('Error with image overlay, trying fallback:', e);
+                    this.handleImageError(sourceId, absoluteUrl, bbox, item);
+                }
+            });
+            
             return true;
         } catch (error) {
-            console.error('Error with validated image placement:', error);
+            console.error('Error in addImageOverlay:', error);
+            
+            // Use GeoJSON fallback without tooltip
             this.addGeoJsonLayerWithoutTooltip(bbox, item);
             return false;
         }
     }
     
     /**
-     * Load and validate image, optionally converting to data URL
-     * @param {string} url - Image URL
-     * @returns {Promise<Object>} - Image data with dimensions and optional dataUrl
+     * Handle image loading error
+     * @param {string} sourceId - Source ID
+     * @param {string} url - Image URL 
+     * @param {Array} bbox - Bounding box
+     * @param {Object} item - STAC item
      */
-    async loadAndValidateImage(url) {
-        return new Promise((resolve, reject) => {
-            const img = new Image();
-            
-            img.onload = () => {
-                // For images that might have CORS issues, try to convert to data URL
-                try {
-                    // Create a canvas
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    
-                    // Draw image to canvas
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    
-                    // Try to get data URL (will fail if tainted by CORS)
-                    try {
-                        const dataUrl = canvas.toDataURL('image/png');
-                        resolve({
-                            width: img.width,
-                            height: img.height,
-                            aspectRatio: img.width / img.height,
-                            dataUrl: dataUrl
-                        });
-                    } catch (corsError) {
-                        // If we can't get data URL due to CORS, just return dimensions
-                        console.warn('Could not create data URL due to CORS, using original URL');
-                        resolve({
-                            width: img.width,
-                            height: img.height, 
-                            aspectRatio: img.width / img.height
-                        });
-                    }
-                } catch (canvasError) {
-                    console.warn('Error using canvas:', canvasError);
-                    resolve({
-                        width: img.width,
-                        height: img.height,
-                        aspectRatio: img.width / img.height
-                    });
-                }
-            };
-            
-            img.onerror = () => {
-                reject(new Error(`Failed to load image: ${url}`));
-            };
-            
-            // Set crossOrigin to anonymous to avoid CORS issues if possible
-            img.crossOrigin = "anonymous";
-            img.src = url;
-            
-            // Set a timeout in case the image hangs
-            setTimeout(() => {
-                reject(new Error(`Timeout loading image: ${url}`));
-            }, 10000); // 10 second timeout
-        });
+    async handleImageError(sourceId, url, bbox, item) {
+        // Cleanup failed attempt
+        try {
+            if (this.map.getLayer(`${sourceId}-layer`)) {
+                this.map.removeLayer(`${sourceId}-layer`);
+            }
+            if (this.map.getSource(sourceId)) {
+                this.map.removeSource(sourceId);
+            }
+        } catch (removeError) {
+            console.warn('Error cleaning up failed layer:', removeError);
+        }
+        
+        console.log('Image failed to load, showing bounding box outline instead');
+        
+        // Show the bounding box outline as fallback
+        this.addGeoJsonLayerWithoutTooltip(bbox, item);
     }
     
     /**
-     * Calculate optimal coordinates based on image dimensions
-     * @param {Object} imageData - Image data with dimensions
-     * @param {Array} bbox - Bounding box [west, south, east, north]
-     * @returns {Array} - Array of coordinate pairs
+     * Try to get a proxy URL for CORS issues
+     * @param {string} url - Original URL
+     * @returns {string} - Proxy URL or original URL
      */
-    async calculateOptimalCoordinates(imageData, bbox) {
-        // If we don't have image dimensions, use the bbox directly
-        if (!imageData || !imageData.width || !imageData.height) {
-            return [
-                [bbox[0], bbox[3]], // top-left (northwest)
-                [bbox[2], bbox[3]], // top-right (northeast)
-                [bbox[2], bbox[1]], // bottom-right (southeast)
-                [bbox[0], bbox[1]]  // bottom-left (southwest)
-            ];
+    getProxyUrl(url) {
+        // Check if we're on the same origin
+        if (url.startsWith(window.location.origin)) {
+            return url; // No need for proxy
         }
         
-        // Calculate aspect ratios
-        const imgAspectRatio = imageData.width / imageData.height;
-        const bboxWidth = Math.abs(bbox[2] - bbox[0]);
-        const bboxHeight = Math.abs(bbox[3] - bbox[1]);
-        const bboxAspectRatio = bboxWidth / bboxHeight;
+        // For external URLs, we can try a CORS proxy if available
+        // This is a simple implementation - you might want to add more sophisticated proxy logic
         
-        // If aspects are very close, no need to adjust
-        if (Math.abs(imgAspectRatio - bboxAspectRatio) < 0.1) {
-            return [
-                [bbox[0], bbox[3]], // top-left
-                [bbox[2], bbox[3]], // top-right
-                [bbox[2], bbox[1]], // bottom-right
-                [bbox[0], bbox[1]]  // bottom-left
-            ];
+        // Option: Use relative path if image is on the server
+        if (url.startsWith('http') && url.includes('/') && !url.startsWith(window.location.origin)) {
+            // Extract just the filename and try as relative
+            const filename = url.substring(url.lastIndexOf('/') + 1);
+            return `./images/${filename}`;
         }
         
-        // Adjust coordinates to match image aspect ratio while centering in bbox
-        let adjustedBbox;
-        
-        if (imgAspectRatio > bboxAspectRatio) {
-            // Image is wider than bbox
-            const adjustedHeight = bboxWidth / imgAspectRatio;
-            const heightDiff = bboxHeight - adjustedHeight;
-            const midY = (bbox[1] + bbox[3]) / 2;
-            
-            adjustedBbox = [
-                bbox[0],
-                midY - (adjustedHeight / 2),
-                bbox[2],
-                midY + (adjustedHeight / 2)
-            ];
-        } else {
-            // Image is taller than bbox
-            const adjustedWidth = bboxHeight * imgAspectRatio;
-            const widthDiff = bboxWidth - adjustedWidth;
-            const midX = (bbox[0] + bbox[2]) / 2;
-            
-            adjustedBbox = [
-                midX - (adjustedWidth / 2),
-                bbox[1],
-                midX + (adjustedWidth / 2),
-                bbox[3]
-            ];
-        }
-        
-        return [
-            [adjustedBbox[0], adjustedBbox[3]], // top-left
-            [adjustedBbox[2], adjustedBbox[3]], // top-right
-            [adjustedBbox[2], adjustedBbox[1]], // bottom-right
-            [adjustedBbox[0], adjustedBbox[1]]  // bottom-left
-        ];
+        // No proxy available, return original
+        return url;
     }
 }

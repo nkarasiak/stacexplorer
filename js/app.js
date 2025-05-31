@@ -15,10 +15,10 @@ import { initializeGeometrySync } from './utils/GeometrySync.js';
 // Import UI components
 import { CardSearchPanel } from './components/search/CardSearchPanel.js';
 import { CatalogSelector } from './components/search/CatalogSelector.js';
-import { CollectionManager } from './components/search/CollectionManager.js';
+import { CollectionManagerEnhanced } from './components/search/CollectionManagerEnhanced.js';
 import { SearchForm } from './components/search/SearchForm.js';
 import { ResultsPanel } from './components/results/ResultsPanel.js';
-import { AISmartSearch } from './components/search/AISmartSearch.js';
+import { AISmartSearchEnhanced } from './components/search/AISmartSearchEnhanced.js';
 
 // Import configuration
 import { CONFIG } from './config.js';
@@ -44,8 +44,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize catalog selector first to handle default catalog load
         const catalogSelector = new CatalogSelector(apiClient, notificationService);
         
-        // Initialize collection manager
-        const collectionManager = new CollectionManager(apiClient, notificationService);
+        // Initialize enhanced collection manager with auto-loading from all sources
+        const collectionManager = new CollectionManagerEnhanced(apiClient, notificationService, catalogSelector, CONFIG);
         
         // Initialize results panel and search form
         const resultsPanel = new ResultsPanel(apiClient, mapManager, notificationService);
@@ -61,8 +61,8 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
-        // Initialize AI Smart Search component
-        const aiSmartSearch = new AISmartSearch(
+        // Initialize AI Smart Search Enhanced component
+        const aiSmartSearch = new AISmartSearchEnhanced(
             apiClient,
             searchPanel,
             collectionManager,
@@ -99,16 +99,21 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('date-end').value = formatDateForInput(endDate);
         }
         
-        // Show welcome notification
-        notificationService.showNotification('🤖 AI Smart Search is ready! Start by describing what you want to find.', 'success');
+        // Show welcome notification about the enhanced system  
+        setTimeout(() => {
+            notificationService.showNotification('🤖 AI Smart Search ↔️ Search Dashboard are now fully integrated!', 'info');
+        }, 3000);
         
-        // Show AI Smart Search immediately (no delay)
+        // Show AI Smart Search Enhanced immediately (no delay)
         if (aiSmartSearch && typeof aiSmartSearch.showMinimalistSearch === 'function') {
             // Small delay to ensure DOM is ready, but not visible to user
             setTimeout(() => {
                 aiSmartSearch.showMinimalistSearch();
             }, 100);
         }
+        
+        // AI Smart Search Enhanced is ready
+        console.log('🤖 AI Smart Search Enhanced is ready and will open automatically!');
         
         console.log('STAC Catalog Explorer - Initialization complete');
         

@@ -405,8 +405,7 @@ export class ResultsPanel {
             thumbnailHtml = `
                 <div class="thumbnail-section">
                     <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" 
-                         onerror="this.parentElement.style.display='none'; this.parentElement.parentElement.classList.add('no-thumbnail'); this.parentElement.parentElement.querySelector('.dataset-date').classList.add('no-image');" 
-                         onclick="this.parentElement.parentElement.parentElement.querySelector('.view-geometry-btn').click()">
+                         onerror="this.parentElement.style.display='none'; this.parentElement.parentElement.classList.add('no-thumbnail'); this.parentElement.parentElement.querySelector('.dataset-date').classList.add('no-image');">
                 </div>
             `;
         }
@@ -422,7 +421,7 @@ export class ResultsPanel {
                     </div>
                     ${thumbnailHtml}
                     <div class="thumbnail-overlay">
-                        <button class="view-geometry-btn" title="View on map">
+                        <button class="view-geometry-btn" title="View boundaries on map">
                             <i class="material-icons">map</i>
                         </button>
                         <button class="info-btn details-btn" title="Show details">
@@ -461,10 +460,52 @@ export class ResultsPanel {
      * @param {Object} item - STAC item data
      */
     attachItemEventListeners(element, item) {
+        const thumbnail = element.querySelector('.dataset-thumbnail');
         const viewGeometryBtn = element.querySelector('.view-geometry-btn');
         const infoBtn = element.querySelector('.info-btn');
         
-        // Add click handler to view geometry button
+        // Add click handler to thumbnail image (if exists) - displays image on map
+        if (thumbnail) {
+            thumbnail.addEventListener('click', () => {
+                // Show loading indicator
+                document.getElementById('loading').style.display = 'flex';
+                
+                // Display thumbnail image on map
+                setTimeout(() => {
+                    this.mapManager.displayItemOnMap(item, 'thumbnail')
+                        .then(() => {
+                            // Mark the item as active
+                            document.querySelectorAll('.dataset-item').forEach(el => {
+                                el.classList.remove('active');
+                            });
+                            element.classList.add('active');
+                            
+                            // Dispatch item activated event
+                            document.dispatchEvent(new CustomEvent('itemActivated', {
+                                detail: { 
+                                    itemId: item.id,
+                                    assetKey: 'thumbnail'
+                                }
+                            }));
+                            
+                            // Expand tools panel if collapsed
+                            document.dispatchEvent(new CustomEvent('expandToolsPanel'));
+                            
+                            // Hide loading indicator
+                            document.getElementById('loading').style.display = 'none';
+                        })
+                        .catch(error => {
+                            this.notificationService.showNotification(
+                                `Error displaying thumbnail on map: ${error.message}`, 
+                                'error'
+                            );
+                            document.getElementById('loading').style.display = 'none';
+                        });
+                }, 100); // Small delay to allow loading indicator to appear
+            });
+        }
+        
+        // Add click handler to view geometry button - displays boundaries on map
         if (viewGeometryBtn) {
             viewGeometryBtn.addEventListener('click', () => {
                 // Show loading indicator

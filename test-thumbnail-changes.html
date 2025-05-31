@@ -46,6 +46,16 @@
     <p>This page documents the changes made to improve thumbnail handling in the STAC Explorer.</p>
 
     <div class="test-case">
+        <h3>✅ User Interface Options</h3>
+        <ul>
+            <li><strong>Click Thumbnail Image:</strong> Displays the thumbnail image overlaid on the map (original functionality restored)</li>
+            <li><strong>Click Map Button (🗺️):</strong> Shows dataset boundaries/geometry on the map (new option)</li>
+            <li><strong>Click Info Button (ℹ️):</strong> Opens detailed metadata modal</li>
+            <li><strong>No Thumbnail:</strong> Only map and info buttons available, card maintains proper height</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
         <h3>✅ Changes Implemented</h3>
         <ul>
             <li><strong>Removed placeholder thumbnails:</strong> No more "No Preview" placeholder images</li>
@@ -160,10 +170,12 @@ if (thumbnailUrl) {
     <div class="test-case">
         <h3>🎯 User Experience Improvements</h3>
         <ul>
+            <li><span class="success">Restored thumbnail image display</span> - Click thumbnails to see images on map (original behavior)</li>
+            <li><span class="success">Added geometry boundaries option</span> - Click map button to see dataset outlines</li>
             <li><span class="success">No more broken placeholder images</span> - Clean interface when thumbnails aren't available</li>
-            <li><span class="success">Instant geometry display</span> - Click to see dataset boundaries without waiting for image loading</li>
             <li><span class="success">Better error handling</span> - Failed images completely disappear instead of showing broken placeholders</li>
-            <li><span class="success">Clearer UI</span> - Dedicated map button makes the action more obvious</li>
+            <li><span class="success">Consistent card heights</span> - All cards maintain proper height regardless of thumbnail availability</li>
+            <li><span class="success">Clearer UI</span> - Button tooltips clearly indicate what each action does</li>
         </ul>
     </div>
 
@@ -182,10 +194,21 @@ if (thumbnailUrl) {
         <ol>
             <li>Start the STAC Explorer application</li>
             <li>Perform a search to get results</li>
-            <li>Observe that only datasets with valid thumbnails show images</li>
-            <li>Click the blue map button (🗺️) on any result item</li>
-            <li>Verify that the dataset's bounding box appears on the map</li>
+            <li>For items WITH thumbnails:
+                <ul>
+                    <li><strong>Click the thumbnail image</strong> → Verify the image appears overlaid on the map</li>
+                    <li><strong>Click the map button (🗺️)</strong> → Verify the dataset boundaries appear on the map</li>
+                </ul>
+            </li>
+            <li>For items WITHOUT thumbnails:
+                <ul>
+                    <li>Verify cards maintain proper height (120px minimum)</li>
+                    <li>Verify date and buttons are visible</li>
+                    <li><strong>Click the map button (🗺️)</strong> → Verify boundaries appear on map</li>
+                </ul>
+            </li>
             <li>Check that failed thumbnails are completely hidden (not showing placeholder)</li>
+            <li>Verify button tooltips show "View boundaries on map" vs "Show details"</li>
         </ol>
     </div>
 

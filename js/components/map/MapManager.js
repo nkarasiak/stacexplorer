@@ -1197,12 +1197,17 @@ export class MapManager {
                 console.log('✅ Using preloaded thumbnail from results panel');
                 finalUrl = thumbnailDataUrl;
             } else {
-                console.log('⚠️ Could not convert preloaded thumbnail, trying direct URL...');
+                console.log('⚠️ Could not get preloaded thumbnail, checking if external URL is safe...');
                 
-                // Use the direct thumbnail URL - MapLibre might be able to handle it
-                // even if canvas conversion fails
+                // Check if the external URL is likely to cause CORS issues
                 const absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
-                console.log('🌐 Trying direct thumbnail URL:', absoluteUrl);
+                if (this.isLikelyCORSBlocked(absoluteUrl)) {
+                    console.log('🚫 External URL likely blocked by CORS, showing bounding box instead');
+                    this.addGeoJsonLayerWithoutTooltip(bbox, item);
+                    return true;
+                }
+                
+                console.log('🌐 Using direct image URL (might fail due to CORS):', absoluteUrl);
                 finalUrl = absoluteUrl;
             }
             
@@ -1261,7 +1266,7 @@ export class MapManager {
             // Register error handler for post-adding errors
             this.map.once('error', (e) => {
                 if (e.sourceId === sourceId) {
-                    console.log('❌ Image failed to load, showing bounding box instead');
+                    console.error('❌ Error with image overlay, showing fallback:', e);
                     this.handleImageError(sourceId, finalUrl, bbox, item);
                 }
             });
@@ -1274,6 +1279,53 @@ export class MapManager {
             this.addGeoJsonLayerWithoutTooltip(bbox, item);
             return false;
         }
+    }
+    
+    /**
+     * Check if a URL is likely to be blocked by CORS
+     * @param {string} url - URL to check
+     * @returns {boolean} - True if likely to be CORS blocked
+     */
+    isLikelyCORSBlocked(url) {
+        if (!url) return true;
+        
+        // If it's the same origin, it should be fine
+        if (url.startsWith(window.location.origin)) {
+            return false;
+        }
+        
+        // If it's a data URL, it should be fine
+        if (url.startsWith('data:')) {
+            return false;
+        }
+        
+        // Known CORS-problematic domains/patterns
+        const corsProblematicPatterns = [
+            'datahub.creodias.eu',
+            'odata/v1/Assets',
+            '/$value',
+            'earthdata.nasa.gov',
+            'ladsweb.modaps.eosdis.nasa.gov',
+            'archive.usgs.gov'
+        ];
+        
+        // Check if URL contains any problematic patterns
+        const hasProblematicPattern = corsProblematicPatterns.some(pattern => 
+            url.toLowerCase().includes(pattern.toLowerCase())
+        );
+        
+        if (hasProblematicPattern) {
+            console.log('🚫 URL contains CORS-problematic pattern:', url);
+            return true;
+        }
+        
+        // All other external URLs are potentially problematic
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            console.log('⚠️ External URL detected, might have CORS issues:', url);
+            return true; // Conservative approach - assume external URLs might have CORS issues
+        }
+        
+        return false;
     }
     
     /**

@@ -515,12 +515,14 @@ export class AISmartSearchEnhanced {
         container.className = 'ai-dropdown-content';
         
         const collections = this.allAvailableCollections || [];
-        const popularCollections = collections.slice(0, 8); // Show top 8
+        const showAllCollections = container.dataset.showAll === 'true';
+        const initialDisplayLimit = 25; // Show more collections initially
+        const collectionsToShow = showAllCollections ? collections : collections.slice(0, initialDisplayLimit);
         
         container.innerHTML = `
             <div class="ai-dropdown-header">
                 <i class="material-icons">dataset</i>
-                <span>Select Dataset</span>
+                <span>Select Dataset (${collections.length} available)</span>
             </div>
             
             <div class="ai-search-section">
@@ -528,8 +530,8 @@ export class AISmartSearchEnhanced {
             </div>
             
             <div class="ai-options-section" id="collection-options">
-                ${popularCollections.length > 0 ? 
-                    popularCollections.map(collection => `
+                ${collectionsToShow.length > 0 ? 
+                    collectionsToShow.map(collection => `
                         <div class="ai-option" data-value="${collection.id}" data-source="${collection.source}">
                             <i class="material-icons">satellite</i>
                             <div class="ai-option-content">
@@ -540,6 +542,15 @@ export class AISmartSearchEnhanced {
                     `).join('') :
                     '<div class="ai-option-loading"><i class="material-icons">refresh</i> Loading collections...</div>'
                 }
+                ${!showAllCollections && collections.length > initialDisplayLimit ? `
+                    <div class="ai-show-all-option" id="show-all-collections">
+                        <i class="material-icons">expand_more</i>
+                        <div class="ai-option-content">
+                            <div class="ai-option-title">Show all ${collections.length} collections</div>
+                            <div class="ai-option-subtitle">Display complete list</div>
+                        </div>
+                    </div>
+                ` : ''}
             </div>
         `;
         
@@ -702,6 +713,26 @@ export class AISmartSearchEnhanced {
         if (searchInput) {
             searchInput.addEventListener('input', (e) => {
                 this.filterCollections(e.target.value, container);
+            });
+        }
+        
+        // Show all collections button
+        const showAllButton = container.querySelector('#show-all-collections');
+        if (showAllButton) {
+            showAllButton.addEventListener('click', () => {
+                // Rebuild dropdown with all collections
+                container.dataset.showAll = 'true';
+                const newContent = this.createCollectionDropdown();
+                
+                // Replace current dropdown content
+                const currentDropdown = document.querySelector('.ai-dropdown-enhanced[data-type="collection"]');
+                if (currentDropdown) {
+                    currentDropdown.innerHTML = '';
+                    currentDropdown.appendChild(newContent);
+                    
+                    // Reposition dropdown
+                    this.positionDropdownNearField(currentDropdown, this.activeField);
+                }
             });
         }
         
@@ -1203,13 +1234,34 @@ export class AISmartSearchEnhanced {
      */
     filterCollections(query, container) {
         const options = container.querySelectorAll('.ai-option[data-value]');
+        const showAllButton = container.querySelector('#show-all-collections');
         const normalizedQuery = query.toLowerCase();
+        
+        let visibleCount = 0;
         
         options.forEach(option => {
             const title = option.querySelector('.ai-option-title').textContent.toLowerCase();
-            const matches = title.includes(normalizedQuery);
+            const subtitle = option.querySelector('.ai-option-subtitle').textContent.toLowerCase();
+            const matches = title.includes(normalizedQuery) || subtitle.includes(normalizedQuery);
+            
             option.style.display = matches ? 'flex' : 'none';
+            if (matches) visibleCount++;
         });
+        
+        // Hide "Show all" button when searching
+        if (showAllButton) {
+            showAllButton.style.display = query.trim() ? 'none' : 'flex';
+        }
+        
+        // Show count of filtered results
+        const header = container.querySelector('.ai-dropdown-header span');
+        if (header && query.trim()) {
+            const total = this.allAvailableCollections ? this.allAvailableCollections.length : 0;
+            header.textContent = `Search Results (${visibleCount} of ${total})`;
+        } else if (header) {
+            const total = this.allAvailableCollections ? this.allAvailableCollections.length : 0;
+            header.textContent = `Select Dataset (${total} available)`;
+        }
     }
     
     /**

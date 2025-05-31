@@ -398,7 +398,10 @@ export class ResultsPanel {
         `);
         // Construct HTML - conditionally include thumbnail
         let thumbnailHtml = '';
+        let hasValidThumbnail = false;
+        
         if (thumbnailUrl) {
+            hasValidThumbnail = true;
             thumbnailHtml = `
                 <div class="thumbnail-section">
                     <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" 
@@ -408,11 +411,14 @@ export class ResultsPanel {
             `;
         }
         
+        const thumbnailContainerClass = `thumbnail-container${!hasValidThumbnail ? ' no-thumbnail' : ''}`;
+        const dateClass = `dataset-date${!hasValidThumbnail ? ' no-image' : ''}`;
+        
         li.innerHTML = `
             <div class="dataset-content">
-                <div class="thumbnail-container${!thumbnailUrl ? ' no-thumbnail' : ''}">
+                <div class="${thumbnailContainerClass}">
                     <div class="dataset-metadata">
-                        <div class="dataset-date${!thumbnailUrl ? ' no-image' : ''}"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
+                        <div class="${dateClass}"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                     </div>
                     ${thumbnailHtml}
                     <div class="thumbnail-overlay">
@@ -429,6 +435,22 @@ export class ResultsPanel {
         
         // Add event listeners after creating the element
         this.attachItemEventListeners(li, item);
+        
+        // Ensure proper styling is applied (defensive programming)
+        setTimeout(() => {
+            const container = li.querySelector('.thumbnail-container');
+            const thumbnailSection = li.querySelector('.thumbnail-section');
+            const dateElement = li.querySelector('.dataset-date');
+            
+            if (container && !thumbnailSection) {
+                // No thumbnail found, ensure proper classes are applied
+                container.classList.add('no-thumbnail');
+                if (dateElement) {
+                    dateElement.classList.add('no-image');
+                }
+                console.log('Applied no-thumbnail styling to item:', item.id);
+            }
+        }, 0);
         
         return li;
     }

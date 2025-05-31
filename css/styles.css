@@ -709,6 +709,7 @@ select.form-control {
 
 .dataset-content {
     padding: 6px;
+    min-height: 132px; /* Ensure parent container is tall enough (120px + 12px padding) */
 }
 
 .dataset-header {
@@ -1332,7 +1333,7 @@ select.form-control {
     position: relative;
     width: 100%;
     margin-bottom: 0px;
-    min-height: 120px; /* Ensure minimum height even without thumbnail */
+    min-height: 120px !important; /* Force minimum height for all containers */
     background-color: var(--md-surface-overlay);
     border-radius: 4px;
     display: flex;
@@ -1348,6 +1349,20 @@ select.form-control {
 
 /* Add a subtle icon when no thumbnail */
 .thumbnail-container.no-thumbnail::before {
+    content: 'image';
+    font-family: 'Material Icons';
+    font-size: 48px;
+    color: var(--md-text-secondary);
+    opacity: 0.3;
+}
+
+/* Fallback: if no thumbnail section exists, still show placeholder */
+.thumbnail-container:not(:has(.thumbnail-section)) {
+    background: linear-gradient(135deg, var(--md-surface-overlay) 0%, var(--md-hover-overlay) 100%);
+    border: 1px dashed var(--md-border-color);
+}
+
+.thumbnail-container:not(:has(.thumbnail-section))::before {
     content: 'image';
     font-family: 'Material Icons';
     font-size: 48px;

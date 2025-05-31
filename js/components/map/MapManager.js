@@ -1175,42 +1175,26 @@ export class MapManager {
     }
     
     /**
-     * Add image overlay to map
+     * Add image overlay to map - SIMPLE WORKING VERSION
      * @param {string} imageUrl - Image URL
      * @param {Array} bbox - Bounding box [west, south, east, north]
      * @param {Object} item - STAC item
      */
     async addImageOverlay(imageUrl, bbox, item) {
         try {
-            console.log('🖼️ Adding image overlay:', imageUrl);
-            console.log('📍 Using full bounding box:', bbox);
+            console.log('Adding image overlay:', imageUrl);
             
             // Remove existing overlay if any
             this.removeCurrentLayer();
 
-            // Try to use the already-loaded thumbnail from results panel first (avoids CORS)
-            console.log('🔄 Attempting to get thumbnail from results panel...');
-            const thumbnailDataUrl = await this.getThumbnailFromResultsPanel(item.id);
-            
-            let finalUrl;
-            if (thumbnailDataUrl) {
-                console.log('✅ Using preloaded thumbnail from results panel');
-                finalUrl = thumbnailDataUrl;
-            } else {
-                console.log('⚠️ Could not convert preloaded thumbnail, trying direct URL...');
-                
-                // Use the direct thumbnail URL - MapLibre might be able to handle it
-                // even if canvas conversion fails due to CORS
-                const absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
-                console.log('🌐 Trying direct thumbnail URL:', absoluteUrl);
-                finalUrl = absoluteUrl;
-            }
+            // Ensure proper URL handling
+            let absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
+            console.log('Absolute URL:', absoluteUrl);
             
             // Create a unique ID for this image source
             const sourceId = `image-overlay-${Date.now()}`;
             
-            // Use the FULL bounding box coordinates without aspect ratio adjustments
-            // This ensures the image covers 100% of the geographic extent
+            // Apply coordinates directly - full bounding box coverage
             const coordinates = [
                 [bbox[0], bbox[3]], // top-left (northwest)
                 [bbox[2], bbox[3]], // top-right (northeast)
@@ -1218,16 +1202,14 @@ export class MapManager {
                 [bbox[0], bbox[1]]  // bottom-left (southwest)
             ];
             
-            console.log('📐 Using full bbox coordinates:', coordinates);
-            
-            // Add source with full bounding box coverage
+            // Add source without pre-validation - let MapLibre handle it
             this.map.addSource(sourceId, {
                 type: 'image',
-                url: finalUrl,
+                url: absoluteUrl,
                 coordinates: coordinates
             });
             
-            // Add image layer with error handling
+            // Add image layer
             this.map.addLayer({
                 id: `${sourceId}-layer`,
                 type: 'raster',
@@ -1237,17 +1219,6 @@ export class MapManager {
                     'raster-resampling': 'linear'
                 }
             });
-            
-            // Wait a moment to see if the layer loads successfully
-            setTimeout(() => {
-                // Check if the source actually loaded
-                const source = this.map.getSource(sourceId);
-                if (source && this.map.getLayer(`${sourceId}-layer`)) {
-                    console.log('✅ Image layer appears to have loaded successfully');
-                } else {
-                    console.warn('⚠️ Image layer may have failed to load, checking...');
-                }
-            }, 2000);
             
             // Store as current layer
             this.currentLayer = {
@@ -1267,27 +1238,19 @@ export class MapManager {
                 }
             };
             
-            console.log('✅ Image overlay added successfully with full bbox coverage');
+            console.log('Image overlay added successfully');
             
             // Register error handler for post-adding errors
             this.map.once('error', (e) => {
                 if (e.sourceId === sourceId) {
-                    console.log('❌ Image failed to load, showing bounding box instead');
-                    this.handleImageError(sourceId, finalUrl, bbox, item);
-                }
-            });
-            
-            // Also listen for source data events to catch loading failures
-            this.map.once('sourcedata', (e) => {
-                if (e.sourceId === sourceId && e.isSourceLoaded === false) {
-                    console.warn('⚠️ Image source failed to load, using fallback');
-                    this.handleImageError(sourceId, finalUrl, bbox, item);
+                    console.error('Error with image overlay, showing fallback:', e);
+                    this.handleImageError(sourceId, absoluteUrl, bbox, item);
                 }
             });
             
             return true;
         } catch (error) {
-            console.error('❌ Error in addImageOverlay:', error);
+            console.error('Error in addImageOverlay:', error);
             
             // Use GeoJSON fallback without tooltip
             this.addGeoJsonLayerWithoutTooltip(bbox, item);
@@ -1296,159 +1259,7 @@ export class MapManager {
     }
     
     /**
-     * Check if a URL is likely to be blocked by CORS
-     * @param {string} url - URL to check
-     * @returns {boolean} - True if likely to be CORS blocked
-     */
-    isLikelyCORSBlocked(url) {
-        if (!url) return true;
-        
-        // If it's the same origin, it should be fine
-        if (url.startsWith(window.location.origin)) {
-            return false;
-        }
-        
-        // If it's a data URL, it should be fine
-        if (url.startsWith('data:')) {
-            return false;
-        }
-        
-        // Known highly problematic domains/patterns that rarely work
-        const highlyProblematicPatterns = [
-            '/$value',  // OData $value endpoints rarely support CORS
-            '/odata/v1/Assets',  // Specific OData asset endpoints
-            'datahub.creodias.eu',  // This domain generally blocks CORS
-            'earthdata.nasa.gov',   // NASA domain blocks CORS
-            'ladsweb.modaps.eosdis.nasa.gov',  // NASA MODAPS blocks CORS
-            'archive.usgs.gov',     // USGS archive blocks CORS
-        ];
-        
-        // Check if URL contains highly problematic patterns
-        const hasHighlyProblematicPattern = highlyProblematicPatterns.some(pattern => 
-            url.toLowerCase().includes(pattern.toLowerCase())
-        );
-        
-        if (hasHighlyProblematicPattern) {
-            console.log('🚫 URL contains highly problematic pattern, will block:', url);
-            return true;
-        }
-        
-        // Only block URLs with known problematic patterns
-        // Most external URLs should be allowed to try loading
-        console.log('🌐 External URL detected, will attempt to load:', url);
-        return false; // Allow external URLs to be attempted
-    }
-    
-    /**
-     * Get thumbnail from results panel and try to convert to data URL
-     * @param {string} itemId - Item ID to look for
-     * @returns {Promise<string|null>} - Data URL of the thumbnail or null (CORS usually prevents this)
-     */
-    async getThumbnailFromResultsPanel(itemId) {
-        try {
-            console.log('🔍 Looking for preloaded thumbnail for item:', itemId);
-            
-            // Find the item in the results panel
-            const resultItem = this.findResultItemByMultipleStrategies(itemId);
-            if (!resultItem) {
-                console.log('❌ Item not found in results panel');
-                return null;
-            }
-            
-            // Find the thumbnail image element
-            const thumbnailImg = resultItem.querySelector('.dataset-thumbnail');
-            if (!thumbnailImg) {
-                console.log('❌ No thumbnail image element found in results panel');
-                return null;
-            }
-            
-            // Check if the image is loaded and has a valid source
-            console.log('📊 Thumbnail status:', {
-                src: thumbnailImg.src,
-                complete: thumbnailImg.complete,
-                naturalWidth: thumbnailImg.naturalWidth,
-                naturalHeight: thumbnailImg.naturalHeight
-            });
-            
-            if (!thumbnailImg.src || thumbnailImg.src.includes('placeholder')) {
-                console.log('❌ Thumbnail has no valid source or is placeholder');
-                return null;
-            }
-            
-            if (!thumbnailImg.complete || thumbnailImg.naturalWidth === 0) {
-                console.log('❌ Thumbnail not fully loaded yet');
-                return null;
-            }
-            
-            // Try to convert the loaded image to a data URL
-            // This will fail with CORS, but that's OK - MapLibre can still use the direct URL
-            console.log('🐈 Attempting to convert thumbnail to data URL (will likely fail with CORS)...');
-            
-            const dataUrl = await this.imageToDataUrl(thumbnailImg);
-            if (dataUrl && dataUrl.length > 1000) {
-                console.log('✅ Successfully converted thumbnail to data URL (length:', dataUrl.length, ')');
-                return dataUrl;
-            } else {
-                console.log('❌ Failed to convert thumbnail to data URL due to CORS - this is expected');
-                return null;
-            }
-        } catch (error) {
-            console.error('❌ Error getting thumbnail from results panel:', error);
-            return null;
-        }
-    }
-    
-    /**
-     * Convert an image element to a data URL
-     * @param {HTMLImageElement} imgElement - Image element to convert
-     * @returns {Promise<string|null>} - Data URL or null if conversion fails
-     */
-    async imageToDataUrl(imgElement) {
-        return new Promise((resolve) => {
-            try {
-                // Create a canvas element
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                
-                // Set canvas dimensions to match image
-                canvas.width = imgElement.naturalWidth || imgElement.width || 300;
-                canvas.height = imgElement.naturalHeight || imgElement.height || 200;
-                
-                console.log('🎨 Converting image to canvas:', {
-                    width: canvas.width,
-                    height: canvas.height,
-                    imgSrc: imgElement.src?.substring(0, 100) + '...'
-                });
-                
-                // Draw the image onto the canvas
-                ctx.drawImage(imgElement, 0, 0);
-                
-                // Try to convert canvas to data URL
-                let dataUrl;
-                try {
-                    dataUrl = canvas.toDataURL('image/png', 0.8); // Slightly compressed
-                    console.log('✅ Successfully converted to data URL, size:', dataUrl.length);
-                } catch (corsError) {
-                    console.warn('❌ Canvas tainted by CORS - this is expected for external images:', corsError.message);
-                    canvas.remove();
-                    resolve(null);
-                    return;
-                }
-                
-                // Clean up
-                canvas.remove();
-                
-                resolve(dataUrl);
-                
-            } catch (error) {
-                console.warn('❌ Could not convert image to data URL:', error.message);
-                resolve(null);
-            }
-        });
-    }
-    
-    /**
-     * Handle image loading error
+     * Handle image loading error - SIMPLE VERSION
      * @param {string} sourceId - Source ID
      * @param {string} url - Image URL 
      * @param {Array} bbox - Bounding box
@@ -1483,9 +1294,6 @@ export class MapManager {
         if (url.startsWith(window.location.origin)) {
             return url; // No need for proxy
         }
-        
-        // For external URLs, we can try a CORS proxy if available
-        // This is a simple implementation - you might want to add more sophisticated proxy logic
         
         // Option: Use relative path if image is on the server
         if (url.startsWith('http') && url.includes('/') && !url.startsWith(window.location.origin)) {

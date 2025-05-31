@@ -6,6 +6,7 @@
 
 import { defaultGeocodingService } from '../../utils/GeocodingService.js';
 import { isWKT, isGeoJSON, wktToGeoJSON, parseGeoJSON, geojsonToBbox } from '../../utils/GeometryUtils.js';
+import { DateUtils } from '../../utils/DateUtils.js';
 
 export class AISmartSearch {
     /**
@@ -36,9 +37,10 @@ export class AISmartSearch {
         this.selectedCollection = "";
         this.selectedLocation = "everywhere";
         this.selectedDate = {
-            type: "anytime", // "anytime", "last7", "last30", "custom"
+            type: "anytime",
             start: null,
-            end: null
+            end: null,
+            preset: null
         };
         this.cloudCover = 20;
         
@@ -90,7 +92,7 @@ export class AISmartSearch {
             aiButton.addEventListener('click', () => {
                 this.showMinimalistSearch();
             });
-            console.log('🤖 AI Smart Search button initialized');
+            console.log('🤖 Enhanced AI Smart Search button initialized');
         } else {
             console.error('❌ AI Smart Search button not found');
         }
@@ -183,44 +185,29 @@ export class AISmartSearch {
     /**
      * Create and show the minimalist search interface
      */
-    /**
- * Create and show the minimalist search interface
- */
-async showMinimalistSearch() {
-    try {
-        // Show loading notification while collections are being loaded
-        this.notificationService.showNotification('Loading collections from all data sources...', 'info');
-        
-        // Ensure we have collections from all data sources
-        const hasCollections = await this.ensureDataSourceSelected();
-        
-        if (!hasCollections) {
-            this.notificationService.showNotification('Could not load collections from any data source. Please check your internet connection.', 'error');
-            return;
+    async showMinimalistSearch() {
+        try {
+            console.log('🤖 Showing AI Smart Search immediately...');
+            
+            // Show interface immediately with placeholder collections
+            this.createAndShowInterface();
+            
+            // Load collections in background
+            this.loadCollectionsInBackground();
+            
+        } catch (error) {
+            console.error('❌ Error showing AI minimalist search:', error);
+            this.notificationService.showNotification('Error showing AI search interface', 'error');
         }
-        
-        // Clear the loading notification after a brief delay
-        setTimeout(() => {
-            this.notificationService.showNotification(`Loaded ${this.allAvailableCollections.length} collections from all sources! 🎉`, 'success');
-        }, 500);
-        
+    }
+    
+    /**
+     * Create and show the interface immediately
+     */
+    createAndShowInterface() {
         // Create fullscreen element
         this.fullscreenElement = document.createElement('div');
         this.fullscreenElement.className = 'ai-fullscreen';
-        
-        // Get available collections from all data sources
-        const collections = this.allAvailableCollections || [];
-        console.log(`🗂️ Using ${collections.length} collections for AI search interface`);
-        
-        // Create the collection options with source information
-        const collectionItems = collections.map(collection => 
-            `<div class="ai-dropdown-item" data-value="${collection.id}" data-source="${collection.source}">
-                <div class="collection-item-content">
-                    <div class="collection-title">${collection.displayTitle || collection.title || collection.id}</div>
-                    <div class="collection-id">${collection.id}</div>
-                </div>
-            </div>`
-        ).join('');
         
         // Set current date for datepickers
         const today = new Date();
@@ -230,7 +217,7 @@ async showMinimalistSearch() {
         last7Days.setDate(last7Days.getDate() - 7);
         const formattedLast7Days = this.formatDate(last7Days);
         
-        // Build fullscreen content - restored to original click behavior with enhanced dropdowns
+        // Build interface with enhanced date functionality
         this.fullscreenElement.innerHTML = `
             <div class="ai-fullscreen-header">
                 <button class="ai-fullscreen-close" aria-label="Close search">
@@ -254,8 +241,11 @@ async showMinimalistSearch() {
                             <input type="text" class="ai-collection-search-input" 
                                 placeholder="Search for datasets...">
                         </div>
-                        <div class="ai-collections-list">
-                            ${collectionItems}
+                        <div class="ai-collections-list" id="ai-collections-list">
+                            <div class="ai-collections-loading">
+                                <i class="material-icons ai-loading-spinner">refresh</i>
+                                <span>Loading collections from all data sources...</span>
+                            </div>
                         </div>
                     </div>
                     over 
@@ -318,33 +308,8 @@ async showMinimalistSearch() {
                     at 
                     <span class="ai-field ${this.selectedDate.type === 'anytime' ? 'empty' : ''}" 
                           id="ai-field-date" 
-                          data-placeholder="ANYTIME">${this.getDateDisplayText()}</span>
-                    <div class="ai-dropdown" id="ai-dropdown-date">
-                        <div class="ai-dropdown-edit-section">
-                            <input type="text" class="ai-dropdown-edit-input" 
-                                placeholder="Type date like 'last week', 'last month'..." 
-                                id="ai-date-edit-input">
-                        </div>
-                        <div class="ai-date-presets">
-                            <div class="ai-date-preset" data-type="anytime">ANYTIME</div>
-                            <div class="ai-date-preset" data-type="last7">Last 7 days</div>
-                            <div class="ai-date-preset" data-type="last30">Last 30 days</div>
-                            <div class="ai-date-preset" data-type="last90">Last 3 months</div>
-                        </div>
-                        <div class="ai-date-custom">
-                            <div>Custom range:</div>
-                            <div class="ai-date-custom-inputs">
-                                <input type="date" class="ai-date-input" id="ai-date-start" 
-                                    value="${formattedLast7Days}">
-                                <span>to</span>
-                                <input type="date" class="ai-date-input" id="ai-date-end" 
-                                    value="${formattedToday}">
-                                <button class="ai-location-action" id="ai-apply-custom-date">
-                                    Apply
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+                          data-placeholder="ANYTIME">${this.getEnhancedDateDisplayText()}</span>
+                    ${this.renderSimpleDateDropdown()}
                     with 
                     <span class="ai-field" 
                           id="ai-field-params" 
@@ -385,12 +350,81 @@ async showMinimalistSearch() {
         // Set up event listeners
         this.setupMinimalistEventListeners();
         
-        console.log('🤖 AI Smart Search minimalist displayed with collections:', collections.length);
-    } catch (error) {
-        console.error('❌ Error showing AI minimalist search:', error);
-        this.notificationService.showNotification('Error showing AI search interface', 'error');
+        console.log('🤖 AI Smart Search interface shown immediately');
     }
-}
+    
+    /**
+     * Load collections in the background and update interface
+     */
+    async loadCollectionsInBackground() {
+        try {
+            console.log('🔄 Loading collections in background...');
+            
+            // Load collections from all data sources
+            const hasCollections = await this.ensureDataSourceSelected();
+            
+            if (hasCollections && this.fullscreenElement) {
+                // Update the collections list in the interface
+                this.updateCollectionsList();
+                this.notificationService.showNotification(`🎉 Loaded ${this.allAvailableCollections.length} collections from all sources!`, 'success');
+            } else {
+                // Show error in collections list
+                this.showCollectionsError();
+                this.notificationService.showNotification('Could not load collections. You can still search by typing collection names.', 'warning');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error loading collections in background:', error);
+            this.showCollectionsError();
+            this.notificationService.showNotification('Error loading collections. You can still search by typing collection names.', 'warning');
+        }
+    }
+    
+    /**
+     * Update the collections list in the already-shown interface
+     */
+    updateCollectionsList() {
+        const collectionsContainer = document.getElementById('ai-collections-list');
+        if (!collectionsContainer || !this.allAvailableCollections) {
+            return;
+        }
+        
+        // Create the collection options with source information
+        const collectionItems = this.allAvailableCollections.map(collection => 
+            `<div class="ai-dropdown-item" data-value="${collection.id}" data-source="${collection.source}">
+                <div class="collection-item-content">
+                    <div class="collection-title">${collection.displayTitle || collection.title || collection.id}</div>
+                    <div class="collection-id">${collection.id}</div>
+                </div>
+            </div>`
+        ).join('');
+        
+        // Replace loading with actual collections
+        collectionsContainer.innerHTML = collectionItems;
+        
+        // Re-setup collection field handlers with new items
+        this.setupCollectionField();
+        
+        console.log(`✅ Updated collections list with ${this.allAvailableCollections.length} collections`);
+    }
+    
+    /**
+     * Show error state in collections list
+     */
+    showCollectionsError() {
+        const collectionsContainer = document.getElementById('ai-collections-list');
+        if (!collectionsContainer) {
+            return;
+        }
+        
+        collectionsContainer.innerHTML = `
+            <div class="ai-collections-error">
+                <i class="material-icons">error_outline</i>
+                <span>Could not load collections</span>
+                <small>You can still type collection names manually</small>
+            </div>
+        `;
+    }
 
     
     /**
@@ -412,22 +446,19 @@ async showMinimalistSearch() {
         return collection ? (collection.title || collectionId) : collectionId;
     }
     /**
-     * Get display text for the date field
+     * Get enhanced display text for the date field using DateUtils
+     * @returns {string} Display text for date
+     */
+    getEnhancedDateDisplayText() {
+        return DateUtils.getDateDisplayText(this.selectedDate);
+    }
+    
+    /**
+     * Get display text for the date field (legacy compatibility)
      * @returns {string} Display text for date
      */
     getDateDisplayText() {
-        if (this.selectedDate.type === 'anytime') {
-            return 'ANYTIME';
-        } else if (this.selectedDate.type === 'last7') {
-            return 'Last 7 days';
-        } else if (this.selectedDate.type === 'last30') {
-            return 'Last 30 days';
-        } else if (this.selectedDate.type === 'last90') {
-            return 'Last 3 months';
-        } else if (this.selectedDate.type === 'custom' && this.selectedDate.start && this.selectedDate.end) {
-            return `${this.selectedDate.start} to ${this.selectedDate.end}`;
-        }
-        return 'ANYTIME';
+        return this.getEnhancedDateDisplayText();
     }
     
     
@@ -514,11 +545,11 @@ setupFieldClickHandlers() {
         this.toggleField('location');
     });
     
-    // Other fields: Direct editing as implemented
+    // Other fields: Show dropdown for date, direct editing for params
     const dateField = document.getElementById('ai-field-date');
     dateField.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.startDirectEdit(dateField, 'date');
+        this.toggleField('date');
     });
     
     const paramsField = document.getElementById('ai-field-params');
@@ -1459,66 +1490,340 @@ setupDropdownEditInputs() {
     }
     
     /**
-     * Set up date field handlers
+     * Render simple date dropdown with list of suggestions
+     * @returns {string} HTML for simple date dropdown
+     */
+    renderSimpleDateDropdown() {
+        const today = new Date();
+        const formattedToday = DateUtils.formatDate(today);
+        const lastWeek = new Date();
+        lastWeek.setDate(today.getDate() - 7);
+        const formattedLastWeek = DateUtils.formatDate(lastWeek);
+        
+        // Simple list of date suggestions
+        const dateOptions = [
+            { type: 'anytime', label: 'ANYTIME', icon: 'all_inclusive', description: 'No date restriction' },
+            { type: 'today', label: 'Today', icon: 'today', description: 'Today only' },
+            { type: 'yesterday', label: 'Yesterday', icon: 'history', description: 'Yesterday only' },
+            { type: 'last7days', label: 'Last 7 days', icon: 'view_week', description: 'Past week including today' },
+            { type: 'thisweek', label: 'This week', icon: 'date_range', description: 'Monday to Sunday (current week)' },
+            { type: 'lastweek', label: 'Last week', icon: 'skip_previous', description: 'Previous Monday to Sunday' },
+            { type: 'last30days', label: 'Last 30 days', icon: 'calendar_month', description: 'Past month including today' },
+            { type: 'thismonth', label: 'This month', icon: 'calendar_today', description: 'Current month' },
+            { type: 'lastmonth', label: 'Last month', icon: 'skip_previous', description: 'Previous month' },
+            { type: 'last90days', label: 'Last 3 months', icon: 'calendar_view_month', description: 'Past 3 months' },
+            { type: 'last6months', label: 'Last 6 months', icon: 'view_timeline', description: 'Past 6 months' },
+            { type: 'thisyear', label: 'This year', icon: 'calendar_view_year', description: 'Current year' },
+            { type: 'lastyear', label: 'Last year', icon: 'skip_previous', description: 'Previous year' },
+            { type: 'custom', label: 'Custom range...', icon: 'tune', description: 'Select your own dates' }
+        ];
+        
+        const optionsList = dateOptions.map(option => `
+            <div class="ai-date-option" data-type="${option.type}" title="${option.description}">
+                <i class="material-icons">${option.icon}</i>
+                <div class="ai-date-option-content">
+                    <div class="ai-date-option-label">${option.label}</div>
+                    <div class="ai-date-option-description">${option.description}</div>
+                </div>
+            </div>
+        `).join('');
+        
+        return `
+            <div class="ai-dropdown ai-dropdown-simple" id="ai-dropdown-date">
+                <div class="ai-dropdown-header">
+                    <div class="ai-dropdown-edit-section">
+                        <input type="text" class="ai-dropdown-edit-input" 
+                            placeholder="Type date like 'last week', 'this month'..." 
+                            id="ai-date-edit-input">
+                        <button class="ai-dropdown-parse-btn" id="ai-parse-date-btn" title="Parse natural language date">
+                            <i class="material-icons">psychology</i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="ai-dropdown-body">
+                    <div class="ai-date-options-list">
+                        ${optionsList}
+                    </div>
+                    
+                    <!-- Custom Date Range Section (shown when custom is selected) -->
+                    <div class="ai-date-custom-section" id="ai-date-custom-section" style="display: none;">
+                        <div class="ai-date-section-header">
+                            <div>
+                                <i class="material-icons">date_range</i>
+                                <span>Custom Date Range</span>
+                            </div>
+                        </div>
+                        
+                        <div class="ai-date-custom-inputs">
+                            <div class="ai-date-input-group">
+                                <label for="ai-date-start">From:</label>
+                                <input type="date" class="ai-date-input" id="ai-date-start" 
+                                    value="${formattedLastWeek}">
+                            </div>
+                            <div class="ai-date-input-separator">
+                                <i class="material-icons">arrow_forward</i>
+                            </div>
+                            <div class="ai-date-input-group">
+                                <label for="ai-date-end">To:</label>
+                                <input type="date" class="ai-date-input" id="ai-date-end" 
+                                    value="${formattedToday}">
+                            </div>
+                            <button class="ai-apply-btn" id="ai-apply-custom-date">
+                                <i class="material-icons">check</i>
+                                Apply Range
+                            </button>
+                        </div>
+                        
+                        <!-- Date Range Validation -->
+                        <div class="ai-date-validation" id="ai-date-validation" style="display: none;">
+                            <div class="ai-date-validation-content">
+                                <i class="material-icons ai-validation-icon">info</i>
+                                <span class="ai-validation-message" id="ai-validation-message"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Get category title for UI display
+     * @param {string} category - Category key
+     * @returns {string} Display title
+     */
+    getCategoryTitle(category) {
+        const titles = {
+            'any': 'Any Time',
+            'recent': 'Recent',
+            'periods': 'Time Periods',
+            'extended': 'Extended Ranges',
+            'custom': 'Custom'
+        };
+        return titles[category] || category;
+    }
+    
+    /**
+     * Get category icon for UI display
+     * @param {string} category - Category key
+     * @returns {string} Material icon name
+     */
+    getCategoryIcon(category) {
+        const icons = {
+            'any': 'all_inclusive',
+            'recent': 'schedule',
+            'periods': 'date_range',
+            'extended': 'view_timeline',
+            'custom': 'tune'
+        };
+        return icons[category] || 'date_range';
+    }
+    
+    /**
+     * Set up simple date field with list-based functionality
      */
     setupDateField() {
-        const dateField = document.getElementById('ai-field-date');
+        // Natural language date parsing
+        const dateEditInput = document.getElementById('ai-date-edit-input');
+        const parseDateBtn = document.getElementById('ai-parse-date-btn');
         
-        // Date presets
-        const datePresets = this.fullscreenElement.querySelectorAll('.ai-date-preset');
-        datePresets.forEach(preset => {
-            preset.addEventListener('click', (e) => {
-                const presetType = preset.dataset.type;
-                this.selectedDate.type = presetType;
-                
-                // Set the display text
-                dateField.textContent = preset.textContent;
-                dateField.dataset.originalText = preset.textContent;
-                
-                // Calculate actual dates except for 'anytime'
-                if (presetType !== 'anytime') {
-                    const today = new Date();
-                    const startDate = new Date();
-                    
-                    if (presetType === 'last7') {
-                        startDate.setDate(today.getDate() - 7);
-                    } else if (presetType === 'last30') {
-                        startDate.setDate(today.getDate() - 30);
-                    } else if (presetType === 'last90') {
-                        startDate.setDate(today.getDate() - 90);
-                    }
-                    
-                    this.selectedDate.start = this.formatDate(startDate);
-                    this.selectedDate.end = this.formatDate(today);
-                } else {
-                    // For 'anytime', set start and end to null
-                    this.selectedDate.start = null;
-                    this.selectedDate.end = null;
+        if (parseDateBtn) {
+            parseDateBtn.addEventListener('click', () => {
+                const text = dateEditInput.value.trim();
+                if (text) {
+                    this.parseNaturalLanguageDate(text);
                 }
+            });
+        }
+        
+        if (dateEditInput) {
+            dateEditInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const text = e.target.value.trim();
+                    if (text) {
+                        this.parseNaturalLanguageDate(text);
+                    }
+                }
+            });
+        }
+        
+        // Date option list items
+        const dateOptions = this.fullscreenElement.querySelectorAll('.ai-date-option');
+        dateOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                const optionType = option.dataset.type;
                 
-                this.closeDropdowns();
+                if (optionType === 'custom') {
+                    // Show custom date section
+                    this.showCustomDateSection();
+                } else {
+                    // Apply preset and close
+                    this.applyDatePreset(optionType);
+                }
                 e.stopPropagation();
             });
         });
         
-        // Apply custom date button
+        // Custom date range handlers
         const applyCustomDateBtn = document.getElementById('ai-apply-custom-date');
-        applyCustomDateBtn.addEventListener('click', (e) => {
-            const startInput = document.getElementById('ai-date-start');
-            const endInput = document.getElementById('ai-date-end');
-            
-            this.selectedDate.type = 'custom';
-            this.selectedDate.start = startInput.value;
-            this.selectedDate.end = endInput.value;
-            
-            const displayText = `${startInput.value} to ${endInput.value}`;
-            dateField.textContent = displayText;
-            dateField.dataset.originalText = displayText;
-            dateField.classList.remove('empty');
-            
-            this.closeDropdowns();
-            e.stopPropagation();
+        if (applyCustomDateBtn) {
+            applyCustomDateBtn.addEventListener('click', (e) => {
+                this.applyCustomDateRange();
+                e.stopPropagation();
+            });
+        }
+        
+        // Date range validation
+        const startInput = document.getElementById('ai-date-start');
+        const endInput = document.getElementById('ai-date-end');
+        
+        [startInput, endInput].forEach(input => {
+            if (input) {
+                input.addEventListener('change', () => {
+                    this.validateDateRange();
+                });
+            }
         });
+    }
+    
+    /**
+     * Show the custom date range section
+     */
+    showCustomDateSection() {
+        const customSection = document.getElementById('ai-date-custom-section');
+        if (customSection) {
+            customSection.style.display = 'block';
+            
+            // Focus on the start date input
+            const startInput = document.getElementById('ai-date-start');
+            if (startInput) {
+                setTimeout(() => startInput.focus(), 100);
+            }
+        }
+    }
+    
+    /**
+     * Parse natural language date input
+     * @param {string} text - Natural language date text
+     */
+    parseNaturalLanguageDate(text) {
+        const parsed = DateUtils.parseNaturalLanguageDate(text);
+        
+        if (parsed) {
+            this.selectedDate = parsed;
+            this.updateDateField();
+            this.validateDateRange();
+            this.notificationService.showNotification(`✅ Parsed date: "${text}"`, 'success');
+        } else {
+            this.notificationService.showNotification(`❌ Could not parse: "${text}". Try "last week", "this month", etc.`, 'warning');
+        }
+    }
+    
+    /**
+     * Apply a date preset
+     * @param {string} presetType - Type of preset to apply
+     */
+    applyDatePreset(presetType) {
+        const range = DateUtils.calculateDateRange(presetType);
+        
+        this.selectedDate = {
+            type: presetType,
+            start: range.start,
+            end: range.end,
+            preset: presetType
+        };
+        
+        this.updateDateField();
+        this.closeDropdowns();
+        
+        console.log(`📅 Applied date preset: ${presetType}`, this.selectedDate);
+    }
+    
+    /**
+     * Apply custom date range
+     */
+    applyCustomDateRange() {
+        const startInput = document.getElementById('ai-date-start');
+        const endInput = document.getElementById('ai-date-end');
+        
+        if (startInput && endInput) {
+            const validation = DateUtils.validateDateRange(startInput.value, endInput.value);
+            
+            if (validation.isValid) {
+                this.selectedDate = {
+                    type: 'custom',
+                    start: startInput.value,
+                    end: endInput.value,
+                    preset: null
+                };
+                
+                this.updateDateField();
+                this.showDateValidation(validation.message, 'success');
+                this.closeDropdowns();
+            } else {
+                this.showDateValidation(validation.message, 'error');
+            }
+        }
+    }
+    
+    /**
+     * Validate current date range
+     */
+    validateDateRange() {
+        const startInput = document.getElementById('ai-date-start');
+        const endInput = document.getElementById('ai-date-end');
+        
+        if (startInput && endInput && startInput.value && endInput.value) {
+            const validation = DateUtils.validateDateRange(startInput.value, endInput.value);
+            this.showDateValidation(validation.message, validation.isValid ? 'success' : 'error');
+        } else {
+            this.hideDateValidation();
+        }
+    }
+    
+    /**
+     * Show date validation message
+     * @param {string} message - Validation message
+     * @param {string} type - Message type ('success', 'error', 'info')
+     */
+    showDateValidation(message, type) {
+        const validation = document.getElementById('ai-date-validation');
+        const messageEl = document.getElementById('ai-validation-message');
+        const iconEl = validation?.querySelector('.ai-validation-icon');
+        
+        if (validation && messageEl && iconEl) {
+            messageEl.textContent = message;
+            
+            validation.className = `ai-date-validation ai-validation-${type}`;
+            iconEl.textContent = type === 'success' ? 'check_circle' : 
+                                type === 'error' ? 'error' : 'info';
+            
+            validation.style.display = 'block';
+        }
+    }
+    
+    /**
+     * Hide date validation message
+     */
+    hideDateValidation() {
+        const validation = document.getElementById('ai-date-validation');
+        if (validation) {
+            validation.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Update date field display
+     */
+    updateDateField() {
+        const dateField = document.getElementById('ai-field-date');
+        if (dateField) {
+            const displayText = this.getEnhancedDateDisplayText();
+            dateField.textContent = displayText;
+            dateField.classList.toggle('empty', this.selectedDate.type === 'anytime');
+        }
     }
     
     /**
@@ -1549,10 +1854,7 @@ setupDropdownEditInputs() {
         });
     }
     
-    /**
-     * Toggle a field's dropdown open/closed - enhanced with debugging and location support
-     * @param {string} fieldId - The ID of the field to toggle
-     */
+    // Toggle field dropdown visibility
     toggleField(fieldId) {
         console.log(`🔄 Toggling field: ${fieldId}`);
         
@@ -1599,22 +1901,8 @@ setupDropdownEditInputs() {
                 if (searchInput) {
                     searchInput.focus();
                     console.log('🔍 Collection search input focused');
-                } else {
-                    console.warn('⚠️ Collection search input not found');
                 }
             }, 100);
-            
-            // Show a few example collections
-            if (collectionItems.length > 0) {
-                console.log('📋 Available collections (first 5):');
-                for (let i = 0; i < Math.min(5, collectionItems.length); i++) {
-                    const title = collectionItems[i].querySelector('.collection-title')?.textContent;
-                    const id = collectionItems[i].querySelector('.collection-id')?.textContent;
-                    console.log(`  ${i + 1}. ${title} (${id})`);
-                }
-            } else {
-                console.error('❌ No collection items found - collections may not have loaded properly');
-            }
         } else if (fieldId === 'location') {
             // Location-specific setup
             console.log('🌍 Location dropdown opened');
@@ -1624,8 +1912,6 @@ setupDropdownEditInputs() {
                 if (locationSearchInput) {
                     locationSearchInput.focus();
                     console.log('🔍 Location search input focused');
-                } else {
-                    console.warn('⚠️ Location search input not found');
                 }
             }, 100);
             
@@ -1633,8 +1919,19 @@ setupDropdownEditInputs() {
             const resultsContainer = document.getElementById('ai-location-search-results');
             if (resultsContainer) {
                 resultsContainer.innerHTML = '';
-                console.log('🧹 Location search results cleared');
             }
+        } else if (fieldId === 'date') {
+            // Date-specific setup
+            console.log('📅 Date dropdown opened');
+            
+            // Focus on natural language input if available
+            setTimeout(() => {
+                const dateEditInput = document.getElementById('ai-date-edit-input');
+                if (dateEditInput) {
+                    dateEditInput.focus();
+                    console.log('🔍 Date edit input focused');
+                }
+            }, 100);
         }
     }
     

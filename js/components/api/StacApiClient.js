@@ -89,16 +89,23 @@ export class STACApiClient {
     }
     
     /**
-     * Fetch collections from the STAC API
+     * Fetch collections from the STAC API with pagination support
+     * @param {number} limit - Maximum number of collections to fetch (default: 1000)
      * @returns {Promise<Array>} - Promise resolving to an array of collections
      */
-    async fetchCollections() {
+    async fetchCollections(limit = 1000) {
         try {
             if (!this.endpoints.collections) {
                 return [];
             }
             
-            const response = await fetch(this.endpoints.collections);
+            // Add limit parameter to the URL
+            const url = new URL(this.endpoints.collections);
+            url.searchParams.append('limit', limit.toString());
+            
+            console.log(`📡 Fetching collections from: ${url.toString()}`);
+            
+            const response = await fetch(url.toString());
             
             if (!response.ok) {
                 throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
@@ -107,17 +114,22 @@ export class STACApiClient {
             const data = await response.json();
             
             // Check if the response has a collections property (STAC API spec)
+            let collections = [];
             if (data.collections) {
-                return data.collections;
+                collections = data.collections;
             } else if (Array.isArray(data)) {
                 // Some implementations return an array directly
-                return data;
+                collections = data;
             } else {
                 // If it's not an array or doesn't have collections, it's likely a single collection
-                return [data];
+                collections = [data];
             }
+            
+            console.log(`📋 Fetched ${collections.length} collections from ${this.endpoints.collections}`);
+            return collections;
+            
         } catch (error) {
-            console.error('Error fetching collections:', error);
+            console.error('❌ Error fetching collections:', error);
             throw new Error(`Failed to fetch collections: ${error.message}`);
         }
     }

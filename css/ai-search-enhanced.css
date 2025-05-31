@@ -1,0 +1,758 @@
+/**
+ * AI Smart Search Enhanced Styles
+ * Enhanced date filtering interface with comprehensive styling
+ * 
+ * @version 2.0.0
+ * @author STAC Explorer Team
+ */
+
+/* Enhanced Fullscreen Container */
+.ai-fullscreen-enhanced {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.1) 0%, rgba(156, 39, 176, 0.1) 100%);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.ai-fullscreen-enhanced .ai-fullscreen-header {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+}
+
+.ai-fullscreen-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--primary-color, #2196F3);
+}
+
+.ai-fullscreen-title h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    background: linear-gradient(135deg, #2196F3, #9C27B0);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.ai-fullscreen-title .material-icons {
+    font-size: 28px;
+    animation: ai-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ai-pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+/* Enhanced Sentence Layout */
+.ai-sentence-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 32px 24px;
+}
+
+.ai-sentence-line {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 24px;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--text-color, #333);
+    line-height: 1.6;
+}
+
+.ai-sentence-line:last-child {
+    margin-bottom: 0;
+}
+
+/* Enhanced Dropdown Styles */
+.ai-dropdown-enhanced {
+    min-width: 400px;
+    max-width: 600px;
+    max-height: 500px;
+    overflow-y: auto;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(20px);
+}
+
+.ai-dropdown-header {
+    padding: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    background: rgba(33, 150, 243, 0.02);
+}
+
+.ai-dropdown-parse-btn {
+    background: linear-gradient(135deg, #2196F3, #21CBF3);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.ai-dropdown-parse-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.ai-dropdown-parse-btn .material-icons {
+    font-size: 16px;
+}
+
+.ai-dropdown-body {
+    padding: 8px;
+}
+
+/* Enhanced Date Categories */
+.ai-date-quick-access {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 8px;
+    margin-bottom: 16px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.05), rgba(156, 39, 176, 0.05));
+    border-radius: 8px;
+}
+
+.ai-date-quick-preset {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px;
+    background: white;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.ai-date-quick-preset:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--primary-color, #2196F3);
+}
+
+.ai-date-quick-preset .material-icons {
+    font-size: 18px;
+    color: var(--primary-color, #2196F3);
+}
+
+.ai-date-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.ai-date-category {
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    background: white;
+}
+
+.ai-date-category-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.08), rgba(156, 39, 176, 0.08));
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-color, #333);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ai-date-category-header .material-icons {
+    font-size: 20px;
+    color: var(--primary-color, #2196F3);
+}
+
+.ai-date-category-presets {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.ai-date-preset-enhanced {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: none;
+    text-align: left;
+}
+
+.ai-date-preset-enhanced:hover {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(156, 39, 176, 0.1));
+    transform: translateX(4px);
+}
+
+.ai-date-preset-enhanced .material-icons {
+    font-size: 24px;
+    color: var(--primary-color, #2196F3);
+    min-width: 24px;
+}
+
+.ai-date-preset-content {
+    flex: 1;
+}
+
+.ai-date-preset-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-color, #333);
+    margin-bottom: 2px;
+}
+
+.ai-date-preset-description {
+    font-size: 12px;
+    color: var(--text-muted, #666);
+    line-height: 1.3;
+}
+
+/* Custom Date Range Section */
+.ai-date-custom-section {
+    margin-top: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background: white;
+    overflow: hidden;
+}
+
+.ai-date-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.08), rgba(139, 195, 74, 0.08));
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-color, #333);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ai-date-section-header > div:first-child {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ai-date-section-header .material-icons {
+    font-size: 20px;
+    color: #4CAF50;
+}
+
+.ai-toggle-calendar-btn {
+    background: none;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    color: var(--text-color, #333);
+}
+
+.ai-toggle-calendar-btn:hover {
+    background: rgba(76, 175, 80, 0.1);
+    border-color: #4CAF50;
+}
+
+.ai-toggle-calendar-btn .material-icons {
+    font-size: 18px;
+}
+
+.ai-date-custom-inputs {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    flex-wrap: wrap;
+}
+
+.ai-date-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 140px;
+}
+
+.ai-date-input-group label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted, #666);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ai-date-input {
+    padding: 10px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    font-size: 14px;
+    background: white;
+    transition: all 0.2s ease;
+}
+
+.ai-date-input:focus {
+    outline: none;
+    border-color: var(--primary-color, #2196F3);
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.ai-date-input-separator {
+    display: flex;
+    align-items: center;
+    color: var(--text-muted, #666);
+    margin-top: 20px;
+}
+
+.ai-apply-btn {
+    background: linear-gradient(135deg, #4CAF50, #8BC34A);
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 20px;
+}
+
+.ai-apply-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.ai-apply-btn .material-icons {
+    font-size: 16px;
+}
+
+/* Mini Calendar Widget */
+.ai-mini-calendar {
+    margin-top: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    background: white;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ai-calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #2196F3, #21CBF3);
+    color: white;
+}
+
+.ai-calendar-nav {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.ai-calendar-nav:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.ai-calendar-nav .material-icons {
+    font-size: 20px;
+}
+
+.ai-calendar-title {
+    font-weight: 600;
+    font-size: 16px;
+}
+
+.ai-calendar-body {
+    padding: 8px;
+}
+
+.ai-calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.ai-calendar-weekday {
+    padding: 8px 4px;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted, #666);
+    text-transform: uppercase;
+}
+
+.ai-calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+
+.ai-calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.ai-calendar-day:not(.ai-calendar-day-empty):hover {
+    background: rgba(33, 150, 243, 0.1);
+    transform: scale(1.05);
+}
+
+.ai-calendar-day-today {
+    background: var(--primary-color, #2196F3);
+    color: white;
+    font-weight: 600;
+}
+
+.ai-calendar-day-past {
+    color: var(--text-muted, #999);
+}
+
+.ai-calendar-day-empty {
+    cursor: default;
+}
+
+.ai-calendar-footer {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.02);
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.ai-calendar-action {
+    background: none;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.ai-calendar-action:hover {
+    background: rgba(33, 150, 243, 0.1);
+    border-color: var(--primary-color, #2196F3);
+    color: var(--primary-color, #2196F3);
+}
+
+/* Date Validation */
+.ai-date-validation {
+    margin-top: 16px;
+    padding: 12px 16px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ai-validation-success {
+    background: rgba(76, 175, 80, 0.1);
+    border: 1px solid rgba(76, 175, 80, 0.3);
+    color: #2E7D32;
+}
+
+.ai-validation-error {
+    background: rgba(244, 67, 54, 0.1);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    color: #C62828;
+}
+
+.ai-validation-info {
+    background: rgba(33, 150, 243, 0.1);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    color: #1565C0;
+}
+
+.ai-validation-icon {
+    font-size: 18px;
+    min-width: 18px;
+}
+
+.ai-validation-message {
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* Search Summary Section */
+.ai-search-summary {
+    max-width: 1000px;
+    margin: 0 auto 32px;
+    padding: 0 24px;
+}
+
+.ai-summary-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color, #333);
+}
+
+.ai-summary-header .material-icons {
+    font-size: 22px;
+    color: var(--primary-color, #2196F3);
+}
+
+.ai-summary-content {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(250, 250, 250, 0.9));
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.ai-summary-item {
+    margin-bottom: 8px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.ai-summary-item:last-child {
+    margin-bottom: 0;
+}
+
+.ai-summary-item strong {
+    color: var(--primary-color, #2196F3);
+    font-weight: 600;
+}
+
+.ai-summary-item em {
+    color: var(--text-muted, #666);
+    font-style: italic;
+}
+
+.ai-summary-empty {
+    color: var(--text-muted, #666);
+    font-style: italic;
+    text-align: center;
+    padding: 20px;
+}
+
+/* Enhanced Execute Button */
+.ai-execute-container {
+    text-align: center;
+    padding: 0 24px 32px;
+}
+
+.ai-execute-btn-enhanced {
+    background: linear-gradient(135deg, #4CAF50, #8BC34A);
+    border: none;
+    border-radius: 12px;
+    padding: 16px 32px;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 4px 16px rgba(76, 175, 80, 0.3);
+    min-width: 200px;
+    justify-content: center;
+}
+
+.ai-execute-btn-enhanced:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(76, 175, 80, 0.4);
+    background: linear-gradient(135deg, #66BB6A, #9CCC65);
+}
+
+.ai-execute-btn-enhanced:active {
+    transform: translateY(0);
+}
+
+.ai-execute-btn-enhanced .material-icons {
+    font-size: 20px;
+}
+
+.ai-execute-help {
+    margin-top: 12px;
+    font-size: 12px;
+    color: var(--text-muted, #666);
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .ai-fullscreen-enhanced .ai-fullscreen-header {
+        padding: 12px 16px;
+    }
+    
+    .ai-fullscreen-title h2 {
+        font-size: 20px;
+    }
+    
+    .ai-sentence-container {
+        padding: 24px 16px;
+    }
+    
+    .ai-sentence-line {
+        font-size: 18px;
+        margin-bottom: 20px;
+    }
+    
+    .ai-dropdown-enhanced {
+        min-width: 300px;
+        max-width: calc(100vw - 32px);
+    }
+    
+    .ai-date-quick-access {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .ai-date-category-presets {
+        grid-template-columns: 1fr;
+    }
+    
+    .ai-date-custom-inputs {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    
+    .ai-date-input-separator {
+        margin: 0;
+        justify-content: center;
+    }
+    
+    .ai-apply-btn {
+        margin-top: 0;
+        align-self: stretch;
+        justify-content: center;
+    }
+    
+    .ai-search-summary,
+    .ai-execute-container {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+    
+    .ai-execute-btn-enhanced {
+        width: 100%;
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ai-sentence-line {
+        font-size: 16px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+    
+    .ai-date-quick-access {
+        grid-template-columns: 1fr;
+    }
+    
+    .ai-mini-calendar {
+        font-size: 12px;
+    }
+    
+    .ai-calendar-day {
+        font-size: 12px;
+    }
+}
+
+/* Animation for loading states */
+@keyframes ai-loading-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.ai-loading-spinner {
+    animation: ai-loading-spin 1s linear infinite;
+}
+
+/* Enhanced accessibility */
+.ai-date-preset-enhanced:focus,
+.ai-date-quick-preset:focus,
+.ai-apply-btn:focus,
+.ai-execute-btn-enhanced:focus {
+    outline: 2px solid var(--primary-color, #2196F3);
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .ai-date-preset-enhanced:hover,
+    .ai-date-quick-preset:hover {
+        background: #000;
+        color: #fff;
+    }
+    
+    .ai-validation-success {
+        background: #000;
+        color: #0f0;
+    }
+    
+    .ai-validation-error {
+        background: #000;
+        color: #f00;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .ai-date-preset-enhanced,
+    .ai-date-quick-preset,
+    .ai-apply-btn,
+    .ai-execute-btn-enhanced,
+    .ai-calendar-day {
+        transition: none;
+    }
+    
+    .ai-fullscreen-title .material-icons {
+        animation: none;
+    }
+}

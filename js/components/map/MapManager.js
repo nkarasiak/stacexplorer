@@ -1182,23 +1182,33 @@ export class MapManager {
      */
     async addImageOverlay(imageUrl, bbox, item) {
         try {
-            console.log('Adding image overlay:', imageUrl);
-            console.log('Using full bounding box:', bbox);
+            console.log('🖼️ Adding image overlay:', imageUrl);
+            console.log('📍 Using full bounding box:', bbox);
             
             // Remove existing overlay if any
             this.removeCurrentLayer();
 
             // Try to use the already-loaded thumbnail from results panel first (avoids CORS)
+            console.log('🔄 Attempting to get thumbnail from results panel...');
             const thumbnailDataUrl = await this.getThumbnailFromResultsPanel(item.id);
             
             let finalUrl;
             if (thumbnailDataUrl) {
-                console.log('Using preloaded thumbnail from results panel');
+                console.log('✅ Using preloaded thumbnail from results panel');
                 finalUrl = thumbnailDataUrl;
             } else {
-                // Fallback to direct URL
-                finalUrl = this.ensureAbsoluteUrl(imageUrl);
-                console.log('Using direct image URL:', finalUrl);
+                console.log('⚠️ Could not get preloaded thumbnail, checking if external URL is safe...');
+                
+                // Check if the external URL is likely to cause CORS issues
+                const absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
+                if (this.isLikelyCORSBlocked(absoluteUrl)) {
+                    console.log('🚫 External URL likely blocked by CORS, showing bounding box instead');
+                    this.addGeoJsonLayerWithoutTooltip(bbox, item);
+                    return true;
+                }
+                
+                console.log('🌐 Using direct image URL (might fail due to CORS):', absoluteUrl);
+                finalUrl = absoluteUrl;
             }
             
             // Create a unique ID for this image source
@@ -1213,7 +1223,7 @@ export class MapManager {
                 [bbox[0], bbox[1]]  // bottom-left (southwest)
             ];
             
-            console.log('Using full bbox coordinates:', coordinates);
+            console.log('📐 Using full bbox coordinates:', coordinates);
             
             // Add source with full bounding box coverage
             this.map.addSource(sourceId, {
@@ -1251,24 +1261,71 @@ export class MapManager {
                 }
             };
             
-            console.log('Image overlay added successfully with full bbox coverage');
+            console.log('✅ Image overlay added successfully with full bbox coverage');
             
             // Register error handler for post-adding errors
             this.map.once('error', (e) => {
                 if (e.sourceId === sourceId) {
-                    console.error('Error with image overlay, trying fallback:', e);
+                    console.error('❌ Error with image overlay, showing fallback:', e);
                     this.handleImageError(sourceId, finalUrl, bbox, item);
                 }
             });
             
             return true;
         } catch (error) {
-            console.error('Error in addImageOverlay:', error);
+            console.error('❌ Error in addImageOverlay:', error);
             
             // Use GeoJSON fallback without tooltip
             this.addGeoJsonLayerWithoutTooltip(bbox, item);
             return false;
         }
+    }
+    
+    /**
+     * Check if a URL is likely to be blocked by CORS
+     * @param {string} url - URL to check
+     * @returns {boolean} - True if likely to be CORS blocked
+     */
+    isLikelyCORSBlocked(url) {
+        if (!url) return true;
+        
+        // If it's the same origin, it should be fine
+        if (url.startsWith(window.location.origin)) {
+            return false;
+        }
+        
+        // If it's a data URL, it should be fine
+        if (url.startsWith('data:')) {
+            return false;
+        }
+        
+        // Known CORS-problematic domains/patterns
+        const corsProblematicPatterns = [
+            'datahub.creodias.eu',
+            'odata/v1/Assets',
+            '/$value',
+            'earthdata.nasa.gov',
+            'ladsweb.modaps.eosdis.nasa.gov',
+            'archive.usgs.gov'
+        ];
+        
+        // Check if URL contains any problematic patterns
+        const hasProblematicPattern = corsProblematicPatterns.some(pattern => 
+            url.toLowerCase().includes(pattern.toLowerCase())
+        );
+        
+        if (hasProblematicPattern) {
+            console.log('🚫 URL contains CORS-problematic pattern:', url);
+            return true;
+        }
+        
+        // All other external URLs are potentially problematic
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            console.log('⚠️ External URL detected, might have CORS issues:', url);
+            return true; // Conservative approach - assume external URLs might have CORS issues
+        }
+        
+        return false;
     }
     
     /**
@@ -1278,39 +1335,55 @@ export class MapManager {
      */
     async getThumbnailFromResultsPanel(itemId) {
         try {
-            console.log('Looking for preloaded thumbnail for item:', itemId);
+            console.log('🔍 Looking for preloaded thumbnail for item:', itemId);
             
             // Find the item in the results panel
             const resultItem = this.findResultItemByMultipleStrategies(itemId);
             if (!resultItem) {
-                console.log('Item not found in results panel');
+                console.log('❌ Item not found in results panel');
                 return null;
             }
+            console.log('✅ Found result item in panel');
             
             // Find the thumbnail image element
             const thumbnailImg = resultItem.querySelector('.dataset-thumbnail');
             if (!thumbnailImg) {
-                console.log('No thumbnail image found in results panel');
+                console.log('❌ No thumbnail image element found in results panel');
+                return null;
+            }
+            console.log('✅ Found thumbnail image element');
+            
+            // Check if the image is loaded and has a valid source
+            console.log('📊 Thumbnail status:', {
+                src: thumbnailImg.src,
+                complete: thumbnailImg.complete,
+                naturalWidth: thumbnailImg.naturalWidth,
+                naturalHeight: thumbnailImg.naturalHeight
+            });
+            
+            if (!thumbnailImg.src || thumbnailImg.src.includes('placeholder')) {
+                console.log('❌ Thumbnail has no valid source or is placeholder');
                 return null;
             }
             
-            // Check if the image is loaded and has a valid source
-            if (!thumbnailImg.src || thumbnailImg.src.includes('placeholder') || !thumbnailImg.complete) {
-                console.log('Thumbnail not loaded or is placeholder');
+            if (!thumbnailImg.complete || thumbnailImg.naturalWidth === 0) {
+                console.log('❌ Thumbnail not fully loaded yet');
                 return null;
             }
+            
+            console.log('✅ Thumbnail appears to be loaded, attempting conversion...');
             
             // Convert the loaded image to a data URL
             const dataUrl = await this.imageToDataUrl(thumbnailImg);
-            if (dataUrl) {
-                console.log('Successfully converted thumbnail to data URL');
+            if (dataUrl && dataUrl.length > 1000) { // Basic check for valid data URL
+                console.log('✅ Successfully converted thumbnail to data URL (length:', dataUrl.length, ')');
                 return dataUrl;
             } else {
-                console.log('Failed to convert thumbnail to data URL');
+                console.log('❌ Failed to convert thumbnail to data URL or data URL too small');
                 return null;
             }
         } catch (error) {
-            console.error('Error getting thumbnail from results panel:', error);
+            console.error('❌ Error getting thumbnail from results panel:', error);
             return null;
         }
     }
@@ -1321,29 +1394,39 @@ export class MapManager {
      * @returns {Promise<string|null>} - Data URL or null if conversion fails
      */
     async imageToDataUrl(imgElement) {
-        try {
-            // Create a canvas element
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            
-            // Set canvas dimensions to match image
-            canvas.width = imgElement.naturalWidth || imgElement.width;
-            canvas.height = imgElement.naturalHeight || imgElement.height;
-            
-            // Draw the image onto the canvas
-            ctx.drawImage(imgElement, 0, 0);
-            
-            // Convert canvas to data URL
-            const dataUrl = canvas.toDataURL('image/png');
-            
-            // Clean up
-            canvas.remove();
-            
-            return dataUrl;
-        } catch (error) {
-            console.warn('Could not convert image to data URL (likely CORS issue):', error);
-            return null;
-        }
+        return new Promise((resolve) => {
+            try {
+                // Create a canvas element
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Set canvas dimensions to match image
+                canvas.width = imgElement.naturalWidth || imgElement.width || 300;
+                canvas.height = imgElement.naturalHeight || imgElement.height || 200;
+                
+                console.log('🎨 Converting image to canvas:', {
+                    width: canvas.width,
+                    height: canvas.height,
+                    imgSrc: imgElement.src?.substring(0, 100) + '...'
+                });
+                
+                // Draw the image onto the canvas
+                ctx.drawImage(imgElement, 0, 0);
+                
+                // Convert canvas to data URL
+                const dataUrl = canvas.toDataURL('image/png', 0.8); // Slightly compressed
+                
+                // Clean up
+                canvas.remove();
+                
+                console.log('✅ Successfully converted to data URL, size:', dataUrl.length);
+                resolve(dataUrl);
+                
+            } catch (error) {
+                console.warn('❌ Could not convert image to data URL (CORS tainted canvas):', error.message);
+                resolve(null);
+            }
+        });
     }
     
     /**

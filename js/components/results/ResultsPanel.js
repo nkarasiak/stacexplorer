@@ -271,16 +271,16 @@ export class ResultsPanel {
         li.dataset.id = item.id;
         li.setAttribute('data-id', item.id);
         
-        // Extract thumbnail URL
-        let thumbnailUrl = 'https://api.placeholder.com/300/200?text=No+Preview';
+        // Extract thumbnail URL - only if a valid thumbnail exists
+        let thumbnailUrl = null;
         
         // Check various potential thumbnail locations in the STAC item
         if (item.assets) {
-            if (item.assets.thumbnail) {
+            if (item.assets.thumbnail && item.assets.thumbnail.href) {
                 thumbnailUrl = item.assets.thumbnail.href;
-            } else if (item.assets.preview) {
+            } else if (item.assets.preview && item.assets.preview.href) {
                 thumbnailUrl = item.assets.preview.href;
-            } else if (item.assets.overview) {
+            } else if (item.assets.overview && item.assets.overview.href) {
                 thumbnailUrl = item.assets.overview.href;
             }
         }
@@ -396,15 +396,29 @@ export class ResultsPanel {
                 <pre class="json-content">${formattedJson}</pre>
             </div>
         `);
-        // Construct html
+        // Construct HTML - conditionally include thumbnail
+        let thumbnailHtml = '';
+        if (thumbnailUrl) {
+            thumbnailHtml = `
+                <div class="thumbnail-section">
+                    <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" 
+                         onerror="this.parentElement.style.display='none'; this.parentElement.parentElement.classList.add('no-thumbnail'); this.parentElement.parentElement.querySelector('.dataset-date').classList.add('no-image');" 
+                         onclick="this.parentElement.parentElement.parentElement.querySelector('.view-geometry-btn').click()">
+                </div>
+            `;
+        }
+        
         li.innerHTML = `
             <div class="dataset-content">
-                <div class="thumbnail-container">
+                <div class="thumbnail-container${!thumbnailUrl ? ' no-thumbnail' : ''}">
                     <div class="dataset-metadata">
-                        <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
+                        <div class="dataset-date${!thumbnailUrl ? ' no-image' : ''}"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                     </div>
-                    <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" onerror="this.src=''">
+                    ${thumbnailHtml}
                     <div class="thumbnail-overlay">
+                        <button class="view-geometry-btn" title="View on map">
+                            <i class="material-icons">map</i>
+                        </button>
                         <button class="info-btn details-btn" title="Show details">
                             <i class="material-icons">info</i>
                         </button>
@@ -425,49 +439,49 @@ export class ResultsPanel {
      * @param {Object} item - STAC item data
      */
     attachItemEventListeners(element, item) {
-        // Add event listener to thumbnail
-        const thumbnail = element.querySelector('.dataset-thumbnail');
+        const viewGeometryBtn = element.querySelector('.view-geometry-btn');
         const infoBtn = element.querySelector('.info-btn');
         
-        // Add click handler to thumbnail
-        thumbnail.addEventListener('click', () => {
-            // Show loading indicator
-            document.getElementById('loading').style.display = 'flex';
-            
-            // Display item on map
-            setTimeout(() => {
-                // Always use the thumbnail asset key when clicking View
-                this.mapManager.displayItemOnMap(item, 'thumbnail')
-                    .then(() => {
-                        // Mark the item as active
-                        document.querySelectorAll('.dataset-item').forEach(el => {
-                            el.classList.remove('active');
+        // Add click handler to view geometry button
+        if (viewGeometryBtn) {
+            viewGeometryBtn.addEventListener('click', () => {
+                // Show loading indicator
+                document.getElementById('loading').style.display = 'flex';
+                
+                // Display item geometry on map
+                setTimeout(() => {
+                    this.mapManager.displayItemGeometry(item)
+                        .then(() => {
+                            // Mark the item as active
+                            document.querySelectorAll('.dataset-item').forEach(el => {
+                                el.classList.remove('active');
+                            });
+                            element.classList.add('active');
+                            
+                            // Dispatch item activated event
+                            document.dispatchEvent(new CustomEvent('itemActivated', {
+                                detail: { 
+                                    itemId: item.id,
+                                    assetKey: 'geometry'
+                                }
+                            }));
+                            
+                            // Expand tools panel if collapsed
+                            document.dispatchEvent(new CustomEvent('expandToolsPanel'));
+                            
+                            // Hide loading indicator
+                            document.getElementById('loading').style.display = 'none';
+                        })
+                        .catch(error => {
+                            this.notificationService.showNotification(
+                                `Error displaying item geometry: ${error.message}`, 
+                                'error'
+                            );
+                            document.getElementById('loading').style.display = 'none';
                         });
-                        element.classList.add('active');
-                        
-                        // Dispatch item activated event with the thumbnail asset key
-                        document.dispatchEvent(new CustomEvent('itemActivated', {
-                            detail: { 
-                                itemId: item.id,
-                                assetKey: 'thumbnail'
-                            }
-                        }));
-                        
-                        // Expand tools panel if collapsed
-                        document.dispatchEvent(new CustomEvent('expandToolsPanel'));
-                        
-                        // Hide loading indicator
-                        document.getElementById('loading').style.display = 'none';
-                    })
-                    .catch(error => {
-                        this.notificationService.showNotification(
-                            `Error displaying item on map: ${error.message}`, 
-                            'error'
-                        );
-                        document.getElementById('loading').style.display = 'none';
-                    });
-            }, 100); // Small delay to allow loading indicator to appear
-        });
+                }, 100); // Small delay to allow loading indicator to appear
+            });
+        }
         
         // Add event listener to info button
         if (infoBtn) {

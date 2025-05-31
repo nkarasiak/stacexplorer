@@ -665,6 +665,72 @@ export class MapManager {
     }
     
     /**
+     * Display item geometry/bounding box on the map (without loading images)
+     * @param {Object} item - STAC item to display
+     * @returns {Promise<boolean>} - Success status
+     */
+    async displayItemGeometry(item) {
+        try {
+            console.log('Displaying item geometry on map:', item.id);
+            
+            // Remove any existing layers
+            this.removeCurrentLayer();
+            
+            // Get bounding box or geometry
+            const bbox = this.getBoundingBox(item);
+            if (!bbox) {
+                console.warn('Item has no valid bbox or geometry');
+                return false;
+            }
+            
+            // Create GeoJSON for the item geometry
+            let geojson;
+            
+            if (item.geometry && item.geometry.type === 'Polygon') {
+                // Use the actual geometry if available
+                geojson = {
+                    type: 'Feature',
+                    properties: {
+                        title: item.properties?.title || item.id,
+                        description: item.properties?.description || '',
+                        id: item.id
+                    },
+                    geometry: item.geometry
+                };
+            } else {
+                // Create a polygon from the bounding box
+                geojson = {
+                    type: 'Feature',
+                    properties: {
+                        title: item.properties?.title || item.id,
+                        description: item.properties?.description || '',
+                        id: item.id
+                    },
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[
+                            [bbox[0], bbox[3]], // Northwest
+                            [bbox[2], bbox[3]], // Northeast
+                            [bbox[2], bbox[1]], // Southeast
+                            [bbox[0], bbox[1]], // Southwest
+                            [bbox[0], bbox[3]]  // Close the polygon
+                        ]]
+                    }
+                };
+            }
+            
+            // Display the geometry
+            this.displayGeometry(geojson, bbox);
+            
+            console.log('Item geometry displayed successfully');
+            return true;
+        } catch (error) {
+            console.error('Error displaying item geometry:', error);
+            return false;
+        }
+    }
+    
+    /**
      * Display an item on the map
      * @param {Object} item - STAC item to display
      * @param {string} preferredAssetKey - Preferred asset key to display

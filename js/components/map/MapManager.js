@@ -1197,17 +1197,12 @@ export class MapManager {
                 console.log('✅ Using preloaded thumbnail from results panel');
                 finalUrl = thumbnailDataUrl;
             } else {
-                console.log('⚠️ Could not get preloaded thumbnail, checking if external URL is safe...');
+                console.log('⚠️ Could not convert preloaded thumbnail, trying direct URL...');
                 
-                // Check if the external URL is likely to cause CORS issues
+                // Use the direct thumbnail URL - MapLibre might be able to handle it
+                // even if canvas conversion fails
                 const absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
-                if (this.isLikelyCORSBlocked(absoluteUrl)) {
-                    console.log('🚫 External URL likely blocked by CORS, showing bounding box instead');
-                    this.addGeoJsonLayerWithoutTooltip(bbox, item);
-                    return true;
-                }
-                
-                console.log('🌐 Using direct image URL (might fail due to CORS):', absoluteUrl);
+                console.log('🌐 Trying direct thumbnail URL:', absoluteUrl);
                 finalUrl = absoluteUrl;
             }
             
@@ -1266,7 +1261,7 @@ export class MapManager {
             // Register error handler for post-adding errors
             this.map.once('error', (e) => {
                 if (e.sourceId === sourceId) {
-                    console.error('❌ Error with image overlay, showing fallback:', e);
+                    console.log('❌ Image failed to load, showing bounding box instead');
                     this.handleImageError(sourceId, finalUrl, bbox, item);
                 }
             });

@@ -180,6 +180,38 @@
     color: #aaa;
 }
 
+/* Source group headers */
+.ai-source-group-header {
+    padding: 12px 20px 8px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--primary-color, #2196F3);
+    background: rgba(33, 150, 243, 0.03);
+    border-bottom: 1px solid rgba(33, 150, 243, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.dark-theme .ai-source-group-header {
+    background: rgba(33, 150, 243, 0.08);
+    border-bottom-color: rgba(33, 150, 243, 0.2);
+    color: #4FC3F7;
+}
+
+/* Source separator */
+.ai-source-separator {
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.1), transparent);
+    margin: 8px 20px;
+}
+
+.dark-theme .ai-source-separator {
+    background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.2), transparent);
+}
+
 .ai-option .material-icons {
     font-size: 24px;
     color: var(--primary-color, #2196F3);

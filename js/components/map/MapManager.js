@@ -613,6 +613,128 @@ class MapManager {
     }
 
     /**
+     * Display item on map (thumbnail or specific asset)
+     * @param {Object} item - STAC item to display
+     * @param {string} assetKey - Asset key to display (e.g., 'thumbnail')
+     * @returns {Promise}
+     */
+    async displayItemOnMap(item, assetKey = 'thumbnail') {
+        if (!this.isMapReady()) {
+            throw new Error('Map not initialized');
+        }
+
+        try {
+            // Clear any existing thumbnails first
+            this.clearAllThumbnails();
+
+            // Prepare item data for display
+            const displayItem = {
+                id: item.id,
+                bbox: item.bbox || item.geometry?.bbox,
+                thumbnail: null
+            };
+
+            // Extract thumbnail URL based on asset key
+            if (assetKey === 'thumbnail' && item.assets) {
+                if (item.assets.thumbnail?.href) {
+                    displayItem.thumbnail = item.assets.thumbnail.href;
+                } else if (item.assets.preview?.href) {
+                    displayItem.thumbnail = item.assets.preview.href;
+                } else if (item.assets.overview?.href) {
+                    displayItem.thumbnail = item.assets.overview.href;
+                }
+            }
+
+            // Add to map
+            this.addThumbnailToMap(displayItem);
+
+            // Fit map to bounds if available
+            if (displayItem.bbox) {
+                this.fitToBounds(displayItem.bbox);
+            }
+
+            console.log(`🗺️ Displayed item ${item.id} on map`);
+            return Promise.resolve();
+        } catch (error) {
+            console.error(`Failed to display item on map:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Display item geometry/boundaries on map
+     * @param {Object} item - STAC item with geometry
+     * @returns {Promise}
+     */
+    async displayItemGeometry(item) {
+        if (!this.isMapReady()) {
+            throw new Error('Map not initialized');
+        }
+
+        try {
+            // Clear any existing thumbnails first
+            this.clearAllThumbnails();
+
+            // Prepare item for boundary display
+            const displayItem = {
+                id: item.id,
+                bbox: item.bbox || item.geometry?.bbox
+            };
+
+            // If item has geometry but no bbox, calculate bbox from geometry
+            if (!displayItem.bbox && item.geometry) {
+                displayItem.bbox = this.calculateBboxFromGeometry(item.geometry);
+            }
+
+            // Add bounding box to map
+            this.addBoundingBoxToMap(displayItem);
+
+            // Fit map to bounds
+            if (displayItem.bbox) {
+                this.fitToBounds(displayItem.bbox);
+            }
+
+            console.log(`📦 Displayed geometry for item ${item.id} on map`);
+            return Promise.resolve();
+        } catch (error) {
+            console.error(`Failed to display item geometry:`, error);
+            throw error;
+        }
+    }
+
+    /**
+     * Calculate bounding box from geometry
+     * @param {Object} geometry - GeoJSON geometry
+     * @returns {Array} Bounding box [west, south, east, north]
+     */
+    calculateBboxFromGeometry(geometry) {
+        if (!geometry || !geometry.coordinates) {
+            return null;
+        }
+
+        let minLng = Infinity;
+        let minLat = Infinity;
+        let maxLng = -Infinity;
+        let maxLat = -Infinity;
+
+        const processCoordinates = (coords) => {
+            if (Array.isArray(coords[0])) {
+                coords.forEach(processCoordinates);
+            } else {
+                const [lng, lat] = coords;
+                minLng = Math.min(minLng, lng);
+                minLat = Math.min(minLat, lat);
+                maxLng = Math.max(maxLng, lng);
+                maxLat = Math.max(maxLat, lat);
+            }
+        };
+
+        processCoordinates(geometry.coordinates);
+
+        return [minLng, minLat, maxLng, maxLat];
+    }
+
+    /**
      * Add thumbnail to map - simplified approach
      */
     addThumbnailToMap(item) {

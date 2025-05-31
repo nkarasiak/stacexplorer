@@ -1188,9 +1188,18 @@ export class MapManager {
             // Remove existing overlay if any
             this.removeCurrentLayer();
 
-            // Ensure proper URL handling
-            let absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
-            console.log('Absolute URL:', absoluteUrl);
+            // Try to use the already-loaded thumbnail from results panel first (avoids CORS)
+            const thumbnailDataUrl = await this.getThumbnailFromResultsPanel(item.id);
+            
+            let finalUrl;
+            if (thumbnailDataUrl) {
+                console.log('Using preloaded thumbnail from results panel');
+                finalUrl = thumbnailDataUrl;
+            } else {
+                // Fallback to direct URL
+                finalUrl = this.ensureAbsoluteUrl(imageUrl);
+                console.log('Using direct image URL:', finalUrl);
+            }
             
             // Create a unique ID for this image source
             const sourceId = `image-overlay-${Date.now()}`;
@@ -1209,7 +1218,7 @@ export class MapManager {
             // Add source with full bounding box coverage
             this.map.addSource(sourceId, {
                 type: 'image',
-                url: absoluteUrl,
+                url: finalUrl,
                 coordinates: coordinates
             });
             
@@ -1248,7 +1257,7 @@ export class MapManager {
             this.map.once('error', (e) => {
                 if (e.sourceId === sourceId) {
                     console.error('Error with image overlay, trying fallback:', e);
-                    this.handleImageError(sourceId, absoluteUrl, bbox, item);
+                    this.handleImageError(sourceId, finalUrl, bbox, item);
                 }
             });
             
@@ -1259,6 +1268,81 @@ export class MapManager {
             // Use GeoJSON fallback without tooltip
             this.addGeoJsonLayerWithoutTooltip(bbox, item);
             return false;
+        }
+    }
+    
+    /**
+     * Get thumbnail from results panel and convert to data URL to avoid CORS
+     * @param {string} itemId - Item ID to look for
+     * @returns {Promise<string|null>} - Data URL of the thumbnail or null
+     */
+    async getThumbnailFromResultsPanel(itemId) {
+        try {
+            console.log('Looking for preloaded thumbnail for item:', itemId);
+            
+            // Find the item in the results panel
+            const resultItem = this.findResultItemByMultipleStrategies(itemId);
+            if (!resultItem) {
+                console.log('Item not found in results panel');
+                return null;
+            }
+            
+            // Find the thumbnail image element
+            const thumbnailImg = resultItem.querySelector('.dataset-thumbnail');
+            if (!thumbnailImg) {
+                console.log('No thumbnail image found in results panel');
+                return null;
+            }
+            
+            // Check if the image is loaded and has a valid source
+            if (!thumbnailImg.src || thumbnailImg.src.includes('placeholder') || !thumbnailImg.complete) {
+                console.log('Thumbnail not loaded or is placeholder');
+                return null;
+            }
+            
+            // Convert the loaded image to a data URL
+            const dataUrl = await this.imageToDataUrl(thumbnailImg);
+            if (dataUrl) {
+                console.log('Successfully converted thumbnail to data URL');
+                return dataUrl;
+            } else {
+                console.log('Failed to convert thumbnail to data URL');
+                return null;
+            }
+        } catch (error) {
+            console.error('Error getting thumbnail from results panel:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Convert an image element to a data URL
+     * @param {HTMLImageElement} imgElement - Image element to convert
+     * @returns {Promise<string|null>} - Data URL or null if conversion fails
+     */
+    async imageToDataUrl(imgElement) {
+        try {
+            // Create a canvas element
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Set canvas dimensions to match image
+            canvas.width = imgElement.naturalWidth || imgElement.width;
+            canvas.height = imgElement.naturalHeight || imgElement.height;
+            
+            // Draw the image onto the canvas
+            ctx.drawImage(imgElement, 0, 0);
+            
+            // Convert canvas to data URL
+            const dataUrl = canvas.toDataURL('image/png');
+            
+            // Clean up
+            canvas.remove();
+            
+            return dataUrl;
+        } catch (error) {
+            console.warn('Could not convert image to data URL (likely CORS issue):', error);
+            return null;
         }
     }
     

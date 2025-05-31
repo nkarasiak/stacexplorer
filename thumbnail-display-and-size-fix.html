@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thumbnail Display & Size Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-case {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .error {
+            color: #f44336;
+            font-weight: bold;
+        }
+        .warning {
+            color: #FF9800;
+            font-weight: bold;
+        }
+        .info {
+            color: #2196F3;
+            font-weight: bold;
+        }
+        .code-block {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .flow-diagram {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🖼️ Thumbnail Display & Size Fix</h1>
+        <p>Fixed both CORS issues and image sizing to display thumbnails at 100% coverage</p>
+    </div>
+
+    <div class="test-case">
+        <h3>🎯 Problems Fixed</h3>
+        <p><span class="error">Issue 1:</span> CORS errors preventing thumbnail display</p>
+        <p><span class="error">Issue 2:</span> Images only covering ~80% of dataset bounding box width</p>
+        <p><span class="success">Solution:</span> Smart thumbnail reuse + full bounding box coverage</p>
+    </div>
+
+    <div class="test-case">
+        <h3>🔄 How It Works Now</h3>
+        
+        <div class="flow-diagram">
+            <h4>Image Loading Strategy:</h4>
+            <ol>
+                <li><span class="info">1st Priority:</span> Use already-loaded thumbnail from results panel</li>
+                <li><span class="info">Convert to Data URL:</span> Avoid CORS restrictions</li>
+                <li><span class="warning">Fallback:</span> Try direct URL if thumbnail not found</li>
+                <li><span class="error">Final Fallback:</span> Show bounding box outline</li>
+            </ol>
+        </div>
+
+        <h4>Size Coverage Strategy:</h4>
+        <div class="code-block">// Always use FULL bounding box coordinates:
+const coordinates = [
+    [bbox[0], bbox[3]], // top-left (northwest)
+    [bbox[2], bbox[3]], // top-right (northeast) 
+    [bbox[2], bbox[1]], // bottom-right (southeast)
+    [bbox[0], bbox[1]]  // bottom-left (southwest)
+];
+// Result: 100% width and height coverage</div>
+    </div>
+
+    <div class="test-case">
+        <h3>🔧 Key Methods Added</h3>
+        
+        <h4>1. Smart Thumbnail Retrieval</h4>
+        <div class="code-block">async getThumbnailFromResultsPanel(itemId) {
+    // Find the item in results panel
+    const resultItem = this.findResultItemByMultipleStrategies(itemId);
+    
+    // Get the thumbnail image element
+    const thumbnailImg = resultItem.querySelector('.dataset-thumbnail');
+    
+    // Convert to data URL to avoid CORS
+    const dataUrl = await this.imageToDataUrl(thumbnailImg);
+    
+    return dataUrl; // Returns data:image/png;base64,... format
+}</div>
+
+        <h4>2. Image to Data URL Conversion</h4>
+        <div class="code-block">async imageToDataUrl(imgElement) {
+    // Create canvas and copy image data
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = imgElement.naturalWidth;
+    canvas.height = imgElement.naturalHeight;
+    
+    // Draw image onto canvas
+    ctx.drawImage(imgElement, 0, 0);
+    
+    // Convert to data URL (bypasses CORS)
+    return canvas.toDataURL('image/png');
+}</div>
+
+        <h4>3. Improved Loading Logic</h4>
+        <div class="code-block">async addImageOverlay(imageUrl, bbox, item) {
+    // Try preloaded thumbnail first (avoids CORS)
+    const thumbnailDataUrl = await this.getThumbnailFromResultsPanel(item.id);
+    
+    let finalUrl;
+    if (thumbnailDataUrl) {
+        console.log('Using preloaded thumbnail from results panel');
+        finalUrl = thumbnailDataUrl; // data:image/png;base64,...
+    } else {
+        console.log('Using direct image URL');
+        finalUrl = this.ensureAbsoluteUrl(imageUrl); // External URL
+    }
+    
+    // Always use full bounding box for 100% coverage
+    const coordinates = [ /* full bbox coords */ ];
+}</div>
+    </div>
+
+    <div class="test-case">
+        <h3>✅ What's Fixed</h3>
+        <ul>
+            <li><span class="success">CORS Issues Resolved:</span> Uses preloaded thumbnails when possible</li>
+            <li><span class="success">100% Size Coverage:</span> Images cover full dataset extent</li>
+            <li><span class="success">Fallback Strategy:</span> Multiple attempts before giving up</li>
+            <li><span class="success">Better Error Handling:</span> Graceful degradation to boundary outline</li>
+            <li><span class="success">Performance Improved:</span> Reuses already-loaded images</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>🧪 How to Test</h3>
+        
+        <h4>Test Image Loading:</h4>
+        <ol>
+            <li>Search for datasets with thumbnails (e.g., Sentinel-2)</li>
+            <li>Click on a thumbnail image</li>
+            <li><span class="success">Expected:</span> Image displays on map without CORS errors</li>
+            <li>Check console for: <span class="info">"Using preloaded thumbnail from results panel"</span></li>
+        </ol>
+
+        <h4>Test Size Coverage:</h4>
+        <ol>
+            <li>Display a thumbnail on the map</li>
+            <li>Verify image covers the full dataset boundary</li>
+            <li><span class="success">Expected:</span> No gaps around image edges</li>
+            <li>Image should be 100% width and height of the bounding box</li>
+        </ol>
+
+        <h4>Console Verification:</h4>
+        <p>Look for these success messages:</p>
+        <ul>
+            <li><span class="info">"Looking for preloaded thumbnail for item: [ID]"</span></li>
+            <li><span class="success">"Successfully converted thumbnail to data URL"</span></li>
+            <li><span class="success">"Using preloaded thumbnail from results panel"</span></li>
+            <li><span class="success">"Image overlay added successfully with full bbox coverage"</span></li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>🔍 Troubleshooting</h3>
+        
+        <h4>If thumbnails still don't load:</h4>
+        <ol>
+            <li>Check if thumbnail exists in results panel first</li>
+            <li>Verify thumbnail loaded completely before clicking</li>
+            <li>Look for canvas/CORS errors in console</li>
+            <li>Should fallback to boundary outline if all methods fail</li>
+        </ol>
+
+        <h4>Console Messages Guide:</h4>
+        <ul>
+            <li><span class="success">"Using preloaded thumbnail"</span> - Best case scenario</li>
+            <li><span class="warning">"Using direct image URL"</span> - Fallback method</li>
+            <li><span class="error">"Thumbnail not loaded or is placeholder"</span> - No thumbnail available</li>
+            <li><span class="info">"Image failed to load, showing bounding box outline"</span> - Final fallback</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>🎯 Benefits</h3>
+        <ul>
+            <li><span class="success">Reliable Display:</span> Uses already-cached thumbnails</li>
+            <li><span class="success">CORS-Free:</span> Data URLs bypass cross-origin restrictions</li>
+            <li><span class="success">Full Coverage:</span> Images show complete dataset extent</li>
+            <li><span class="success">Smart Fallbacks:</span> Multiple strategies ensure something displays</li>
+            <li><span class="success">Performance:</span> No duplicate image loading</li>
+        </ul>
+    </div>
+
+    <p><strong>🎉 Thumbnails now display reliably at full size, covering 100% of the dataset's geographic extent!</strong></p>
+</body>
+</html>

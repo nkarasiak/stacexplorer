@@ -567,6 +567,45 @@ export class SearchForm {
     }
     
     /**
+     * Check if the selected collections are non-optical data types that don't use cloud cover
+     * @param {string} collections - Comma-separated list of collection IDs
+     * @returns {boolean} - True if collections are non-optical types
+     */
+    isNonOpticalCollection(collections) {
+        if (!collections) return false;
+        
+        const collectionIds = collections.toLowerCase();
+        
+        // Keywords that indicate non-optical data types
+        const nonOpticalKeywords = [
+            'sar',           // Synthetic Aperture Radar
+            'radar',         // Radar data
+            'dem',           // Digital Elevation Model
+            'dsm',           // Digital Surface Model
+            'dtm',           // Digital Terrain Model
+            'elevation',     // Elevation data
+            'lidar',         // LiDAR data
+            'thermal',       // Thermal infrared (may not use cloud cover)
+            'temperature',   // Temperature data
+            'precipitation', // Weather data
+            'wind',          // Wind data
+            'pressure',      // Atmospheric pressure
+            'humidity',      // Humidity data
+            'bathymetry',    // Underwater topography
+            'sonar',         // Sonar data
+            'cop-dem',       // Copernicus DEM
+            'srtm',          // SRTM elevation data
+            'aster-dem',     // ASTER DEM
+            'nasadem'        // NASA DEM
+        ];
+        
+        // Check if any of the keywords match the collection IDs
+        return nonOpticalKeywords.some(keyword => 
+            collectionIds.includes(keyword)
+        );
+    }
+    
+    /**
      * Get search parameters from form
      * @returns {Object} - Search parameters
      */
@@ -614,20 +653,18 @@ export class SearchForm {
             if (cloudCoverEnabled?.checked && cloudCoverInput && !cloudCoverInput.disabled) {
                 const cloudCoverValue = parseInt(cloudCoverInput.value);
                 if (!isNaN(cloudCoverValue)) {
-                    params["filter-lang"] = "cql2-json";
-                    params.filter = {
-                        "op": "and",
-                        "args": [
-                            {
-                                "op": ">=",
-                                "args": [{ "property": "eo:cloud_cover" }, 0]
-                            },
-                            {
-                                "op": "<",
-                                "args": [{ "property": "eo:cloud_cover" }, cloudCoverValue]
-                            }
-                        ]
-                    };
+                    // Check if we're dealing with collections that typically don't have cloud cover
+                    const collections = document.getElementById('collections')?.value || '';
+                    const isNonOpticalData = this.isNonOpticalCollection(collections);
+                    
+                    if (!isNonOpticalData) {
+                        // Only apply cloud cover filter for optical data collections
+                        params["eo:cloud_cover"] = { "lte": cloudCoverValue };
+                        console.log(`🌥️ Applying cloud cover filter: <= ${cloudCoverValue}%`);
+                    } else {
+                        console.log(`📡 Skipping cloud cover filter for non-optical data: ${collections}`);
+                    }
+                    // For non-optical data (SAR, DEM, etc.), skip the cloud cover filter entirely
                 }
             }
 

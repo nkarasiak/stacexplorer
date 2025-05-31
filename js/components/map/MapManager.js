@@ -1232,7 +1232,7 @@ export class MapManager {
                 coordinates: coordinates
             });
             
-            // Add image layer
+            // Add image layer with error handling
             this.map.addLayer({
                 id: `${sourceId}-layer`,
                 type: 'raster',
@@ -1242,6 +1242,17 @@ export class MapManager {
                     'raster-resampling': 'linear'
                 }
             });
+            
+            // Wait a moment to see if the layer loads successfully
+            setTimeout(() => {
+                // Check if the source actually loaded
+                const source = this.map.getSource(sourceId);
+                if (source && this.map.getLayer(`${sourceId}-layer`)) {
+                    console.log('✅ Image layer appears to have loaded successfully');
+                } else {
+                    console.warn('⚠️ Image layer may have failed to load, checking...');
+                }
+            }, 2000);
             
             // Store as current layer
             this.currentLayer = {
@@ -1307,24 +1318,37 @@ export class MapManager {
             return false;
         }
         
-        // Known CORS-problematic domains/patterns
-        const corsProblematicPatterns = [
+        // Known highly problematic domains/patterns that rarely work
+        const highlyProblematicPatterns = [
+            '/$value',  // OData $value endpoints rarely support CORS
+            '/odata/v1/Assets',  // Specific OData asset endpoints
+        ];
+        
+        // Check if URL contains highly problematic patterns
+        const hasHighlyProblematicPattern = highlyProblematicPatterns.some(pattern => 
+            url.toLowerCase().includes(pattern.toLowerCase())
+        );
+        
+        if (hasHighlyProblematicPattern) {
+            console.log('🚫 URL contains highly problematic pattern:', url);
+            return true;
+        }
+        
+        // For other potentially problematic domains, we'll still try them
+        const potentiallyProblematicDomains = [
             'datahub.creodias.eu',
-            'odata/v1/Assets',
-            '/$value',
             'earthdata.nasa.gov',
             'ladsweb.modaps.eosdis.nasa.gov',
             'archive.usgs.gov'
         ];
         
-        // Check if URL contains any problematic patterns
-        const hasProblematicPattern = corsProblematicPatterns.some(pattern => 
-            url.toLowerCase().includes(pattern.toLowerCase())
+        const hasPotentiallyProblematicDomain = potentiallyProblematicDomains.some(domain => 
+            url.toLowerCase().includes(domain.toLowerCase())
         );
         
-        if (hasProblematicPattern) {
-            console.log('🚫 URL contains CORS-problematic pattern:', url);
-            return true;
+        if (hasPotentiallyProblematicDomain && !hasHighlyProblematicPattern) {
+            console.log('⚠️ URL from potentially problematic domain, will attempt anyway:', url);
+            return false; // Still try it
         }
         
         // Only block URLs with known problematic patterns
@@ -1334,9 +1358,9 @@ export class MapManager {
     }
     
     /**
-     * Get thumbnail from results panel and convert to data URL to avoid CORS
+     * Get thumbnail from results panel - try direct source first, then data URL conversion
      * @param {string} itemId - Item ID to look for
-     * @returns {Promise<string|null>} - Data URL of the thumbnail or null
+     * @returns {Promise<string|null>} - Image URL or data URL of the thumbnail or null
      */
     async getThumbnailFromResultsPanel(itemId) {
         try {
@@ -1363,7 +1387,8 @@ export class MapManager {
                 src: thumbnailImg.src,
                 complete: thumbnailImg.complete,
                 naturalWidth: thumbnailImg.naturalWidth,
-                naturalHeight: thumbnailImg.naturalHeight
+                naturalHeight: thumbnailImg.naturalHeight,
+                crossOrigin: thumbnailImg.crossOrigin
             });
             
             if (!thumbnailImg.src || thumbnailImg.src.includes('placeholder')) {
@@ -1376,16 +1401,23 @@ export class MapManager {
                 return null;
             }
             
-            console.log('✅ Thumbnail appears to be loaded, attempting conversion...');
+            // First, try to use the source directly if it has crossOrigin
+            if (thumbnailImg.crossOrigin === 'anonymous') {
+                console.log('✅ Thumbnail has crossOrigin=anonymous, using source directly:', thumbnailImg.src);
+                return thumbnailImg.src;
+            }
             
-            // Convert the loaded image to a data URL
+            console.log('⚠️ Attempting data URL conversion (might fail with CORS)...');
+            
+            // Try to convert the loaded image to a data URL (this might fail with CORS)
             const dataUrl = await this.imageToDataUrl(thumbnailImg);
             if (dataUrl && dataUrl.length > 1000) { // Basic check for valid data URL
                 console.log('✅ Successfully converted thumbnail to data URL (length:', dataUrl.length, ')');
                 return dataUrl;
             } else {
-                console.log('❌ Failed to convert thumbnail to data URL or data URL too small');
-                return null;
+                console.log('❌ Failed to convert thumbnail to data URL, trying direct source');
+                // If conversion fails, try using the source directly anyway
+                return thumbnailImg.src;
             }
         } catch (error) {
             console.error('❌ Error getting thumbnail from results panel:', error);
@@ -1412,23 +1444,32 @@ export class MapManager {
                 console.log('🎨 Converting image to canvas:', {
                     width: canvas.width,
                     height: canvas.height,
-                    imgSrc: imgElement.src?.substring(0, 100) + '...'
+                    imgSrc: imgElement.src?.substring(0, 100) + '...',
+                    crossOrigin: imgElement.crossOrigin
                 });
                 
                 // Draw the image onto the canvas
                 ctx.drawImage(imgElement, 0, 0);
                 
-                // Convert canvas to data URL
-                const dataUrl = canvas.toDataURL('image/png', 0.8); // Slightly compressed
+                // Try to convert canvas to data URL
+                let dataUrl;
+                try {
+                    dataUrl = canvas.toDataURL('image/png', 0.8); // Slightly compressed
+                    console.log('✅ Successfully converted to data URL, size:', dataUrl.length);
+                } catch (corsError) {
+                    console.warn('❌ Canvas tainted by CORS, cannot convert to data URL:', corsError.message);
+                    canvas.remove();
+                    resolve(null);
+                    return;
+                }
                 
                 // Clean up
                 canvas.remove();
                 
-                console.log('✅ Successfully converted to data URL, size:', dataUrl.length);
                 resolve(dataUrl);
                 
             } catch (error) {
-                console.warn('❌ Could not convert image to data URL (CORS tainted canvas):', error.message);
+                console.warn('❌ Could not convert image to data URL:', error.message);
                 resolve(null);
             }
         });

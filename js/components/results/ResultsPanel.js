@@ -405,6 +405,7 @@ export class ResultsPanel {
             thumbnailHtml = `
                 <div class="thumbnail-section">
                     <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" 
+                         crossorigin="anonymous"
                          onerror="this.parentElement.style.display='none'; this.parentElement.parentElement.classList.add('no-thumbnail'); this.parentElement.parentElement.querySelector('.dataset-date').classList.add('no-image');">
                 </div>
             `;

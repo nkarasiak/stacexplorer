@@ -1197,17 +1197,12 @@ export class MapManager {
                 console.log('✅ Using preloaded thumbnail from results panel');
                 finalUrl = thumbnailDataUrl;
             } else {
-                console.log('⚠️ Could not get preloaded thumbnail (expected due to CORS), checking direct URL...');
+                console.log('⚠️ Could not convert preloaded thumbnail, trying direct URL...');
                 
-                // Check if the external URL should be blocked
+                // Use the direct thumbnail URL - MapLibre might be able to handle it
+                // even if canvas conversion fails due to CORS
                 const absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
-                if (this.isLikelyCORSBlocked(absoluteUrl)) {
-                    console.log('🚫 External URL is known to block CORS, showing bounding box instead');
-                    this.addGeoJsonLayerWithoutTooltip(bbox, item);
-                    return true;
-                }
-                
-                console.log('🌐 External URL appears safe, attempting to load:', absoluteUrl);
+                console.log('🌐 Trying direct thumbnail URL:', absoluteUrl);
                 finalUrl = absoluteUrl;
             }
             
@@ -1277,7 +1272,7 @@ export class MapManager {
             // Register error handler for post-adding errors
             this.map.once('error', (e) => {
                 if (e.sourceId === sourceId) {
-                    console.error('❌ Error with image overlay, showing fallback:', e);
+                    console.log('❌ Image failed to load, showing bounding box instead');
                     this.handleImageError(sourceId, finalUrl, bbox, item);
                 }
             });
@@ -1345,9 +1340,9 @@ export class MapManager {
     }
     
     /**
-     * Get thumbnail from results panel - limited by CORS restrictions
+     * Get thumbnail from results panel and try to convert to data URL
      * @param {string} itemId - Item ID to look for
-     * @returns {Promise<string|null>} - Always returns null due to CORS restrictions
+     * @returns {Promise<string|null>} - Data URL of the thumbnail or null (CORS usually prevents this)
      */
     async getThumbnailFromResultsPanel(itemId) {
         try {
@@ -1385,21 +1380,16 @@ export class MapManager {
                 return null;
             }
             
-            // Check if this URL would be blocked by CORS anyway
-            if (this.isLikelyCORSBlocked(thumbnailImg.src)) {
-                console.log('❌ Thumbnail URL would be blocked by CORS, cannot reuse');
-                return null;
-            }
+            // Try to convert the loaded image to a data URL
+            // This will fail with CORS, but that's OK - MapLibre can still use the direct URL
+            console.log('🐈 Attempting to convert thumbnail to data URL (will likely fail with CORS)...');
             
-            console.log('🐈 Attempting to convert thumbnail to data URL...');
-            
-            // Try to convert the loaded image to a data URL (this will likely fail with CORS)
             const dataUrl = await this.imageToDataUrl(thumbnailImg);
             if (dataUrl && dataUrl.length > 1000) {
                 console.log('✅ Successfully converted thumbnail to data URL (length:', dataUrl.length, ')');
                 return dataUrl;
             } else {
-                console.log('❌ Failed to convert thumbnail to data URL due to CORS restrictions');
+                console.log('❌ Failed to convert thumbnail to data URL due to CORS - this is expected');
                 return null;
             }
         } catch (error) {

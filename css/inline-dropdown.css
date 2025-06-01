@@ -1,3 +1,56 @@
+/* Loading states for dropdowns */
+.inline-dropdown-container.loading-dropdown {
+    pointer-events: none;
+}
+
+.inline-dropdown-container .ai-loading-section {
+    padding: 20px;
+    text-align: center;
+}
+
+.inline-dropdown-container .ai-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    color: var(--md-primary);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.inline-dropdown-container .ai-loading i.spinning {
+    animation: spin 1s linear infinite;
+    font-size: 18px;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Improved dropdown performance */
+.inline-dropdown-container {
+    will-change: opacity, transform;
+}
+
+/* Better visual feedback for active items */
+.search-summary-item.dropdown-active {
+    background: rgba(33, 150, 243, 0.15) !important;
+    transform: translateX(4px) !important;
+    border-left: 3px solid var(--md-primary);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.search-summary-item.dropdown-active:hover {
+    background: rgba(33, 150, 243, 0.15) !important;
+    transform: translateX(4px) !important;
+}
+
+/* Prevent multiple dropdowns visual issues */
+.inline-dropdown-container + .inline-dropdown-container {
+    display: none !important;
+}
+
 /**
  * Inline Dropdown Styles - Beautiful dropdowns for left menu items
  */
@@ -395,12 +448,32 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Search summary item active state */
+/* Search summary item active state - Updated */
 .search-summary-item.dropdown-active {
-    background: rgba(33, 150, 243, 0.1) !important;
+    background: rgba(33, 150, 243, 0.15) !important;
     transform: translateX(4px) !important;
     border-left: 3px solid var(--md-primary);
-    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+    position: relative;
+    z-index: 10;
+}
+
+.search-summary-item.dropdown-active:hover {
+    background: rgba(33, 150, 243, 0.15) !important;
+    transform: translateX(4px) !important;
+}
+
+.search-summary-item.dropdown-active::after {
+    content: '';
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 0;
+    height: 0;
+    border-left: 6px solid var(--md-primary);
+    border-top: 4px solid transparent;
+    border-bottom: 4px solid transparent;
 }
 
 /* Scrollbar styling for dropdown */

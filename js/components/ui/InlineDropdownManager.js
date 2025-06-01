@@ -1,6 +1,7 @@
 /**
  * InlineDropdownManager.js - Manages inline dropdowns for left menu items
  * Provides streamlined dropdown experience without opening fullscreen interface
+ * OPTIMIZED VERSION - Fast loading, single dropdown, no fullscreen interference
  */
 
 import { AISmartSearchEnhanced } from '../search/AISmartSearchEnhanced.js';
@@ -28,10 +29,130 @@ export class InlineDropdownManager {
         
         this.currentDropdown = null;
         this.currentField = null;
+        this.isLoading = false;
+        
+        // Cache collections for performance
+        this.collectionsCache = null;
+        this.cacheTimestamp = null;
+        this.CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
         
         // Initialize event listeners
         this.initializeInlineDropdowns();
         this.setupGlobalListeners();
+        this.interceptMapDrawing();
+        
+        // Pre-load collections in background
+        setTimeout(() => this.preloadCollections(), 1000);
+    }
+    
+    /**
+     * Pre-load collections in background for faster dropdowns
+     */
+    async preloadCollections() {
+        try {
+            console.log('🔄 Pre-loading collections in background...');
+            await this.getCachedCollections();
+            console.log('✅ Collections pre-loaded successfully');
+        } catch (error) {
+            console.warn('⚠️ Failed to pre-load collections:', error);
+        }
+    }
+    
+    /**
+     * Get collections with caching for performance
+     */
+    async getCachedCollections() {
+        const now = Date.now();
+        
+        // Return cached collections if valid
+        if (this.collectionsCache && 
+            this.cacheTimestamp && 
+            (now - this.cacheTimestamp) < this.CACHE_DURATION) {
+            console.log('📦 Using cached collections');
+            return this.collectionsCache;
+        }
+        
+        // Try to get from collection manager first
+        if (this.collectionManager && typeof this.collectionManager.getAllCollections === 'function') {
+            const managerCollections = this.collectionManager.getAllCollections();
+            if (managerCollections && managerCollections.length > 0) {
+                this.collectionsCache = managerCollections;
+                this.cacheTimestamp = now;
+                this.aiSearchHelper.allAvailableCollections = managerCollections;
+                return managerCollections;
+            }
+        }
+        
+        // Fallback to loading collections
+        console.log('🔄 Loading fresh collections...');
+        await this.aiSearchHelper.ensureDataSourceSelected();
+        
+        if (this.aiSearchHelper.allAvailableCollections) {
+            this.collectionsCache = this.aiSearchHelper.allAvailableCollections;
+            this.cacheTimestamp = now;
+            return this.collectionsCache;
+        }
+        
+        return [];
+    }
+    
+    /**
+     * Intercept map drawing to prevent fullscreen interference
+     */
+    interceptMapDrawing() {
+        if (!this.mapManager) return;
+        
+        // Store original method if it exists
+        this.originalStartDrawing = this.mapManager.startDrawingBbox;
+        
+        // Override the drawing method
+        this.mapManager.startDrawingBbox = (callback) => {
+            console.log('🎯 Intercepted map drawing - will handle inline');
+            
+            // Call original method with our custom callback
+            if (this.originalStartDrawing) {
+                this.originalStartDrawing.call(this.mapManager, (bbox) => {
+                    console.log('📍 Drawing completed, handling inline:', bbox);
+                    
+                    // Update location selection inline
+                    this.handleDrawingComplete(bbox);
+                    
+                    // Call original callback if provided
+                    if (callback && typeof callback === 'function') {
+                        callback(bbox);
+                    }
+                });
+            }
+        };
+        
+        console.log('🎯 Map drawing interception set up');
+    }
+    
+    /**
+     * Handle drawing completion inline without opening fullscreen
+     */
+    handleDrawingComplete(bbox) {
+        try {
+            // Update the AI search helper state
+            this.aiSearchHelper.selectedLocation = bbox;
+            this.aiSearchHelper.selectedLocationResult = {
+                formattedName: 'Map Selection',
+                shortName: 'Map Selection',
+                bbox: bbox,
+                category: 'drawn'
+            };
+            
+            // Update the sidebar summary
+            this.updateSearchSummary('location', 'MAP SELECTION');
+            
+            // Show success notification
+            this.notificationService.showNotification('📍 Location drawn and applied!', 'success');
+            
+            console.log('✅ Drawing handled inline, no fullscreen opened');
+            
+        } catch (error) {
+            console.error('❌ Error handling drawing completion:', error);
+        }
     }
     
     /**
@@ -66,13 +187,17 @@ export class InlineDropdownManager {
             
             // Add hover effects
             item.addEventListener('mouseenter', () => {
-                item.style.transform = 'translateX(4px)';
-                item.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
+                if (!item.classList.contains('dropdown-active')) {
+                    item.style.transform = 'translateX(4px)';
+                    item.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
+                }
             });
             
             item.addEventListener('mouseleave', () => {
-                item.style.transform = 'translateX(0)';
-                item.style.backgroundColor = 'transparent';
+                if (!item.classList.contains('dropdown-active')) {
+                    item.style.transform = 'translateX(0)';
+                    item.style.backgroundColor = 'transparent';
+                }
             });
         });
         
@@ -86,19 +211,29 @@ export class InlineDropdownManager {
      */
     async showInlineDropdown(fieldType, triggerElement) {
         try {
-            // Close any existing dropdown
+            // IMPORTANT: Close any existing dropdown first
             this.closeCurrentDropdown();
             
-            console.log(`📋 Opening inline dropdown for: ${fieldType}`);
+            // Prevent multiple dropdowns during loading
+            if (this.isLoading) {
+                console.log('⏳ Already loading dropdown, please wait...');
+                return;
+            }
             
-            // Ensure AI search helper has collections loaded
-            await this.aiSearchHelper.ensureDataSourceSelected();
+            console.log(`📋 Opening inline dropdown for: ${fieldType}`);
+            this.isLoading = true;
+            
+            // Show loading state immediately
+            this.showLoadingDropdown(fieldType, triggerElement);
             
             // Create dropdown content based on field type
             let dropdownContent;
             
             switch (fieldType) {
                 case 'collection':
+                    // Use cached collections for instant loading
+                    const collections = await this.getCachedCollections();
+                    this.aiSearchHelper.allAvailableCollections = collections;
                     dropdownContent = this.aiSearchHelper.createCollectionDropdown();
                     break;
                 case 'location':
@@ -109,50 +244,97 @@ export class InlineDropdownManager {
                     break;
                 default:
                     console.warn(`Unknown field type: ${fieldType}`);
+                    this.isLoading = false;
                     return;
             }
             
-            // Create inline dropdown container
-            const dropdown = document.createElement('div');
-            dropdown.className = 'inline-dropdown-container';
-            dropdown.setAttribute('data-field', fieldType);
-            
-            // Add the dropdown content
-            dropdown.appendChild(dropdownContent);
-            
-            // Position the dropdown relative to the trigger element
-            this.positionInlineDropdown(dropdown, triggerElement);
-            
-            // Add to the sidebar
-            const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
-            if (sidebar) {
-                sidebar.appendChild(dropdown);
-            } else {
-                document.body.appendChild(dropdown);
-            }
-            
-            // Store references
-            this.currentDropdown = dropdown;
-            this.currentField = fieldType;
-            
-            // Set up dropdown-specific event handlers
-            this.setupDropdownHandlers(dropdown, fieldType);
-            
-            // Add active state to trigger element
-            triggerElement.classList.add('dropdown-active');
-            
-            // Focus first interactive element
-            const firstInput = dropdown.querySelector('input, button, [tabindex]');
-            if (firstInput) {
-                setTimeout(() => firstInput.focus(), 100);
-            }
+            // Replace loading dropdown with actual content
+            this.replaceLoadingWithContent(dropdownContent, fieldType);
             
             console.log(`✅ Showed inline dropdown for: ${fieldType}`);
             
         } catch (error) {
             console.error(`❌ Error showing inline dropdown for ${fieldType}:`, error);
             this.notificationService.showNotification(`Error opening ${fieldType} options`, 'error');
+        } finally {
+            this.isLoading = false;
         }
+    }
+    
+    /**
+     * Show loading dropdown immediately for better UX
+     */
+    showLoadingDropdown(fieldType, triggerElement) {
+        // Create loading dropdown container
+        const dropdown = document.createElement('div');
+        dropdown.className = 'inline-dropdown-container loading-dropdown';
+        dropdown.setAttribute('data-field', fieldType);
+        
+        // Add loading content
+        dropdown.innerHTML = `
+            <div class="ai-dropdown-content">
+                <div class="ai-dropdown-header">
+                    <i class="material-icons">${
+                        fieldType === 'collection' ? 'dataset' :
+                        fieldType === 'location' ? 'place' : 'event'
+                    }</i>
+                    <span>Loading ${fieldType}...</span>
+                </div>
+                <div class="ai-loading-section">
+                    <div class="ai-loading">
+                        <i class="material-icons spinning">refresh</i>
+                        Please wait...
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Position and show the loading dropdown
+        this.positionInlineDropdown(dropdown, triggerElement);
+        
+        // Add to the sidebar
+        const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
+        if (sidebar) {
+            sidebar.appendChild(dropdown);
+        } else {
+            document.body.appendChild(dropdown);
+        }
+        
+        // Store references
+        this.currentDropdown = dropdown;
+        this.currentField = fieldType;
+        
+        // Add active state to trigger element
+        triggerElement.classList.add('dropdown-active');
+        
+        console.log(`⏳ Loading dropdown shown for: ${fieldType}`);
+    }
+    
+    /**
+     * Replace loading dropdown with actual content
+     */
+    replaceLoadingWithContent(dropdownContent, fieldType) {
+        if (!this.currentDropdown) return;
+        
+        // Clear current content
+        this.currentDropdown.innerHTML = '';
+        
+        // Add the real dropdown content
+        this.currentDropdown.appendChild(dropdownContent);
+        
+        // Remove loading class
+        this.currentDropdown.classList.remove('loading-dropdown');
+        
+        // Set up dropdown-specific event handlers
+        this.setupDropdownHandlers(this.currentDropdown, fieldType);
+        
+        // Focus first interactive element
+        const firstInput = this.currentDropdown.querySelector('input, button, [tabindex]');
+        if (firstInput) {
+            setTimeout(() => firstInput.focus(), 100);
+        }
+        
+        console.log(`🔄 Loading dropdown replaced with content for: ${fieldType}`);
     }
     
     /**
@@ -583,11 +765,17 @@ export class InlineDropdownManager {
                 this.currentDropdown = null;
             }, 200);
             
-            // Remove active state from trigger elements
+            // Remove active state from ALL trigger elements
             const activeItems = document.querySelectorAll('.dropdown-active');
-            activeItems.forEach(item => item.classList.remove('dropdown-active'));
+            activeItems.forEach(item => {
+                item.classList.remove('dropdown-active');
+                // Reset hover styles
+                item.style.transform = 'translateX(0)';
+                item.style.backgroundColor = 'transparent';
+            });
             
             this.currentField = null;
+            this.isLoading = false; // Reset loading state
             
             console.log('🚪 Closed inline dropdown');
         }

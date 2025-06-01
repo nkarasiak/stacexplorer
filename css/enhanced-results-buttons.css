@@ -1,4 +1,4 @@
-/* Enhanced Results Display - Beautiful Thumbnail-Overlay Style */
+/* Enhanced Results Display - Beautiful Round Buttons (Matching Header Actions) */
 
 /* Fix for no-thumbnail layout using thumbnail-overlay style */
 .dataset-content.no-thumbnail {
@@ -79,77 +79,54 @@
     z-index: 10;
 }
 
-/* Beautiful info-btn styling (used for both map and info buttons) */
+/* Beautiful round buttons (matching header-actions ai-button style) */
 .thumbnail-overlay .info-btn {
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
+    background: var(--md-primary);
     border: none;
-    border-radius: 8px;
-    width: 36px;
-    height: 36px;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%; /* Perfect circle */
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(12px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     position: relative;
     overflow: hidden;
 }
 
-/* Specific button colors */
-.thumbnail-overlay .view-map-btn {
-    background: linear-gradient(135deg, #4A90E2, #357ABD);
-    border: 1px solid rgba(74, 144, 226, 0.3);
-}
-
-.thumbnail-overlay .view-map-btn:hover {
-    background: linear-gradient(135deg, #357ABD, #2E6DA4);
-    border-color: rgba(74, 144, 226, 0.6);
+/* Hover effects matching header-actions */
+.thumbnail-overlay .info-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(74, 144, 226, 0.4);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-.thumbnail-overlay .details-btn {
-    background: linear-gradient(135deg, #8B5CF6, #7C3AED);
-    border: 1px solid rgba(139, 92, 246, 0.3);
-}
-
-.thumbnail-overlay .details-btn:hover {
-    background: linear-gradient(135deg, #7C3AED, #6D28D9);
-    border-color: rgba(139, 92, 246, 0.6);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
-}
-
-/* Icon styling and hover effects */
+/* Icon styling */
 .thumbnail-overlay .info-btn i {
     font-size: 18px;
     transition: transform 0.2s ease;
 }
 
+/* Subtle icon scale on hover */
 .thumbnail-overlay .info-btn:hover i {
-    transform: scale(1.1);
+    transform: scale(1.05);
 }
 
-/* Ripple effect */
-.thumbnail-overlay .info-btn::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.3);
-    transform: translate(-50%, -50%);
-    transition: width 0.3s ease, height 0.3s ease;
+/* Optional: Different colors for different button types while maintaining round style */
+.thumbnail-overlay .view-map-btn {
+    background: var(--md-primary); /* Blue for map */
 }
 
-.thumbnail-overlay .info-btn:active::before {
-    width: 100%;
-    height: 100%;
+.thumbnail-overlay .details-btn {
+    background: var(--md-info); /* Light blue for info */
+}
+
+/* Active state */
+.thumbnail-overlay .info-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 /* Enhanced fallback button styling */
@@ -172,13 +149,17 @@
 }
 
 .fallback-geometry-view .info-btn {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
 }
 
 /* Dark theme adjustments */
 .dark-theme .thumbnail-overlay .info-btn {
-    backdrop-filter: blur(16px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.dark-theme .thumbnail-overlay .info-btn:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
 .dark-theme .dataset-content.no-thumbnail {
@@ -193,8 +174,11 @@
 
 /* Light theme adjustments */
 .light-theme .thumbnail-overlay .info-btn {
-    backdrop-filter: blur(8px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.light-theme .thumbnail-overlay .info-btn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
 }
 
 /* Responsive adjustments */
@@ -206,8 +190,8 @@
     }
     
     .thumbnail-overlay .info-btn {
-        width: 32px;
-        height: 32px;
+        width: 28px;
+        height: 28px;
     }
     
     .thumbnail-overlay .info-btn i {
@@ -247,4 +231,10 @@
 
 .thumbnail-overlay .info-btn:nth-child(2) {
     animation-delay: 0.2s;
+}
+
+/* Focus states for accessibility */
+.thumbnail-overlay .info-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
 }

@@ -30,10 +30,12 @@ export class AISmartSearchEnhanced {
         this.escapeListener = null;
         this.currentDropdown = null; // Track current open dropdown
         
-        // Location search state
         this.locationSearchResults = [];
         this.selectedLocationResult = null;
         this.locationSearchTimeout = null;
+        
+        // Track current location layer for cleanup
+        this.currentLocationLayerId = null;
         
         // Selected parameters
         this.selectedCollection = "";
@@ -966,6 +968,9 @@ export class AISmartSearchEnhanced {
         const everywhereOption = container.querySelector('[data-value="everywhere"]');
         if (everywhereOption) {
             everywhereOption.addEventListener('click', () => {
+                // Clear previous geometry when selecting "everywhere"
+                this.clearPreviousLocationGeometry();
+                
                 this.selectedLocation = 'everywhere';
                 const locationField = document.getElementById('ai-field-location');
                 locationField.textContent = 'THE WORLD';
@@ -1104,6 +1109,9 @@ export class AISmartSearchEnhanced {
      * Handle draw on map functionality
      */
     handleDrawOnMap() {
+        // Clear previous geometry first
+        this.clearPreviousLocationGeometry();
+        
         this.closeAllDropdowns();
         this.closeFullscreen();
         
@@ -1116,6 +1124,13 @@ export class AISmartSearchEnhanced {
                     bbox: bbox,
                     category: 'drawn'
                 };
+                
+                // Generate unique layer ID for drawn geometry
+                const layerId = `drawn-geometry-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                this.currentLocationLayerId = layerId;
+                
+                // Note: The drawing itself will be handled by the map manager
+                // We just need to track the layer ID for future cleanup
                 
                 // Reopen AI Search with updated location
                 this.showMinimalistSearch();
@@ -1238,21 +1253,28 @@ export class AISmartSearchEnhanced {
             locationField.classList.remove('empty');
         }
         
-        // 🔧 FIX: Display geometry on map and zoom to it
+        // 🔧 FIX: Display geometry on map and zoom to it with cleanup
         if (this.mapManager && geometryResult.geojson && geometryResult.bbox) {
             try {
                 console.log('🗺️ Displaying pasted geometry on map:', geometryResult.type);
+                
+                // Clear any previous location geometry first
+                this.clearPreviousLocationGeometry();
+                
+                // Generate unique layer ID
+                const layerId = `pasted-geometry-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+                this.currentLocationLayerId = layerId;
                 
                 // Display the geometry with beautiful styling
                 if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
                     this.mapManager.addBeautifulGeometryLayer(
                         geometryResult.geojson, 
-                        `pasted-geometry-${Date.now()}`
+                        layerId
                     );
                 } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
                     this.mapManager.addGeoJsonLayer(
                         geometryResult.geojson, 
-                        `pasted-geometry-${Date.now()}`
+                        layerId
                     );
                 }
                 
@@ -1426,6 +1448,34 @@ export class AISmartSearchEnhanced {
     }
     
     /**
+     * Clear previous location geometry from the map
+     */
+    clearPreviousLocationGeometry() {
+        if (!this.mapManager || !this.currentLocationLayerId) {
+            return;
+        }
+        
+        try {
+            // Try different methods to remove the layer
+            if (typeof this.mapManager.removeLayer === 'function') {
+                this.mapManager.removeLayer(this.currentLocationLayerId);
+            } else if (typeof this.mapManager.removeGeoJsonLayer === 'function') {
+                this.mapManager.removeGeoJsonLayer(this.currentLocationLayerId);
+            } else if (typeof this.mapManager.clearGeometryLayer === 'function') {
+                this.mapManager.clearGeometryLayer(this.currentLocationLayerId);
+            }
+            
+            console.log(`🧹 Cleared previous location geometry: ${this.currentLocationLayerId}`);
+            this.currentLocationLayerId = null;
+            
+        } catch (error) {
+            console.warn('⚠️ Could not remove previous location geometry:', error);
+            // Reset the ID anyway to avoid accumulating references
+            this.currentLocationLayerId = null;
+        }
+    }
+    
+    /**
      * Display location on map with geometry and zoom (same behavior as pasted geometry)
      * @param {Array} bbox - Bounding box [west, south, east, north]
      * @param {string} name - Location name
@@ -1440,6 +1490,9 @@ export class AISmartSearchEnhanced {
         try {
             console.log(`🗺️ Displaying location "${name}" on map:`, bbox);
             
+            // Clear any previous location geometry first
+            this.clearPreviousLocationGeometry();
+            
             // Create a GeoJSON rectangle from the bounding box
             const [west, south, east, north] = bbox;
             const locationGeometry = {
@@ -1447,7 +1500,7 @@ export class AISmartSearchEnhanced {
                 properties: {
                     name: name,
                     category: category,
-                    type: 'searched_location'
+                    type: 'location_geometry'
                 },
                 geometry: {
                     type: 'Polygon',
@@ -1461,16 +1514,20 @@ export class AISmartSearchEnhanced {
                 }
             };
             
+            // Generate unique layer ID
+            const layerId = `location-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            this.currentLocationLayerId = layerId;
+            
             // Display the location geometry with beautiful styling (same as pasted geometry)
             if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
                 this.mapManager.addBeautifulGeometryLayer(
                     locationGeometry, 
-                    `searched-location-${Date.now()}`
+                    layerId
                 );
             } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
                 this.mapManager.addGeoJsonLayer(
                     locationGeometry, 
-                    `searched-location-${Date.now()}`
+                    layerId
                 );
             }
             
@@ -1481,7 +1538,7 @@ export class AISmartSearchEnhanced {
                 this.mapManager.fitMapToBbox(bbox);
             }
             
-            console.log(`✅ Location "${name}" successfully displayed and zoomed on map`);
+            console.log(`✅ Location "${name}" successfully displayed and zoomed on map (Layer: ${layerId})`);
             
         } catch (mapError) {
             console.error('❌ Error displaying location on map:', mapError);

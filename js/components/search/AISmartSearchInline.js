@@ -21,6 +21,9 @@ export class AISmartSearchInline extends AISmartSearchEnhanced {
         this.inlineContainer = null;
         this.isInlineMode = true; // Flag to differentiate from fullscreen mode
         
+        // Track current location layer for cleanup (same as parent)
+        this.currentLocationLayerId = null;
+        
         // Don't initialize AI button for inline version
         // This will be handled by the parent component
     }
@@ -383,7 +386,7 @@ export class AISmartSearchInline extends AISmartSearchEnhanced {
         // Use parent logic for processing
         super.handlePastedGeometry(geometryResult, originalText);
         
-        // Update inline field
+        // Update inline field (parent updates the fullscreen field)
         const locationField = document.getElementById('ai-field-location-inline');
         if (locationField) {
             locationField.textContent = 'Custom Geometry';
@@ -431,6 +434,9 @@ export class AISmartSearchInline extends AISmartSearchEnhanced {
         const everywhereOption = container.querySelector('[data-value="everywhere"]');
         if (everywhereOption) {
             everywhereOption.addEventListener('click', () => {
+                // Clear previous geometry when selecting "everywhere"
+                this.clearPreviousLocationGeometry();
+                
                 this.selectedLocation = 'everywhere';
                 const locationField = document.getElementById('ai-field-location-inline');
                 if (locationField) {

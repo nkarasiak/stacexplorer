@@ -29,6 +29,10 @@ export function initializeURLStateManagement(components) {
     );
     
     // Add URL management methods to global scope for easy access
+    // Create window.stacExplorer if it doesn't exist yet
+    if (!window.stacExplorer) {
+        window.stacExplorer = {};
+    }
     window.stacExplorer.urlStateManager = urlStateManager;
     
     // Add share URL functionality to UI

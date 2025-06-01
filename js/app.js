@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Check for Ctrl+K (Windows/Linux) or Cmd+K (Mac)
             if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
                 event.preventDefault(); // Prevent browser's default search
-                console.log('🚀 Keyboard shortcut triggered - opening AI Smart Search');
+                console.log('[SHORTCUT] Keyboard shortcut triggered - opening AI Smart Search');
                 aiSmartSearch.showMinimalistSearch({ hideMenuOnOpen: false });
             }
         });
@@ -93,12 +93,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const searchTitle = document.getElementById('search-title');
         if (searchTitle) {
             searchTitle.addEventListener('click', () => {
-                console.log('🔍 Search title clicked - opening AI Smart Search with hidden menu');
+                console.log('[CLICK] Search title clicked - opening AI Smart Search with hidden menu');
                 aiSmartSearch.showMinimalistSearch({ hideMenuOnOpen: true });
             });
-            console.log('🎯 Clickable search title initialized');
+            console.log('[INIT] Clickable search title initialized');
         } else {
-            console.error('❌ Search title element not found');
+            console.error('[ERROR] Search title element not found');
         }
         
         // ✨ NEW: Initialize Inline Dropdown Manager for enhanced menu behavior
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
-        console.log('✨ Enhanced inline dropdowns initialized for left menu');
+        console.log('[DROPDOWN] Enhanced inline dropdowns initialized for left menu');
         
         // 🔗 NEW: Initialize URL State Management for perfect synchronization
         const urlStateManager = initializeURLStateManagement({
@@ -123,9 +123,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Enhance AI Search for URL state events
         enhanceAISearchForURLState(aiSmartSearch);
         
-        console.log('🔗 URL state management initialized - search params will sync between interfaces and be stored in URL');
+        console.log('[URL] URL state management initialized - search params will sync between interfaces and be stored in URL');
         
-        console.log('⌨️ AI Smart Search keyboard shortcut (Ctrl+K / Cmd+K) initialized');
+        console.log('[KEYBOARD] AI Smart Search keyboard shortcut (Ctrl+K / Cmd+K) initialized');
         
         // Initialize geometry sync for seamless integration (simplified for full-screen only)
         const geometrySync = initializeGeometrySync({
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
             mapManager,
             notificationService
         });
-        console.log('🔄 GeometrySync initialized - map will sync with AI Search');
+        console.log('[SYNC] GeometrySync initialized - map will sync with AI Search');
         
         // Initialize state manager after all components are ready
         const stateManager = new StateManager(catalogSelector, mapManager, searchPanel);
@@ -158,26 +158,28 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show welcome notification about the clickable search interface
         setTimeout(() => {
-            notificationService.showNotification('🎨 Click "Search" title or any search field to customize your search!', 'info');
+            notificationService.showNotification('Click "Search" title or any search field to customize your search!', 'info');
         }, 2000);
         
         // Sidebar is now visible by default - AI Smart Search Enhanced available via button click
         if (!stateManager.hasUrlStateParams()) {
-            console.log('🤖 No URL state detected, sidebar visible with AI Smart Search ready');
+            console.log('[AI] No URL state detected, sidebar visible with AI Smart Search ready');
             // Don't auto-show AI Smart Search Enhanced - let users click the button when they want it
             // The sidebar is now visible by default with the AI Smart Search interface available
         } else {
-            console.log('🔗 URL state parameters detected, sidebar visible for state restoration');
+            console.log('[URL] URL state parameters detected, sidebar visible for state restoration');
             // Sidebar is already visible and state restoration will populate it properly
         }
         
         // AI Smart Search Enhanced is ready
-        console.log('🤖 AI Smart Search Enhanced is ready!');
+        console.log('[AI] AI Smart Search Enhanced is ready!');
         
         console.log('STAC Catalog Explorer - Initialization complete');
         
         // Expose key objects to the global scope for developer console access
+        // Preserve existing window.stacExplorer properties if they exist
         window.stacExplorer = {
+            ...window.stacExplorer, // Preserve existing properties (like urlStateManager)
             mapManager,
             apiClient,
             searchPanel,

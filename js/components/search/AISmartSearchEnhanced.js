@@ -601,7 +601,19 @@ export class AISmartSearchEnhanced {
         }, {});
         
         // Create HTML for collections with source grouping
-        let collectionsHTML = '';
+        let collectionsHTML = ''; 
+        
+        // Add EVERYTHING option at the top
+        collectionsHTML += `
+            <div class="ai-option ai-everything-option" data-value="" data-source="">
+                <i class="material-icons">public</i>
+                <div class="ai-option-content">
+                    <div class="ai-option-title">EVERYTHING</div>
+                    <div class="ai-option-subtitle">Search across all ${collections.length} collections</div>
+                </div>
+            </div>
+            <div class="ai-source-separator"></div>
+        `;
         
         if (Object.keys(groupedCollections).length > 0) {
             // Add Element84 collections first (if any)
@@ -915,13 +927,30 @@ export class AISmartSearchEnhanced {
             
             // Handle collection selection
             const option = e.target.closest('.ai-option');
-            if (option && option.dataset.value) {
-                this.selectedCollection = option.dataset.value;
-                this.selectedCollectionSource = option.dataset.source;
+            if (option) {
+                const optionValue = option.dataset.value;
                 
-                const collectionField = document.getElementById('ai-field-collection');
-                collectionField.textContent = option.querySelector('.ai-option-title').textContent;
-                collectionField.classList.remove('empty');
+                if (optionValue === '') {
+                    // EVERYTHING option selected
+                    this.selectedCollection = '';
+                    this.selectedCollectionSource = null;
+                    
+                    const collectionField = document.getElementById('ai-field-collection');
+                    collectionField.textContent = 'EVERYTHING';
+                    collectionField.classList.add('empty'); // Use empty styling for EVERYTHING
+                    
+                    console.log('🌍 EVERYTHING mode selected');
+                } else if (optionValue) {
+                    // Specific collection selected
+                    this.selectedCollection = optionValue;
+                    this.selectedCollectionSource = option.dataset.source;
+                    
+                    const collectionField = document.getElementById('ai-field-collection');
+                    collectionField.textContent = option.querySelector('.ai-option-title').textContent;
+                    collectionField.classList.remove('empty');
+                    
+                    console.log(`🎯 Specific collection selected: ${optionValue}`);
+                }
                 
                 this.closeAllDropdowns();
             }
@@ -1490,17 +1519,22 @@ export class AISmartSearchEnhanced {
      */
     executeSearch() {
         try {
-            // Check minimum requirements
-            if (!this.selectedCollection) {
-                this.notificationService.showNotification('Please select a dataset', 'warning');
-                return;
-            }
-            
             // Collect parameters
             const params = {
-                collections: [this.selectedCollection],
                 cloudCover: this.cloudCover
             };
+            
+            // Handle collection selection - EVERYTHING mode vs specific collection
+            if (this.selectedCollection) {
+                // Specific collection selected
+                params.collections = [this.selectedCollection];
+                console.log(`🎯 Searching specific collection: ${this.selectedCollection}`);
+            } else {
+                // EVERYTHING mode - search across all available collections
+                console.log('🌍 EVERYTHING mode: Searching across all available collections');
+                // Don't set collections parameter - this will search all collections
+                // Alternatively, we could set all available collection IDs, but omitting is cleaner
+            }
             
             // Add date range if not "anytime"
             if (this.selectedDate.type !== 'anytime' && this.selectedDate.start && this.selectedDate.end) {
@@ -1519,10 +1553,13 @@ export class AISmartSearchEnhanced {
                 }
             }
             
-            this.notificationService.showNotification('Processing your search...', 'info');
-            
-            // Log the parameters for debugging
             console.log('🔍 AI Smart Search Enhanced Parameters:', params);
+            
+            // Show appropriate processing message
+            const searchTypeMessage = params.collections && params.collections.length > 0 ? 
+                `Processing search for ${this.getCollectionDisplayName(params.collections[0])}...` : 
+                'Processing EVERYTHING search across all collections...';
+            this.notificationService.showNotification(searchTypeMessage, 'info');
             
             // Close the interface first
             this.closeFullscreen();
@@ -1553,7 +1590,10 @@ export class AISmartSearchEnhanced {
                 
                 // Show success notification after a brief delay
                 setTimeout(() => {
-                    this.notificationService.showNotification('Search executed successfully! 🎉', 'success');
+                    const searchType = params.collections && params.collections.length > 0 ? 
+                        `specific collection (${params.collections[0]})` : 
+                        'ALL collections (🌍 EVERYTHING mode)';
+                    this.notificationService.showNotification(`Search executed successfully across ${searchType}! 🎉`, 'success');
                 }, 500);
                 
             }, 200);
@@ -1677,6 +1717,18 @@ export class AISmartSearchEnhanced {
                             console.log(`✅ Set collection via fallback: ${collectionId}`);
                         }, 100);
                     }
+                }
+            } else {
+                // EVERYTHING mode - clear collection selection to search all
+                console.log('🌍 EVERYTHING mode: Clearing collection selection to search all');
+                const collectionSelect = document.getElementById('collection-select');
+                if (collectionSelect) {
+                    collectionSelect.value = ''; // Set to "All collections" option
+                    collectionSelect.dispatchEvent(new Event('change'));
+                }
+                
+                if (this.collectionManager && typeof this.collectionManager.resetSelection === 'function') {
+                    this.collectionManager.resetSelection();
                 }
             }
             

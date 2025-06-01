@@ -19,6 +19,7 @@ import { CollectionManagerEnhanced } from './components/search/CollectionManager
 import { SearchForm } from './components/search/SearchForm.js';
 import { ResultsPanel } from './components/results/ResultsPanel.js';
 import { AISmartSearchEnhanced } from './components/search/AISmartSearchEnhanced.js';
+import { InlineDropdownManager } from './components/ui/InlineDropdownManager.js';
 // Removed inline AI search imports - only using the full-screen version now
 
 // Import configuration
@@ -99,22 +100,16 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('❌ Search title element not found');
         }
         
-        // 🔧 FIX: Set up clickable search summary items
-        const summaryItems = document.querySelectorAll('.search-summary-item');
-        summaryItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const field = item.dataset.field;
-                console.log(`🎯 Search summary item clicked: ${field}`);
-                
-                // Open AI Smart Search with specific field focused
-                aiSmartSearch.showMinimalistSearch({ 
-                    hideMenuOnOpen: true, 
-                    focusField: field 
-                });
-            });
-        });
+        // ✨ NEW: Initialize Inline Dropdown Manager for enhanced menu behavior
+        const inlineDropdownManager = new InlineDropdownManager(
+            apiClient,
+            searchPanel,
+            collectionManager,
+            mapManager,
+            notificationService
+        );
         
-        console.log('🎨 Search summary interface initialized with', summaryItems.length, 'clickable items');
+        console.log('✨ Enhanced inline dropdowns initialized for left menu');
         
         console.log('⌨️ AI Smart Search keyboard shortcut (Ctrl+K / Cmd+K) initialized');
         
@@ -176,6 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
             stateManager,
             shareManager,
             aiSmartSearch,
+            inlineDropdownManager,
             geometrySync,
             config: CONFIG
         };

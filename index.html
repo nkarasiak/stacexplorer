@@ -153,6 +153,32 @@
                         <div class="ai-search-info">
                             <p>Press <kbd>Ctrl+K</kbd> or <kbd>Cmd+K</kbd> to open AI Smart Search</p>
                         </div>
+                        
+                        <!-- Hidden form inputs for compatibility with existing components -->
+                        <div style="display: none;">
+                            <select id="catalog-select">
+                                <option value="">Auto-detect from selected dataset</option>
+                                <option value="copernicus">🛰️ Copernicus Data Space</option>
+                                <option value="element84">🌍 Element84 Earth Search</option>
+                                <option value="custom">⚙️ Custom STAC Catalog</option>
+                            </select>
+                            <select id="collection-select">
+                                <option value="">All datasets</option>
+                            </select>
+                            <input type="text" id="bbox-input">
+                            <input type="date" id="date-start">
+                            <input type="date" id="date-end">
+                            <input type="checkbox" id="cloud-cover-enabled">
+                            <input type="range" id="cloud-cover" min="0" max="100" value="20">
+                            <span id="cloud-cover-value">20%</span>
+                            <input type="text" id="custom-catalog-url">
+                            <button id="connect-catalog-btn">Connect</button>
+                            <div id="custom-catalog-container"></div>
+                            <button id="criteria-draw-bbox-btn">Draw Area</button>
+                            <button id="collection-info-btn">Info</button>
+                            <button id="preset-2024">2024</button>
+                            <input type="hidden" id="search-input">
+                        </div>
                     </div>
                 </div>
 

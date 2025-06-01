@@ -81,6 +81,9 @@ export class AISmartSearchEnhanced {
         // 🔧 FIX: Mark as closed when cleaning up
         AISmartSearchEnhanced.isOpen = false;
         
+        // Reset open options
+        this.openOptions = null;
+        
         // Remove all event listeners
         if (this.escapeListener) {
             document.removeEventListener('keydown', this.escapeListener);
@@ -243,8 +246,10 @@ export class AISmartSearchEnhanced {
     
     /**
      * Create and show the minimalist search interface
+     * @param {Object} options - Options for opening the search
+     * @param {boolean} options.hideMenuOnOpen - Whether to hide the sidebar menu when opening
      */
-    async showMinimalistSearch() {
+    async showMinimalistSearch(options = {}) {
         try {
             // 🔧 FIX: Prevent multiple instances from opening
             if (AISmartSearchEnhanced.isOpen) {
@@ -260,10 +265,18 @@ export class AISmartSearchEnhanced {
                 return;
             }
             
-            console.log('🤖 Showing Enhanced AI Smart Search...');
+            console.log('🤖 Showing Enhanced AI Smart Search...', options);
             
             // Mark as open
             AISmartSearchEnhanced.isOpen = true;
+            
+            // Store options for later use
+            this.openOptions = options;
+            
+            // Hide sidebar if requested
+            if (options.hideMenuOnOpen) {
+                this.hideSidebar();
+            }
             
             // Show interface immediately
             this.createAndShowInterface();
@@ -1837,6 +1850,9 @@ export class AISmartSearchEnhanced {
         // 🔧 FIX: Mark as closed when closing fullscreen
         AISmartSearchEnhanced.isOpen = false;
         
+        // Reset open options
+        this.openOptions = null;
+        
         if (this.fullscreenElement && document.body.contains(this.fullscreenElement)) {
             if (this.escapeListener) {
                 document.removeEventListener('keydown', this.escapeListener);
@@ -1858,6 +1874,82 @@ export class AISmartSearchEnhanced {
         }
         
         console.log('🤖 Enhanced AI Smart Search closed');
+    }
+    
+    /**
+     * Hide the sidebar/menu
+     */
+    hideSidebar() {
+        try {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) {
+                console.warn('⚠️ Sidebar element not found');
+                return;
+            }
+            
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // On mobile, close the mobile sidebar
+                if (window.mobileSidebarManager && typeof window.mobileSidebarManager.closeSidebar === 'function') {
+                    window.mobileSidebarManager.closeSidebar();
+                } else {
+                    sidebar.classList.remove('mobile-open');
+                    document.body.classList.remove('sidebar-open');
+                }
+            } else {
+                // On desktop, hide the sidebar
+                sidebar.classList.add('hidden');
+                // Update toggle button icon
+                const toggleIcon = document.querySelector('.sidebar-toggle i');
+                if (toggleIcon) {
+                    toggleIcon.textContent = 'chevron_right';
+                }
+            }
+            
+            console.log('🙈 Sidebar hidden for clean search experience');
+            
+        } catch (error) {
+            console.error('❌ Error hiding sidebar:', error);
+        }
+    }
+    
+    /**
+     * Show the sidebar/menu
+     */
+    showSidebar() {
+        try {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) {
+                console.warn('⚠️ Sidebar element not found');
+                return;
+            }
+            
+            const isMobile = window.innerWidth <= 768;
+            
+            if (isMobile) {
+                // On mobile, open the mobile sidebar
+                if (window.mobileSidebarManager && typeof window.mobileSidebarManager.openSidebar === 'function') {
+                    window.mobileSidebarManager.openSidebar();
+                } else {
+                    sidebar.classList.add('mobile-open');
+                    document.body.classList.add('sidebar-open');
+                }
+            } else {
+                // On desktop, show the sidebar
+                sidebar.classList.remove('hidden');
+                // Update toggle button icon
+                const toggleIcon = document.querySelector('.sidebar-toggle i');
+                if (toggleIcon) {
+                    toggleIcon.textContent = 'chevron_left';
+                }
+            }
+            
+            console.log('😎 Sidebar shown with search results');
+            
+        } catch (error) {
+            console.error('❌ Error showing sidebar:', error);
+        }
     }
     
     /**
@@ -1909,6 +2001,12 @@ export class AISmartSearchEnhanced {
             
             // Close the interface first
             this.closeFullscreen();
+            
+            // Show sidebar if it was hidden when opening from title click
+            if (this.openOptions && this.openOptions.hideMenuOnOpen) {
+                this.showSidebar();
+                console.log('🔄 Showing sidebar after search execution');
+            }
             
             // Ensure sidebar is visible BEFORE applying parameters
             this.ensureSidebarVisible();

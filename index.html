@@ -130,6 +130,36 @@
             border-color: var(--border-dark, #444);
             color: var(--text-primary, #ffffff);
         }
+        
+        /* Clickable Search Title */
+        .clickable-search-title {
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin: -8px -12px;
+            user-select: none;
+        }
+        
+        .clickable-search-title:hover {
+            background: var(--surface-secondary, #f8fafc);
+            color: var(--primary-600, #4f46e5);
+            transform: translateY(-1px);
+        }
+        
+        .clickable-search-title:active {
+            transform: translateY(0);
+            background: var(--surface-tertiary, #f1f5f9);
+        }
+        
+        .dark-theme .clickable-search-title:hover {
+            background: var(--surface-secondary, #2a2a2a);
+            color: var(--primary-400, #818cf8);
+        }
+        
+        .dark-theme .clickable-search-title:active {
+            background: var(--surface-tertiary, #3a3a3a);
+        }
     </style>
 </head>
 <body>
@@ -146,12 +176,12 @@
                 <!-- Card-Based Search Container -->
                 <div class="md-card" id="search-container">
                     <div class="md-card-header" id="search-container-header">
-                        <h2><i class="material-icons">psychology</i> AI Smart Search</h2>
+                        <h2 class="clickable-search-title" id="search-title"><i class="material-icons">search</i> Search</h2>
                     </div>
                     <div class="md-card-body">
                         <!-- Clean interface - full AI Smart Search available via keyboard shortcut or menu -->
                         <div class="ai-search-info">
-                            <p>Press <kbd>Ctrl+K</kbd> or <kbd>Cmd+K</kbd> to open AI Smart Search</p>
+                            <p>Click on <strong>Search</strong> above or press <kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd></p>
                         </div>
                         
                         <!-- Hidden form inputs for compatibility with existing components -->

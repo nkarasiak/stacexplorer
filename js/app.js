@@ -83,9 +83,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
                 event.preventDefault(); // Prevent browser's default search
                 console.log('🚀 Keyboard shortcut triggered - opening AI Smart Search');
-                aiSmartSearch.showMinimalistSearch();
+                aiSmartSearch.showMinimalistSearch({ hideMenuOnOpen: false });
             }
         });
+        
+        // 🔧 FIX: Set up clickable search title
+        const searchTitle = document.getElementById('search-title');
+        if (searchTitle) {
+            searchTitle.addEventListener('click', () => {
+                console.log('🔍 Search title clicked - opening AI Smart Search with hidden menu');
+                aiSmartSearch.showMinimalistSearch({ hideMenuOnOpen: true });
+            });
+            console.log('🎯 Clickable search title initialized');
+        } else {
+            console.error('❌ Search title element not found');
+        }
         
         console.log('⌨️ AI Smart Search keyboard shortcut (Ctrl+K / Cmd+K) initialized');
         
@@ -118,9 +130,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('date-end').value = formatDateForInput(endDate);
         }
         
-        // Show welcome notification about the keyboard shortcut
+        // Show welcome notification about the clickable title and keyboard shortcut
         setTimeout(() => {
-            notificationService.showNotification('🚀 AI Smart Search is ready! Press Ctrl+K (or Cmd+K on Mac) to get started.', 'info');
+            notificationService.showNotification('🚀 Click "Search" or press Ctrl+K (Cmd+K on Mac) to get started!', 'info');
         }, 2000);
         
         // Sidebar is now visible by default - AI Smart Search Enhanced available via button click

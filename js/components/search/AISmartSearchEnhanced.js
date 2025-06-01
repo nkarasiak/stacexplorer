@@ -102,6 +102,92 @@ export class AISmartSearchEnhanced {
     }
     
     /**
+     * Focus on a specific field in the AI search interface
+     * @param {string} fieldType - Type of field to focus ('collection', 'location', 'date')
+     */
+    focusSpecificField(fieldType) {
+        try {
+            console.log(`🎯 Focusing on field: ${fieldType}`);
+            
+            let fieldElement = null;
+            let dropdownCreator = null;
+            
+            switch (fieldType) {
+                case 'collection':
+                    fieldElement = document.getElementById('ai-field-collection');
+                    dropdownCreator = () => this.createCollectionDropdown();
+                    break;
+                case 'location':
+                    fieldElement = document.getElementById('ai-field-location');
+                    dropdownCreator = () => this.createLocationDropdown();
+                    break;
+                case 'date':
+                    fieldElement = document.getElementById('ai-field-date');
+                    dropdownCreator = () => this.createDateDropdown();
+                    break;
+                default:
+                    console.warn(`Unknown field type: ${fieldType}`);
+                    return;
+            }
+            
+            if (fieldElement && dropdownCreator) {
+                // Highlight the field
+                fieldElement.style.animation = 'pulse 0.5s ease-in-out';
+                
+                // Open the dropdown after a short delay
+                setTimeout(() => {
+                    this.showMinimalistDropdown(fieldType, fieldElement, dropdownCreator());
+                }, 200);
+                
+                console.log(`✨ Focused and opened dropdown for: ${fieldType}`);
+            } else {
+                console.error(`❌ Could not find field element for: ${fieldType}`);
+            }
+            
+        } catch (error) {
+            console.error(`❌ Error focusing field ${fieldType}:`, error);
+        }
+    }
+    
+    /**
+     * Update the sidebar search summary display
+     * @param {string} fieldType - Type of field to update
+     * @param {string} value - New value to display
+     */
+    updateSidebarSummary(fieldType, value) {
+        try {
+            let summaryElement = null;
+            
+            switch (fieldType) {
+                case 'collection':
+                    summaryElement = document.querySelector('#summary-source .search-summary-value');
+                    break;
+                case 'location':
+                    summaryElement = document.querySelector('#summary-location .search-summary-value');
+                    break;
+                case 'date':
+                    summaryElement = document.querySelector('#summary-date .search-summary-value');
+                    break;
+            }
+            
+            if (summaryElement) {
+                summaryElement.textContent = value;
+                
+                // Add a brief highlight animation
+                summaryElement.style.animation = 'highlight 0.3s ease-in-out';
+                setTimeout(() => {
+                    summaryElement.style.animation = '';
+                }, 300);
+                
+                console.log(`🔄 Updated sidebar summary ${fieldType}: ${value}`);
+            }
+            
+        } catch (error) {
+            console.error(`❌ Error updating sidebar summary:`, error);
+        }
+    }
+    
+    /**
      * Initialize AI button event listener
      */
     initAIButton() {
@@ -280,6 +366,13 @@ export class AISmartSearchEnhanced {
             
             // Show interface immediately
             this.createAndShowInterface();
+            
+            // Focus specific field if requested
+            if (options.focusField) {
+                setTimeout(() => {
+                    this.focusSpecificField(options.focusField);
+                }, 300);
+            }
             
             // Load collections in background
             this.loadCollectionsInBackground();
@@ -978,6 +1071,9 @@ export class AISmartSearchEnhanced {
                     collectionField.textContent = 'EVERYTHING';
                     collectionField.classList.add('empty'); // Use empty styling for EVERYTHING
                     
+                    // Update sidebar summary
+                    this.updateSidebarSummary('collection', 'EVERYTHING');
+                    
                     console.log('🌍 EVERYTHING mode selected');
                 } else if (optionValue) {
                     // Specific collection selected
@@ -985,8 +1081,12 @@ export class AISmartSearchEnhanced {
                     this.selectedCollectionSource = option.dataset.source;
                     
                     const collectionField = document.getElementById('ai-field-collection');
-                    collectionField.textContent = option.querySelector('.ai-option-title').textContent;
+                    const collectionTitle = option.querySelector('.ai-option-title').textContent;
+                    collectionField.textContent = collectionTitle;
                     collectionField.classList.remove('empty');
+                    
+                    // Update sidebar summary
+                    this.updateSidebarSummary('collection', collectionTitle.toUpperCase());
                     
                     console.log(`🎯 Specific collection selected: ${optionValue}`);
                 }
@@ -1012,6 +1112,10 @@ export class AISmartSearchEnhanced {
                 const locationField = document.getElementById('ai-field-location');
                 locationField.textContent = 'THE WORLD';
                 locationField.classList.add('empty');
+                
+                // Update sidebar summary
+                this.updateSidebarSummary('location', 'THE WORLD');
+                
                 this.closeAllDropdowns();
             });
         }
@@ -1290,6 +1394,9 @@ export class AISmartSearchEnhanced {
             locationField.classList.remove('empty');
         }
         
+        // Update sidebar summary
+        this.updateSidebarSummary('location', 'CUSTOM GEOMETRY');
+        
         // 🔧 FIX: Display geometry on map and zoom to it with cleanup
         if (this.mapManager && geometryResult.geojson && geometryResult.bbox) {
             try {
@@ -1506,6 +1613,9 @@ export class AISmartSearchEnhanced {
                 locationField.textContent = shortName || name;
                 locationField.classList.remove('empty');
             }
+            
+            // Update sidebar summary
+            this.updateSidebarSummary('location', (shortName || name).toUpperCase());
             
             // Display location on map and zoom to it (same as pasted geometry)
             this.displayLocationOnMap(this.selectedLocation, name, category);
@@ -1742,6 +1852,10 @@ export class AISmartSearchEnhanced {
         dateField.textContent = this.getEnhancedDateDisplayText();
         dateField.classList.toggle('empty', preset === 'anytime');
         
+        // Update sidebar summary
+        const displayText = preset === 'anytime' ? 'ANYTIME' : this.getEnhancedDateDisplayText().toUpperCase();
+        this.updateSidebarSummary('date', displayText);
+        
         console.log(`📅 Applied date preset: ${preset}`, this.selectedDate);
         
         this.closeAllDropdowns();
@@ -1779,8 +1893,12 @@ export class AISmartSearchEnhanced {
             };
             
             const dateField = document.getElementById('ai-field-date');
-            dateField.textContent = `${startInput.value} to ${endInput.value}`;
+            const dateText = `${startInput.value} to ${endInput.value}`;
+            dateField.textContent = dateText;
             dateField.classList.remove('empty');
+            
+            // Update sidebar summary
+            this.updateSidebarSummary('date', dateText.toUpperCase());
             
             this.closeAllDropdowns();
         }

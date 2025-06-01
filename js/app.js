@@ -99,6 +99,23 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('❌ Search title element not found');
         }
         
+        // 🔧 FIX: Set up clickable search summary items
+        const summaryItems = document.querySelectorAll('.search-summary-item');
+        summaryItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const field = item.dataset.field;
+                console.log(`🎯 Search summary item clicked: ${field}`);
+                
+                // Open AI Smart Search with specific field focused
+                aiSmartSearch.showMinimalistSearch({ 
+                    hideMenuOnOpen: true, 
+                    focusField: field 
+                });
+            });
+        });
+        
+        console.log('🎨 Search summary interface initialized with', summaryItems.length, 'clickable items');
+        
         console.log('⌨️ AI Smart Search keyboard shortcut (Ctrl+K / Cmd+K) initialized');
         
         // Initialize geometry sync for seamless integration (simplified for full-screen only)
@@ -130,9 +147,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('date-end').value = formatDateForInput(endDate);
         }
         
-        // Show welcome notification about the clickable title and keyboard shortcut
+        // Show welcome notification about the clickable search interface
         setTimeout(() => {
-            notificationService.showNotification('🚀 Click "Search" or press Ctrl+K (Cmd+K on Mac) to get started!', 'info');
+            notificationService.showNotification('🎨 Click "Search" title or any search field to customize your search!', 'info');
         }, 2000);
         
         // Sidebar is now visible by default - AI Smart Search Enhanced available via button click

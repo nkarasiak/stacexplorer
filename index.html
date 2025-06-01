@@ -160,6 +160,146 @@
         .dark-theme .clickable-search-title:active {
             background: var(--surface-tertiary, #3a3a3a);
         }
+        
+        /* Beautiful Search Summary Interface */
+        .search-summary-interface {
+            padding: 16px 0;
+        }
+        
+        .search-summary-row {
+            margin-bottom: 12px;
+        }
+        
+        .search-summary-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .search-summary-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--surface-secondary, #f8fafc);
+            border: 1px solid transparent;
+            user-select: none;
+        }
+        
+        .search-summary-item:hover {
+            background: var(--surface-tertiary, #f1f5f9);
+            border-color: var(--primary-200, #c7d2fe);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
+        }
+        
+        .search-summary-item:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(79, 70, 229, 0.1);
+        }
+        
+        .search-summary-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--primary-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .search-summary-icon i {
+            color: white;
+            font-size: 18px;
+        }
+        
+        .search-summary-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .search-summary-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary, #64748b);
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .search-summary-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary, #1a1a1a);
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        /* Dark theme support */
+        .dark-theme .search-summary-item {
+            background: var(--surface-secondary, #2a2a2a);
+        }
+        
+        .dark-theme .search-summary-item:hover {
+            background: var(--surface-tertiary, #3a3a3a);
+            border-color: var(--primary-600, #4f46e5);
+            box-shadow: 0 2px 8px rgba(129, 140, 248, 0.15);
+        }
+        
+        .dark-theme .search-summary-item:active {
+            box-shadow: 0 1px 4px rgba(129, 140, 248, 0.15);
+        }
+        
+        .dark-theme .search-summary-label {
+            color: var(--text-secondary, #94a3b8);
+        }
+        
+        .dark-theme .search-summary-value {
+            color: var(--text-primary, #ffffff);
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .search-summary-interface {
+                padding: 12px 0;
+            }
+            
+            .search-summary-item {
+                padding: 10px 12px;
+            }
+            
+            .search-summary-icon {
+                width: 32px;
+                height: 32px;
+                margin-right: 10px;
+            }
+            
+            .search-summary-icon i {
+                font-size: 16px;
+            }
+            
+            .search-summary-label {
+                font-size: 11px;
+            }
+            
+            .search-summary-value {
+                font-size: 13px;
+            }
+        }
+        
+        /* Animation effects */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes highlight {
+            0% { background-color: transparent; }
+            50% { background-color: rgba(79, 70, 229, 0.2); }
+            100% { background-color: transparent; }
+        }
     </style>
 </head>
 <body>
@@ -179,9 +319,43 @@
                         <h2 class="clickable-search-title" id="search-title"><i class="material-icons">search</i> Search</h2>
                     </div>
                     <div class="md-card-body">
-                        <!-- Clean interface - full AI Smart Search available via keyboard shortcut or menu -->
-                        <div class="ai-search-info">
-                            <p>Click on <strong>Search</strong> above or press <kbd>Ctrl+K</kbd> / <kbd>Cmd+K</kbd></p>
+                        <!-- Beautiful Search Summary Interface -->
+                        <div class="search-summary-interface">
+                            <div class="search-summary-row">
+                                <div class="search-summary-item" id="summary-source" data-field="collection">
+                                    <div class="search-summary-icon">
+                                        <i class="material-icons">public</i>
+                                    </div>
+                                    <div class="search-summary-content">
+                                        <div class="search-summary-label">Source</div>
+                                        <div class="search-summary-value">EVERYTHING</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="search-summary-row">
+                                <div class="search-summary-item" id="summary-location" data-field="location">
+                                    <div class="search-summary-icon">
+                                        <i class="material-icons">place</i>
+                                    </div>
+                                    <div class="search-summary-content">
+                                        <div class="search-summary-label">Location</div>
+                                        <div class="search-summary-value">THE WORLD</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="search-summary-row">
+                                <div class="search-summary-item" id="summary-date" data-field="date">
+                                    <div class="search-summary-icon">
+                                        <i class="material-icons">schedule</i>
+                                    </div>
+                                    <div class="search-summary-content">
+                                        <div class="search-summary-label">Time</div>
+                                        <div class="search-summary-value">ANYTIME</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <!-- Hidden form inputs for compatibility with existing components -->

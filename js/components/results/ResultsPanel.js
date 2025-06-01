@@ -426,11 +426,11 @@ export class ResultsPanel {
                             <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                         </div>
                         <div class="dataset-title">${title}</div>
-                        <div class="dataset-action">
-                            <button class="view-geometry-btn" title="View geometry on map">
-                                <i class="material-icons">map</i> View on Map
+                        <div class="dataset-actions">
+                            <button class="action-btn view-map-btn" title="View geometry on map">
+                                <i class="material-icons">map</i>
                             </button>
-                            <button class="info-btn details-btn" title="Show details">
+                            <button class="action-btn info-btn details-btn" title="Show details">
                                 <i class="material-icons">info</i>
                             </button>
                         </div>
@@ -454,7 +454,7 @@ export class ResultsPanel {
         // Add event listener to thumbnail (if exists)
         const thumbnail = element.querySelector('.dataset-thumbnail');
         const infoBtn = element.querySelector('.info-btn');
-        const viewGeometryBtn = element.querySelector('.view-geometry-btn');
+        const viewMapBtn = element.querySelector('.view-map-btn');
         
         // Function to handle map display with loading indicator
         const displayOnMap = (useGeometry = false) => {
@@ -515,9 +515,9 @@ export class ResultsPanel {
             thumbnail.addEventListener('click', () => displayOnMap(false));
         }
         
-        // Add click handler to view geometry button (for items without thumbnails)
-        if (viewGeometryBtn) {
-            viewGeometryBtn.addEventListener('click', () => displayOnMap(true));
+        // Add click handler to view map button (for items without thumbnails)
+        if (viewMapBtn) {
+            viewMapBtn.addEventListener('click', () => displayOnMap(true));
         }
         
         // Add event listener to info button
@@ -535,18 +535,18 @@ export class ResultsPanel {
      */
     addFallbackGeometryButton(element, item) {
         const content = element.querySelector('.dataset-content');
-        if (content && !content.querySelector('.view-geometry-btn')) {
+        if (content && !content.querySelector('.view-map-btn')) {
             const fallbackHtml = `
                 <div class="fallback-geometry-view">
-                    <button class="view-geometry-btn" title="View geometry on map">
-                        <i class="material-icons">map</i> View Geometry on Map
+                    <button class="action-btn view-map-btn" title="View geometry on map">
+                        <i class="material-icons">map</i>
                     </button>
                 </div>
             `;
             content.insertAdjacentHTML('beforeend', fallbackHtml);
             
             // Add event listener to the new button
-            const newBtn = content.querySelector('.view-geometry-btn');
+            const newBtn = content.querySelector('.view-map-btn');
             if (newBtn) {
                 newBtn.addEventListener('click', () => {
                     // Show loading indicator

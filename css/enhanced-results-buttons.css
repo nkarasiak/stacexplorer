@@ -1,0 +1,303 @@
+/* Enhanced Results Display - Beautiful Action Buttons */
+
+/* Dataset Actions Container */
+.dataset-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+}
+
+/* Beautiful Action Buttons */
+.action-btn {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hover effects */
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.action-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Icon styling */
+.action-btn i {
+    font-size: 20px;
+    transition: transform 0.2s ease;
+}
+
+.action-btn:hover i {
+    transform: scale(1.1);
+}
+
+/* Specific button colors */
+.view-map-btn {
+    background: linear-gradient(135deg, #4A90E2, #357ABD);
+    border: 2px solid rgba(74, 144, 226, 0.3);
+}
+
+.view-map-btn:hover {
+    background: linear-gradient(135deg, #357ABD, #2E6DA4);
+    border-color: rgba(74, 144, 226, 0.6);
+    box-shadow: 0 4px 16px rgba(74, 144, 226, 0.4);
+}
+
+.info-btn.action-btn {
+    background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+    border: 2px solid rgba(139, 92, 246, 0.3);
+}
+
+.info-btn.action-btn:hover {
+    background: linear-gradient(135deg, #7C3AED, #6D28D9);
+    border-color: rgba(139, 92, 246, 0.6);
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+}
+
+/* Ripple effect */
+.action-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s ease, height 0.3s ease;
+}
+
+.action-btn:active::before {
+    width: 100%;
+    height: 100%;
+}
+
+/* Fix for no-thumbnail layout */
+.dataset-content.no-thumbnail {
+    border: 2px dashed var(--md-border-color);
+    border-radius: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.03), rgba(139, 92, 246, 0.03));
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: visible; /* Allow buttons to show outside */
+    min-height: 120px;
+}
+
+.dataset-content.no-thumbnail:hover {
+    border-color: var(--md-primary);
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.08), rgba(139, 92, 246, 0.08));
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.15);
+}
+
+/* Improved dataset info layout */
+.dataset-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-right: 60px; /* Make space for action buttons */
+}
+
+.dataset-info .dataset-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--md-text-primary);
+    margin: 0;
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    max-width: 100%;
+}
+
+.dataset-info .dataset-date {
+    background: linear-gradient(45deg, var(--md-primary), #8B5CF6);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    font-size: 12px;
+}
+
+.dataset-info .dataset-metadata {
+    position: static;
+    width: auto;
+    background: none;
+    backdrop-filter: none;
+    margin-bottom: 0;
+}
+
+/* Enhanced fallback button styling */
+.fallback-geometry-view {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.05), rgba(139, 92, 246, 0.05));
+    border-radius: 8px;
+    border: 2px solid var(--md-border-color);
+    margin-top: 12px;
+}
+
+.fallback-geometry-view .action-btn {
+    position: static;
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
+    background: linear-gradient(135deg, #4A90E2, #8B5CF6);
+    border: none;
+}
+
+.fallback-geometry-view .action-btn:hover {
+    background: linear-gradient(135deg, #357ABD, #7C3AED);
+    transform: translateY(-2px) scale(1.05);
+}
+
+/* Ensure proper stacking for thumbnail overlay buttons */
+.thumbnail-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 10;
+}
+
+.thumbnail-overlay .info-btn {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.thumbnail-overlay .info-btn:hover {
+    background: rgba(139, 92, 246, 0.9);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.4);
+}
+
+/* Dark theme adjustments */
+.dark-theme .action-btn {
+    backdrop-filter: blur(12px);
+}
+
+.dark-theme .dataset-content.no-thumbnail {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.08), rgba(139, 92, 246, 0.08));
+}
+
+.dark-theme .dataset-content.no-thumbnail:hover {
+    border-color: var(--md-primary);
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(139, 92, 246, 0.15));
+}
+
+/* Light theme adjustments */
+.light-theme .action-btn {
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--md-text-primary);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .view-map-btn {
+    background: linear-gradient(135deg, #4A90E2, #357ABD);
+    color: white;
+    border: none;
+}
+
+.light-theme .info-btn.action-btn {
+    background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+    color: white;
+    border: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .dataset-actions {
+        top: 8px;
+        right: 8px;
+        gap: 6px;
+    }
+    
+    .action-btn {
+        width: 36px;
+        height: 36px;
+    }
+    
+    .action-btn i {
+        font-size: 18px;
+    }
+    
+    .dataset-info {
+        padding-right: 50px;
+    }
+    
+    .dataset-info .dataset-title {
+        font-size: 15px;
+    }
+    
+    .dataset-info .dataset-date {
+        font-size: 11px;
+        padding: 4px 10px;
+    }
+}
+
+/* Animation for when buttons appear */
+@keyframes buttonFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.action-btn {
+    animation: buttonFadeIn 0.3s ease forwards;
+}
+
+.action-btn:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.action-btn:nth-child(2) {
+    animation-delay: 0.2s;
+}

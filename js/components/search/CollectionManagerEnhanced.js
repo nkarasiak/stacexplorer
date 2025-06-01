@@ -3,6 +3,8 @@
  * Automatically loads collections from all configured data sources
  */
 
+import { CollectionDetailsModal } from './CollectionDetailsModal.js';
+
 export class CollectionManagerEnhanced {
     /**
      * Create a new CollectionManagerEnhanced
@@ -21,8 +23,14 @@ export class CollectionManagerEnhanced {
         this.selectedCollection = '';
         this.isLoading = false;
         
+        // Initialize collection details modal
+        this.collectionDetailsModal = new CollectionDetailsModal(this.apiClient, this.notificationService);
+        
         // Initialize event listeners
         this.initEventListeners();
+        
+        // Setup collection info button
+        this.setupCollectionInfoButton();
         
         // Auto-load collections from all sources on startup
         this.loadAllCollectionsOnStartup();
@@ -404,5 +412,39 @@ export class CollectionManagerEnhanced {
      */
     isLoadingCollections() {
         return this.isLoading;
+    }
+    
+    /**
+     * Setup the collection info button event listener
+     */
+    setupCollectionInfoButton() {
+        const infoBtn = document.getElementById('collection-info-btn');
+        if (infoBtn) {
+            infoBtn.addEventListener('click', () => {
+                this.showSelectedCollectionDetails();
+            });
+            console.log('✅ Collection info button setup completed');
+        } else {
+            console.warn('⚠️ Collection info button not found');
+        }
+    }
+    
+    /**
+     * Show details for the currently selected collection
+     */
+    showSelectedCollectionDetails() {
+        const selectedCollectionId = this.getSelectedCollection();
+        
+        if (!selectedCollectionId) {
+            this.notificationService.showNotification('Please select a collection first', 'info');
+            return;
+        }
+        
+        const collection = this.getCollectionById(selectedCollectionId);
+        if (collection) {
+            this.collectionDetailsModal.showCollection(collection);
+        } else {
+            this.notificationService.showNotification('Collection details not available', 'error');
+        }
     }
 }

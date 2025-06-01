@@ -7,6 +7,7 @@
 import { defaultGeocodingService } from '../../utils/GeocodingService.js';
 import { isWKT, isGeoJSON, wktToGeoJSON, parseGeoJSON, geojsonToBbox } from '../../utils/GeometryUtils.js';
 import { DateUtils } from '../../utils/DateUtils.js';
+import { CollectionDetailsModal } from './CollectionDetailsModal.js';
 
 export class AISmartSearchEnhanced {
     /**
@@ -51,6 +52,9 @@ export class AISmartSearchEnhanced {
         this.allAvailableCollections = null;
         this.selectedCollectionSource = null;
         this.showAllCollections = false; // Track show all state
+        
+        // Initialize collection details modal
+        this.collectionDetailsModal = new CollectionDetailsModal(this.apiClient, this.notificationService);
         
         this.initAIButton();
         
@@ -107,9 +111,13 @@ export class AISmartSearchEnhanced {
      */
     async loadAllCollections() {
         const allCollections = [];
-        const dataSources = ['copernicus', 'element84'];
         
-        console.log('🔄 Loading collections from all data sources...');
+        // Dynamically get all available data sources from config
+        const availableDataSources = this.getAvailableDataSources();
+        const dataSources = availableDataSources.length > 0 ? availableDataSources : ['copernicus', 'element84'];
+        
+        console.log('🔄 Loading collections from ALL available data sources...');
+        console.log('📡 Available data sources:', dataSources);
         
         for (const source of dataSources) {
             try {
@@ -145,8 +153,50 @@ export class AISmartSearchEnhanced {
             }
         }
         
-        console.log(`🗂️ Total collections loaded: ${allCollections.length}`);
+        console.log(`🗂️ Total collections loaded from ALL sources: ${allCollections.length}`);
+        console.log(`📊 EVERYTHING mode: Collections from ${dataSources.length} data sources`);
         return allCollections;
+    }
+    
+    /**
+     * Get all available data sources from configuration
+     * @returns {Array} Array of available data source keys
+     */
+    getAvailableDataSources() {
+        try {
+            const config = window.stacExplorer?.config;
+            if (!config?.stacEndpoints) {
+                console.warn('⚠️ No STAC endpoints configuration found');
+                return [];
+            }
+            
+            // Get all configured data sources except 'custom' and 'local' unless they're properly configured
+            const allSources = Object.keys(config.stacEndpoints);
+            const validSources = allSources.filter(source => {
+                const endpoints = config.stacEndpoints[source];
+                
+                // Skip if no endpoints defined
+                if (!endpoints) return false;
+                
+                // For custom and local, require proper URL configuration
+                if (source === 'custom' || source === 'local') {
+                    return endpoints.collections && 
+                           endpoints.collections.startsWith('http') && 
+                           endpoints.search && 
+                           endpoints.search.startsWith('http');
+                }
+                
+                // For other sources, just check if collections URL exists
+                return endpoints.collections && endpoints.collections.startsWith('http');
+            });
+            
+            console.log(`🔍 Found ${validSources.length} valid data sources:`, validSources);
+            return validSources;
+            
+        } catch (error) {
+            console.error('❌ Error getting available data sources:', error);
+            return [];
+        }
     }
 
     /**
@@ -223,7 +273,7 @@ export class AISmartSearchEnhanced {
                     I want 
                     <span class="ai-field ${this.selectedCollection ? '' : 'empty'}" 
                           id="ai-field-collection" 
-                          data-placeholder="DATA">${this.selectedCollection ? this.getCollectionDisplayName(this.selectedCollection) : 'DATA'}</span>
+                          data-placeholder="EVERYTHING">${this.selectedCollection ? this.getCollectionDisplayName(this.selectedCollection) : 'EVERYTHING'}</span>
                     over 
                     <span class="ai-field ${this.selectedLocation === 'everywhere' ? 'empty' : ''}" 
                           id="ai-field-location" 
@@ -566,6 +616,9 @@ export class AISmartSearchEnhanced {
                             <div class="ai-option-title">${collection.displayTitle}</div>
                             <div class="ai-option-subtitle">${collection.source}</div>
                         </div>
+                        <button class="ai-option-details" data-collection-id="${collection.id}" data-collection-source="${collection.source}" title="View collection details">
+                            <i class="material-icons">info</i>
+                        </button>
                     </div>
                 `).join('');
             }
@@ -579,14 +632,17 @@ export class AISmartSearchEnhanced {
                     <div class="ai-source-group-header">Copernicus Collections (${groupedCollections.copernicus.length})</div>
                 `;
                 collectionsHTML += groupedCollections.copernicus.map(collection => `
-                    <div class="ai-option" data-value="${collection.id}" data-source="${collection.source}">
-                        <i class="material-icons">satellite</i>
-                        <div class="ai-option-content">
-                            <div class="ai-option-title">${collection.displayTitle}</div>
-                            <div class="ai-option-subtitle">${collection.source}</div>
-                        </div>
-                    </div>
-                `).join('');
+                <div class="ai-option" data-value="${collection.id}" data-source="${collection.source}">
+                <i class="material-icons">satellite</i>
+                <div class="ai-option-content">
+                <div class="ai-option-title">${collection.displayTitle}</div>
+                <div class="ai-option-subtitle">${collection.source}</div>
+                </div>
+                    <button class="ai-option-details" data-collection-id="${collection.id}" data-collection-source="${collection.source}" title="View collection details">
+                            <i class="material-icons">info</i>
+                    </button>
+                </div>
+            `).join('');
             }
             
             // Add other sources if any
@@ -605,6 +661,9 @@ export class AISmartSearchEnhanced {
                                 <div class="ai-option-title">${collection.displayTitle}</div>
                                 <div class="ai-option-subtitle">${collection.source}</div>
                             </div>
+                            <button class="ai-option-details" data-collection-id="${collection.id}" data-collection-source="${collection.source}" title="View collection details">
+                                <i class="material-icons">info</i>
+                            </button>
                         </div>
                     `).join('');
                 }
@@ -836,8 +895,25 @@ export class AISmartSearchEnhanced {
             });
         }
         
-        // Collection options
+        // Collection options and details buttons
         container.addEventListener('click', (e) => {
+            // Handle details button clicks
+            const detailsBtn = e.target.closest('.ai-option-details');
+            if (detailsBtn) {
+                e.stopPropagation();
+                const collectionId = detailsBtn.dataset.collectionId;
+                const collectionSource = detailsBtn.dataset.collectionSource;
+                
+                if (collectionId) {
+                    const collection = this.allAvailableCollections.find(c => c.id === collectionId && c.source === collectionSource);
+                    if (collection) {
+                        this.showCollectionDetails(collection);
+                    }
+                }
+                return;
+            }
+            
+            // Handle collection selection
             const option = e.target.closest('.ai-option');
             if (option && option.dataset.value) {
                 this.selectedCollection = option.dataset.value;
@@ -1747,5 +1823,25 @@ export class AISmartSearchEnhanced {
      */
     formatDate(date) {
         return date.toISOString().split('T')[0];
+    }
+    
+    /**
+     * Show collection details modal
+     * @param {Object} collection - Collection object to show details for
+     */
+    showCollectionDetails(collection) {
+        try {
+            console.log('📄 Showing collection details for:', collection.id);
+            
+            if (this.collectionDetailsModal) {
+                this.collectionDetailsModal.showCollection(collection);
+            } else {
+                console.error('❌ Collection details modal not initialized');
+                this.notificationService.showNotification('Collection details unavailable', 'error');
+            }
+        } catch (error) {
+            console.error('❌ Error showing collection details:', error);
+            this.notificationService.showNotification('Error showing collection details', 'error');
+        }
     }
 }

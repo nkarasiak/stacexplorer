@@ -117,6 +117,7 @@
     background: none;
     width: 100%;
     text-align: left;
+    position: relative;
 }
 
 .ai-option:hover {
@@ -623,4 +624,56 @@
 
 .dark-theme .ai-dropdown-content::-webkit-scrollbar-thumb:hover {
     background: rgba(255, 255, 255, 0.4);
+}
+
+/* Collection Details Button */
+.ai-option-details {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(33, 150, 243, 0.1);
+    border: 1px solid rgba(33, 150, 243, 0.2);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0;
+    transform: translateY(-50%) scale(0.8);
+}
+
+.ai-option:hover .ai-option-details {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+}
+
+.ai-option-details:hover {
+    background: rgba(33, 150, 243, 0.2);
+    border-color: rgba(33, 150, 243, 0.4);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.ai-option-details .material-icons {
+    font-size: 16px;
+    color: var(--primary-color, #2196F3);
+    min-width: auto;
+}
+
+.dark-theme .ai-option-details {
+    background: rgba(33, 150, 243, 0.15);
+    border-color: rgba(33, 150, 243, 0.3);
+}
+
+.dark-theme .ai-option-details:hover {
+    background: rgba(33, 150, 243, 0.25);
+    border-color: rgba(33, 150, 243, 0.5);
+}
+
+/* Adjust option content to make room for details button */
+.ai-option .ai-option-content {
+    padding-right: 48px;
 }

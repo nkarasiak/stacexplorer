@@ -492,7 +492,28 @@ export class InlineDropdownManager {
         dropdown.addEventListener('click', (e) => {
             e.stopPropagation();
             
-            // Handle option selection
+            // Handle option selection for dates
+            if (fieldType === 'date') {
+                const option = e.target.closest('.ai-option');
+                if (option && option.dataset.value) {
+                    console.log(`📅 Date option clicked: ${option.dataset.value}`);
+                    this.handleDateSelection(option.dataset.value);
+                    this.closeCurrentDropdown();
+                    return;
+                }
+                
+                // Handle custom date button
+                const customDateBtn = e.target.closest('#custom-date');
+                if (customDateBtn) {
+                    console.log('📅 Custom date button clicked');
+                    this.handleCustomDate(dropdown);
+                    return;
+                }
+                
+                return; // Exit early for date dropdown
+            }
+            
+            // Handle option selection for other types
             const option = e.target.closest('.ai-option');
             if (option) {
                 this.handleOptionSelection(option, fieldType);
@@ -633,8 +654,26 @@ export class InlineDropdownManager {
      * @param {string} dateType - Date type
      */
     handleDateSelection(dateType) {
-        const dateRange = this.aiSearchHelper.calculateDateRange(dateType);
+        console.log(`📅 Handling date selection: ${dateType}`);
         
+        let dateRange;
+        let displayText;
+        
+        switch (dateType) {
+            case 'anytime':
+                dateRange = { start: null, end: null };
+                displayText = 'ANYTIME';
+                break;
+            case 'thismonth':
+                dateRange = this.calculateCurrentMonthRange();
+                displayText = 'THIS MONTH';
+                break;
+            default:
+                console.warn(`Unknown date preset: ${dateType}`);
+                return;
+        }
+        
+        // Update AI search helper state
         this.aiSearchHelper.selectedDate = {
             type: dateType,
             start: dateRange.start,
@@ -642,12 +681,52 @@ export class InlineDropdownManager {
             preset: dateType
         };
         
-        const displayText = dateType === 'anytime' ? 'ANYTIME' : 
-                          this.aiSearchHelper.getEnhancedDateDisplayText().toUpperCase();
-        
+        // Update the sidebar summary
         this.updateSearchSummary('date', displayText);
         
-        console.log(`📅 Date selected: ${dateType}`);
+        // Also update the actual form fields for compatibility
+        if (dateRange.start && dateRange.end) {
+            const startInput = document.getElementById('date-start');
+            const endInput = document.getElementById('date-end');
+            if (startInput) startInput.value = dateRange.start;
+            if (endInput) endInput.value = dateRange.end;
+            
+            // Trigger change events
+            if (startInput) startInput.dispatchEvent(new Event('change'));
+            if (endInput) endInput.dispatchEvent(new Event('change'));
+        } else {
+            // Clear date inputs for "anytime"
+            const startInput = document.getElementById('date-start');
+            const endInput = document.getElementById('date-end');
+            if (startInput) startInput.value = '';
+            if (endInput) endInput.value = '';
+        }
+        
+        console.log(`✅ Date selected: ${dateType}`, this.aiSearchHelper.selectedDate);
+    }
+    
+    /**
+     * Calculate current month date range
+     * @returns {Object} Date range for current month
+     */
+    calculateCurrentMonthRange() {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        
+        return {
+            start: this.formatDateForInput(startOfMonth),
+            end: this.formatDateForInput(endOfMonth)
+        };
+    }
+    
+    /**
+     * Format date for input field (YYYY-MM-DD)
+     * @param {Date} date - Date to format
+     * @returns {string} Formatted date
+     */
+    formatDateForInput(date) {
+        return date.toISOString().split('T')[0];
     }
     
     /**
@@ -709,32 +788,151 @@ export class InlineDropdownManager {
      * @param {HTMLElement} dropdown - Dropdown container
      */
     handleCustomDate(dropdown) {
+        console.log('📅 Showing custom date section');
+        
         const customSection = dropdown.querySelector('#custom-date-section');
         if (customSection) {
             customSection.style.display = 'block';
             
+            // Focus on start date input
+            const startInput = dropdown.querySelector('#date-start');
+            if (startInput) {
+                setTimeout(() => {
+                    startInput.focus();
+                    if (startInput.showPicker) {
+                        try {
+                            startInput.showPicker();
+                        } catch (e) {
+                            console.log('Date picker not available, using fallback');
+                        }
+                    }
+                }, 100);
+            }
+            
+            // Set up smart date picker flow
+            this.setupSmartDateFlow(dropdown);
+            
             // Set up apply button
             const applyBtn = dropdown.querySelector('#apply-date-range');
             if (applyBtn) {
-                applyBtn.addEventListener('click', () => {
-                    const startInput = dropdown.querySelector('#date-start');
-                    const endInput = dropdown.querySelector('#date-end');
-                    
-                    if (startInput && endInput && startInput.value && endInput.value) {
-                        this.aiSearchHelper.selectedDate = {
-                            type: 'custom',
-                            start: startInput.value,
-                            end: endInput.value,
-                            preset: null
-                        };
-                        
-                        const dateText = `${startInput.value} to ${endInput.value}`;
-                        this.updateSearchSummary('date', dateText.toUpperCase());
-                        
-                        this.closeCurrentDropdown();
-                    }
+                // Remove existing handlers
+                const newApplyBtn = applyBtn.cloneNode(true);
+                applyBtn.parentNode.replaceChild(newApplyBtn, applyBtn);
+                
+                newApplyBtn.addEventListener('click', () => {
+                    this.applyCustomDateRange(dropdown);
                 });
+                
+                console.log('✅ Custom date apply button set up');
             }
+        }
+    }
+    
+    /**
+     * Set up smart date picker flow
+     * @param {HTMLElement} dropdown - Dropdown container
+     */
+    setupSmartDateFlow(dropdown) {
+        const startInput = dropdown.querySelector('#date-start');
+        const endInput = dropdown.querySelector('#date-end');
+        
+        if (startInput && endInput) {
+            // When start date is selected, automatically focus end date
+            startInput.addEventListener('change', () => {
+                if (startInput.value) {
+                    console.log(`📅 Start date set to: ${startInput.value}`);
+                    
+                    // Set minimum date for end input
+                    endInput.min = startInput.value;
+                    
+                    // Focus end date picker after short delay
+                    setTimeout(() => {
+                        endInput.focus();
+                        if (endInput.showPicker) {
+                            try {
+                                endInput.showPicker();
+                            } catch (e) {
+                                console.log('End date picker not available');
+                            }
+                        }
+                    }, 200);
+                }
+            });
+            
+            // Clear minimum when start date is cleared
+            startInput.addEventListener('input', () => {
+                if (!startInput.value) {
+                    endInput.min = '';
+                }
+            });
+            
+            // Auto-apply when both dates are selected
+            endInput.addEventListener('change', () => {
+                if (startInput.value && endInput.value) {
+                    console.log(`📅 Both dates selected, auto-applying`);
+                    setTimeout(() => {
+                        this.applyCustomDateRange(dropdown);
+                    }, 500);
+                }
+            });
+            
+            console.log('✅ Smart date picker flow set up');
+        }
+    }
+    
+    /**
+     * Apply custom date range
+     * @param {HTMLElement} dropdown - Dropdown container
+     */
+    applyCustomDateRange(dropdown) {
+        console.log('📅 Applying custom date range');
+        
+        const startInput = dropdown.querySelector('#date-start');
+        const endInput = dropdown.querySelector('#date-end');
+        
+        if (startInput && endInput && startInput.value && endInput.value) {
+            // Validate date range
+            const startDate = new Date(startInput.value);
+            const endDate = new Date(endInput.value);
+            
+            if (startDate > endDate) {
+                this.notificationService.showNotification('⚠️ Start date must be before end date', 'warning');
+                return;
+            }
+            
+            // Update AI search helper state
+            this.aiSearchHelper.selectedDate = {
+                type: 'custom',
+                start: startInput.value,
+                end: endInput.value,
+                preset: null
+            };
+            
+            // Create display text
+            const dateText = `${startInput.value} to ${endInput.value}`;
+            
+            // Update sidebar summary
+            this.updateSearchSummary('date', dateText.toUpperCase());
+            
+            // Update the actual form fields for compatibility
+            const globalStartInput = document.getElementById('date-start');
+            const globalEndInput = document.getElementById('date-end');
+            if (globalStartInput) globalStartInput.value = startInput.value;
+            if (globalEndInput) globalEndInput.value = endInput.value;
+            
+            // Trigger change events
+            if (globalStartInput) globalStartInput.dispatchEvent(new Event('change'));
+            if (globalEndInput) globalEndInput.dispatchEvent(new Event('change'));
+            
+            console.log(`✅ Custom date range applied: ${dateText}`);
+            
+            // Close dropdown
+            this.closeCurrentDropdown();
+            
+            // Show success notification
+            this.notificationService.showNotification(`📅 Date range set: ${dateText}`, 'success');
+        } else {
+            this.notificationService.showNotification('⚠️ Please select both start and end dates', 'warning');
         }
     }
     

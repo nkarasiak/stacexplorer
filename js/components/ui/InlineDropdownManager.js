@@ -1026,7 +1026,7 @@ export class InlineDropdownManager {
     }
     
     /**
-     * Update search summary display
+     * Update search summary display and emit URL state event
      * @param {string} fieldType - Field type to update
      * @param {string} value - New value to display
      */
@@ -1055,6 +1055,68 @@ export class InlineDropdownManager {
             }, 500);
             
             console.log(`🔄 Updated search summary ${fieldType}: ${value}`);
+            
+            // Emit URL state change event
+            this.emitStateChangeEvent();
+        }
+    }
+    
+    /**
+     * Emit search parameter change event for URL state management
+     */
+    emitStateChangeEvent() {
+        try {
+            // Collect current state from AI search helper
+            const currentState = {
+                collection: this.aiSearchHelper.selectedCollection || null,
+                collectionSource: this.aiSearchHelper.selectedCollectionSource || null,
+                locationBbox: null,
+                locationName: null,
+                dateType: null,
+                dateStart: null,
+                dateEnd: null,
+                cloudCover: this.aiSearchHelper.cloudCover || 20
+            };
+            
+            // Location state
+            if (this.aiSearchHelper.selectedLocation && this.aiSearchHelper.selectedLocation !== 'everywhere') {
+                if (Array.isArray(this.aiSearchHelper.selectedLocation)) {
+                    currentState.locationBbox = this.aiSearchHelper.selectedLocation;
+                }
+                
+                if (this.aiSearchHelper.selectedLocationResult) {
+                    currentState.locationName = this.aiSearchHelper.selectedLocationResult.shortName || 
+                                              this.aiSearchHelper.selectedLocationResult.formattedName;
+                    
+                    // Include geometry if available
+                    if (this.aiSearchHelper.selectedLocationResult.geojson) {
+                        currentState.geometry = JSON.stringify(this.aiSearchHelper.selectedLocationResult.geojson);
+                    }
+                    if (this.aiSearchHelper.selectedLocationResult.originalText) {
+                        currentState.geometry = this.aiSearchHelper.selectedLocationResult.originalText;
+                    }
+                }
+            }
+            
+            // Date state
+            if (this.aiSearchHelper.selectedDate && this.aiSearchHelper.selectedDate.type !== 'anytime') {
+                currentState.dateType = this.aiSearchHelper.selectedDate.type;
+                currentState.dateStart = this.aiSearchHelper.selectedDate.start;
+                currentState.dateEnd = this.aiSearchHelper.selectedDate.end;
+            }
+            
+            // Emit the event
+            const event = new CustomEvent('searchParameterChanged', {
+                detail: currentState,
+                bubbles: true
+            });
+            
+            document.dispatchEvent(event);
+            
+            console.log('📡 Emitted search parameter change event:', currentState);
+            
+        } catch (error) {
+            console.error('❌ Error emitting state change event:', error);
         }
     }
     

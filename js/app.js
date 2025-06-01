@@ -20,6 +20,7 @@ import { SearchForm } from './components/search/SearchForm.js';
 import { ResultsPanel } from './components/results/ResultsPanel.js';
 import { AISmartSearchEnhanced } from './components/search/AISmartSearchEnhanced.js';
 import { InlineDropdownManager } from './components/ui/InlineDropdownManager.js';
+import { initializeURLStateManagement, enhanceAISearchForURLState } from './url-state-integration.js';
 // Removed inline AI search imports - only using the full-screen version now
 
 // Import configuration
@@ -111,6 +112,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('✨ Enhanced inline dropdowns initialized for left menu');
         
+        // 🔗 NEW: Initialize URL State Management for perfect synchronization
+        const urlStateManager = initializeURLStateManagement({
+            inlineDropdownManager,
+            aiSmartSearch,
+            mapManager,
+            notificationService
+        });
+        
+        // Enhance AI Search for URL state events
+        enhanceAISearchForURLState(aiSmartSearch);
+        
+        console.log('🔗 URL state management initialized - search params will sync between interfaces and be stored in URL');
+        
         console.log('⌨️ AI Smart Search keyboard shortcut (Ctrl+K / Cmd+K) initialized');
         
         // Initialize geometry sync for seamless integration (simplified for full-screen only)
@@ -172,6 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
             shareManager,
             aiSmartSearch,
             inlineDropdownManager,
+            urlStateManager,
             geometrySync,
             config: CONFIG
         };

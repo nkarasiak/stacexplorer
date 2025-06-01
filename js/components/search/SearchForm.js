@@ -415,7 +415,34 @@ export class SearchForm {
                 
                 // Display geometry on map
                 if (this.mapManager) {
-                    this.mapManager.displayGeometry(geojson, bbox);
+                    try {
+                        console.log('🗺️ Displaying geometry on map from SearchForm');
+                        
+                        // Display geometry with beautiful styling
+                        if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
+                            this.mapManager.addBeautifulGeometryLayer(
+                                geojson, 
+                                `searchform-geometry-${Date.now()}`
+                            );
+                        } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
+                            this.mapManager.addGeoJsonLayer(
+                                geojson, 
+                                `searchform-geometry-${Date.now()}`
+                            );
+                        }
+                        
+                        // Zoom to the geometry bounds
+                        if (typeof this.mapManager.fitToBounds === 'function') {
+                            this.mapManager.fitToBounds(bbox);
+                        } else if (typeof this.mapManager.fitMapToBbox === 'function') {
+                            this.mapManager.fitMapToBbox(bbox);
+                        }
+                        
+                        console.log('✅ Geometry successfully displayed and zoomed on map');
+                    } catch (mapError) {
+                        console.error('❌ Error displaying geometry on map:', mapError);
+                        // Continue anyway - the bbox is still updated
+                    }
                 }
                 
                 // Show notification
@@ -511,8 +538,23 @@ export class SearchForm {
         const bboxInput = document.getElementById('bbox-input');
         if (bboxInput) {
             bboxInput.addEventListener('change', (event) => {
-                if (this.mapManager) {
-                    this.mapManager.updateBBoxFromInput(event.target.value);
+                if (this.mapManager && event.target.value) {
+                    try {
+                        // Parse the bbox input and update map
+                        const bboxValues = event.target.value.split(',').map(Number);
+                        if (bboxValues.length === 4 && !bboxValues.some(isNaN)) {
+                            console.log('🗺️ Updating map from bbox input:', bboxValues);
+                            
+                            // Use the correct MapManager method
+                            if (typeof this.mapManager.setBboxFromCoordinates === 'function') {
+                                this.mapManager.setBboxFromCoordinates(bboxValues);
+                            } else if (typeof this.mapManager.fitToBounds === 'function') {
+                                this.mapManager.fitToBounds(bboxValues);
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ Error updating map from bbox input:', error);
+                    }
                 }
             });
         }

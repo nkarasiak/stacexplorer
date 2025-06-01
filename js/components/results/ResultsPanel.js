@@ -418,22 +418,22 @@ export class ResultsPanel {
                 </div>
             `;
         } else {
-            // No thumbnail available - show minimal info with click to view geometry
+            // No thumbnail available - show minimal info with thumbnail-overlay style buttons
             li.innerHTML = `
                 <div class="dataset-content no-thumbnail">
                     <div class="dataset-info">
                         <div class="dataset-metadata">
                             <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                         </div>
-                        <div class="dataset-title">${title}</div>
-                        <div class="dataset-actions">
-                            <button class="action-btn view-map-btn" title="View geometry on map">
+                        <div class="thumbnail-overlay">
+                            <button class="info-btn view-map-btn" title="View geometry on map">
                                 <i class="material-icons">map</i>
                             </button>
-                            <button class="action-btn info-btn details-btn" title="Show details">
+                            <button class="info-btn details-btn" title="Show details">
                                 <i class="material-icons">info</i>
                             </button>
                         </div>
+                        <div class="dataset-title">${title}</div>
                     </div>
                 </div>
             `;
@@ -538,9 +538,11 @@ export class ResultsPanel {
         if (content && !content.querySelector('.view-map-btn')) {
             const fallbackHtml = `
                 <div class="fallback-geometry-view">
-                    <button class="action-btn view-map-btn" title="View geometry on map">
-                        <i class="material-icons">map</i>
-                    </button>
+                    <div class="thumbnail-overlay">
+                        <button class="info-btn view-map-btn" title="View geometry on map">
+                            <i class="material-icons">map</i>
+                        </button>
+                    </div>
                 </div>
             `;
             content.insertAdjacentHTML('beforeend', fallbackHtml);

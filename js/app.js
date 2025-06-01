@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
-        // 🔧 FIX: Set up keyboard shortcut (Ctrl+K / Cmd+K) to open AI Smart Search
+        // FIX: Set up keyboard shortcut (Ctrl+K / Cmd+K) to open AI Smart Search
         document.addEventListener('keydown', (event) => {
             // Check for Ctrl+K (Windows/Linux) or Cmd+K (Mac)
             if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // 🔧 FIX: Set up clickable search title
+        // FIX: Set up clickable search title
         const searchTitle = document.getElementById('search-title');
         if (searchTitle) {
             searchTitle.addEventListener('click', () => {
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
             console.error('[ERROR] Search title element not found');
         }
         
-        // ✨ NEW: Initialize Inline Dropdown Manager for enhanced menu behavior
+        // NEW: Initialize Inline Dropdown Manager for enhanced menu behavior
         const inlineDropdownManager = new InlineDropdownManager(
             apiClient,
             searchPanel,
@@ -112,7 +112,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('[DROPDOWN] Enhanced inline dropdowns initialized for left menu');
         
-        // 🔗 NEW: Initialize URL State Management for perfect synchronization
+        // NEW: Initialize URL State Management for perfect synchronization
         const urlStateManager = initializeURLStateManagement({
             inlineDropdownManager,
             aiSmartSearch,

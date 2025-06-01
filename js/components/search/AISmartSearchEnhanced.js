@@ -1265,30 +1265,71 @@ export class AISmartSearchEnhanced {
                 const layerId = `pasted-geometry-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
                 this.currentLocationLayerId = layerId;
                 
-                // Display the geometry with beautiful styling
+                // Use MapManager's addBeautifulGeometryLayer method directly
                 if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
-                    this.mapManager.addBeautifulGeometryLayer(
-                        geometryResult.geojson, 
-                        layerId
-                    );
+                    this.mapManager.addBeautifulGeometryLayer(geometryResult.geojson, layerId);
+                    console.log(`✅ Added pasted geometry via MapManager: ${layerId}`);
                 } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
-                    this.mapManager.addGeoJsonLayer(
-                        geometryResult.geojson, 
-                        layerId
-                    );
+                    this.mapManager.addGeoJsonLayer(geometryResult.geojson, layerId);
+                    console.log(`✅ Added pasted geometry as GeoJSON: ${layerId}`);
+                } else {
+                    // Fallback: add directly to map
+                    const map = this.mapManager.map || this.mapManager.getMap();
+                    if (map) {
+                        // Add source
+                        map.addSource(layerId, {
+                            type: 'geojson',
+                            data: geometryResult.geojson
+                        });
+                        
+                        // Add basic polygon layer
+                        map.addLayer({
+                            id: `${layerId}-fill`,
+                            type: 'fill',
+                            source: layerId,
+                            paint: {
+                                'fill-color': '#2196F3',
+                                'fill-opacity': 0.2
+                            }
+                        });
+                        
+                        // Add stroke
+                        map.addLayer({
+                            id: `${layerId}-stroke`,
+                            type: 'line',
+                            source: layerId,
+                            paint: {
+                                'line-color': '#2196F3',
+                                'line-width': 2
+                            }
+                        });
+                        
+                        console.log(`✅ Added pasted geometry directly to map: ${layerId}`);
+                    }
                 }
                 
-                // Zoom to the geometry bounds
+                // Zoom to the geometry bounds using MapManager method
                 if (typeof this.mapManager.fitToBounds === 'function') {
                     this.mapManager.fitToBounds(geometryResult.bbox);
                 } else if (typeof this.mapManager.fitMapToBbox === 'function') {
                     this.mapManager.fitMapToBbox(geometryResult.bbox);
+                } else {
+                    // Fallback: fit bounds directly
+                    const map = this.mapManager.map || this.mapManager.getMap();
+                    if (map) {
+                        const [west, south, east, north] = geometryResult.bbox;
+                        map.fitBounds([[west, south], [east, north]], { 
+                            padding: 50, 
+                            maxZoom: 16,
+                            duration: 1000 
+                        });
+                    }
                 }
                 
-                console.log('✅ Geometry successfully displayed and zoomed on map');
+                console.log('✅ Pasted geometry successfully displayed and zoomed on map');
                 
             } catch (mapError) {
-                console.error('❌ Error displaying geometry on map:', mapError);
+                console.error('❌ Error displaying pasted geometry on map:', mapError);
                 // Continue anyway - the geometry is still stored for search
             }
         } else {
@@ -1451,60 +1492,69 @@ export class AISmartSearchEnhanced {
      * Clear previous location geometry from the map
      */
     clearPreviousLocationGeometry() {
-        if (!this.mapManager || !this.currentLocationLayerId) {
+        if (!this.mapManager) {
             return;
         }
         
         try {
-            const map = this.mapManager.map || this.mapManager.getMap();
-            if (!map) {
-                console.warn('⚠️ Map instance not available for cleanup');
-                return;
+            console.log('🧹 Clearing previous location geometry using MapManager');
+            
+            // Use MapManager's built-in cleanup method
+            if (typeof this.mapManager.removeCurrentLayer === 'function') {
+                this.mapManager.removeCurrentLayer();
+                console.log('✅ Used MapManager.removeCurrentLayer()');
+            } else if (typeof this.mapManager.clearAllThumbnails === 'function') {
+                this.mapManager.clearAllThumbnails();
+                console.log('✅ Used MapManager.clearAllThumbnails()');
             }
             
-            console.log(`🧹 Attempting to clear location geometry: ${this.currentLocationLayerId}`);
-            
-            // Remove all layers that use this source ID
-            const layersToRemove = [];
-            
-            // Get all layers and find ones that use our source
-            if (map.getStyle && map.getStyle()) {
-                const layers = map.getStyle().layers || [];
-                layers.forEach(layer => {
-                    if (layer.source === this.currentLocationLayerId) {
-                        layersToRemove.push(layer.id);
+            // Also clear any layers with our tracked ID if we have one
+            if (this.currentLocationLayerId) {
+                const map = this.mapManager.map || this.mapManager.getMap();
+                if (map) {
+                    // Find and remove all layers with this source ID or containing this ID
+                    const layersToRemove = [];
+                    
+                    if (map.getStyle && map.getStyle()) {
+                        const layers = map.getStyle().layers || [];
+                        layers.forEach(layer => {
+                            // Check if layer source matches or layer ID contains our ID
+                            if (layer.source === this.currentLocationLayerId || 
+                                layer.id.includes(this.currentLocationLayerId)) {
+                                layersToRemove.push(layer.id);
+                            }
+                        });
                     }
-                });
-            }
-            
-            // Remove each layer
-            layersToRemove.forEach(layerId => {
-                try {
-                    if (map.getLayer(layerId)) {
-                        map.removeLayer(layerId);
-                        console.log(`✅ Removed layer: ${layerId}`);
+                    
+                    // Remove each found layer
+                    layersToRemove.forEach(layerId => {
+                        try {
+                            if (map.getLayer(layerId)) {
+                                map.removeLayer(layerId);
+                                console.log(`✅ Removed layer: ${layerId}`);
+                            }
+                        } catch (layerError) {
+                            console.warn(`⚠️ Could not remove layer ${layerId}:`, layerError);
+                        }
+                    });
+                    
+                    // Remove the source
+                    try {
+                        if (map.getSource(this.currentLocationLayerId)) {
+                            map.removeSource(this.currentLocationLayerId);
+                            console.log(`✅ Removed source: ${this.currentLocationLayerId}`);
+                        }
+                    } catch (sourceError) {
+                        console.warn(`⚠️ Could not remove source:`, sourceError);
                     }
-                } catch (layerError) {
-                    console.warn(`⚠️ Could not remove layer ${layerId}:`, layerError);
                 }
-            });
-            
-            // Remove the source
-            try {
-                if (map.getSource(this.currentLocationLayerId)) {
-                    map.removeSource(this.currentLocationLayerId);
-                    console.log(`✅ Removed source: ${this.currentLocationLayerId}`);
-                }
-            } catch (sourceError) {
-                console.warn(`⚠️ Could not remove source ${this.currentLocationLayerId}:`, sourceError);
             }
             
-            console.log(`🧹 Successfully cleared previous location geometry: ${this.currentLocationLayerId}`);
             this.currentLocationLayerId = null;
+            console.log('✅ Successfully cleared previous location geometry');
             
         } catch (error) {
             console.warn('⚠️ Error clearing previous location geometry:', error);
-            // Reset the ID anyway to avoid accumulating references
             this.currentLocationLayerId = null;
         }
     }
@@ -1552,24 +1602,64 @@ export class AISmartSearchEnhanced {
             const layerId = `location-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
             this.currentLocationLayerId = layerId;
             
-            // Display the location geometry with beautiful styling (same as pasted geometry)
+            // Use MapManager's addBeautifulGeometryLayer method directly
             if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
-                this.mapManager.addBeautifulGeometryLayer(
-                    locationGeometry, 
-                    layerId
-                );
+                this.mapManager.addBeautifulGeometryLayer(locationGeometry, layerId);
+                console.log(`✅ Added beautiful geometry layer via MapManager: ${layerId}`);
             } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
-                this.mapManager.addGeoJsonLayer(
-                    locationGeometry, 
-                    layerId
-                );
+                this.mapManager.addGeoJsonLayer(locationGeometry, layerId);
+                console.log(`✅ Added GeoJSON layer via MapManager: ${layerId}`);
+            } else {
+                // Fallback: add directly to map
+                const map = this.mapManager.map || this.mapManager.getMap();
+                if (map) {
+                    // Add source
+                    map.addSource(layerId, {
+                        type: 'geojson',
+                        data: locationGeometry
+                    });
+                    
+                    // Add basic polygon layer
+                    map.addLayer({
+                        id: `${layerId}-fill`,
+                        type: 'fill',
+                        source: layerId,
+                        paint: {
+                            'fill-color': '#2196F3',
+                            'fill-opacity': 0.2
+                        }
+                    });
+                    
+                    // Add stroke
+                    map.addLayer({
+                        id: `${layerId}-stroke`,
+                        type: 'line',
+                        source: layerId,
+                        paint: {
+                            'line-color': '#2196F3',
+                            'line-width': 2
+                        }
+                    });
+                    
+                    console.log(`✅ Added geometry layer directly to map: ${layerId}`);
+                }
             }
             
-            // Zoom to the location bounds (same as pasted geometry)
+            // Zoom to the location bounds using MapManager method
             if (typeof this.mapManager.fitToBounds === 'function') {
                 this.mapManager.fitToBounds(bbox);
             } else if (typeof this.mapManager.fitMapToBbox === 'function') {
                 this.mapManager.fitMapToBbox(bbox);
+            } else {
+                // Fallback: fit bounds directly
+                const map = this.mapManager.map || this.mapManager.getMap();
+                if (map) {
+                    map.fitBounds([[west, south], [east, north]], { 
+                        padding: 50, 
+                        maxZoom: 16,
+                        duration: 1000 
+                    });
+                }
             }
             
             console.log(`✅ Location "${name}" successfully displayed and zoomed on map (Layer: ${layerId})`);

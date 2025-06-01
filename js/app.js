@@ -19,6 +19,7 @@ import { CollectionManagerEnhanced } from './components/search/CollectionManager
 import { SearchForm } from './components/search/SearchForm.js';
 import { ResultsPanel } from './components/results/ResultsPanel.js';
 import { AISmartSearchEnhanced } from './components/search/AISmartSearchEnhanced.js';
+import { AISmartSearchInline } from './components/search/AISmartSearchInline.js';
 
 // Import configuration
 import { CONFIG } from './config.js';
@@ -76,13 +77,32 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
+        // Initialize AI Smart Search Inline component
+        const aiSmartSearchInline = new AISmartSearchInline(
+            apiClient,
+            searchPanel,
+            collectionManager,
+            mapManager,
+            notificationService
+        );
+        
+        // Render the inline AI search into the container
+        const inlineContainer = document.getElementById('ai-search-inline-container');
+        if (inlineContainer) {
+            aiSmartSearchInline.renderInline(inlineContainer);
+            console.log('🤖 AI Smart Search Inline rendered successfully');
+        } else {
+            console.error('❌ AI Smart Search Inline container not found');
+        }
+        
         // Initialize geometry sync for seamless integration
         const geometrySync = initializeGeometrySync({
             aiSmartSearch,
+            aiSmartSearchInline,
             mapManager,
             notificationService
         });
-        console.log('🔄 GeometrySync initialized - main interface will sync with AI Search');
+        console.log('🔄 GeometrySync initialized - interfaces will sync with AI Search');
         
         // Initialize state manager after all components are ready
         const stateManager = new StateManager(catalogSelector, mapManager, searchPanel);
@@ -138,6 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
             stateManager,
             shareManager,
             aiSmartSearch,
+            aiSmartSearchInline,
             geometrySync,
             config: CONFIG
         };

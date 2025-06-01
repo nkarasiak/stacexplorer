@@ -30,6 +30,8 @@
     <link rel="stylesheet" href="css/ai-location-search.css">
     <!-- AI Smart Search Enhanced CSS -->
     <link rel="stylesheet" href="css/ai-smart-search-enhanced.css">
+    <!-- AI Smart Search Inline CSS -->
+    <link rel="stylesheet" href="css/ai-smart-search-inline.css">
     <!-- Collection Details Modal CSS -->
     <link rel="stylesheet" href="css/collection-details-modal.css">
     <!-- Enhanced Results Buttons CSS -->
@@ -147,187 +149,29 @@
                             </button>
                         </div>
 
-                        <!-- Card-Based Search -->
-                        <div class="card-search-container">
-                            <!-- Data Source Card -->
-                            <div class="search-card" id="source-card">
-                                <div class="search-card-header">
-                                    <div class="card-header-left">
-                                        <div class="card-icon">
-                                            <i class="material-icons">cloud</i>
-                                        </div>
-                                        <div class="card-title-section">
-                                            <div class="card-title">Data Source</div>
-                                            <div class="card-subtitle">Auto-detected from dataset</div>
-                                        </div>
-                                    </div>
-                                    <div class="card-header-right">
-                                        <div class="card-status optional">Optional</div>
-                                        <i class="material-icons card-expand-icon">expand_more</i>
-                                    </div>
-                                </div>
-                                <div class="search-card-body">
-                                    <div class="card-form-group">
-                                        <div class="inline-form">
-                                            <div class="card-select">
-                                                <select class="form-control" id="catalog-select">
-                                                    <option value="">Auto-detect from selected dataset</option>
-                                                    <option value="copernicus">🛰️ Copernicus Data Space</option>
-                                                    <option value="element84">🌍 Element84 Earth Search</option>
-                                                    <option value="custom">⚙️ Custom STAC Catalog</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div id="custom-catalog-container" class="form-group mt-2" style="display: none;">
-                                            <div class="inline-form">
-                                                <input type="text" id="custom-catalog-url" class="form-control" 
-                                                    placeholder="Enter STAC catalog URL..." value="">
-                                                <button id="connect-catalog-btn" class="md-btn md-btn-primary compact-btn">
-                                                    <i class="material-icons">link</i> Connect
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="connection-line"></div>
-
-                            <!-- Dataset Type Card -->
-                            <div class="search-card" id="dataset-card">
-                                <div class="search-card-header">
-                                    <div class="card-header-left">
-                                        <div class="card-icon">
-                                            <i class="material-icons">layers</i>
-                                        </div>
-                                        <div class="card-title-section">
-                                            <div class="card-title">Dataset Type</div>
-                                            <div class="card-subtitle">Sentinel-2, Landsat, etc.</div>
-                                        </div>
-                                    </div>
-                                    <div class="card-header-right">
-                                        <div class="card-status optional">Optional</div>
-                                        <i class="material-icons card-expand-icon">expand_more</i>
-                                    </div>
-                                </div>
-                                <div class="search-card-body">
-                                    <div class="card-form-group">
-                                        <div class="inline-form">
-                                            <div class="card-select">
-                                                <select class="form-control" id="collection-select">
-                                                    <option value="">All datasets</option>
-                                                    <option value="sentinel-s2-l2a-cogs">🛰️ Sentinel-2 Level-2A</option>
-                                                    <option value="sentinel-s1-grd">📡 Sentinel-1 GRD</option>
-                                                    <option value="landsat-c2-l2">🛰️ Landsat Collection 2</option>
-                                                </select>
-                                            </div>
-                                            <button class="md-btn md-btn-secondary compact-btn" id="collection-info-btn">
-                                                <i class="material-icons">info</i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="connection-line"></div>
-
-                            <!-- Location Card -->
-                            <div class="search-card" id="location-card">
-                                <div class="search-card-header">
-                                    <div class="card-header-left">
-                                        <div class="card-icon">
-                                            <i class="material-icons">place</i>
-                                        </div>
-                                        <div class="card-title-section">
-                                            <div class="card-title">Location</div>
-                                            <div class="card-subtitle">Area of interest</div>
-                                        </div>
-                                    </div>
-                                    <div class="card-header-right">
-                                        <div class="card-status optional">Optional</div>
-                                        <i class="material-icons card-expand-icon">expand_more</i>
-                                    </div>
-                                </div>
-                                <div class="search-card-body">
-                                    <div class="card-form-group">
-                                        <div class="inline-form">
-                                            <button class="md-btn md-btn-primary compact-btn" id="criteria-draw-bbox-btn">
-                                                <i class="material-icons">crop_square</i>
-                                                Draw Area
-                                            </button>
-                                            <input type="text" class="form-control" id="bbox-input" placeholder="Or enter coordinates...">
-                                            <div class="smart-badge success">
-                                                <i class="material-icons">gps_fixed</i>
-                                                GPS
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="connection-line"></div>
-
-                            <!-- Time Period Card -->
-                            <div class="search-card" id="time-card">
-                                <div class="search-card-header">
-                                    <div class="card-header-left">
-                                        <div class="card-icon">
-                                            <i class="material-icons">schedule</i>
-                                        </div>
-                                        <div class="card-title-section">
-                                            <div class="card-title">Time Period</div>
-                                            <div class="card-subtitle">Date range</div>
-                                        </div>
-                                    </div>
-                                    <div class="card-header-right">
-                                        <div class="card-status optional">Optional</div>
-                                        <i class="material-icons card-expand-icon">expand_more</i>
-                                    </div>
-                                </div>
-                                <div class="search-card-body">
-                                    <div class="card-form-group">
-                                        <div class="date-range-inline">
-                                            <input type="date" class="form-control" id="date-start">
-                                            <span class="date-separator">to</span>
-                                            <input type="date" class="form-control" id="date-end">
-                                            <button class="md-btn md-btn-secondary compact-btn" id="preset-2024">
-                                                2024
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="connection-line"></div>
-
-                            <!-- Quality Filters Card -->
-                            <div class="search-card" id="quality-card">
-                                <div class="search-card-header">
-                                    <div class="card-header-left">
-                                        <div class="card-icon">
-                                            <i class="material-icons">tune</i>
-                                        </div>
-                                        <div class="card-title-section">
-                                            <div class="card-title">Quality Filters</div>
-                                            <div class="card-subtitle">Cloud cover, etc.</div>
-                                        </div>
-                                    </div>
-                                    <div class="card-header-right">
-                                        <div class="card-status optional">Optional</div>
-                                        <i class="material-icons card-expand-icon">expand_more</i>
-                                    </div>
-                                </div>
-                                <div class="search-card-body">
-                                    <div class="card-form-group">
-                                        <div class="cloud-cover-inline">
-                                            <input type="checkbox" id="cloud-cover-enabled" class="form-check-input">
-                                            <label for="cloud-cover-enabled" class="form-check-label">Max cloud cover:</label>
-                                            <input type="range" id="cloud-cover" class="form-range" min="0" max="100" value="50" disabled>
-                                            <span class="cloud-percentage" id="cloud-cover-value">50%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <!-- AI Smart Search Inline Interface -->
+                        <div id="ai-search-inline-container" class="ai-search-inline-wrapper">
+                            <!-- This will be populated by the AISmartSearchInline component -->
+                        </div>
+                        
+                        <!-- Hidden form inputs for compatibility -->
+                        <div style="display: none;">
+                            <select id="catalog-select">
+                                <option value="">Auto-detect from selected dataset</option>
+                                <option value="copernicus">🛰️ Copernicus Data Space</option>
+                                <option value="element84">🌍 Element84 Earth Search</option>
+                                <option value="custom">⚙️ Custom STAC Catalog</option>
+                            </select>
+                            <select id="collection-select">
+                                <option value="">All datasets</option>
+                            </select>
+                            <input type="text" id="bbox-input">
+                            <input type="date" id="date-start">
+                            <input type="date" id="date-end">
+                            <input type="checkbox" id="cloud-cover-enabled">
+                            <input type="range" id="cloud-cover" min="0" max="100" value="20">
+                            <span id="cloud-cover-value">20%</span>
+                            <input type="text" id="custom-catalog-url">
                         </div>
 
                         <!-- Action Buttons (Removed) -->

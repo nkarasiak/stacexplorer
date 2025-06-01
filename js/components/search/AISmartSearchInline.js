@@ -383,7 +383,7 @@ export class AISmartSearchInline extends AISmartSearchEnhanced {
      * @param {string} originalText - Original pasted text
      */
     handlePastedGeometry(geometryResult, originalText) {
-        // Use parent logic for processing
+        // Use parent logic for processing (which includes proper cleanup)
         super.handlePastedGeometry(geometryResult, originalText);
         
         // Update inline field (parent updates the fullscreen field)

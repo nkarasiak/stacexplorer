@@ -34,6 +34,14 @@ export class STACApiClient {
     }
     
     /**
+     * Get current API endpoints
+     * @returns {Object} Current endpoints
+     */
+    getCurrentEndpoints() {
+        return { ...this.endpoints };
+    }
+    
+    /**
      * Connect to a custom STAC catalog
      * @param {string} url - URL of the STAC catalog
      */

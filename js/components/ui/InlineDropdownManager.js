@@ -365,7 +365,10 @@ export class InlineDropdownManager {
             // Replace loading dropdown with actual content
             this.replaceLoadingWithContent(dropdownContent, fieldType);
             
-            console.log(`✅ Showed inline dropdown for: ${fieldType}`);
+            // Ensure dropdown is visible after content is loaded
+        this.ensureDropdownVisible();
+        
+        console.log(`✅ Showed inline dropdown for: ${fieldType}`);
             
         } catch (error) {
             console.error(`❌ Error showing inline dropdown for ${fieldType}:`, error);
@@ -406,13 +409,11 @@ export class InlineDropdownManager {
         // Position and show the loading dropdown
         this.positionInlineDropdown(dropdown, triggerElement);
         
-        // Add to the sidebar
-        const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
-        if (sidebar) {
-            sidebar.appendChild(dropdown);
-        } else {
-            document.body.appendChild(dropdown);
-        }
+        // Add to document body for better positioning control
+        document.body.appendChild(dropdown);
+        
+        // Add a debug class for easier identification
+        dropdown.classList.add('debug-inline-dropdown');
         
         // Store references
         this.currentDropdown = dropdown;
@@ -449,6 +450,11 @@ export class InlineDropdownManager {
         }
         
         console.log(`🔄 Loading dropdown replaced with content for: ${fieldType}`);
+        
+        // Force visibility check after content is added
+        setTimeout(() => {
+            this.ensureDropdownVisible();
+        }, 50);
     }
     
     /**
@@ -460,29 +466,167 @@ export class InlineDropdownManager {
         const triggerRect = trigger.getBoundingClientRect();
         const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
         const sidebarRect = sidebar ? sidebar.getBoundingClientRect() : { left: 0, width: 360 };
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
         
-        // Position dropdown
+        console.log(`📍 Positioning dropdown - Trigger:`, triggerRect);
+        console.log(`📍 Positioning dropdown - Sidebar:`, sidebarRect);
+        console.log(`📍 Positioning dropdown - Viewport: ${viewportWidth}x${viewportHeight}`);
+        
+        // Enhanced positioning logic
         dropdown.style.position = 'fixed';
-        dropdown.style.left = `${sidebarRect.left + 8}px`;
-        dropdown.style.right = '8px';
-        dropdown.style.top = `${triggerRect.bottom + 8}px`;
-        dropdown.style.zIndex = '2500';
-        dropdown.style.maxWidth = `${sidebarRect.width - 16}px`;
+        dropdown.style.zIndex = '9999'; // Higher z-index
         dropdown.style.maxHeight = '400px';
         dropdown.style.overflowY = 'auto';
+        dropdown.style.borderRadius = '12px';
+        dropdown.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
         
-        // Add animation
+        // Calculate positioning
+        let left = sidebarRect.left + 8;
+        let top = triggerRect.bottom + 8;
+        let width = Math.max(sidebarRect.width - 16, 300); // Minimum width of 300px
+        
+        // Ensure dropdown stays within viewport bounds
+        if (left + width > viewportWidth) {
+            left = viewportWidth - width - 16;
+        }
+        
+        if (left < 8) {
+            left = 8;
+            width = Math.min(width, viewportWidth - 16);
+        }
+        
+        // Check if dropdown would go below viewport
+        if (top + 400 > viewportHeight) {
+            // Position above trigger instead
+            top = triggerRect.top - 408; // 400px height + 8px gap
+            if (top < 8) {
+                // If still not enough space, position at viewport edge
+                top = 8;
+                dropdown.style.maxHeight = `${triggerRect.top - 16}px`;
+            }
+        }
+        
+        // Apply calculated positions
+        dropdown.style.left = `${left}px`;
+        dropdown.style.top = `${top}px`;
+        dropdown.style.width = `${width}px`;
+        
+        // Make absolutely sure it's visible
+        dropdown.style.display = 'block';
+        dropdown.style.visibility = 'visible';
+        dropdown.style.pointerEvents = 'auto';
+        
+        // Add animation with more reliable approach
         dropdown.style.opacity = '0';
-        dropdown.style.transform = 'translateY(-10px)';
-        dropdown.style.transition = 'all 0.3s ease';
+        dropdown.style.transform = 'translateY(-10px) scale(0.95)';
+        dropdown.style.transition = 'opacity 0.2s ease, transform 0.2s ease';
         
-        // Trigger animation
-        setTimeout(() => {
+        // Force reflow and trigger animation
+        dropdown.offsetHeight; // Force reflow
+        
+        requestAnimationFrame(() => {
             dropdown.style.opacity = '1';
-            dropdown.style.transform = 'translateY(0)';
-        }, 10);
+            dropdown.style.transform = 'translateY(0) scale(1)';
+        });
         
-        console.log(`📍 Positioned inline dropdown relative to trigger`);
+        console.log(`📍 Positioned inline dropdown at (${left}, ${top}) with size ${width}x${dropdown.style.maxHeight}`);
+        
+        // Debug: Check if dropdown is actually visible
+        setTimeout(() => {
+            const finalRect = dropdown.getBoundingClientRect();
+            const isVisible = finalRect.width > 0 && finalRect.height > 0 && 
+                            window.getComputedStyle(dropdown).display !== 'none' &&
+                            window.getComputedStyle(dropdown).visibility !== 'hidden';
+            
+            console.log(`📍 Dropdown final position check:`, {
+                rect: finalRect,
+                visible: isVisible,
+                display: window.getComputedStyle(dropdown).display,
+                visibility: window.getComputedStyle(dropdown).visibility,
+                opacity: window.getComputedStyle(dropdown).opacity,
+                zIndex: window.getComputedStyle(dropdown).zIndex
+            });
+            
+            if (!isVisible) {
+                console.error('❌ Dropdown positioned but not visible! Check for CSS conflicts.');
+            }
+        }, 100);
+    }
+    
+    /**
+     * Ensure dropdown is visible - fallback method for when normal positioning fails
+     */
+    ensureDropdownVisible() {
+        if (!this.currentDropdown) return;
+        
+        setTimeout(() => {
+            const dropdown = this.currentDropdown;
+            if (!dropdown) return;
+            
+            const rect = dropdown.getBoundingClientRect();
+            const computedStyle = window.getComputedStyle(dropdown);
+            
+            const isVisible = rect.width > 0 && rect.height > 0 && 
+                            computedStyle.display !== 'none' &&
+                            computedStyle.visibility !== 'hidden' &&
+                            parseFloat(computedStyle.opacity) > 0;
+            
+            if (!isVisible) {
+                console.warn('⚠️ Dropdown not visible, applying fallback positioning...');
+                
+                // Fallback positioning - center on screen
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                
+                dropdown.style.position = 'fixed';
+                dropdown.style.top = '20%';
+                dropdown.style.left = '50%';
+                dropdown.style.transform = 'translateX(-50%)';
+                dropdown.style.width = '320px';
+                dropdown.style.maxWidth = 'calc(100vw - 32px)';
+                dropdown.style.maxHeight = '60vh';
+                dropdown.style.zIndex = '99999';
+                dropdown.style.display = 'block';
+                dropdown.style.visibility = 'visible';
+                dropdown.style.opacity = '1';
+                dropdown.style.pointerEvents = 'auto';
+                dropdown.style.backgroundColor = 'var(--md-surface, #1e1e1e)';
+                dropdown.style.border = '2px solid var(--md-primary, #2196F3)';
+                dropdown.style.borderRadius = '12px';
+                dropdown.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.5)';
+                
+                // Add a visible indicator that this is fallback positioning
+                const existingIndicator = dropdown.querySelector('.fallback-indicator');
+                if (!existingIndicator) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'fallback-indicator';
+                    indicator.style.cssText = `
+                        background: linear-gradient(45deg, #ff9800, #f57c00);
+                        color: white;
+                        padding: 4px 8px;
+                        font-size: 11px;
+                        font-weight: 600;
+                        text-align: center;
+                        border-radius: 4px 4px 0 0;
+                    `;
+                    indicator.textContent = 'DROPDOWN (FALLBACK POSITION)';
+                    dropdown.insertBefore(indicator, dropdown.firstChild);
+                }
+                
+                console.log('✅ Applied fallback positioning for dropdown visibility');
+                
+                // Show success notification
+                if (this.notificationService) {
+                    this.notificationService.showNotification(
+                        `📝 ${this.currentField?.toUpperCase() || 'Dropdown'} menu opened`, 
+                        'info'
+                    );
+                }
+            } else {
+                console.log('✅ Dropdown is properly visible');
+            }
+        }, 200);
     }
     
     /**

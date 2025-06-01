@@ -63,8 +63,30 @@
     border: 1px solid var(--md-border-color);
     backdrop-filter: blur(10px);
     overflow: hidden;
-    z-index: 2500;
+    z-index: 9999 !important; /* Force high z-index */
     margin: 8px 0;
+    position: fixed !important; /* Ensure fixed positioning */
+    display: block !important; /* Force visibility */
+    visibility: visible !important;
+    pointer-events: auto !important;
+}
+
+/* Debug styling for inline dropdowns */
+.debug-inline-dropdown {
+    outline: 2px dashed #ff9800 !important;
+    background: var(--md-surface, #1e1e1e) !important;
+}
+
+/* Fallback indicator styling */
+.fallback-indicator {
+    background: linear-gradient(45deg, #ff9800, #f57c00) !important;
+    color: white !important;
+    padding: 4px 8px !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    border-radius: 4px 4px 0 0 !important;
+    z-index: 10000 !important;
 }
 
 /* Dark theme specific adjustments */

@@ -427,10 +427,7 @@ export class AISmartSearchInline extends AISmartSearchEnhanced {
      * Setup location dropdown events (override to handle inline field updates)
      */
     setupLocationDropdownEvents(container) {
-        // Use parent logic
-        super.setupLocationDropdownEvents(container);
-        
-        // Override field updates for inline
+        // Everywhere option
         const everywhereOption = container.querySelector('[data-value="everywhere"]');
         if (everywhereOption) {
             everywhereOption.addEventListener('click', () => {
@@ -441,6 +438,34 @@ export class AISmartSearchInline extends AISmartSearchEnhanced {
                     locationField.classList.add('empty');
                 }
                 this.closeAllDropdowns();
+            });
+        }
+        
+        // Draw on map option
+        const drawOption = container.querySelector('#draw-location');
+        if (drawOption) {
+            drawOption.addEventListener('click', () => {
+                this.handleDrawOnMap();
+            });
+        }
+        
+        // Paste geometry option
+        const pasteOption = container.querySelector('#paste-geometry');
+        if (pasteOption) {
+            pasteOption.addEventListener('click', () => {
+                this.handlePasteGeometry();
+            });
+        }
+        
+        // Location search
+        const searchInput = container.querySelector('#location-search');
+        if (searchInput) {
+            let searchTimeout;
+            searchInput.addEventListener('input', (e) => {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    this.searchLocations(e.target.value, container);
+                }, 300);
             });
         }
     }

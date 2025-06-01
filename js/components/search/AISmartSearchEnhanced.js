@@ -1336,32 +1336,18 @@ export class AISmartSearchEnhanced {
             }
             
             const resultItems = results.slice(0, 5).map(result => {
-                // Create a better location display format
-                let locationHierarchy = result.formattedName;
-                
-                // Try to extract country/region info from the result
-                if (result.bbox && result.address) {
-                    // If we have address components, use them
-                    const parts = [];
-                    if (result.address.city) parts.push(result.address.city);
-                    if (result.address.state) parts.push(result.address.state);
-                    if (result.address.country) parts.push(result.address.country);
-                    if (parts.length > 0) {
-                        locationHierarchy = parts.join(', ');
-                    }
-                } else {
-                    // Fallback: try to parse from formattedName
-                    const nameParts = result.formattedName.split(',');
-                    if (nameParts.length > 1) {
-                        locationHierarchy = nameParts.map(part => part.trim()).join(', ');
-                    }
-                }
-                
                 return `
-                    <div class="ai-location-result" data-bbox="${result.bbox ? result.bbox.join(',') : ''}">
+                    <div class="ai-location-result" 
+                         data-bbox="${result.bbox ? result.bbox.join(',') : ''}" 
+                         data-lat="${result.lat}" 
+                         data-lon="${result.lon}"
+                         data-name="${result.formattedName}"
+                         data-short-name="${result.shortName}"
+                         data-category="${result.category}">
                         <i class="material-icons">place</i>
                         <div class="ai-location-info">
-                            <div class="ai-location-name">${locationHierarchy}</div>
+                            <div class="ai-location-name">${result.formattedName}</div>
+                            <div class="ai-location-category">${result.category}</div>
                         </div>
                     </div>
                 `;
@@ -1369,23 +1355,138 @@ export class AISmartSearchEnhanced {
             
             resultsContainer.innerHTML = resultItems;
             
-            // Add click handlers
+            // Add click handlers with enhanced functionality
             resultsContainer.querySelectorAll('.ai-location-result').forEach(result => {
                 result.addEventListener('click', () => {
-                    const bbox = result.dataset.bbox;
-                    const name = result.querySelector('.ai-location-name').textContent;
-                    
-                    if (bbox) {
-                        this.selectedLocation = bbox.split(',').map(Number);
-                    }
-                    
-                    const locationField = document.getElementById('ai-field-location');
-                    locationField.textContent = name;
-                    locationField.classList.remove('empty');
-                    this.closeAllDropdowns();
+                    this.handleLocationSelection(result);
                 });
             });
         });
+    }
+    
+    /**
+     * Handle location selection with map display and zoom
+     * @param {HTMLElement} resultElement - Selected location result element
+     */
+    handleLocationSelection(resultElement) {
+        try {
+            const bbox = resultElement.dataset.bbox;
+            const name = resultElement.dataset.name;
+            const shortName = resultElement.dataset.shortName;
+            const lat = parseFloat(resultElement.dataset.lat);
+            const lon = parseFloat(resultElement.dataset.lon);
+            const category = resultElement.dataset.category;
+            
+            console.log(`📍 Location selected: ${name}`, { bbox, lat, lon, category });
+            
+            // Store the location
+            if (bbox) {
+                this.selectedLocation = bbox.split(',').map(Number);
+            } else {
+                // Fallback: create a small bbox around the point
+                const offset = 0.01; // ~1km
+                this.selectedLocation = [lon - offset, lat - offset, lon + offset, lat + offset];
+            }
+            
+            this.selectedLocationResult = {
+                formattedName: name,
+                shortName: shortName,
+                bbox: this.selectedLocation,
+                coordinates: [lon, lat],
+                category: 'searched',
+                originalQuery: name
+            };
+            
+            // Update the location field
+            const locationField = this.isInlineMode ? 
+                document.getElementById('ai-field-location-inline') : 
+                document.getElementById('ai-field-location');
+                
+            if (locationField) {
+                locationField.textContent = shortName || name;
+                locationField.classList.remove('empty');
+            }
+            
+            // Display location on map and zoom to it (same as pasted geometry)
+            this.displayLocationOnMap(this.selectedLocation, name, category);
+            
+            // Close dropdown
+            this.closeAllDropdowns();
+            
+            // Show success notification
+            this.notificationService.showNotification(
+                `📍 Selected location: ${shortName || name}`, 
+                'success'
+            );
+            
+        } catch (error) {
+            console.error('❌ Error handling location selection:', error);
+            this.notificationService.showNotification('Error selecting location', 'error');
+        }
+    }
+    
+    /**
+     * Display location on map with geometry and zoom (same behavior as pasted geometry)
+     * @param {Array} bbox - Bounding box [west, south, east, north]
+     * @param {string} name - Location name
+     * @param {string} category - Location category
+     */
+    displayLocationOnMap(bbox, name, category) {
+        if (!this.mapManager || !bbox || bbox.length !== 4) {
+            console.warn('⚠️ Cannot display location: missing mapManager or invalid bbox');
+            return;
+        }
+        
+        try {
+            console.log(`🗺️ Displaying location "${name}" on map:`, bbox);
+            
+            // Create a GeoJSON rectangle from the bounding box
+            const [west, south, east, north] = bbox;
+            const locationGeometry = {
+                type: 'Feature',
+                properties: {
+                    name: name,
+                    category: category,
+                    type: 'searched_location'
+                },
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [[
+                        [west, south],
+                        [east, south], 
+                        [east, north],
+                        [west, north],
+                        [west, south]
+                    ]]
+                }
+            };
+            
+            // Display the location geometry with beautiful styling (same as pasted geometry)
+            if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
+                this.mapManager.addBeautifulGeometryLayer(
+                    locationGeometry, 
+                    `searched-location-${Date.now()}`
+                );
+            } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
+                this.mapManager.addGeoJsonLayer(
+                    locationGeometry, 
+                    `searched-location-${Date.now()}`
+                );
+            }
+            
+            // Zoom to the location bounds (same as pasted geometry)
+            if (typeof this.mapManager.fitToBounds === 'function') {
+                this.mapManager.fitToBounds(bbox);
+            } else if (typeof this.mapManager.fitMapToBbox === 'function') {
+                this.mapManager.fitMapToBbox(bbox);
+            }
+            
+            console.log(`✅ Location "${name}" successfully displayed and zoomed on map`);
+            
+        } catch (mapError) {
+            console.error('❌ Error displaying location on map:', mapError);
+            // Continue anyway - the location is still stored for search
+        }
     }
     
     /**

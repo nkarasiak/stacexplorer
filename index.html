@@ -156,6 +156,24 @@
                         
                         <!-- Hidden form inputs for compatibility with existing components -->
                         <div style="display: none;">
+                            <!-- Hidden card structures for component compatibility -->
+                            <div id="location-card">
+                                <div class="search-card-body">
+                                    <div class="card-form-group"></div>
+                                </div>
+                            </div>
+                            <div id="source-card"></div>
+                            <div id="dataset-card"></div>
+                            <div id="time-card"></div>
+                            <div id="quality-card"></div>
+                            <div id="cloud-cover-controls"></div>
+                            <div id="global-summary">
+                                <div class="summary-text">
+                                    <span id="summary-details">Configure your search</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Form elements -->
                             <select id="catalog-select">
                                 <option value="">Auto-detect from selected dataset</option>
                                 <option value="copernicus">🛰️ Copernicus Data Space</option>
@@ -172,11 +190,14 @@
                             <input type="range" id="cloud-cover" min="0" max="100" value="20">
                             <span id="cloud-cover-value">20%</span>
                             <input type="text" id="custom-catalog-url">
+                            <input type="text" id="collections">
                             <button id="connect-catalog-btn">Connect</button>
                             <div id="custom-catalog-container"></div>
                             <button id="criteria-draw-bbox-btn">Draw Area</button>
                             <button id="collection-info-btn">Info</button>
                             <button id="preset-2024">2024</button>
+                            <button id="summary-search-btn">Search</button>
+                            <button id="summary-reset-btn">Reset</button>
                             <input type="hidden" id="search-input">
                         </div>
                     </div>

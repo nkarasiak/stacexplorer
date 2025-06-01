@@ -91,35 +91,62 @@ export class StateManager {
     }
     
     /**
-     * Ensure regular search interface is shown instead of AI Smart Search
+     * Ensure regular search interface is shown and visible for URL state restoration
      */
     ensureRegularSearchInterface() {
-        // Hide AI Smart Search if it's showing
+        console.log('🔗 Ensuring regular search interface is visible for URL state restoration');
+        
+        // Hide AI Smart Search fullscreen if it's showing
         const aiSearchContainer = document.querySelector('.ai-smart-search-container');
         if (aiSearchContainer) {
             aiSearchContainer.style.display = 'none';
         }
         
-        // Show regular search interface
+        // Ensure sidebar is visible and properly displayed
         const sidebar = document.querySelector('.sidebar');
         if (sidebar) {
+            // Remove hidden class if present
+            sidebar.classList.remove('hidden');
             sidebar.style.display = 'flex';
+            
+            console.log('✅ Sidebar made visible for URL state restoration');
         }
         
-        // Ensure search cards are expanded
+        // For mobile devices, ensure sidebar is properly opened
+        const isMobile = window.innerWidth <= 768;
+        if (isMobile && window.mobileSidebarManager) {
+            // Use mobile sidebar manager to properly show sidebar
+            if (typeof window.mobileSidebarManager.openSidebar === 'function') {
+                window.mobileSidebarManager.openSidebar();
+                console.log('📱 Mobile sidebar opened for URL state restoration');
+            }
+        }
+        
+        // Ensure search and results cards are expanded with better targeting
         setTimeout(() => {
-            const searchCard = document.getElementById('search-card');
+            // Look for the actual search container (updated ID)
+            const searchContainer = document.getElementById('search-container');
             const resultsCard = document.getElementById('results-card');
             
-            if (searchCard && searchCard.classList.contains('collapsed')) {
-                const searchHeader = document.getElementById('search-header');
-                if (searchHeader) searchHeader.click();
+            // Expand search container if collapsed
+            if (searchContainer && searchContainer.classList.contains('collapsed')) {
+                const searchHeader = document.getElementById('search-container-header');
+                if (searchHeader) {
+                    searchHeader.click();
+                    console.log('🔍 Expanded search container');
+                }
             }
             
+            // Expand results card if collapsed
             if (resultsCard && resultsCard.classList.contains('collapsed')) {
                 const resultsHeader = document.getElementById('results-header');
-                if (resultsHeader) resultsHeader.click();
+                if (resultsHeader) {
+                    resultsHeader.click();
+                    console.log('📊 Expanded results card');
+                }
             }
+            
+            console.log('✅ Search interface setup completed for URL state restoration');
         }, 100);
     }
     
@@ -531,6 +558,15 @@ export class StateManager {
         // Only set up listeners if not currently restoring from URL
         if (this.isRestoringFromUrl) {
             return;
+        }
+        
+        console.log('🔗 Setting up state change listeners');
+        
+        // Ensure sidebar remains visible when setting up listeners
+        const sidebar = document.querySelector('.sidebar');
+        if (sidebar && sidebar.classList.contains('hidden')) {
+            sidebar.classList.remove('hidden');
+            console.log('✅ Removed hidden class from sidebar during listener setup');
         }
         
         // Listen for catalog changes

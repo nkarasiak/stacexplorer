@@ -20,6 +20,7 @@ import { SearchForm } from './components/search/SearchForm.js';
 import { ResultsPanel } from './components/results/ResultsPanel.js';
 import { AISmartSearchEnhanced } from './components/search/AISmartSearchEnhanced.js';
 import { AISmartSearchInline } from './components/search/AISmartSearchInline.js';
+import { AISmartSearchInlineEnhanced } from './components/search/AISmartSearchInlineEnhanced.js';
 
 // Import configuration
 import { CONFIG } from './config.js';
@@ -77,7 +78,16 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
-        // Initialize AI Smart Search Inline component
+        // Initialize AI Smart Search Inline Enhanced component (primary interface)
+        const aiSmartSearchInlineEnhanced = new AISmartSearchInlineEnhanced(
+            apiClient,
+            searchPanel,
+            collectionManager,
+            mapManager,
+            notificationService
+        );
+        
+        // Initialize AI Smart Search Inline component (fallback)
         const aiSmartSearchInline = new AISmartSearchInline(
             apiClient,
             searchPanel,
@@ -86,11 +96,11 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
-        // Render the inline AI search into the container
+        // Render the enhanced inline AI search into the container
         const inlineContainer = document.getElementById('ai-search-inline-container');
         if (inlineContainer) {
-            aiSmartSearchInline.renderInline(inlineContainer);
-            console.log('🤖 AI Smart Search Inline rendered successfully');
+            aiSmartSearchInlineEnhanced.renderInlineEnhanced(inlineContainer);
+            console.log('🚀 AI Smart Search Inline Enhanced rendered successfully');
         } else {
             console.error('❌ AI Smart Search Inline container not found');
         }
@@ -99,6 +109,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const geometrySync = initializeGeometrySync({
             aiSmartSearch,
             aiSmartSearchInline,
+            aiSmartSearchInlineEnhanced,
             mapManager,
             notificationService
         });
@@ -127,21 +138,17 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show welcome notification about the enhanced system  
         setTimeout(() => {
-            notificationService.showNotification('🤖 AI Smart Search ↔️ Search Dashboard are now fully integrated!', 'info');
-        }, 3000);
+            notificationService.showNotification('🚀 AI Smart Search Enhanced is ready! Click the expand icon in the search panel to get started.', 'info');
+        }, 2000);
         
-        // Only show AI Smart Search if there are no URL state parameters to restore
+        // Sidebar is now visible by default - AI Smart Search Enhanced available via button click
         if (!stateManager.hasUrlStateParams()) {
-            console.log('🤖 No URL state detected, showing AI Smart Search');
-            // Show AI Smart Search Enhanced immediately (no delay)
-            if (aiSmartSearch && typeof aiSmartSearch.showMinimalistSearch === 'function') {
-                // Small delay to ensure DOM is ready, but not visible to user
-                setTimeout(() => {
-                    aiSmartSearch.showMinimalistSearch();
-                }, 100);
-            }
+            console.log('🤖 No URL state detected, sidebar visible with AI Smart Search ready');
+            // Don't auto-show AI Smart Search Enhanced - let users click the button when they want it
+            // The sidebar is now visible by default with the AI Smart Search interface available
         } else {
-            console.log('🔗 URL state parameters detected, skipping AI Smart Search auto-show');
+            console.log('🔗 URL state parameters detected, sidebar visible for state restoration');
+            // Sidebar is already visible and state restoration will populate it properly
         }
         
         // AI Smart Search Enhanced is ready
@@ -159,6 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
             shareManager,
             aiSmartSearch,
             aiSmartSearchInline,
+            aiSmartSearchInlineEnhanced,
             geometrySync,
             config: CONFIG
         };

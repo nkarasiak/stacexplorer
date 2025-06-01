@@ -188,12 +188,20 @@ export class CardSearchPanel {
             collectionValue 
         });
         
-        // Only data source is required
-        const sourceCompleted = catalogValue !== '';
+        // Check if we're in AI Smart Search EVERYTHING mode
+        // This happens when no specific catalog is selected but collections are loaded from all sources
+        const isEverythingMode = catalogValue === '' && 
+                                this.collectionManager && 
+                                typeof this.collectionManager.getAllCollections === 'function' &&
+                                this.collectionManager.getAllCollections().length > 0;
+        
+        // Data source is required UNLESS we're in EVERYTHING mode
+        const sourceCompleted = catalogValue !== '' || isEverythingMode;
         const locationCompleted = true; // Location is now optional
         
         console.log('📊 Requirements status:', { 
             sourceCompleted, 
+            isEverythingMode,
             locationOptional: true,
             locationProvided: bboxValue !== '',
             collectionSelected: collectionValue !== ''
@@ -595,8 +603,19 @@ export class CardSearchPanel {
             
             // Validate required fields
             if (!this.areRequiredCardsCompleted()) {
-                this.notificationService.showNotification('Please select a Data Source to continue', 'warning');
-                return;
+                // Check if we're in EVERYTHING mode for better error messaging
+                const catalogValue = document.getElementById('catalog-select').value;
+                const isEverythingMode = catalogValue === '' && 
+                                        this.collectionManager && 
+                                        typeof this.collectionManager.getAllCollections === 'function' &&
+                                        this.collectionManager.getAllCollections().length > 0;
+                
+                if (isEverythingMode) {
+                    this.notificationService.showNotification('EVERYTHING mode active - continuing with search across all data sources', 'info');
+                } else {
+                    this.notificationService.showNotification('Please select a Data Source to continue', 'warning');
+                    return;
+                }
             }
             
             // Show loading indicator
@@ -667,14 +686,22 @@ export class CardSearchPanel {
             
             // Show success notification with collection info
             if (items.length === 0) {
-                const searchContext = selectedCollection ? ` in collection "${selectedCollection}"` : ' across all collections';
+                const catalogValue = document.getElementById('catalog-select').value;
+                const isEverythingMode = catalogValue === '';
+                const searchContext = selectedCollection ? ` in collection "${selectedCollection}"` : 
+                                    isEverythingMode ? ' across ALL data sources (EVERYTHING mode)' : 
+                                    ' across all collections';
                 this.notificationService.showNotification(`No datasets found${searchContext} matching your search criteria.`, 'info');
             } else {
-                const collectionText = selectedCollection ? ` from collection "${selectedCollection}"` : ' from all collections';
+                const catalogValue = document.getElementById('catalog-select').value;
+                const isEverythingMode = catalogValue === '';
+                const collectionText = selectedCollection ? ` from collection "${selectedCollection}"` : 
+                                     isEverythingMode ? ' from ALL data sources (🌍 EVERYTHING mode)' : 
+                                     ' from all collections';
                 this.notificationService.showNotification(`Found ${items.length} datasets${collectionText}!`, 'success');
                 console.log('🎉 Search successful!', {
                     itemCount: items.length,
-                    collection: selectedCollection || 'all collections',
+                    collection: selectedCollection || (isEverythingMode ? 'EVERYTHING mode' : 'all collections'),
                     searchParams: searchParams
                 });
             }

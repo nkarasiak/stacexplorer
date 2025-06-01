@@ -30,10 +30,9 @@
     <link rel="stylesheet" href="css/ai-location-search.css">
     <!-- AI Smart Search Enhanced CSS -->
     <link rel="stylesheet" href="css/ai-smart-search-enhanced.css">
-    <!-- AI Smart Search Inline CSS -->
-    <link rel="stylesheet" href="css/ai-smart-search-inline.css">
-    <!-- AI Smart Search Inline Enhanced CSS -->
-    <link rel="stylesheet" href="css/ai-smart-search-inline-enhanced.css">
+    <!-- Removed - AI Smart Search Inline CSS (no longer needed) -->
+    <!-- AI Smart Search Trigger CSS -->
+    <link rel="stylesheet" href="css/ai-search-trigger.css">
     <!-- Collection Details Modal CSS -->
     <link rel="stylesheet" href="css/collection-details-modal.css">
     <!-- Enhanced Results Buttons CSS -->
@@ -115,7 +114,7 @@
                     <div class="md-card-header" id="search-container-header">
                         <h2><i class="material-icons">psychology</i> AI Smart Search</h2>
                         <div class="header-actions">
-                            <button id="ai-search-btn" class="ai-button" title="Open AI Smart Search Enhanced">
+                            <button id="ai-search-btn" class="ai-button" title="Open AI Smart Search Enhanced" style="display: none;">
                                 <i class="material-icons">fullscreen</i>
                             </button>
                         </div>
@@ -151,9 +150,30 @@
                             </button>
                         </div>
 
-                        <!-- AI Smart Search Inline Interface -->
-                        <div id="ai-search-inline-container" class="ai-search-inline-wrapper">
-                            <!-- This will be populated by the AISmartSearchInline component -->
+                        <!-- AI Smart Search Trigger Interface -->
+                        <div id="ai-search-trigger-container" class="ai-search-trigger-wrapper">
+                            <div class="ai-search-trigger-card">
+                                <div class="ai-search-trigger-header">
+                                    <div class="ai-search-trigger-icon">
+                                        <i class="material-icons">psychology</i>
+                                    </div>
+                                    <div class="ai-search-trigger-content">
+                                        <h3>AI Smart Search</h3>
+                                        <p>Describe what you want in natural language</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="ai-search-trigger-preview">
+                                    <div class="ai-search-preview-text">
+                                        <span class="ai-preview-highlight">"I want</span> <span class="ai-preview-field">Sentinel-2</span> <span class="ai-preview-highlight">over</span> <span class="ai-preview-field">Paris</span> <span class="ai-preview-highlight">at</span> <span class="ai-preview-field">2024</span> <span class="ai-preview-highlight">with</span> <span class="ai-preview-field">low clouds</span><span class="ai-preview-highlight">"</span>
+                                    </div>
+                                </div>
+                                
+                                <button class="ai-search-trigger-button" id="ai-search-trigger-btn">
+                                    <i class="material-icons">fullscreen</i>
+                                    <span>Open AI Smart Search</span>
+                                </button>
+                            </div>
                         </div>
                         
                         <!-- Hidden form inputs for compatibility -->

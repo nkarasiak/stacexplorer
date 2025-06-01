@@ -10,6 +10,9 @@ import { DateUtils } from '../../utils/DateUtils.js';
 import { CollectionDetailsModal } from './CollectionDetailsModal.js';
 
 export class AISmartSearchEnhanced {
+    // Static property to track if an instance is currently open (fix multiple windows bug)
+    static isOpen = false;
+    
     /**
      * Create a new AISmartSearchEnhanced component
      * @param {Object} apiClient - STAC API client
@@ -74,6 +77,9 @@ export class AISmartSearchEnhanced {
             document.body.removeChild(this.fullscreenElement);
             this.fullscreenElement = null;
         }
+        
+        // 🔧 FIX: Mark as closed when cleaning up
+        AISmartSearchEnhanced.isOpen = false;
         
         // Remove all event listeners
         if (this.escapeListener) {
@@ -240,7 +246,24 @@ export class AISmartSearchEnhanced {
      */
     async showMinimalistSearch() {
         try {
+            // 🔧 FIX: Prevent multiple instances from opening
+            if (AISmartSearchEnhanced.isOpen) {
+                console.log('🚫 AI Smart Search is already open, bringing existing instance to front');
+                
+                // If already open, just bring it to front and show notification
+                if (this.fullscreenElement) {
+                    this.fullscreenElement.style.zIndex = '1100';
+                    this.fullscreenElement.focus();
+                }
+                
+                this.notificationService.showNotification('AI Smart Search is already open', 'info');
+                return;
+            }
+            
             console.log('🤖 Showing Enhanced AI Smart Search...');
+            
+            // Mark as open
+            AISmartSearchEnhanced.isOpen = true;
             
             // Show interface immediately
             this.createAndShowInterface();
@@ -250,6 +273,7 @@ export class AISmartSearchEnhanced {
             
         } catch (error) {
             console.error('❌ Error showing AI minimalist search:', error);
+            AISmartSearchEnhanced.isOpen = false; // Reset flag on error
             this.notificationService.showNotification('Error showing AI search interface', 'error');
         }
     }
@@ -1810,6 +1834,9 @@ export class AISmartSearchEnhanced {
     closeFullscreen() {
         this.closeAllDropdowns();
         
+        // 🔧 FIX: Mark as closed when closing fullscreen
+        AISmartSearchEnhanced.isOpen = false;
+        
         if (this.fullscreenElement && document.body.contains(this.fullscreenElement)) {
             if (this.escapeListener) {
                 document.removeEventListener('keydown', this.escapeListener);
@@ -1829,6 +1856,8 @@ export class AISmartSearchEnhanced {
             document.body.removeChild(this.fullscreenElement);
             this.fullscreenElement = null;
         }
+        
+        console.log('🤖 Enhanced AI Smart Search closed');
     }
     
     /**

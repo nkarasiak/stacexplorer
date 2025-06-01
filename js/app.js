@@ -19,8 +19,7 @@ import { CollectionManagerEnhanced } from './components/search/CollectionManager
 import { SearchForm } from './components/search/SearchForm.js';
 import { ResultsPanel } from './components/results/ResultsPanel.js';
 import { AISmartSearchEnhanced } from './components/search/AISmartSearchEnhanced.js';
-import { AISmartSearchInline } from './components/search/AISmartSearchInline.js';
-import { AISmartSearchInlineEnhanced } from './components/search/AISmartSearchInlineEnhanced.js';
+// Removed inline AI search imports - only using the full-screen version now
 
 // Import configuration
 import { CONFIG } from './config.js';
@@ -69,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
-        // Initialize AI Smart Search Enhanced component
+        // Initialize AI Smart Search Enhanced component (full-screen only)
         const aiSmartSearch = new AISmartSearchEnhanced(
             apiClient,
             searchPanel,
@@ -78,42 +77,35 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
-        // Initialize AI Smart Search Inline Enhanced component (primary interface)
-        const aiSmartSearchInlineEnhanced = new AISmartSearchInlineEnhanced(
-            apiClient,
-            searchPanel,
-            collectionManager,
-            mapManager,
-            notificationService
-        );
-        
-        // Initialize AI Smart Search Inline component (fallback)
-        const aiSmartSearchInline = new AISmartSearchInline(
-            apiClient,
-            searchPanel,
-            collectionManager,
-            mapManager,
-            notificationService
-        );
-        
-        // Render the enhanced inline AI search into the container
-        const inlineContainer = document.getElementById('ai-search-inline-container');
-        if (inlineContainer) {
-            aiSmartSearchInlineEnhanced.renderInlineEnhanced(inlineContainer);
-            console.log('🚀 AI Smart Search Inline Enhanced rendered successfully');
+        // 🔧 FIX: Set up the AI Search trigger button to open full-screen AI search
+        const aiSearchTriggerBtn = document.getElementById('ai-search-trigger-btn');
+        if (aiSearchTriggerBtn) {
+            aiSearchTriggerBtn.addEventListener('click', () => {
+                console.log('🚀 AI Search Trigger clicked - opening full-screen AI Smart Search');
+                
+                // Add visual feedback
+                const triggerCard = aiSearchTriggerBtn.closest('.ai-search-trigger-card');
+                if (triggerCard) {
+                    triggerCard.classList.add('clicked');
+                    setTimeout(() => triggerCard.classList.remove('clicked'), 150);
+                }
+                
+                // Open the full-screen AI Smart Search
+                aiSmartSearch.showMinimalistSearch();
+            });
+            
+            console.log('🎯 AI Search Trigger button initialized successfully');
         } else {
-            console.error('❌ AI Smart Search Inline container not found');
+            console.error('❌ AI Search Trigger button not found');
         }
         
-        // Initialize geometry sync for seamless integration
+        // Initialize geometry sync for seamless integration (simplified for full-screen only)
         const geometrySync = initializeGeometrySync({
             aiSmartSearch,
-            aiSmartSearchInline,
-            aiSmartSearchInlineEnhanced,
             mapManager,
             notificationService
         });
-        console.log('🔄 GeometrySync initialized - interfaces will sync with AI Search');
+        console.log('🔄 GeometrySync initialized - map will sync with AI Search');
         
         // Initialize state manager after all components are ready
         const stateManager = new StateManager(catalogSelector, mapManager, searchPanel);
@@ -138,7 +130,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Show welcome notification about the enhanced system  
         setTimeout(() => {
-            notificationService.showNotification('🚀 AI Smart Search Enhanced is ready! Click the expand icon in the search panel to get started.', 'info');
+            notificationService.showNotification('🚀 AI Smart Search is ready! Click "Open AI Smart Search" to get started.', 'info');
         }, 2000);
         
         // Sidebar is now visible by default - AI Smart Search Enhanced available via button click
@@ -165,8 +157,6 @@ document.addEventListener('DOMContentLoaded', function() {
             stateManager,
             shareManager,
             aiSmartSearch,
-            aiSmartSearchInline,
-            aiSmartSearchInlineEnhanced,
             geometrySync,
             config: CONFIG
         };

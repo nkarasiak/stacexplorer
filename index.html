@@ -31,8 +31,7 @@
     <!-- AI Smart Search Enhanced CSS -->
     <link rel="stylesheet" href="css/ai-smart-search-enhanced.css">
     <!-- Removed - AI Smart Search Inline CSS (no longer needed) -->
-    <!-- AI Smart Search Trigger CSS -->
-    <link rel="stylesheet" href="css/ai-search-trigger.css">
+    <!-- Removed - AI Smart Search Trigger CSS (no longer needed) -->
     <!-- Collection Details Modal CSS -->
     <link rel="stylesheet" href="css/collection-details-modal.css">
     <!-- Enhanced Results Buttons CSS -->
@@ -96,6 +95,41 @@
             color: #ddd;
             background-color: var(--surface-primary, #1a1a1a);
         }
+        
+        /* AI Search Info Styling */
+        .ai-search-info {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary, #666);
+        }
+        
+        .ai-search-info p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .ai-search-info kbd {
+            background: var(--surface-tertiary, #f1f5f9);
+            border: 1px solid var(--border-light, #e2e8f0);
+            border-radius: 4px;
+            padding: 2px 6px;
+            margin: 0 2px;
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary, #1a1a1a);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-theme .ai-search-info {
+            color: var(--text-secondary, #aaa);
+        }
+        
+        .dark-theme .ai-search-info kbd {
+            background: var(--surface-tertiary, #2a2a2a);
+            border-color: var(--border-dark, #444);
+            color: var(--text-primary, #ffffff);
+        }
     </style>
 </head>
 <body>
@@ -113,98 +147,12 @@
                 <div class="md-card" id="search-container">
                     <div class="md-card-header" id="search-container-header">
                         <h2><i class="material-icons">psychology</i> AI Smart Search</h2>
-                        <div class="header-actions">
-                            <button id="ai-search-btn" class="ai-button" title="Open AI Smart Search Enhanced" style="display: none;">
-                                <i class="material-icons">fullscreen</i>
-                            </button>
-                        </div>
                     </div>
                     <div class="md-card-body">
-                        <!-- Quick Setup Options (Removed) -->
-                        <div class="quick-setup" style="display: none;">
+                        <!-- Clean interface - full AI Smart Search available via keyboard shortcut or menu -->
+                        <div class="ai-search-info">
+                            <p>Press <kbd>Ctrl+K</kbd> or <kbd>Cmd+K</kbd> to open AI Smart Search</p>
                         </div>
-                        
-                        <!-- Simple Search Buttons -->
-                        <div class="global-search-summary" id="global-summary">
-                            <div class="summary-text">
-                                <span id="summary-details">Configure your search</span>
-                            </div>
-                            <div class="summary-actions">
-                                <button class="summary-btn" id="summary-search-btn">
-                                    <i class="material-icons">search</i> Search
-                                </button>
-                                <button class="summary-btn" id="summary-reset-btn">
-                                    <i class="material-icons">clear</i> Reset
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="search-buttons-container">
-                            <button id="execute-search" class="card-style-button card-style-button-primary">
-                                <i class="material-icons">search</i>
-                                Search
-                            </button>
-                            <button id="clear-all" class="card-style-button card-style-button-secondary reset-button">
-                                <i class="material-icons">clear</i>
-                                Clear
-                            </button>
-                        </div>
-
-                        <!-- AI Smart Search Trigger Interface -->
-                        <div id="ai-search-trigger-container" class="ai-search-trigger-wrapper">
-                            <div class="ai-search-trigger-card">
-                                <div class="ai-search-trigger-header">
-                                    <div class="ai-search-trigger-icon">
-                                        <i class="material-icons">psychology</i>
-                                    </div>
-                                    <div class="ai-search-trigger-content">
-                                        <h3>AI Smart Search</h3>
-                                        <p>Describe what you want in natural language</p>
-                                    </div>
-                                </div>
-                                
-                                <div class="ai-search-trigger-preview">
-                                    <div class="ai-search-preview-text">
-                                        <span class="ai-preview-highlight">"I want</span> <span class="ai-preview-field">Sentinel-2</span> <span class="ai-preview-highlight">over</span> <span class="ai-preview-field">Paris</span> <span class="ai-preview-highlight">at</span> <span class="ai-preview-field">2024</span> <span class="ai-preview-highlight">with</span> <span class="ai-preview-field">low clouds</span><span class="ai-preview-highlight">"</span>
-                                    </div>
-                                </div>
-                                
-                                <button class="ai-search-trigger-button" id="ai-search-trigger-btn">
-                                    <i class="material-icons">fullscreen</i>
-                                    <span>Open AI Smart Search</span>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- Hidden form inputs for compatibility -->
-                        <div style="display: none;">
-                            <select id="catalog-select">
-                                <option value="">Auto-detect from selected dataset</option>
-                                <option value="copernicus">🛰️ Copernicus Data Space</option>
-                                <option value="element84">🌍 Element84 Earth Search</option>
-                                <option value="custom">⚙️ Custom STAC Catalog</option>
-                            </select>
-                            <select id="collection-select">
-                                <option value="">All datasets</option>
-                            </select>
-                            <input type="text" id="bbox-input">
-                            <input type="date" id="date-start">
-                            <input type="date" id="date-end">
-                            <input type="checkbox" id="cloud-cover-enabled">
-                            <input type="range" id="cloud-cover" min="0" max="100" value="20">
-                            <span id="cloud-cover-value">20%</span>
-                            <input type="text" id="custom-catalog-url">
-                            <button id="connect-catalog-btn">Connect</button>
-                            <div id="custom-catalog-container"></div>
-                            <button id="criteria-draw-bbox-btn">Draw Area</button>
-                            <button id="collection-info-btn">Info</button>
-                            <button id="preset-2024">2024</button>
-                        </div>
-
-                        <!-- Action Buttons (Removed) -->
-                        
-                        <!-- Hidden inputs for compatibility -->
-                        <input type="hidden" id="search-input">
                     </div>
                 </div>
 

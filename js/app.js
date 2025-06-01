@@ -77,27 +77,17 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
-        // 🔧 FIX: Set up the AI Search trigger button to open full-screen AI search
-        const aiSearchTriggerBtn = document.getElementById('ai-search-trigger-btn');
-        if (aiSearchTriggerBtn) {
-            aiSearchTriggerBtn.addEventListener('click', () => {
-                console.log('🚀 AI Search Trigger clicked - opening full-screen AI Smart Search');
-                
-                // Add visual feedback
-                const triggerCard = aiSearchTriggerBtn.closest('.ai-search-trigger-card');
-                if (triggerCard) {
-                    triggerCard.classList.add('clicked');
-                    setTimeout(() => triggerCard.classList.remove('clicked'), 150);
-                }
-                
-                // Open the full-screen AI Smart Search
+        // 🔧 FIX: Set up keyboard shortcut (Ctrl+K / Cmd+K) to open AI Smart Search
+        document.addEventListener('keydown', (event) => {
+            // Check for Ctrl+K (Windows/Linux) or Cmd+K (Mac)
+            if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+                event.preventDefault(); // Prevent browser's default search
+                console.log('🚀 Keyboard shortcut triggered - opening AI Smart Search');
                 aiSmartSearch.showMinimalistSearch();
-            });
-            
-            console.log('🎯 AI Search Trigger button initialized successfully');
-        } else {
-            console.error('❌ AI Search Trigger button not found');
-        }
+            }
+        });
+        
+        console.log('⌨️ AI Smart Search keyboard shortcut (Ctrl+K / Cmd+K) initialized');
         
         // Initialize geometry sync for seamless integration (simplified for full-screen only)
         const geometrySync = initializeGeometrySync({
@@ -128,9 +118,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('date-end').value = formatDateForInput(endDate);
         }
         
-        // Show welcome notification about the enhanced system  
+        // Show welcome notification about the keyboard shortcut
         setTimeout(() => {
-            notificationService.showNotification('🚀 AI Smart Search is ready! Click "Open AI Smart Search" to get started.', 'info');
+            notificationService.showNotification('🚀 AI Smart Search is ready! Press Ctrl+K (or Cmd+K on Mac) to get started.', 'info');
         }, 2000);
         
         // Sidebar is now visible by default - AI Smart Search Enhanced available via button click

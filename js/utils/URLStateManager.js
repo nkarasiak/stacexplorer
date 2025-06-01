@@ -14,6 +14,7 @@ export class URLStateManager {
         // State tracking
         this.currentState = {};
         this.isUpdatingFromURL = false;
+        this.isApplyingState = false; // Prevent loops when applying state to interfaces
         this.updateTimeout = null;
         
         // URL parameter keys
@@ -60,29 +61,35 @@ export class URLStateManager {
     setupStateListeners() {
         // Listen for inline dropdown changes
         document.addEventListener('searchParameterChanged', (event) => {
-            if (!this.isUpdatingFromURL) {
+            if (!this.isUpdatingFromURL && !this.isApplyingState) {
                 console.log('[PARAM] Search parameter changed:', event.detail);
                 this.updateURLFromState(event.detail);
+            } else {
+                console.log('[PARAM] Ignoring parameter change (updating from URL or applying state)');
             }
         });
         
         // Listen for fullscreen AI search changes
         document.addEventListener('aiSearchStateChanged', (event) => {
-            if (!this.isUpdatingFromURL) {
+            if (!this.isUpdatingFromURL && !this.isApplyingState) {
                 console.log('[AI] AI search state changed:', event.detail);
                 this.updateURLFromState(event.detail);
+            } else {
+                console.log('[AI] Ignoring AI search change (updating from URL or applying state)');
             }
         });
         
         // Listen for map drawing completion
         document.addEventListener('geometrySelected', (event) => {
-            if (!this.isUpdatingFromURL) {
+            if (!this.isUpdatingFromURL && !this.isApplyingState) {
                 console.log('[MAP] Geometry selected:', event.detail);
                 this.updateURLFromState({
                     type: 'location',
                     locationBbox: event.detail.bbox,
                     locationName: event.detail.name || 'Map Selection'
                 });
+            } else {
+                console.log('[MAP] Ignoring geometry selection (updating from URL or applying state)');
             }
         });
     }
@@ -155,8 +162,8 @@ export class URLStateManager {
             
             console.log('[URL] URL updated:', newURL);
             
-            // Sync both interfaces
-            this.syncInterfaces();
+            // Note: Don't sync interfaces here as it can cause infinite loops
+            // Interfaces should already be up-to-date since they triggered this update
             
         } catch (error) {
             console.error('[ERROR] Error updating URL:', error);
@@ -233,23 +240,37 @@ export class URLStateManager {
      * @param {Object} state - State to apply
      */
     applyStateToInterfaces(state) {
-        // Apply to inline dropdown manager
-        if (this.inlineDropdownManager) {
-            this.applyStateToInlineDropdowns(state);
-        }
+        // Set flag to prevent triggering new events while applying state
+        this.isApplyingState = true;
         
-        // Apply to AI search
-        if (this.aiSmartSearch) {
-            this.applyStateToAISearch(state);
+        try {
+            console.log('[APPLY] Applying state to interfaces:', state);
+            
+            // Apply to inline dropdown manager
+            if (this.inlineDropdownManager) {
+                this.applyStateToInlineDropdowns(state);
+            }
+            
+            // Apply to AI search
+            if (this.aiSmartSearch) {
+                this.applyStateToAISearch(state);
+            }
+            
+            // Apply to map if geometry exists
+            if (state.locationBbox || state.geometry) {
+                this.applyStateToMap(state);
+            }
+            
+            // Apply to form fields
+            this.applyStateToFormFields(state);
+            
+        } finally {
+            // Always reset the flag, even if there's an error
+            setTimeout(() => {
+                this.isApplyingState = false;
+                console.log('[APPLY] State application complete, flag reset');
+            }, 500); // Short delay to ensure all async operations complete
         }
-        
-        // Apply to map if geometry exists
-        if (state.locationBbox || state.geometry) {
-            this.applyStateToMap(state);
-        }
-        
-        // Apply to form fields
-        this.applyStateToFormFields(state);
     }
     
     /**
@@ -499,11 +520,82 @@ export class URLStateManager {
     
     displayGeometryOnMap(geojson, name) {
         // Implementation for displaying geometry on map
-        // This would use the existing map display utilities
+        try {
+            if (this.mapManager && geojson) {
+                // Use the map manager's geometry display methods
+                if (typeof this.mapManager.addGeometry === 'function') {
+                    this.mapManager.addGeometry(geojson, {
+                        name: name || 'Selected Area',
+                        style: {
+                            fill: 'rgba(79, 70, 229, 0.2)',
+                            stroke: '#4f46e5',
+                            strokeWidth: 2
+                        }
+                    });
+                } else if (typeof this.mapManager.showGeometry === 'function') {
+                    this.mapManager.showGeometry(geojson, name);
+                }
+                console.log('[MAP] Geometry displayed on map:', name);
+            }
+        } catch (error) {
+            console.error('[ERROR] Error displaying geometry on map:', error);
+        }
     }
     
     displayBboxOnMap(bbox, name) {
         // Implementation for displaying bbox on map
-        // This would use the existing map display utilities
+        try {
+            if (this.mapManager && bbox && Array.isArray(bbox) && bbox.length === 4) {
+                const [west, south, east, north] = bbox;
+                
+                // Create a GeoJSON polygon from bbox coordinates
+                const bboxGeometry = {
+                    type: 'Feature',
+                    properties: {
+                        name: name || 'Selected Area'
+                    },
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[
+                            [west, south],
+                            [east, south], 
+                            [east, north],
+                            [west, north],
+                            [west, south]
+                        ]]
+                    }
+                };
+                
+                // Try multiple methods to display the bbox
+                if (typeof this.mapManager.addGeometry === 'function') {
+                    this.mapManager.addGeometry(bboxGeometry, {
+                        name: name || 'Selected Area',
+                        style: {
+                            fill: 'rgba(79, 70, 229, 0.2)',
+                            stroke: '#4f46e5',
+                            strokeWidth: 2
+                        }
+                    });
+                } else if (typeof this.mapManager.showGeometry === 'function') {
+                    this.mapManager.showGeometry(bboxGeometry, name);
+                } else if (typeof this.mapManager.addBoundingBox === 'function') {
+                    this.mapManager.addBoundingBox(bbox, name);
+                } else {
+                    // Fallback: try to add as a rectangle
+                    if (typeof this.mapManager.addRectangle === 'function') {
+                        this.mapManager.addRectangle(bbox, {
+                            name: name || 'Selected Area',
+                            fillColor: 'rgba(79, 70, 229, 0.2)',
+                            strokeColor: '#4f46e5',
+                            strokeWidth: 2
+                        });
+                    }
+                }
+                
+                console.log('[MAP] Bounding box displayed on map:', name, bbox);
+            }
+        } catch (error) {
+            console.error('[ERROR] Error displaying bounding box on map:', error);
+        }
     }
 }

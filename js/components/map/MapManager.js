@@ -697,39 +697,67 @@ class MapManager {
     }
 
 /**
-     * Display item geometry/boundaries on map
-     * @param {Object} item - STAC item with geometry
-     * @returns {Promise}
-     */
-    async displayItemGeometry(item) {
-        if (!this.isMapReady()) {
-            throw new Error('Map not initialized');
-        }
+* Display item geometry/boundaries on map with beautiful gradient
+* @param {Object} item - STAC item with geometry
+* @returns {Promise}
+*/
+async displayItemGeometry(item) {
+if (!this.isMapReady()) {
+throw new Error('Map not initialized');
+}
 
-        try {
-            // Clear any existing thumbnails first
+try {
+// Clear any existing layers first
+this.removeCurrentLayer();
             this.clearAllThumbnails();
 
-            // Prepare item for boundary display
-            const displayItem = {
-                id: item.id,
-                bbox: item.bbox || item.geometry?.bbox
-            };
+// Get bounding box
+let bbox = this.getBoundingBox(item);
+if (!bbox) {
+    console.warn('Item has no valid bbox or geometry');
+                throw new Error('No geometry available for this item');
+}
 
-            // If item has geometry but no bbox, calculate bbox from geometry
-            if (!displayItem.bbox && item.geometry) {
-                displayItem.bbox = this.calculateBboxFromGeometry(item.geometry);
+// Create beautiful geometry display
+let geojson;
+            if (item.geometry && item.geometry.type === 'Polygon') {
+    // Use the actual geometry if available
+    geojson = {
+                    type: 'Feature',
+        properties: {
+            title: item.properties?.title || item.title || item.id,
+        description: item.properties?.description || item.description || 'STAC Item Geometry'
+        },
+                    geometry: item.geometry
+    };
+} else {
+        // Create polygon from bbox
+    geojson = {
+        type: 'Feature', 
+            properties: {
+                    title: item.properties?.title || item.title || item.id,
+                        description: item.properties?.description || item.description || 'STAC Item Boundary'
+                    },
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[
+                            [bbox[0], bbox[3]], // northwest
+                            [bbox[2], bbox[3]], // northeast
+                            [bbox[2], bbox[1]], // southeast
+                            [bbox[0], bbox[1]], // southwest
+                            [bbox[0], bbox[3]]  // close polygon
+                        ]]
+                    }
+                };
             }
 
-            // Add bounding box to map
-            this.addBoundingBoxToMap(displayItem);
+            // Add beautiful gradient geometry layer
+            this.addBeautifulGeometryLayer(geojson, `geometry-${item.id}`);
 
             // Fit map to bounds
-            if (displayItem.bbox) {
-                this.fitToBounds(displayItem.bbox);
-            }
+            this.fitMapToBbox(bbox);
 
-            console.log(`📦 Displayed geometry for item ${item.id} on map`);
+            console.log(`🎨 Displayed beautiful gradient geometry for item ${item.id} on map`);
             return Promise.resolve();
         } catch (error) {
             console.error(`Failed to display item geometry:`, error);
@@ -1123,13 +1151,13 @@ class MapManager {
     }
     
         /**
-     * Add GeoJSON layer without tooltip
+     * Add GeoJSON layer without tooltip - with beautiful blue to purple gradient
      * @param {Array} bbox - Bounding box
      * @param {Object} item - STAC item
      */
     addGeoJsonLayerWithoutTooltip(bbox, item) {
-        // Just show the bounding box outline without any tooltip
-        this.addGeoJsonLayer({
+        // Create beautiful gradient geometry display
+        this.addBeautifulGeometryLayer({
             type: 'Feature',
             properties: {
                 title: item.title || item.id || 'Unknown Item',
@@ -1757,11 +1785,11 @@ class MapManager {
     }
     
     /**
-     * Add GeoJSON layer to map
+     * Add beautiful geometry layer with blue to purple gradient
      * @param {Object} geojson - GeoJSON object
      * @param {string} sourceId - Source ID
      */
-    addGeoJsonLayer(geojson, sourceId = 'item-geometry') {
+    addBeautifulGeometryLayer(geojson, sourceId = 'beautiful-geometry') {
         // Remove existing source and layers if they exist
         if (this.map.getSource(sourceId)) {
             // First remove any layers that use this source
@@ -1781,25 +1809,98 @@ class MapManager {
             data: geojson
         });
         
-        // Add fill layer
+        // Add animated fill layer with beautiful gradient-like effect
         this.map.addLayer({
-            id: `${sourceId}-fill`,
+            id: `${sourceId}-fill-glow`,
             type: 'fill',
             source: sourceId,
             paint: {
-                'fill-color': '#2196F3',
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, '#4A90E2',   // Beautiful blue at lower zoom
+                    10, '#8B5CF6', // Purple at medium zoom
+                    15, '#A855F7'  // Lighter purple at higher zoom
+                ],
+                'fill-opacity': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, 0.15,  // More transparent at lower zoom
+                    10, 0.25, // Medium opacity at medium zoom
+                    15, 0.35  // More opaque at higher zoom
+                ]
+            }
+        });
+        
+        // Add inner fill with gradient effect
+        this.map.addLayer({
+            id: `${sourceId}-fill-inner`,
+            type: 'fill',
+            source: sourceId,
+            paint: {
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, '#6366F1',   // Indigo blue
+                    10, '#8B5CF6',  // Purple
+                    15, '#A855F7'   // Light purple
+                ],
                 'fill-opacity': 0.1
             }
         });
         
-        // Add line layer
+        // Add beautiful gradient stroke
         this.map.addLayer({
-            id: `${sourceId}-line`,
+            id: `${sourceId}-stroke-outer`,
             type: 'line',
             source: sourceId,
             paint: {
-                'line-color': '#2196F3',
-                'line-width': 2
+                'line-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, '#3B82F6',   // Blue
+                    10, '#7C3AED',  // Purple
+                    15, '#9333EA'   // Bright purple
+                ],
+                'line-width': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, 2,
+                    10, 3,
+                    15, 4
+                ],
+                'line-opacity': 0.8
+            }
+        });
+        
+        // Add inner stroke for depth
+        this.map.addLayer({
+            id: `${sourceId}-stroke-inner`,
+            type: 'line',
+            source: sourceId,
+            paint: {
+                'line-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, '#60A5FA',   // Light blue
+                    10, '#A78BFA',  // Light purple
+                    15, '#C084FC'   // Very light purple
+                ],
+                'line-width': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, 1,
+                    10, 1.5,
+                    15, 2
+                ],
+                'line-opacity': 0.6
             }
         });
         
@@ -1826,6 +1927,18 @@ class MapManager {
                 return null;
             }
         };
+        
+        console.log('🎨 Added beautiful blue-to-purple gradient geometry layer');
+    }
+    
+    /**
+     * Add GeoJSON layer to map (legacy method, kept for compatibility)
+     * @param {Object} geojson - GeoJSON object
+     * @param {string} sourceId - Source ID
+     */
+    addGeoJsonLayer(geojson, sourceId = 'item-geometry') {
+        // Use the beautiful geometry layer instead
+        this.addBeautifulGeometryLayer(geojson, sourceId);
     }
     
     /**

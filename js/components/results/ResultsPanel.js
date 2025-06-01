@@ -271,17 +271,21 @@ export class ResultsPanel {
         li.dataset.id = item.id;
         li.setAttribute('data-id', item.id);
         
-        // Extract thumbnail URL
-        let thumbnailUrl = 'https://api.placeholder.com/300/200?text=No+Preview';
+        // Extract thumbnail URL - no placeholder fallback
+        let thumbnailUrl = null;
+        let hasThumbnail = false;
         
         // Check various potential thumbnail locations in the STAC item
         if (item.assets) {
             if (item.assets.thumbnail) {
                 thumbnailUrl = item.assets.thumbnail.href;
+                hasThumbnail = true;
             } else if (item.assets.preview) {
                 thumbnailUrl = item.assets.preview.href;
+                hasThumbnail = true;
             } else if (item.assets.overview) {
                 thumbnailUrl = item.assets.overview.href;
+                hasThumbnail = true;
             }
         }
         
@@ -396,22 +400,44 @@ export class ResultsPanel {
                 <pre class="json-content">${formattedJson}</pre>
             </div>
         `);
-        // Construct html
-        li.innerHTML = `
-            <div class="dataset-content">
-                <div class="thumbnail-container">
-                    <div class="dataset-metadata">
-                        <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
-                    </div>
-                    <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" onerror="this.src=''">
-                    <div class="thumbnail-overlay">
-                        <button class="info-btn details-btn" title="Show details">
-                            <i class="material-icons">info</i>
-                        </button>
+        // Construct html based on thumbnail availability
+        if (hasThumbnail && thumbnailUrl) {
+            li.innerHTML = `
+                <div class="dataset-content">
+                    <div class="thumbnail-container">
+                        <div class="dataset-metadata">
+                            <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
+                        </div>
+                        <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" onerror="this.handleThumbnailError(this)">
+                        <div class="thumbnail-overlay">
+                            <button class="info-btn details-btn" title="Show details">
+                                <i class="material-icons">info</i>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            // No thumbnail available - show minimal info with click to view geometry
+            li.innerHTML = `
+                <div class="dataset-content no-thumbnail">
+                    <div class="dataset-info">
+                        <div class="dataset-metadata">
+                            <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
+                        </div>
+                        <div class="dataset-title">${title}</div>
+                        <div class="dataset-action">
+                            <button class="view-geometry-btn" title="View geometry on map">
+                                <i class="material-icons">map</i> View on Map
+                            </button>
+                            <button class="info-btn details-btn" title="Show details">
+                                <i class="material-icons">info</i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
         
         // Add event listeners after creating the element
         this.attachItemEventListeners(li, item);
@@ -425,19 +451,23 @@ export class ResultsPanel {
      * @param {Object} item - STAC item data
      */
     attachItemEventListeners(element, item) {
-        // Add event listener to thumbnail
+        // Add event listener to thumbnail (if exists)
         const thumbnail = element.querySelector('.dataset-thumbnail');
         const infoBtn = element.querySelector('.info-btn');
+        const viewGeometryBtn = element.querySelector('.view-geometry-btn');
         
-        // Add click handler to thumbnail
-        thumbnail.addEventListener('click', () => {
+        // Function to handle map display with loading indicator
+        const displayOnMap = (useGeometry = false) => {
             // Show loading indicator
             document.getElementById('loading').style.display = 'flex';
             
             // Display item on map
             setTimeout(() => {
-                // Always use the thumbnail asset key when clicking View
-                this.mapManager.displayItemOnMap(item, 'thumbnail')
+                const displayPromise = useGeometry ? 
+                    this.mapManager.displayItemGeometry(item) :
+                    this.mapManager.displayItemOnMap(item, 'thumbnail');
+                    
+                displayPromise
                     .then(() => {
                         // Mark the item as active
                         document.querySelectorAll('.dataset-item').forEach(el => {
@@ -445,11 +475,11 @@ export class ResultsPanel {
                         });
                         element.classList.add('active');
                         
-                        // Dispatch item activated event with the thumbnail asset key
+                        // Dispatch item activated event
                         document.dispatchEvent(new CustomEvent('itemActivated', {
                             detail: { 
                                 itemId: item.id,
-                                assetKey: 'thumbnail'
+                                assetKey: useGeometry ? 'geometry' : 'thumbnail'
                             }
                         }));
                         
@@ -467,13 +497,95 @@ export class ResultsPanel {
                         document.getElementById('loading').style.display = 'none';
                     });
             }, 100); // Small delay to allow loading indicator to appear
-        });
+        };
+        
+        // Add click handler to thumbnail (if exists)
+        if (thumbnail) {
+            // Handle thumbnail error
+            thumbnail.onerror = () => {
+                // Hide the entire thumbnail container on error
+                const thumbnailContainer = element.querySelector('.thumbnail-container');
+                if (thumbnailContainer) {
+                    thumbnailContainer.style.display = 'none';
+                }
+                // Add a replacement view geometry button
+                this.addFallbackGeometryButton(element, item);
+            };
+            
+            thumbnail.addEventListener('click', () => displayOnMap(false));
+        }
+        
+        // Add click handler to view geometry button (for items without thumbnails)
+        if (viewGeometryBtn) {
+            viewGeometryBtn.addEventListener('click', () => displayOnMap(true));
+        }
         
         // Add event listener to info button
         if (infoBtn) {
             infoBtn.addEventListener('click', () => {
                 this.showModal(item);
             });
+        }
+    }
+    
+    /**
+     * Add fallback geometry button when thumbnail fails to load
+     * @param {HTMLElement} element - Dataset item element
+     * @param {Object} item - STAC item data
+     */
+    addFallbackGeometryButton(element, item) {
+        const content = element.querySelector('.dataset-content');
+        if (content && !content.querySelector('.view-geometry-btn')) {
+            const fallbackHtml = `
+                <div class="fallback-geometry-view">
+                    <button class="view-geometry-btn" title="View geometry on map">
+                        <i class="material-icons">map</i> View Geometry on Map
+                    </button>
+                </div>
+            `;
+            content.insertAdjacentHTML('beforeend', fallbackHtml);
+            
+            // Add event listener to the new button
+            const newBtn = content.querySelector('.view-geometry-btn');
+            if (newBtn) {
+                newBtn.addEventListener('click', () => {
+                    // Show loading indicator
+                    document.getElementById('loading').style.display = 'flex';
+                    
+                    // Display geometry on map
+                    setTimeout(() => {
+                        this.mapManager.displayItemGeometry(item)
+                            .then(() => {
+                                // Mark the item as active
+                                document.querySelectorAll('.dataset-item').forEach(el => {
+                                    el.classList.remove('active');
+                                });
+                                element.classList.add('active');
+                                
+                                // Dispatch item activated event
+                                document.dispatchEvent(new CustomEvent('itemActivated', {
+                                    detail: { 
+                                        itemId: item.id,
+                                        assetKey: 'geometry'
+                                    }
+                                }));
+                                
+                                // Expand tools panel if collapsed
+                                document.dispatchEvent(new CustomEvent('expandToolsPanel'));
+                                
+                                // Hide loading indicator
+                                document.getElementById('loading').style.display = 'none';
+                            })
+                            .catch(error => {
+                                this.notificationService.showNotification(
+                                    `Error displaying geometry on map: ${error.message}`, 
+                                    'error'
+                                );
+                                document.getElementById('loading').style.display = 'none';
+                            });
+                    }, 100);
+                });
+            }
         }
     }
     

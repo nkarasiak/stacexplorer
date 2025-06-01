@@ -102,20 +102,39 @@ export class InlineDropdownManager {
     interceptMapDrawing() {
         if (!this.mapManager) return;
         
+        console.log('🎯 Setting up comprehensive map drawing interception...');
+        
         // Store original method if it exists
         this.originalStartDrawing = this.mapManager.startDrawingBbox;
         
+        // Flag to track drawing state
+        this.isDrawingActive = false;
+        
         // Override the drawing method
         this.mapManager.startDrawingBbox = (callback) => {
-            console.log('🎯 Intercepted map drawing - will handle inline');
+            console.log('🎯 Intercepted map drawing - preventing fullscreen triggers');
+            
+            // Set drawing active flag
+            this.isDrawingActive = true;
+            
+            // Temporarily disable AI search fullscreen during drawing
+            this.temporarilyDisableAISearch();
             
             // Call original method with our custom callback
             if (this.originalStartDrawing) {
                 this.originalStartDrawing.call(this.mapManager, (bbox) => {
                     console.log('📍 Drawing completed, handling inline:', bbox);
                     
+                    // Reset drawing state
+                    this.isDrawingActive = false;
+                    
                     // Update location selection inline
                     this.handleDrawingComplete(bbox);
+                    
+                    // Re-enable AI search after a delay
+                    setTimeout(() => {
+                        this.restoreAISearch();
+                    }, 1000);
                     
                     // Call original callback if provided
                     if (callback && typeof callback === 'function') {
@@ -125,7 +144,99 @@ export class InlineDropdownManager {
             }
         };
         
-        console.log('🎯 Map drawing interception set up');
+        // Also intercept any global drawing events that might trigger fullscreen
+        this.interceptDrawingEvents();
+        
+        console.log('🎯 Map drawing interception set up with fullscreen prevention');
+    }
+    
+    /**
+     * Temporarily disable AI search fullscreen during drawing
+     */
+    temporarilyDisableAISearch() {
+        try {
+            console.log('🚫 Temporarily disabling fullscreen AI search during drawing');
+            
+            // Store original method and replace with no-op
+            if (this.aiSearchHelper && this.aiSearchHelper.showMinimalistSearch) {
+                this.originalShowMinimalistSearch = this.aiSearchHelper.showMinimalistSearch;
+                this.aiSearchHelper.showMinimalistSearch = () => {
+                    console.log('🚫 Blocked fullscreen AI search during drawing');
+                    return Promise.resolve();
+                };
+            }
+            
+            // Also disable global AI search if available
+            const globalAISearch = window.stacExplorer?.aiSmartSearch;
+            if (globalAISearch && globalAISearch.showMinimalistSearch) {
+                this.originalGlobalShowMinimalistSearch = globalAISearch.showMinimalistSearch;
+                globalAISearch.showMinimalistSearch = () => {
+                    console.log('🚫 Blocked global fullscreen AI search during drawing');
+                    return Promise.resolve();
+                };
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Error disabling AI search:', error);
+        }
+    }
+    
+    /**
+     * Restore AI search functionality after drawing
+     */
+    restoreAISearch() {
+        try {
+            console.log('✅ Restoring fullscreen AI search after drawing');
+            
+            // Restore original method
+            if (this.originalShowMinimalistSearch) {
+                this.aiSearchHelper.showMinimalistSearch = this.originalShowMinimalistSearch;
+                this.originalShowMinimalistSearch = null;
+            }
+            
+            // Restore global AI search
+            if (this.originalGlobalShowMinimalistSearch) {
+                const globalAISearch = window.stacExplorer?.aiSmartSearch;
+                if (globalAISearch) {
+                    globalAISearch.showMinimalistSearch = this.originalGlobalShowMinimalistSearch;
+                }
+                this.originalGlobalShowMinimalistSearch = null;
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Error restoring AI search:', error);
+        }
+    }
+    
+    /**
+     * Intercept any global drawing completion events
+     */
+    interceptDrawingEvents() {
+        // Listen for any drawing completion events
+        document.addEventListener('drawingCompleted', (event) => {
+            if (this.isDrawingActive) {
+                console.log('🎯 Intercepted drawing completion event');
+                event.stopPropagation();
+                event.preventDefault();
+                
+                // Handle the drawing result inline
+                const bbox = event.detail?.bbox;
+                if (bbox) {
+                    this.handleDrawingComplete(bbox);
+                }
+            }
+        }, true); // Use capture phase to intercept early
+        
+        // Also listen for any geometry sync events that might trigger fullscreen
+        document.addEventListener('geometryChanged', (event) => {
+            if (this.isDrawingActive) {
+                console.log('🎯 Intercepted geometry change event during drawing');
+                event.stopPropagation();
+                event.preventDefault();
+            }
+        }, true);
+        
+        console.log('🎯 Drawing event interception set up');
     }
     
     /**
@@ -405,7 +516,7 @@ export class InlineDropdownManager {
                 return;
             }
             
-            // Handle special buttons
+            // Handle draw on map option
             const drawBtn = e.target.closest('#draw-location');
             if (drawBtn) {
                 this.handleDrawLocation();

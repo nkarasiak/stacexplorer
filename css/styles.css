@@ -709,7 +709,6 @@ select.form-control {
 
 .dataset-content {
     padding: 6px;
-    min-height: 132px; /* Ensure parent container is tall enough (120px + 12px padding) */
 }
 
 .dataset-header {
@@ -1316,14 +1315,6 @@ select.form-control {
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-/* Date styling when there's no thumbnail image */
-.dataset-date.no-image {
-    color: var(--md-text-primary);
-    background-color: var(--md-surface);
-    text-shadow: none;
-    border: 1px solid var(--md-border-color);
-}
-
 .dataset-date i {
     margin-right: 6px;
     font-size: 14px;
@@ -1333,41 +1324,6 @@ select.form-control {
     position: relative;
     width: 100%;
     margin-bottom: 0px;
-    min-height: 120px !important; /* Force minimum height for all containers */
-    background-color: var(--md-surface-overlay);
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* When there's no thumbnail, show a subtle placeholder area */
-.thumbnail-container.no-thumbnail {
-    background: linear-gradient(135deg, var(--md-surface-overlay) 0%, var(--md-hover-overlay) 100%);
-    border: 1px dashed var(--md-border-color);
-}
-
-/* Add a subtle icon when no thumbnail */
-.thumbnail-container.no-thumbnail::before {
-    content: 'image';
-    font-family: 'Material Icons';
-    font-size: 48px;
-    color: var(--md-text-secondary);
-    opacity: 0.3;
-}
-
-/* Fallback: if no thumbnail section exists, still show placeholder */
-.thumbnail-container:not(:has(.thumbnail-section)) {
-    background: linear-gradient(135deg, var(--md-surface-overlay) 0%, var(--md-hover-overlay) 100%);
-    border: 1px dashed var(--md-border-color);
-}
-
-.thumbnail-container:not(:has(.thumbnail-section))::before {
-    content: 'image';
-    font-family: 'Material Icons';
-    font-size: 48px;
-    color: var(--md-text-secondary);
-    opacity: 0.3;
 }
 
 .dataset-thumbnail {
@@ -1383,37 +1339,6 @@ select.form-control {
     top: 0;
     right: 0;
     padding: 4px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.thumbnail-section {
-    width: 100%;
-    margin-bottom: 0;
-}
-
-.view-geometry-btn {
-    background-color: rgba(33, 150, 243, 0.8);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-.view-geometry-btn:hover {
-    background-color: rgba(33, 150, 243, 1);
-    transform: scale(1.05);
-}
-
-.view-geometry-btn i {
-    font-size: 18px;
 }
 
 .info-btn {
@@ -1432,16 +1357,6 @@ select.form-control {
 
 .info-btn:hover {
     background-color: rgba(0, 0, 0, 0.7);
-}
-
-/* Info button styling when there's no thumbnail image */
-.no-thumbnail .info-btn {
-    background-color: var(--md-text-secondary);
-    color: var(--md-surface);
-}
-
-.no-thumbnail .info-btn:hover {
-    background-color: var(--md-text-primary);
 }
 
 .info-btn i {

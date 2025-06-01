@@ -24,11 +24,13 @@ export class URLStateManager {
             location: 'l',
             locationName: 'ln',
             locationBbox: 'lb',
+            locationQuery: 'lq', // Original search query like "Nice"
             dateType: 'dt',
             dateStart: 'ds',
             dateEnd: 'de',
             cloudCover: 'cc',
-            geometry: 'g' // For WKT/GeoJSON
+            geometry: 'g', // For WKT/GeoJSON
+            geojson: 'gj' // For complete GeoJSON
         };
         
         this.initialize();
@@ -133,8 +135,14 @@ export class URLStateManager {
             if (this.currentState.locationName && this.currentState.locationName !== 'THE WORLD') {
                 urlParams.set(this.urlKeys.locationName, this.currentState.locationName);
             }
+            if (this.currentState.locationQuery) {
+                urlParams.set(this.urlKeys.locationQuery, this.currentState.locationQuery);
+            }
             if (this.currentState.geometry) {
                 urlParams.set(this.urlKeys.geometry, encodeURIComponent(this.currentState.geometry));
+            }
+            if (this.currentState.geojson) {
+                urlParams.set(this.urlKeys.geojson, encodeURIComponent(this.currentState.geojson));
             }
             
             // Date parameters
@@ -196,8 +204,14 @@ export class URLStateManager {
             if (urlParams.has(this.urlKeys.locationName)) {
                 restoredState.locationName = urlParams.get(this.urlKeys.locationName);
             }
+            if (urlParams.has(this.urlKeys.locationQuery)) {
+                restoredState.locationQuery = urlParams.get(this.urlKeys.locationQuery);
+            }
             if (urlParams.has(this.urlKeys.geometry)) {
                 restoredState.geometry = decodeURIComponent(urlParams.get(this.urlKeys.geometry));
+            }
+            if (urlParams.has(this.urlKeys.geojson)) {
+                restoredState.geojson = decodeURIComponent(urlParams.get(this.urlKeys.geojson));
             }
             
             // Date parameters

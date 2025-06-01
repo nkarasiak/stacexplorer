@@ -7,7 +7,6 @@
 import { AISmartSearchEnhanced } from '../search/AISmartSearchEnhanced.js';
 
 export class InlineDropdownManager {
-    /**
      * Create a new InlineDropdownManager
      * @param {Object} apiClient - STAC API client
      * @param {Object} searchPanel - Search panel for executing searches
@@ -30,6 +29,9 @@ export class InlineDropdownManager {
         this.currentDropdown = null;
         this.currentField = null;
         this.isLoading = false;
+        
+        // Track current location layer for cleanup
+        this.currentLocationLayerId = null;
         
         // Cache collections for performance
         this.collectionsCache = null;
@@ -1007,19 +1009,10 @@ export class InlineDropdownManager {
             
             resultsContainer.innerHTML = resultItems;
             
-            // Add click handlers
+            // Add click handlers with enhanced functionality (same as fullscreen AI search)
             resultsContainer.querySelectorAll('.ai-location-result').forEach(resultEl => {
                 resultEl.addEventListener('click', () => {
-                    const name = resultEl.dataset.name;
-                    const shortName = resultEl.dataset.shortName;
-                    const bbox = resultEl.dataset.bbox;
-                    
-                    if (bbox) {
-                        this.aiSearchHelper.selectedLocation = bbox.split(',').map(Number);
-                    }
-                    
-                    this.updateSearchSummary('location', (shortName || name).toUpperCase());
-                    this.closeCurrentDropdown();
+                    this.handleLocationSelectionEnhanced(resultEl, query);
                 });
             });
         });
@@ -1088,15 +1081,24 @@ export class InlineDropdownManager {
                     currentState.locationName = this.aiSearchHelper.selectedLocationResult.shortName || 
                                               this.aiSearchHelper.selectedLocationResult.formattedName;
                     
-                    // Include geometry if available
-                    if (this.aiSearchHelper.selectedLocationResult.geojson) {
-                        currentState.geometry = JSON.stringify(this.aiSearchHelper.selectedLocationResult.geojson);
+                    // Include geometry and query data if available
+                    const locationResult = this.aiSearchHelper.selectedLocationResult;
+                    
+                    // Include WKT geometry if available
+                    if (locationResult.wkt) {
+                        currentState.geometry = locationResult.wkt;
                     }
-                    if (this.aiSearchHelper.selectedLocationResult.originalText) {
-                        currentState.geometry = this.aiSearchHelper.selectedLocationResult.originalText;
+                    
+                    // Include original search query
+                    if (locationResult.originalQuery || locationResult.searchQuery) {
+                        currentState.locationQuery = locationResult.originalQuery || locationResult.searchQuery;
+                    }
+                    
+                    // Include GeoJSON if available
+                    if (locationResult.geojson) {
+                        currentState.geojson = JSON.stringify(locationResult.geojson);
                     }
                 }
-            }
             
             // Date state
             if (this.aiSearchHelper.selectedDate && this.aiSearchHelper.selectedDate.type !== 'anytime') {
@@ -1173,5 +1175,287 @@ export class InlineDropdownManager {
         });
         
         console.log('🎧 Global event listeners set up for inline dropdowns');
+    }
+    
+    /**
+     * Handle enhanced location selection with map display and zoom (same as fullscreen AI search)
+     * @param {HTMLElement} resultElement - Selected location result element
+     * @param {string} originalQuery - Original search query
+     */
+    handleLocationSelectionEnhanced(resultElement, originalQuery) {
+        try {
+            const bbox = resultElement.dataset.bbox;
+            const name = resultElement.dataset.name;
+            const shortName = resultElement.dataset.shortName;
+            const lat = parseFloat(resultElement.dataset.lat);
+            const lon = parseFloat(resultElement.dataset.lon);
+            const category = resultElement.dataset.category;
+            
+            console.log(`[LOCATION] Enhanced location selected: ${name}`, { bbox, lat, lon, category, originalQuery });
+            
+            // Store the location with complete information
+            let locationBbox;
+            if (bbox) {
+                locationBbox = bbox.split(',').map(Number);
+            } else {
+                // Fallback: create a small bbox around the point
+                const offset = 0.01; // ~1km
+                locationBbox = [lon - offset, lat - offset, lon + offset, lat + offset];
+            }
+            
+            this.aiSearchHelper.selectedLocation = locationBbox;
+            this.aiSearchHelper.selectedLocationResult = {
+                formattedName: name,
+                shortName: shortName,
+                bbox: locationBbox,
+                coordinates: [lon, lat],
+                category: 'searched',
+                originalQuery: originalQuery,
+                searchQuery: originalQuery // For URL state
+            };
+            
+            // Create GeoJSON geometry for the location
+            const [west, south, east, north] = locationBbox;
+            const locationGeometry = {
+                type: 'Feature',
+                properties: {
+                    name: name,
+                    category: category,
+                    query: originalQuery,
+                    type: 'location_geometry'
+                },
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [[
+                        [west, south],
+                        [east, south], 
+                        [east, north],
+                        [west, north],
+                        [west, south]
+                    ]]
+                }
+            };
+            
+            // Store geometry for URL state
+            this.aiSearchHelper.selectedLocationResult.geojson = locationGeometry;
+            this.aiSearchHelper.selectedLocationResult.wkt = this.geojsonToWKT(locationGeometry.geometry);
+            
+            // Update the display
+            this.updateSearchSummary('location', (shortName || name).toUpperCase());
+            
+            // Display location on map and zoom to it
+            this.displayLocationOnMap(locationBbox, name, category, locationGeometry);
+            
+            // Close dropdown
+            this.closeCurrentDropdown();
+            
+            // Show success notification
+            this.notificationService.showNotification(
+                `[LOCATION] Selected: ${shortName || name}`, 
+                'success'
+            );
+            
+            console.log(`[SUCCESS] Enhanced location selection complete for: ${name}`);
+            
+        } catch (error) {
+            console.error('[ERROR] Error in enhanced location selection:', error);
+            this.notificationService.showNotification('Error selecting location', 'error');
+        }
+    }
+    
+    /**
+     * Display location on map with geometry and zoom (same behavior as fullscreen AI search)
+     * @param {Array} bbox - Bounding box [west, south, east, north]
+     * @param {string} name - Location name
+     * @param {string} category - Location category
+     * @param {Object} locationGeometry - GeoJSON geometry
+     */
+    displayLocationOnMap(bbox, name, category, locationGeometry) {
+        if (!this.mapManager || !bbox || bbox.length !== 4) {
+            console.warn('[WARN] Cannot display location: missing mapManager or invalid bbox');
+            return;
+        }
+        
+        try {
+            console.log(`[MAP] Displaying location "${name}" on map:`, bbox);
+            
+            // Clear any previous location geometry first
+            this.clearPreviousLocationGeometry();
+            
+            // Generate unique layer ID
+            const layerId = `inline-location-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            this.currentLocationLayerId = layerId;
+            
+            // Use MapManager's addBeautifulGeometryLayer method directly
+            if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
+                this.mapManager.addBeautifulGeometryLayer(locationGeometry, layerId);
+                console.log(`[SUCCESS] Added beautiful geometry layer via MapManager: ${layerId}`);
+            } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
+                this.mapManager.addGeoJsonLayer(locationGeometry, layerId);
+                console.log(`[SUCCESS] Added GeoJSON layer via MapManager: ${layerId}`);
+            } else {
+                // Fallback: add directly to map
+                const map = this.mapManager.map || this.mapManager.getMap();
+                if (map) {
+                    // Add source
+                    map.addSource(layerId, {
+                        type: 'geojson',
+                        data: locationGeometry
+                    });
+                    
+                    // Add basic polygon layer
+                    map.addLayer({
+                        id: `${layerId}-fill`,
+                        type: 'fill',
+                        source: layerId,
+                        paint: {
+                            'fill-color': '#2196F3',
+                            'fill-opacity': 0.2
+                        }
+                    });
+                    
+                    // Add stroke
+                    map.addLayer({
+                        id: `${layerId}-stroke`,
+                        type: 'line',
+                        source: layerId,
+                        paint: {
+                            'line-color': '#2196F3',
+                            'line-width': 2
+                        }
+                    });
+                    
+                    console.log(`[SUCCESS] Added geometry layer directly to map: ${layerId}`);
+                }
+            }
+            
+            // Zoom to the location bounds using MapManager method
+            if (typeof this.mapManager.fitToBounds === 'function') {
+                this.mapManager.fitToBounds(bbox);
+            } else if (typeof this.mapManager.fitMapToBbox === 'function') {
+                this.mapManager.fitMapToBbox(bbox);
+            } else {
+                // Fallback: fit bounds directly
+                const map = this.mapManager.map || this.mapManager.getMap();
+                if (map) {
+                    const [west, south, east, north] = bbox;
+                    map.fitBounds([[west, south], [east, north]], { 
+                        padding: 50, 
+                        maxZoom: 16,
+                        duration: 1000 
+                    });
+                }
+            }
+            
+            console.log(`[SUCCESS] Location "${name}" successfully displayed and zoomed on map (Layer: ${layerId})`);
+            
+        } catch (mapError) {
+            console.error('[ERROR] Error displaying location on map:', mapError);
+            // Continue anyway - the location is still stored for search
+        }
+    }
+    
+    /**
+     * Clear previous location geometry from the map
+     */
+    clearPreviousLocationGeometry() {
+        if (!this.mapManager) {
+            return;
+        }
+        
+        try {
+            console.log('[CLEANUP] Clearing previous location geometry using MapManager');
+            
+            // Use MapManager's built-in cleanup method
+            if (typeof this.mapManager.removeCurrentLayer === 'function') {
+                this.mapManager.removeCurrentLayer();
+                console.log('[SUCCESS] Used MapManager.removeCurrentLayer()');
+            } else if (typeof this.mapManager.clearAllThumbnails === 'function') {
+                this.mapManager.clearAllThumbnails();
+                console.log('[SUCCESS] Used MapManager.clearAllThumbnails()');
+            }
+            
+            // Also clear any layers with our tracked ID if we have one
+            if (this.currentLocationLayerId) {
+                const map = this.mapManager.map || this.mapManager.getMap();
+                if (map) {
+                    // Find and remove all layers with this source ID or containing this ID
+                    const layersToRemove = [];
+                    
+                    if (map.getStyle && map.getStyle()) {
+                        const layers = map.getStyle().layers || [];
+                        layers.forEach(layer => {
+                            // Check if layer source matches or layer ID contains our ID
+                            if (layer.source === this.currentLocationLayerId || 
+                                layer.id.includes(this.currentLocationLayerId)) {
+                                layersToRemove.push(layer.id);
+                            }
+                        });
+                    }
+                    
+                    // Remove each found layer
+                    layersToRemove.forEach(layerId => {
+                        try {
+                            if (map.getLayer(layerId)) {
+                                map.removeLayer(layerId);
+                                console.log(`[SUCCESS] Removed layer: ${layerId}`);
+                            }
+                        } catch (layerError) {
+                            console.warn(`[WARN] Could not remove layer ${layerId}:`, layerError);
+                        }
+                    });
+                    
+                    // Remove the source
+                    try {
+                        if (map.getSource(this.currentLocationLayerId)) {
+                            map.removeSource(this.currentLocationLayerId);
+                            console.log(`[SUCCESS] Removed source: ${this.currentLocationLayerId}`);
+                        }
+                    } catch (sourceError) {
+                        console.warn(`[WARN] Could not remove source:`, sourceError);
+                    }
+                }
+            }
+            
+            this.currentLocationLayerId = null;
+            console.log('[SUCCESS] Successfully cleared previous location geometry');
+            
+        } catch (error) {
+            console.warn('[WARN] Error clearing previous location geometry:', error);
+            this.currentLocationLayerId = null;
+        }
+    }
+    
+    /**
+     * Convert GeoJSON geometry to WKT format
+     * @param {Object} geometry - GeoJSON geometry
+     * @returns {string} WKT string
+     */
+    geojsonToWKT(geometry) {
+        try {
+            if (!geometry || !geometry.type) {
+                return null;
+            }
+            
+            switch (geometry.type) {
+                case 'Polygon':
+                    if (geometry.coordinates && geometry.coordinates[0]) {
+                        const coords = geometry.coordinates[0].map(coord => `${coord[0]} ${coord[1]}`).join(', ');
+                        return `POLYGON((${coords}))`;
+                    }
+                    break;
+                case 'Point':
+                    if (geometry.coordinates) {
+                        return `POINT(${geometry.coordinates[0]} ${geometry.coordinates[1]})`;
+                    }
+                    break;
+                // Add more geometry types as needed
+            }
+            
+            return null;
+        } catch (error) {
+            console.warn('[WARN] Error converting GeoJSON to WKT:', error);
+            return null;
+        }
     }
 }

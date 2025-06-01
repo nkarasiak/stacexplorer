@@ -453,7 +453,7 @@ export class ResultsPanel {
     attachItemEventListeners(element, item) {
         // Add event listener to thumbnail (if exists)
         const thumbnail = element.querySelector('.dataset-thumbnail');
-        const infoBtn = element.querySelector('.info-btn');
+        const detailsBtn = element.querySelector('.details-btn'); // Select by specific class
         const viewMapBtn = element.querySelector('.view-map-btn');
         
         // Function to handle map display with loading indicator
@@ -512,17 +512,27 @@ export class ResultsPanel {
                 this.addFallbackGeometryButton(element, item);
             };
             
-            thumbnail.addEventListener('click', () => displayOnMap(false));
+            thumbnail.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                console.log('Thumbnail clicked for item:', item.id);
+                displayOnMap(false);
+            });
         }
         
         // Add click handler to view map button (for items without thumbnails)
         if (viewMapBtn) {
-            viewMapBtn.addEventListener('click', () => displayOnMap(true));
+            viewMapBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                console.log('Map button clicked for item:', item.id);
+                displayOnMap(true);
+            });
         }
         
-        // Add event listener to info button
-        if (infoBtn) {
-            infoBtn.addEventListener('click', () => {
+        // Add event listener to info/details button
+        if (detailsBtn) {
+            detailsBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                console.log('Details button clicked for item:', item.id);
                 this.showModal(item);
             });
         }
@@ -550,7 +560,9 @@ export class ResultsPanel {
             // Add event listener to the new button
             const newBtn = content.querySelector('.view-map-btn');
             if (newBtn) {
-                newBtn.addEventListener('click', () => {
+                newBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent event bubbling
+                    console.log('Fallback map button clicked for item:', item.id);
                     // Show loading indicator
                     document.getElementById('loading').style.display = 'flex';
                     

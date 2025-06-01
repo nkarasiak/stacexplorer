@@ -165,11 +165,11 @@ class SearchButtonFix {
             <span>Search</span>
         `;
         
-        // Enhanced styling for better visibility
+        // Enhanced styling with sidebar header gradient
         searchButton.style.cssText = `
             width: 100%;
             padding: 16px 20px;
-            background: linear-gradient(135deg, #2196F3 0%, #21CBF3 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 12px;
@@ -181,7 +181,7 @@ class SearchButtonFix {
             gap: 12px;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
             position: relative;
             overflow: hidden;
             font-family: 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -226,15 +226,15 @@ class SearchButtonFix {
         // Hover effect
         button.addEventListener('mouseenter', () => {
             button.style.transform = 'translateY(-3px) scale(1.02)';
-            button.style.boxShadow = '0 8px 25px rgba(33, 150, 243, 0.4)';
-            button.style.background = 'linear-gradient(135deg, #1976D2 0%, #0288D1 100%)';
+            button.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.4)';
+            button.style.background = 'linear-gradient(135deg, #5a6fd8 0%, #6b4a94 100%)';
         });
 
         button.addEventListener('mouseleave', () => {
             if (!button.disabled) {
                 button.style.transform = 'translateY(0) scale(1)';
-                button.style.boxShadow = '0 4px 12px rgba(33, 150, 243, 0.3)';
-                button.style.background = 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)';
+                button.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.3)';
+                button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
             }
         });
 
@@ -251,7 +251,7 @@ class SearchButtonFix {
 
         // Focus effect for accessibility
         button.addEventListener('focus', () => {
-            button.style.outline = '2px solid rgba(33, 150, 243, 0.5)';
+            button.style.outline = '2px solid rgba(102, 126, 234, 0.5)';
             button.style.outlineOffset = '2px';
         });
 
@@ -540,7 +540,7 @@ class SearchButtonFix {
             case 'normal':
             default:
                 button.disabled = false;
-                button.style.background = 'linear-gradient(135deg, #2196F3 0%, #21CBF3 100%)';
+                button.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                 button.style.cursor = 'pointer';
                 if (icon) {
                     icon.textContent = 'search';
@@ -552,39 +552,17 @@ class SearchButtonFix {
     }
 
     /**
-     * Show success indicator after button creation
+     * Show success indicator after button creation (disabled per user request)
      */
     showSuccessIndicator() {
+        // Success notification disabled per user request
+        console.log('[SEARCH-BUTTON-FIX] Search button created successfully (notification disabled)');
+        
         if (!this.isButtonVisible()) {
             console.warn('[SEARCH-BUTTON-FIX] Button created but not visible!');
             this.logButtonVisibility();
             return;
         }
-
-        // Create temporary success indicator
-        const indicator = document.createElement('div');
-        indicator.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #4CAF50;
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            z-index: 10000;
-            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
-            font-family: 'Roboto', sans-serif;
-        `;
-        indicator.textContent = '✅ Search button added to left menu!';
-        
-        document.body.appendChild(indicator);
-        
-        setTimeout(() => {
-            if (indicator.parentNode) {
-                indicator.parentNode.removeChild(indicator);
-            }
-        }, 3000);
     }
 
     /**
@@ -676,19 +654,15 @@ class SearchButtonFix {
 // Initialize the search button fix
 let searchButtonFix;
 
-// Auto-initialize when DOM is ready
+// Auto-initialize immediately when DOM is ready (no delay)
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            searchButtonFix = new SearchButtonFix();
-            searchButtonFix.addSpinAnimation();
-        }, 2000);
+        searchButtonFix = new SearchButtonFix();
+        searchButtonFix.addSpinAnimation();
     });
 } else {
-    setTimeout(() => {
-        searchButtonFix = new SearchButtonFix();  
-        searchButtonFix.addSpinAnimation();
-    }, 2000);
+    searchButtonFix = new SearchButtonFix();  
+    searchButtonFix.addSpinAnimation();
 }
 
 // Export for manual usage and debugging

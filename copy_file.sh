@@ -1,0 +1,1 @@
+cd /home/nkk/git/stacexplorer && git checkout main -- js/components/map/MapManager.js

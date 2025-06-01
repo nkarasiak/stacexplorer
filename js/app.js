@@ -110,16 +110,22 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService.showNotification('🤖 AI Smart Search ↔️ Search Dashboard are now fully integrated!', 'info');
         }, 3000);
         
-        // Show AI Smart Search Enhanced immediately (no delay)
-        if (aiSmartSearch && typeof aiSmartSearch.showMinimalistSearch === 'function') {
-            // Small delay to ensure DOM is ready, but not visible to user
-            setTimeout(() => {
-                aiSmartSearch.showMinimalistSearch();
-            }, 100);
+        // Only show AI Smart Search if there are no URL state parameters to restore
+        if (!stateManager.hasUrlStateParams()) {
+            console.log('🤖 No URL state detected, showing AI Smart Search');
+            // Show AI Smart Search Enhanced immediately (no delay)
+            if (aiSmartSearch && typeof aiSmartSearch.showMinimalistSearch === 'function') {
+                // Small delay to ensure DOM is ready, but not visible to user
+                setTimeout(() => {
+                    aiSmartSearch.showMinimalistSearch();
+                }, 100);
+            }
+        } else {
+            console.log('🔗 URL state parameters detected, skipping AI Smart Search auto-show');
         }
         
         // AI Smart Search Enhanced is ready
-        console.log('🤖 AI Smart Search Enhanced is ready and will open automatically!');
+        console.log('🤖 AI Smart Search Enhanced is ready!');
         
         console.log('STAC Catalog Explorer - Initialization complete');
         

@@ -1456,20 +1456,54 @@ export class AISmartSearchEnhanced {
         }
         
         try {
-            // Try different methods to remove the layer
-            if (typeof this.mapManager.removeLayer === 'function') {
-                this.mapManager.removeLayer(this.currentLocationLayerId);
-            } else if (typeof this.mapManager.removeGeoJsonLayer === 'function') {
-                this.mapManager.removeGeoJsonLayer(this.currentLocationLayerId);
-            } else if (typeof this.mapManager.clearGeometryLayer === 'function') {
-                this.mapManager.clearGeometryLayer(this.currentLocationLayerId);
+            const map = this.mapManager.map || this.mapManager.getMap();
+            if (!map) {
+                console.warn('⚠️ Map instance not available for cleanup');
+                return;
             }
             
-            console.log(`🧹 Cleared previous location geometry: ${this.currentLocationLayerId}`);
+            console.log(`🧹 Attempting to clear location geometry: ${this.currentLocationLayerId}`);
+            
+            // Remove all layers that use this source ID
+            const layersToRemove = [];
+            
+            // Get all layers and find ones that use our source
+            if (map.getStyle && map.getStyle()) {
+                const layers = map.getStyle().layers || [];
+                layers.forEach(layer => {
+                    if (layer.source === this.currentLocationLayerId) {
+                        layersToRemove.push(layer.id);
+                    }
+                });
+            }
+            
+            // Remove each layer
+            layersToRemove.forEach(layerId => {
+                try {
+                    if (map.getLayer(layerId)) {
+                        map.removeLayer(layerId);
+                        console.log(`✅ Removed layer: ${layerId}`);
+                    }
+                } catch (layerError) {
+                    console.warn(`⚠️ Could not remove layer ${layerId}:`, layerError);
+                }
+            });
+            
+            // Remove the source
+            try {
+                if (map.getSource(this.currentLocationLayerId)) {
+                    map.removeSource(this.currentLocationLayerId);
+                    console.log(`✅ Removed source: ${this.currentLocationLayerId}`);
+                }
+            } catch (sourceError) {
+                console.warn(`⚠️ Could not remove source ${this.currentLocationLayerId}:`, sourceError);
+            }
+            
+            console.log(`🧹 Successfully cleared previous location geometry: ${this.currentLocationLayerId}`);
             this.currentLocationLayerId = null;
             
         } catch (error) {
-            console.warn('⚠️ Could not remove previous location geometry:', error);
+            console.warn('⚠️ Error clearing previous location geometry:', error);
             // Reset the ID anyway to avoid accumulating references
             this.currentLocationLayerId = null;
         }

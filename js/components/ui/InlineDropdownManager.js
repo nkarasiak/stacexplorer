@@ -7,6 +7,7 @@
 import { AISmartSearchEnhanced } from '../search/AISmartSearchEnhanced.js';
 
 export class InlineDropdownManager {
+    /**
      * Create a new InlineDropdownManager
      * @param {Object} apiClient - STAC API client
      * @param {Object} searchPanel - Search panel for executing searches
@@ -1099,6 +1100,7 @@ export class InlineDropdownManager {
                         currentState.geojson = JSON.stringify(locationResult.geojson);
                     }
                 }
+            }
             
             // Date state
             if (this.aiSearchHelper.selectedDate && this.aiSearchHelper.selectedDate.type !== 'anytime') {

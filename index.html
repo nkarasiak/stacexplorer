@@ -172,6 +172,11 @@
                             <input type="range" id="cloud-cover" min="0" max="100" value="20">
                             <span id="cloud-cover-value">20%</span>
                             <input type="text" id="custom-catalog-url">
+                            <button id="connect-catalog-btn">Connect</button>
+                            <div id="custom-catalog-container"></div>
+                            <button id="criteria-draw-bbox-btn">Draw Area</button>
+                            <button id="collection-info-btn">Info</button>
+                            <button id="preset-2024">2024</button>
                         </div>
 
                         <!-- Action Buttons (Removed) -->
@@ -564,7 +569,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Wait a bit more to ensure all components are initialized
             setTimeout(function() {
-                // Get the button
+                // Get the button (now it's hidden but still needs to work)
                 const criteriaBboxBtn = document.getElementById('criteria-draw-bbox-btn');
                 
                 if (criteriaBboxBtn) {
@@ -574,7 +579,7 @@
                     
                     // Add a new event listener
                     newBtn.addEventListener('click', function() {
-                        console.log('Criteria Draw Bbox button clicked');
+                        console.log('Criteria Draw Bbox button clicked (hidden)');
                         
                         if (window.stacExplorer && window.stacExplorer.mapManager) {
                             console.log('Starting drawing mode...');
@@ -588,14 +593,38 @@
                             console.log('Drawing mode activated');
                         } else {
                             console.error('Map manager not available');
-                            alert('Drawing functionality is not available. Please refresh the page and try again.');
                         }
                     });
                     
-                    console.log('Draw Bounding Box button initialized');
+                    console.log('Draw Bounding Box button initialized (hidden)');
                 } else {
                     console.error('Could not find the criteria-draw-bbox-btn element');
                 }
+                
+                // Also set up the preset 2024 button
+                const preset2024Btn = document.getElementById('preset-2024');
+                if (preset2024Btn) {
+                    preset2024Btn.addEventListener('click', function() {
+                        console.log('2024 preset clicked (hidden)');
+                        document.getElementById('date-start').value = '2024-01-01';
+                        document.getElementById('date-end').value = '2024-12-31';
+                        // Trigger change events
+                        document.getElementById('date-start').dispatchEvent(new Event('change'));
+                        document.getElementById('date-end').dispatchEvent(new Event('change'));
+                    });
+                    console.log('2024 preset button initialized (hidden)');
+                }
+                
+                // Set up collection info button
+                const collectionInfoBtn = document.getElementById('collection-info-btn');
+                if (collectionInfoBtn) {
+                    collectionInfoBtn.addEventListener('click', function() {
+                        console.log('Collection info button clicked (hidden)');
+                        // This can be a no-op since the inline AI search handles collection details
+                    });
+                    console.log('Collection info button initialized (hidden)');
+                }
+                
             }, 1000); // Wait 1 second to ensure everything is loaded
         });
     </script>

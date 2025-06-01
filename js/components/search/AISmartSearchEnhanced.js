@@ -1238,9 +1238,44 @@ export class AISmartSearchEnhanced {
             locationField.classList.remove('empty');
         }
         
+        // 🔧 FIX: Display geometry on map and zoom to it
+        if (this.mapManager && geometryResult.geojson && geometryResult.bbox) {
+            try {
+                console.log('🗺️ Displaying pasted geometry on map:', geometryResult.type);
+                
+                // Display the geometry with beautiful styling
+                if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
+                    this.mapManager.addBeautifulGeometryLayer(
+                        geometryResult.geojson, 
+                        `pasted-geometry-${Date.now()}`
+                    );
+                } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
+                    this.mapManager.addGeoJsonLayer(
+                        geometryResult.geojson, 
+                        `pasted-geometry-${Date.now()}`
+                    );
+                }
+                
+                // Zoom to the geometry bounds
+                if (typeof this.mapManager.fitToBounds === 'function') {
+                    this.mapManager.fitToBounds(geometryResult.bbox);
+                } else if (typeof this.mapManager.fitMapToBbox === 'function') {
+                    this.mapManager.fitMapToBbox(geometryResult.bbox);
+                }
+                
+                console.log('✅ Geometry successfully displayed and zoomed on map');
+                
+            } catch (mapError) {
+                console.error('❌ Error displaying geometry on map:', mapError);
+                // Continue anyway - the geometry is still stored for search
+            }
+        } else {
+            console.warn('⚠️ MapManager not available or geometry data incomplete');
+        }
+        
         // Show success notification
         this.notificationService.showNotification(
-            `✅ ${geometryResult.type} geometry pasted successfully!`, 
+            `✅ ${geometryResult.type} geometry pasted and displayed on map!`, 
             'success'
         );
         
@@ -1797,8 +1832,31 @@ export class AISmartSearchEnhanced {
                 // If we have map manager and bbox, update the map
                 if (this.mapManager && params.bbox && params.bbox.length === 4) {
                     try {
-                        this.mapManager.setBboxFromCoordinates(params.bbox);
-                        console.log('✅ Updated map with bbox');
+                        // 🔧 FIX: If we have stored geometry from paste, display it properly
+                        if (this.selectedLocationResult && 
+                            this.selectedLocationResult.geojson && 
+                            this.selectedLocationResult.category === 'pasted') {
+                            
+                            console.log('🗺️ Re-displaying pasted geometry during search execution');
+                            
+                            // Display the actual geometry, not just bbox
+                            if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
+                                this.mapManager.addBeautifulGeometryLayer(
+                                    this.selectedLocationResult.geojson, 
+                                    `search-geometry-${Date.now()}`
+                                );
+                            }
+                            
+                            // Zoom to the geometry
+                            if (typeof this.mapManager.fitToBounds === 'function') {
+                                this.mapManager.fitToBounds(params.bbox);
+                            }
+                        } else {
+                            // Regular bbox handling
+                            this.mapManager.setBboxFromCoordinates(params.bbox);
+                        }
+                        
+                        console.log('✅ Updated map with geometry/bbox');
                     } catch (mapError) {
                         console.warn('⚠️ Could not update map with bbox:', mapError);
                     }

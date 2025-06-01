@@ -1572,28 +1572,60 @@ export class AISmartSearchEnhanced {
             
             // Execute the search with a small delay to ensure DOM updates
             setTimeout(() => {
-                if (this.searchPanel && typeof this.searchPanel.performSearch === 'function') {
-                    this.searchPanel.performSearch();
-                    console.log('✅ Search executed via searchPanel.performSearch()');
-                } else {
-                    // Fallback: trigger search button click
-                    const searchButton = document.getElementById('execute-search') || document.getElementById('summary-search-btn');
-                    if (searchButton) {
-                        searchButton.click();
-                        console.log('✅ Search executed via button click fallback');
+                // Check if we should use multi-source search for EVERYTHING mode
+                const shouldUseMultiSourceSearch = !params.collections || params.collections.length === 0;
+                
+                if (shouldUseMultiSourceSearch) {
+                    console.log('🌍 AI Smart Search: Using multi-source search for EVERYTHING mode');
+                    // Trigger multi-source search via CardSearchPanel
+                    if (this.searchPanel && typeof this.searchPanel.performMultiSourceSearch === 'function') {
+                        // Get search parameters from the form for multi-source search
+                        const searchParams = this.searchPanel.searchForm ? this.searchPanel.searchForm.getSearchParams() : {};
+                        
+                        // Merge with our AI search parameters
+                        const finalParams = {
+                            ...searchParams,
+                            ...params
+                        };
+                        
+                        // Remove collections parameter for true EVERYTHING search
+                        delete finalParams.collections;
+                        
+                        console.log('📡 AI Smart Search: Multi-source parameters:', finalParams);
+                        
+                        // Execute multi-source search
+                        this.searchPanel.performMultiSourceSearch(finalParams)
+                            .then(items => {
+                                console.log('✅ AI Smart Search: Multi-source search completed with', items.length, 'results');
+                                // Update results panel directly
+                                if (this.searchPanel.resultsPanel) {
+                                    this.searchPanel.resultsPanel.setItems(items);
+                                }
+                            })
+                            .catch(error => {
+                                console.error('❌ AI Smart Search: Multi-source search failed:', error);
+                                this.notificationService.showNotification(`Multi-source search failed: ${error.message}`, 'error');
+                            });
                     } else {
-                        console.error('❌ No search execution method available');
-                        this.notificationService.showNotification('Error: Could not execute search', 'error');
-                        return;
+                        console.warn('⚠️ AI Smart Search: Multi-source search not available, falling back to regular search');
+                        this.executeRegularSearch();
                     }
+                } else {
+                    console.log('🎯 AI Smart Search: Using regular search for specific collection');
+                    this.executeRegularSearch();
                 }
                 
                 // Show success notification after a brief delay
                 setTimeout(() => {
-                    const searchType = params.collections && params.collections.length > 0 ? 
-                        `specific collection (${params.collections[0]})` : 
-                        'ALL collections (🌍 EVERYTHING mode)';
-                    this.notificationService.showNotification(`Search executed successfully across ${searchType}! 🎉`, 'success');
+                    if (shouldUseMultiSourceSearch) {
+                        // Success notification handled by multi-source search method
+                        console.log('🌍 Multi-source search notification handled separately');
+                    } else {
+                        const searchType = params.collections && params.collections.length > 0 ? 
+                            `specific collection (${params.collections[0]})` : 
+                            'ALL collections (🌍 EVERYTHING mode)';
+                        this.notificationService.showNotification(`Search executed successfully across ${searchType}! 🎉`, 'success');
+                    }
                 }, 500);
                 
             }, 200);

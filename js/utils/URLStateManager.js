@@ -1,1 +1,509 @@
-/**\n * URLStateManager.js - Comprehensive URL state management for search synchronization\n * Ensures perfect sync between inline dropdowns and fullscreen search\n * Enables bookmarking, sharing, and state persistence via URL parameters\n */\n\nexport class URLStateManager {\n    constructor(inlineDropdownManager, aiSmartSearch, mapManager, notificationService) {\n        this.inlineDropdownManager = inlineDropdownManager;\n        this.aiSmartSearch = aiSmartSearch;\n        this.mapManager = mapManager;\n        this.notificationService = notificationService;\n        \n        // State tracking\n        this.currentState = {};\n        this.isUpdatingFromURL = false;\n        this.updateTimeout = null;\n        \n        // URL parameter keys\n        this.urlKeys = {\n            collection: 'c',\n            collectionSource: 'cs',\n            location: 'l',\n            locationName: 'ln',\n            locationBbox: 'lb',\n            dateType: 'dt',\n            dateStart: 'ds',\n            dateEnd: 'de',\n            cloudCover: 'cc',\n            geometry: 'g' // For WKT/GeoJSON\n        };\n        \n        this.initialize();\n    }\n    \n    /**\n     * Initialize URL state management\n     */\n    initialize() {\n        console.log('🔗 Initializing URL State Manager...');\n        \n        // Listen for browser back/forward\n        window.addEventListener('popstate', (event) => {\n            console.log('🔙 Browser navigation detected, restoring state');\n            this.restoreStateFromURL();\n        });\n        \n        // Listen for search parameter changes\n        this.setupStateListeners();\n        \n        // Restore state from URL on page load\n        this.restoreStateFromURL();\n        \n        console.log('✅ URL State Manager initialized');\n    }\n    \n    /**\n     * Set up listeners for search parameter changes\n     */\n    setupStateListeners() {\n        // Listen for inline dropdown changes\n        document.addEventListener('searchParameterChanged', (event) => {\n            if (!this.isUpdatingFromURL) {\n                console.log('📝 Search parameter changed:', event.detail);\n                this.updateURLFromState(event.detail);\n            }\n        });\n        \n        // Listen for fullscreen AI search changes\n        document.addEventListener('aiSearchStateChanged', (event) => {\n            if (!this.isUpdatingFromURL) {\n                console.log('🤖 AI search state changed:', event.detail);\n                this.updateURLFromState(event.detail);\n            }\n        });\n        \n        // Listen for map drawing completion\n        document.addEventListener('geometrySelected', (event) => {\n            if (!this.isUpdatingFromURL) {\n                console.log('🗺️ Geometry selected:', event.detail);\n                this.updateURLFromState({\n                    type: 'location',\n                    locationBbox: event.detail.bbox,\n                    locationName: event.detail.name || 'Map Selection'\n                });\n            }\n        });\n    }\n    \n    /**\n     * Update URL parameters from current state\n     * @param {Object} stateChange - Changed state parameters\n     */\n    updateURLFromState(stateChange) {\n        // Debounce URL updates\n        clearTimeout(this.updateTimeout);\n        this.updateTimeout = setTimeout(() => {\n            this.performURLUpdate(stateChange);\n        }, 300);\n    }\n    \n    /**\n     * Perform the actual URL update\n     * @param {Object} stateChange - Changed state parameters\n     */\n    performURLUpdate(stateChange) {\n        try {\n            // Update current state\n            Object.assign(this.currentState, stateChange);\n            \n            // Build URL parameters\n            const urlParams = new URLSearchParams();\n            \n            // Collection parameters\n            if (this.currentState.collection) {\n                urlParams.set(this.urlKeys.collection, this.currentState.collection);\n            }\n            if (this.currentState.collectionSource) {\n                urlParams.set(this.urlKeys.collectionSource, this.currentState.collectionSource);\n            }\n            \n            // Location parameters\n            if (this.currentState.locationBbox && Array.isArray(this.currentState.locationBbox)) {\n                urlParams.set(this.urlKeys.locationBbox, this.currentState.locationBbox.join(','));\n            }\n            if (this.currentState.locationName && this.currentState.locationName !== 'THE WORLD') {\n                urlParams.set(this.urlKeys.locationName, this.currentState.locationName);\n            }\n            if (this.currentState.geometry) {\n                urlParams.set(this.urlKeys.geometry, encodeURIComponent(this.currentState.geometry));\n            }\n            \n            // Date parameters\n            if (this.currentState.dateType && this.currentState.dateType !== 'anytime') {\n                urlParams.set(this.urlKeys.dateType, this.currentState.dateType);\n            }\n            if (this.currentState.dateStart) {\n                urlParams.set(this.urlKeys.dateStart, this.currentState.dateStart);\n            }\n            if (this.currentState.dateEnd) {\n                urlParams.set(this.urlKeys.dateEnd, this.currentState.dateEnd);\n            }\n            \n            // Other parameters\n            if (this.currentState.cloudCover && this.currentState.cloudCover !== 20) {\n                urlParams.set(this.urlKeys.cloudCover, this.currentState.cloudCover.toString());\n            }\n            \n            // Update URL without page reload\n            const newURL = urlParams.toString() ? \n                `${window.location.pathname}?${urlParams.toString()}` : \n                window.location.pathname;\n            \n            window.history.replaceState({ searchState: this.currentState }, '', newURL);\n            \n            console.log('🔗 URL updated:', newURL);\n            \n            // Sync both interfaces\n            this.syncInterfaces();\n            \n        } catch (error) {\n            console.error('❌ Error updating URL:', error);\n        }\n    }\n    \n    /**\n     * Restore state from URL parameters\n     */\n    restoreStateFromURL() {\n        try {\n            this.isUpdatingFromURL = true;\n            \n            const urlParams = new URLSearchParams(window.location.search);\n            const restoredState = {};\n            \n            // Collection parameters\n            if (urlParams.has(this.urlKeys.collection)) {\n                restoredState.collection = urlParams.get(this.urlKeys.collection);\n            }\n            if (urlParams.has(this.urlKeys.collectionSource)) {\n                restoredState.collectionSource = urlParams.get(this.urlKeys.collectionSource);\n            }\n            \n            // Location parameters\n            if (urlParams.has(this.urlKeys.locationBbox)) {\n                const bboxStr = urlParams.get(this.urlKeys.locationBbox);\n                restoredState.locationBbox = bboxStr.split(',').map(Number);\n            }\n            if (urlParams.has(this.urlKeys.locationName)) {\n                restoredState.locationName = urlParams.get(this.urlKeys.locationName);\n            }\n            if (urlParams.has(this.urlKeys.geometry)) {\n                restoredState.geometry = decodeURIComponent(urlParams.get(this.urlKeys.geometry));\n            }\n            \n            // Date parameters\n            if (urlParams.has(this.urlKeys.dateType)) {\n                restoredState.dateType = urlParams.get(this.urlKeys.dateType);\n            }\n            if (urlParams.has(this.urlKeys.dateStart)) {\n                restoredState.dateStart = urlParams.get(this.urlKeys.dateStart);\n            }\n            if (urlParams.has(this.urlKeys.dateEnd)) {\n                restoredState.dateEnd = urlParams.get(this.urlKeys.dateEnd);\n            }\n            \n            // Other parameters\n            if (urlParams.has(this.urlKeys.cloudCover)) {\n                restoredState.cloudCover = parseInt(urlParams.get(this.urlKeys.cloudCover));\n            }\n            \n            if (Object.keys(restoredState).length > 0) {\n                console.log('🔄 Restoring state from URL:', restoredState);\n                this.currentState = restoredState;\n                this.applyStateToInterfaces(restoredState);\n                \n                // Show notification\n                this.notificationService.showNotification('🔗 Search parameters restored from URL', 'info');\n            }\n            \n        } catch (error) {\n            console.error('❌ Error restoring state from URL:', error);\n        } finally {\n            // Reset flag after a delay to ensure all updates are complete\n            setTimeout(() => {\n                this.isUpdatingFromURL = false;\n            }, 1000);\n        }\n    }\n    \n    /**\n     * Apply restored state to both interfaces\n     * @param {Object} state - State to apply\n     */\n    applyStateToInterfaces(state) {\n        // Apply to inline dropdown manager\n        if (this.inlineDropdownManager) {\n            this.applyStateToInlineDropdowns(state);\n        }\n        \n        // Apply to AI search\n        if (this.aiSmartSearch) {\n            this.applyStateToAISearch(state);\n        }\n        \n        // Apply to map if geometry exists\n        if (state.locationBbox || state.geometry) {\n            this.applyStateToMap(state);\n        }\n        \n        // Apply to form fields\n        this.applyStateToFormFields(state);\n    }\n    \n    /**\n     * Apply state to inline dropdowns\n     * @param {Object} state - State to apply\n     */\n    applyStateToInlineDropdowns(state) {\n        try {\n            const aiHelper = this.inlineDropdownManager.aiSearchHelper;\n            \n            // Collection state\n            if (state.collection !== undefined) {\n                aiHelper.selectedCollection = state.collection;\n                aiHelper.selectedCollectionSource = state.collectionSource;\n                \n                const displayName = state.collection ? \n                    this.getCollectionDisplayName(state.collection) : 'EVERYTHING';\n                this.inlineDropdownManager.updateSearchSummary('collection', displayName);\n            }\n            \n            // Location state\n            if (state.locationBbox || state.locationName) {\n                aiHelper.selectedLocation = state.locationBbox || 'everywhere';\n                if (state.locationBbox) {\n                    aiHelper.selectedLocationResult = {\n                        formattedName: state.locationName || 'Custom Location',\n                        shortName: state.locationName || 'Custom Location',\n                        bbox: state.locationBbox,\n                        category: 'restored'\n                    };\n                }\n                \n                const displayName = state.locationName || 'THE WORLD';\n                this.inlineDropdownManager.updateSearchSummary('location', displayName.toUpperCase());\n            }\n            \n            // Date state\n            if (state.dateType) {\n                aiHelper.selectedDate = {\n                    type: state.dateType,\n                    start: state.dateStart,\n                    end: state.dateEnd,\n                    preset: state.dateType !== 'custom' ? state.dateType : null\n                };\n                \n                let displayText = 'ANYTIME';\n                if (state.dateType === 'thismonth') {\n                    displayText = 'THIS MONTH';\n                } else if (state.dateType === 'custom' && state.dateStart && state.dateEnd) {\n                    displayText = `${state.dateStart} to ${state.dateEnd}`.toUpperCase();\n                }\n                \n                this.inlineDropdownManager.updateSearchSummary('date', displayText);\n            }\n            \n            // Cloud cover\n            if (state.cloudCover !== undefined) {\n                aiHelper.cloudCover = state.cloudCover;\n            }\n            \n            console.log('✅ State applied to inline dropdowns');\n            \n        } catch (error) {\n            console.error('❌ Error applying state to inline dropdowns:', error);\n        }\n    }\n    \n    /**\n     * Apply state to AI search interface\n     * @param {Object} state - State to apply\n     */\n    applyStateToAISearch(state) {\n        try {\n            // Collection state\n            if (state.collection !== undefined) {\n                this.aiSmartSearch.selectedCollection = state.collection;\n                this.aiSmartSearch.selectedCollectionSource = state.collectionSource;\n            }\n            \n            // Location state\n            if (state.locationBbox || state.locationName) {\n                this.aiSmartSearch.selectedLocation = state.locationBbox || 'everywhere';\n                if (state.locationBbox) {\n                    this.aiSmartSearch.selectedLocationResult = {\n                        formattedName: state.locationName || 'Custom Location',\n                        shortName: state.locationName || 'Custom Location',\n                        bbox: state.locationBbox,\n                        category: 'restored'\n                    };\n                }\n            }\n            \n            // Date state\n            if (state.dateType) {\n                this.aiSmartSearch.selectedDate = {\n                    type: state.dateType,\n                    start: state.dateStart,\n                    end: state.dateEnd,\n                    preset: state.dateType !== 'custom' ? state.dateType : null\n                };\n            }\n            \n            // Cloud cover\n            if (state.cloudCover !== undefined) {\n                this.aiSmartSearch.cloudCover = state.cloudCover;\n            }\n            \n            console.log('✅ State applied to AI search');\n            \n        } catch (error) {\n            console.error('❌ Error applying state to AI search:', error);\n        }\n    }\n    \n    /**\n     * Apply state to map\n     * @param {Object} state - State to apply\n     */\n    applyStateToMap(state) {\n        try {\n            if (this.mapManager && (state.locationBbox || state.geometry)) {\n                // Clear previous geometry\n                if (typeof this.mapManager.clearAllThumbnails === 'function') {\n                    this.mapManager.clearAllThumbnails();\n                }\n                \n                if (state.geometry) {\n                    // Handle WKT/GeoJSON geometry\n                    const geometryResult = this.parseGeometry(state.geometry);\n                    if (geometryResult) {\n                        this.displayGeometryOnMap(geometryResult.geojson, state.locationName);\n                        if (geometryResult.bbox) {\n                            this.mapManager.fitToBounds(geometryResult.bbox);\n                        }\n                    }\n                } else if (state.locationBbox) {\n                    // Handle bounding box\n                    this.displayBboxOnMap(state.locationBbox, state.locationName);\n                    this.mapManager.fitToBounds(state.locationBbox);\n                }\n                \n                console.log('✅ State applied to map');\n            }\n        } catch (error) {\n            console.error('❌ Error applying state to map:', error);\n        }\n    }\n    \n    /**\n     * Apply state to form fields\n     * @param {Object} state - State to apply\n     */\n    applyStateToFormFields(state) {\n        try {\n            // Date fields\n            if (state.dateStart) {\n                const startInput = document.getElementById('date-start');\n                if (startInput) startInput.value = state.dateStart;\n            }\n            if (state.dateEnd) {\n                const endInput = document.getElementById('date-end');\n                if (endInput) endInput.value = state.dateEnd;\n            }\n            \n            // Collection field\n            if (state.collection !== undefined) {\n                const collectionSelect = document.getElementById('collection-select');\n                if (collectionSelect) collectionSelect.value = state.collection;\n            }\n            \n            // Bbox field\n            if (state.locationBbox) {\n                const bboxInput = document.getElementById('bbox-input');\n                if (bboxInput) bboxInput.value = state.locationBbox.join(',');\n            }\n            \n            console.log('✅ State applied to form fields');\n            \n        } catch (error) {\n            console.error('❌ Error applying state to form fields:', error);\n        }\n    }\n    \n    /**\n     * Synchronize both interfaces to ensure consistency\n     */\n    syncInterfaces() {\n        if (!this.isUpdatingFromURL) {\n            // Apply current state to both interfaces\n            this.applyStateToInterfaces(this.currentState);\n        }\n    }\n    \n    /**\n     * Get shareable URL with current search parameters\n     * @returns {string} Shareable URL\n     */\n    getShareableURL() {\n        return window.location.href;\n    }\n    \n    /**\n     * Copy current search URL to clipboard\n     */\n    async copySearchURL() {\n        try {\n            const url = this.getShareableURL();\n            await navigator.clipboard.writeText(url);\n            this.notificationService.showNotification('🔗 Search URL copied to clipboard!', 'success');\n            return url;\n        } catch (error) {\n            console.error('❌ Error copying URL:', error);\n            this.notificationService.showNotification('❌ Failed to copy URL', 'error');\n            return null;\n        }\n    }\n    \n    /**\n     * Clear all search parameters from URL\n     */\n    clearURLParameters() {\n        window.history.replaceState({}, '', window.location.pathname);\n        this.currentState = {};\n        this.notificationService.showNotification('🗑️ Search parameters cleared from URL', 'info');\n    }\n    \n    /**\n     * Utility methods\n     */\n    getCollectionDisplayName(collectionId) {\n        // Try to get display name from available collections\n        const collections = this.inlineDropdownManager?.aiSearchHelper?.allAvailableCollections;\n        if (collections) {\n            const collection = collections.find(c => c.id === collectionId);\n            if (collection) {\n                return collection.displayTitle || collection.title || collectionId;\n            }\n        }\n        return collectionId;\n    }\n    \n    parseGeometry(geometryString) {\n        // Implementation for parsing WKT/GeoJSON\n        // This would use the existing geometry parsing utilities\n        return null; // Placeholder\n    }\n    \n    displayGeometryOnMap(geojson, name) {\n        // Implementation for displaying geometry on map\n        // This would use the existing map display utilities\n    }\n    \n    displayBboxOnMap(bbox, name) {\n        // Implementation for displaying bbox on map\n        // This would use the existing map display utilities\n    }\n}\n
+/**
+ * URLStateManager.js - Comprehensive URL state management for search synchronization
+ * Ensures perfect sync between inline dropdowns and fullscreen search
+ * Enables bookmarking, sharing, and state persistence via URL parameters
+ */
+
+export class URLStateManager {
+    constructor(inlineDropdownManager, aiSmartSearch, mapManager, notificationService) {
+        this.inlineDropdownManager = inlineDropdownManager;
+        this.aiSmartSearch = aiSmartSearch;
+        this.mapManager = mapManager;
+        this.notificationService = notificationService;
+        
+        // State tracking
+        this.currentState = {};
+        this.isUpdatingFromURL = false;
+        this.updateTimeout = null;
+        
+        // URL parameter keys
+        this.urlKeys = {
+            collection: 'c',
+            collectionSource: 'cs',
+            location: 'l',
+            locationName: 'ln',
+            locationBbox: 'lb',
+            dateType: 'dt',
+            dateStart: 'ds',
+            dateEnd: 'de',
+            cloudCover: 'cc',
+            geometry: 'g' // For WKT/GeoJSON
+        };
+        
+        this.initialize();
+    }
+    
+    /**
+     * Initialize URL state management
+     */
+    initialize() {
+        console.log('[URL] Initializing URL State Manager...');
+        
+        // Listen for browser back/forward
+        window.addEventListener('popstate', (event) => {
+            console.log('[NAV] Browser navigation detected, restoring state');
+            this.restoreStateFromURL();
+        });
+        
+        // Listen for search parameter changes
+        this.setupStateListeners();
+        
+        // Restore state from URL on page load
+        this.restoreStateFromURL();
+        
+        console.log('[SUCCESS] URL State Manager initialized');
+    }
+    
+    /**
+     * Set up listeners for search parameter changes
+     */
+    setupStateListeners() {
+        // Listen for inline dropdown changes
+        document.addEventListener('searchParameterChanged', (event) => {
+            if (!this.isUpdatingFromURL) {
+                console.log('[PARAM] Search parameter changed:', event.detail);
+                this.updateURLFromState(event.detail);
+            }
+        });
+        
+        // Listen for fullscreen AI search changes
+        document.addEventListener('aiSearchStateChanged', (event) => {
+            if (!this.isUpdatingFromURL) {
+                console.log('[AI] AI search state changed:', event.detail);
+                this.updateURLFromState(event.detail);
+            }
+        });
+        
+        // Listen for map drawing completion
+        document.addEventListener('geometrySelected', (event) => {
+            if (!this.isUpdatingFromURL) {
+                console.log('[MAP] Geometry selected:', event.detail);
+                this.updateURLFromState({
+                    type: 'location',
+                    locationBbox: event.detail.bbox,
+                    locationName: event.detail.name || 'Map Selection'
+                });
+            }
+        });
+    }
+    
+    /**
+     * Update URL parameters from current state
+     * @param {Object} stateChange - Changed state parameters
+     */
+    updateURLFromState(stateChange) {
+        // Debounce URL updates
+        clearTimeout(this.updateTimeout);
+        this.updateTimeout = setTimeout(() => {
+            this.performURLUpdate(stateChange);
+        }, 300);
+    }
+    
+    /**
+     * Perform the actual URL update
+     * @param {Object} stateChange - Changed state parameters
+     */
+    performURLUpdate(stateChange) {
+        try {
+            // Update current state
+            Object.assign(this.currentState, stateChange);
+            
+            // Build URL parameters
+            const urlParams = new URLSearchParams();
+            
+            // Collection parameters
+            if (this.currentState.collection) {
+                urlParams.set(this.urlKeys.collection, this.currentState.collection);
+            }
+            if (this.currentState.collectionSource) {
+                urlParams.set(this.urlKeys.collectionSource, this.currentState.collectionSource);
+            }
+            
+            // Location parameters
+            if (this.currentState.locationBbox && Array.isArray(this.currentState.locationBbox)) {
+                urlParams.set(this.urlKeys.locationBbox, this.currentState.locationBbox.join(','));
+            }
+            if (this.currentState.locationName && this.currentState.locationName !== 'THE WORLD') {
+                urlParams.set(this.urlKeys.locationName, this.currentState.locationName);
+            }
+            if (this.currentState.geometry) {
+                urlParams.set(this.urlKeys.geometry, encodeURIComponent(this.currentState.geometry));
+            }
+            
+            // Date parameters
+            if (this.currentState.dateType && this.currentState.dateType !== 'anytime') {
+                urlParams.set(this.urlKeys.dateType, this.currentState.dateType);
+            }
+            if (this.currentState.dateStart) {
+                urlParams.set(this.urlKeys.dateStart, this.currentState.dateStart);
+            }
+            if (this.currentState.dateEnd) {
+                urlParams.set(this.urlKeys.dateEnd, this.currentState.dateEnd);
+            }
+            
+            // Other parameters
+            if (this.currentState.cloudCover && this.currentState.cloudCover !== 20) {
+                urlParams.set(this.urlKeys.cloudCover, this.currentState.cloudCover.toString());
+            }
+            
+            // Update URL without page reload
+            const newURL = urlParams.toString() ? 
+                `${window.location.pathname}?${urlParams.toString()}` : 
+                window.location.pathname;
+            
+            window.history.replaceState({ searchState: this.currentState }, '', newURL);
+            
+            console.log('[URL] URL updated:', newURL);
+            
+            // Sync both interfaces
+            this.syncInterfaces();
+            
+        } catch (error) {
+            console.error('[ERROR] Error updating URL:', error);
+        }
+    }
+    
+    /**
+     * Restore state from URL parameters
+     */
+    restoreStateFromURL() {
+        try {
+            this.isUpdatingFromURL = true;
+            
+            const urlParams = new URLSearchParams(window.location.search);
+            const restoredState = {};
+            
+            // Collection parameters
+            if (urlParams.has(this.urlKeys.collection)) {
+                restoredState.collection = urlParams.get(this.urlKeys.collection);
+            }
+            if (urlParams.has(this.urlKeys.collectionSource)) {
+                restoredState.collectionSource = urlParams.get(this.urlKeys.collectionSource);
+            }
+            
+            // Location parameters
+            if (urlParams.has(this.urlKeys.locationBbox)) {
+                const bboxStr = urlParams.get(this.urlKeys.locationBbox);
+                restoredState.locationBbox = bboxStr.split(',').map(Number);
+            }
+            if (urlParams.has(this.urlKeys.locationName)) {
+                restoredState.locationName = urlParams.get(this.urlKeys.locationName);
+            }
+            if (urlParams.has(this.urlKeys.geometry)) {
+                restoredState.geometry = decodeURIComponent(urlParams.get(this.urlKeys.geometry));
+            }
+            
+            // Date parameters
+            if (urlParams.has(this.urlKeys.dateType)) {
+                restoredState.dateType = urlParams.get(this.urlKeys.dateType);
+            }
+            if (urlParams.has(this.urlKeys.dateStart)) {
+                restoredState.dateStart = urlParams.get(this.urlKeys.dateStart);
+            }
+            if (urlParams.has(this.urlKeys.dateEnd)) {
+                restoredState.dateEnd = urlParams.get(this.urlKeys.dateEnd);
+            }
+            
+            // Other parameters
+            if (urlParams.has(this.urlKeys.cloudCover)) {
+                restoredState.cloudCover = parseInt(urlParams.get(this.urlKeys.cloudCover));
+            }
+            
+            if (Object.keys(restoredState).length > 0) {
+                console.log('[RESTORE] Restoring state from URL:', restoredState);
+                this.currentState = restoredState;
+                this.applyStateToInterfaces(restoredState);
+                
+                // Show notification
+                this.notificationService.showNotification('[URL] Search parameters restored from URL', 'info');
+            }
+            
+        } catch (error) {
+            console.error('[ERROR] Error restoring state from URL:', error);
+        } finally {
+            // Reset flag after a delay to ensure all updates are complete
+            setTimeout(() => {
+                this.isUpdatingFromURL = false;
+            }, 1000);
+        }
+    }
+    
+    /**
+     * Apply restored state to both interfaces
+     * @param {Object} state - State to apply
+     */
+    applyStateToInterfaces(state) {
+        // Apply to inline dropdown manager
+        if (this.inlineDropdownManager) {
+            this.applyStateToInlineDropdowns(state);
+        }
+        
+        // Apply to AI search
+        if (this.aiSmartSearch) {
+            this.applyStateToAISearch(state);
+        }
+        
+        // Apply to map if geometry exists
+        if (state.locationBbox || state.geometry) {
+            this.applyStateToMap(state);
+        }
+        
+        // Apply to form fields
+        this.applyStateToFormFields(state);
+    }
+    
+    /**
+     * Apply state to inline dropdowns
+     * @param {Object} state - State to apply
+     */
+    applyStateToInlineDropdowns(state) {
+        try {
+            const aiHelper = this.inlineDropdownManager.aiSearchHelper;
+            
+            // Collection state
+            if (state.collection !== undefined) {
+                aiHelper.selectedCollection = state.collection;
+                aiHelper.selectedCollectionSource = state.collectionSource;
+                
+                const displayName = state.collection ? 
+                    this.getCollectionDisplayName(state.collection) : 'EVERYTHING';
+                this.inlineDropdownManager.updateSearchSummary('collection', displayName);
+            }
+            
+            // Location state
+            if (state.locationBbox || state.locationName) {
+                aiHelper.selectedLocation = state.locationBbox || 'everywhere';
+                if (state.locationBbox) {
+                    aiHelper.selectedLocationResult = {
+                        formattedName: state.locationName || 'Custom Location',
+                        shortName: state.locationName || 'Custom Location',
+                        bbox: state.locationBbox,
+                        category: 'restored'
+                    };
+                }
+                
+                const displayName = state.locationName || 'THE WORLD';
+                this.inlineDropdownManager.updateSearchSummary('location', displayName.toUpperCase());
+            }
+            
+            // Date state
+            if (state.dateType) {
+                aiHelper.selectedDate = {
+                    type: state.dateType,
+                    start: state.dateStart,
+                    end: state.dateEnd,
+                    preset: state.dateType !== 'custom' ? state.dateType : null
+                };
+                
+                let displayText = 'ANYTIME';
+                if (state.dateType === 'thismonth') {
+                    displayText = 'THIS MONTH';
+                } else if (state.dateType === 'custom' && state.dateStart && state.dateEnd) {
+                    displayText = `${state.dateStart} to ${state.dateEnd}`.toUpperCase();
+                }
+                
+                this.inlineDropdownManager.updateSearchSummary('date', displayText);
+            }
+            
+            // Cloud cover
+            if (state.cloudCover !== undefined) {
+                aiHelper.cloudCover = state.cloudCover;
+            }
+            
+            console.log('[SUCCESS] State applied to inline dropdowns');
+            
+        } catch (error) {
+            console.error('[ERROR] Error applying state to inline dropdowns:', error);
+        }
+    }
+    
+    /**
+     * Apply state to AI search interface
+     * @param {Object} state - State to apply
+     */
+    applyStateToAISearch(state) {
+        try {
+            // Collection state
+            if (state.collection !== undefined) {
+                this.aiSmartSearch.selectedCollection = state.collection;
+                this.aiSmartSearch.selectedCollectionSource = state.collectionSource;
+            }
+            
+            // Location state
+            if (state.locationBbox || state.locationName) {
+                this.aiSmartSearch.selectedLocation = state.locationBbox || 'everywhere';
+                if (state.locationBbox) {
+                    this.aiSmartSearch.selectedLocationResult = {
+                        formattedName: state.locationName || 'Custom Location',
+                        shortName: state.locationName || 'Custom Location',
+                        bbox: state.locationBbox,
+                        category: 'restored'
+                    };
+                }
+            }
+            
+            // Date state
+            if (state.dateType) {
+                this.aiSmartSearch.selectedDate = {
+                    type: state.dateType,
+                    start: state.dateStart,
+                    end: state.dateEnd,
+                    preset: state.dateType !== 'custom' ? state.dateType : null
+                };
+            }
+            
+            // Cloud cover
+            if (state.cloudCover !== undefined) {
+                this.aiSmartSearch.cloudCover = state.cloudCover;
+            }
+            
+            console.log('[SUCCESS] State applied to AI search');
+            
+        } catch (error) {
+            console.error('[ERROR] Error applying state to AI search:', error);
+        }
+    }
+    
+    /**
+     * Apply state to map
+     * @param {Object} state - State to apply
+     */
+    applyStateToMap(state) {
+        try {
+            if (this.mapManager && (state.locationBbox || state.geometry)) {
+                // Clear previous geometry
+                if (typeof this.mapManager.clearAllThumbnails === 'function') {
+                    this.mapManager.clearAllThumbnails();
+                }
+                
+                if (state.geometry) {
+                    // Handle WKT/GeoJSON geometry
+                    const geometryResult = this.parseGeometry(state.geometry);
+                    if (geometryResult) {
+                        this.displayGeometryOnMap(geometryResult.geojson, state.locationName);
+                        if (geometryResult.bbox) {
+                            this.mapManager.fitToBounds(geometryResult.bbox);
+                        }
+                    }
+                } else if (state.locationBbox) {
+                    // Handle bounding box
+                    this.displayBboxOnMap(state.locationBbox, state.locationName);
+                    this.mapManager.fitToBounds(state.locationBbox);
+                }
+                
+                console.log('[SUCCESS] State applied to map');
+            }
+        } catch (error) {
+            console.error('[ERROR] Error applying state to map:', error);
+        }
+    }
+    
+    /**
+     * Apply state to form fields
+     * @param {Object} state - State to apply
+     */
+    applyStateToFormFields(state) {
+        try {
+            // Date fields
+            if (state.dateStart) {
+                const startInput = document.getElementById('date-start');
+                if (startInput) startInput.value = state.dateStart;
+            }
+            if (state.dateEnd) {
+                const endInput = document.getElementById('date-end');
+                if (endInput) endInput.value = state.dateEnd;
+            }
+            
+            // Collection field
+            if (state.collection !== undefined) {
+                const collectionSelect = document.getElementById('collection-select');
+                if (collectionSelect) collectionSelect.value = state.collection;
+            }
+            
+            // Bbox field
+            if (state.locationBbox) {
+                const bboxInput = document.getElementById('bbox-input');
+                if (bboxInput) bboxInput.value = state.locationBbox.join(',');
+            }
+            
+            console.log('[SUCCESS] State applied to form fields');
+            
+        } catch (error) {
+            console.error('[ERROR] Error applying state to form fields:', error);
+        }
+    }
+    
+    /**
+     * Synchronize both interfaces to ensure consistency
+     */
+    syncInterfaces() {
+        if (!this.isUpdatingFromURL) {
+            // Apply current state to both interfaces
+            this.applyStateToInterfaces(this.currentState);
+        }
+    }
+    
+    /**
+     * Get shareable URL with current search parameters
+     * @returns {string} Shareable URL
+     */
+    getShareableURL() {
+        return window.location.href;
+    }
+    
+    /**
+     * Copy current search URL to clipboard
+     */
+    async copySearchURL() {
+        try {
+            const url = this.getShareableURL();
+            await navigator.clipboard.writeText(url);
+            this.notificationService.showNotification('[URL] Search URL copied to clipboard!', 'success');
+            return url;
+        } catch (error) {
+            console.error('[ERROR] Error copying URL:', error);
+            this.notificationService.showNotification('[ERROR] Failed to copy URL', 'error');
+            return null;
+        }
+    }
+    
+    /**
+     * Clear all search parameters from URL
+     */
+    clearURLParameters() {
+        window.history.replaceState({}, '', window.location.pathname);
+        this.currentState = {};
+        this.notificationService.showNotification('[CLEAR] Search parameters cleared from URL', 'info');
+    }
+    
+    /**
+     * Utility methods
+     */
+    getCollectionDisplayName(collectionId) {
+        // Try to get display name from available collections
+        const collections = this.inlineDropdownManager?.aiSearchHelper?.allAvailableCollections;
+        if (collections) {
+            const collection = collections.find(c => c.id === collectionId);
+            if (collection) {
+                return collection.displayTitle || collection.title || collectionId;
+            }
+        }
+        return collectionId;
+    }
+    
+    parseGeometry(geometryString) {
+        // Implementation for parsing WKT/GeoJSON
+        // This would use the existing geometry parsing utilities
+        return null; // Placeholder
+    }
+    
+    displayGeometryOnMap(geojson, name) {
+        // Implementation for displaying geometry on map
+        // This would use the existing map display utilities
+    }
+    
+    displayBboxOnMap(bbox, name) {
+        // Implementation for displaying bbox on map
+        // This would use the existing map display utilities
+    }
+}

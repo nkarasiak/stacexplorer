@@ -325,17 +325,33 @@ export class InlineDropdownManager {
      */
     async showInlineDropdown(fieldType, triggerElement) {
         try {
-            // IMPORTANT: Close any existing dropdown first
-            this.closeCurrentDropdown();
+            // IMPORTANT: Close any existing dropdown first with force cleanup
+            this.forceCloseCurrentDropdown();
             
-            // Prevent multiple dropdowns during loading
+            // Prevent multiple dropdowns during loading with timeout fallback
             if (this.isLoading) {
-                console.log('⏳ Already loading dropdown, please wait...');
-                return;
+                console.log('⏳ Already loading dropdown, attempting recovery...');
+                // If loading state persists for more than 10 seconds, force reset
+                if (!this.loadingStartTime || (Date.now() - this.loadingStartTime) > 10000) {
+                    console.warn('⚠️ Loading state stuck, forcing reset...');
+                    this.forceReset();
+                } else {
+                    return;
+                }
             }
             
             console.log(`📋 Opening inline dropdown for: ${fieldType}`);
             this.isLoading = true;
+            this.loadingStartTime = Date.now();
+            
+            // Set up automatic timeout to prevent stuck loading states
+            this.loadingTimeout = setTimeout(() => {
+                if (this.isLoading) {
+                    console.warn('⚠️ Dropdown loading timeout, forcing reset...');
+                    this.forceReset();
+                    this.notificationService.showNotification('Dropdown loading timeout - please try again', 'warning');
+                }
+            }, 15000); // 15 second timeout
             
             // Show loading state immediately
             this.showLoadingDropdown(fieldType, triggerElement);
@@ -358,23 +374,35 @@ export class InlineDropdownManager {
                     break;
                 default:
                     console.warn(`Unknown field type: ${fieldType}`);
-                    this.isLoading = false;
-                    return;
+                    throw new Error(`Unknown field type: ${fieldType}`);
+            }
+            
+            // Validate dropdown content
+            if (!dropdownContent) {
+                throw new Error(`Failed to create dropdown content for ${fieldType}`);
             }
             
             // Replace loading dropdown with actual content
             this.replaceLoadingWithContent(dropdownContent, fieldType);
             
             // Ensure dropdown is visible after content is loaded
-        this.ensureDropdownVisible();
-        
-        console.log(`✅ Showed inline dropdown for: ${fieldType}`);
+            this.ensureDropdownVisible();
+            
+            console.log(`✅ Showed inline dropdown for: ${fieldType}`);
             
         } catch (error) {
             console.error(`❌ Error showing inline dropdown for ${fieldType}:`, error);
             this.notificationService.showNotification(`Error opening ${fieldType} options`, 'error');
+            // Force cleanup on error
+            this.forceReset();
         } finally {
+            // Clear timeout and reset loading state
+            if (this.loadingTimeout) {
+                clearTimeout(this.loadingTimeout);
+                this.loadingTimeout = null;
+            }
             this.isLoading = false;
+            this.loadingStartTime = null;
         }
     }
     
@@ -1269,58 +1297,311 @@ export class InlineDropdownManager {
     }
     
     /**
-     * Close current dropdown
+     * Close current dropdown with enhanced error handling
      */
     closeCurrentDropdown() {
-        if (this.currentDropdown) {
-            // Animate out
-            this.currentDropdown.style.opacity = '0';
-            this.currentDropdown.style.transform = 'translateY(-10px)';
-            
-            setTimeout(() => {
-                if (this.currentDropdown && this.currentDropdown.parentNode) {
-                    this.currentDropdown.parentNode.removeChild(this.currentDropdown);
+        try {
+            if (this.currentDropdown) {
+                // Animate out if possible
+                try {
+                    this.currentDropdown.style.opacity = '0';
+                    this.currentDropdown.style.transform = 'translateY(-10px)';
+                } catch (styleError) {
+                    console.warn('⚠️ Error setting animation styles:', styleError);
                 }
-                this.currentDropdown = null;
-            }, 200);
+                
+                // Remove dropdown after animation or immediately on error
+                const removeDropdown = () => {
+                    try {
+                        if (this.currentDropdown && this.currentDropdown.parentNode) {
+                            this.currentDropdown.parentNode.removeChild(this.currentDropdown);
+                        }
+                    } catch (removeError) {
+                        console.warn('⚠️ Error removing dropdown from DOM:', removeError);
+                    }
+                    this.currentDropdown = null;
+                };
+                
+                // Try animated removal, but fallback to immediate removal
+                try {
+                    setTimeout(removeDropdown, 200);
+                } catch (timeoutError) {
+                    removeDropdown(); // Immediate removal if setTimeout fails
+                }
+            }
             
             // Remove active state from ALL trigger elements
-            const activeItems = document.querySelectorAll('.dropdown-active');
-            activeItems.forEach(item => {
-                item.classList.remove('dropdown-active');
-                // Reset hover styles
-                item.style.transform = 'translateX(0)';
-                item.style.backgroundColor = 'transparent';
-            });
+            try {
+                const activeItems = document.querySelectorAll('.dropdown-active');
+                activeItems.forEach(item => {
+                    try {
+                        item.classList.remove('dropdown-active');
+                        // Reset hover styles
+                        item.style.transform = 'translateX(0)';
+                        item.style.backgroundColor = 'transparent';
+                    } catch (itemError) {
+                        console.warn('⚠️ Error resetting item styles:', itemError);
+                    }
+                });
+            } catch (cleanupError) {
+                console.warn('⚠️ Error cleaning up active items:', cleanupError);
+            }
             
+            // Always reset these states
             this.currentField = null;
-            this.isLoading = false; // Reset loading state
+            this.isLoading = false;
+            this.loadingStartTime = null;
             
-            console.log('🚪 Closed inline dropdown');
+            // Clear any pending timeouts
+            if (this.loadingTimeout) {
+                clearTimeout(this.loadingTimeout);
+                this.loadingTimeout = null;
+            }
+            
+            console.log('🚪 Closed inline dropdown successfully');
+            
+        } catch (error) {
+            console.error('❌ Error closing dropdown, forcing reset:', error);
+            this.forceReset();
         }
     }
     
     /**
-     * Set up global event listeners
+     * Force close current dropdown without animations - more aggressive cleanup
+     */
+    forceCloseCurrentDropdown() {
+        try {
+            // Immediately remove dropdown without animation
+            if (this.currentDropdown) {
+                try {
+                    if (this.currentDropdown.parentNode) {
+                        this.currentDropdown.parentNode.removeChild(this.currentDropdown);
+                    }
+                } catch (removeError) {
+                    console.warn('⚠️ Error force removing dropdown:', removeError);
+                }
+                this.currentDropdown = null;
+            }
+            
+            // Force cleanup active states
+            try {
+                const activeItems = document.querySelectorAll('.dropdown-active');
+                activeItems.forEach(item => {
+                    item.classList.remove('dropdown-active');
+                    item.style.transform = '';
+                    item.style.backgroundColor = '';
+                });
+            } catch (cleanupError) {
+                console.warn('⚠️ Error in force cleanup:', cleanupError);
+            }
+            
+            // Reset all states
+            this.currentField = null;
+            this.isLoading = false;
+            this.loadingStartTime = null;
+            
+            if (this.loadingTimeout) {
+                clearTimeout(this.loadingTimeout);
+                this.loadingTimeout = null;
+            }
+            
+            console.log('🚪 Force closed dropdown');
+            
+        } catch (error) {
+            console.error('❌ Critical error in force close, using nuclear reset:', error);
+            this.forceReset();
+        }
+    }
+    
+    /**
+     * Nuclear option: force reset everything to clean state
+     */
+    forceReset() {
+        try {
+            console.warn('🔄 Executing force reset of dropdown manager...');
+            
+            // Clear all timeouts
+            if (this.loadingTimeout) {
+                clearTimeout(this.loadingTimeout);
+                this.loadingTimeout = null;
+            }
+            
+            // Remove all dropdown elements forcefully
+            try {
+                const allDropdowns = document.querySelectorAll('.inline-dropdown-container, .debug-inline-dropdown');
+                allDropdowns.forEach(dropdown => {
+                    try {
+                        if (dropdown.parentNode) {
+                            dropdown.parentNode.removeChild(dropdown);
+                        }
+                    } catch (removeError) {
+                        console.warn('⚠️ Error removing dropdown in reset:', removeError);
+                    }
+                });
+            } catch (findError) {
+                console.warn('⚠️ Error finding dropdowns to remove:', findError);
+            }
+            
+            // Clear all active states
+            try {
+                const allActiveItems = document.querySelectorAll('.dropdown-active');
+                allActiveItems.forEach(item => {
+                    item.classList.remove('dropdown-active');
+                    item.style.cssText = ''; // Clear all inline styles
+                });
+            } catch (activeError) {
+                console.warn('⚠️ Error clearing active states:', activeError);
+            }
+            
+            // Reset all internal state
+            this.currentDropdown = null;
+            this.currentField = null;
+            this.isLoading = false;
+            this.loadingStartTime = null;
+            
+            console.log('✅ Force reset completed successfully');
+            
+        } catch (criticalError) {
+            console.error('❌ Critical error in force reset - manual intervention may be required:', criticalError);
+            // Last resort: just reset internal state
+            this.currentDropdown = null;
+            this.currentField = null;
+            this.isLoading = false;
+            this.loadingStartTime = null;
+            this.loadingTimeout = null;
+        }
+    }
+    
+    /**
+     * Set up global event listeners with enhanced error handling
      */
     setupGlobalListeners() {
-        // Close dropdown when clicking outside
-        document.addEventListener('click', (e) => {
-            if (this.currentDropdown && 
-                !this.currentDropdown.contains(e.target) && 
-                !e.target.closest('.search-summary-item')) {
-                this.closeCurrentDropdown();
+        // Enhanced click outside handler
+        this.globalClickHandler = (e) => {
+            try {
+                if (this.currentDropdown && 
+                    !this.currentDropdown.contains(e.target) && 
+                    !e.target.closest('.search-summary-item')) {
+                    console.log('👆 Click outside detected, closing dropdown');
+                    this.closeCurrentDropdown();
+                }
+            } catch (error) {
+                console.warn('⚠️ Error in global click handler:', error);
+                this.forceReset();
             }
-        });
+        };
         
-        // Close dropdown on escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.currentDropdown) {
-                this.closeCurrentDropdown();
+        // Enhanced escape key handler
+        this.globalEscapeHandler = (e) => {
+            try {
+                if (e.key === 'Escape' && this.currentDropdown) {
+                    console.log('⌨️ Escape key pressed, closing dropdown');
+                    this.closeCurrentDropdown();
+                }
+            } catch (error) {
+                console.warn('⚠️ Error in escape handler:', error);
+                this.forceReset();
             }
-        });
+        };
         
-        console.log('🎧 Global event listeners set up for inline dropdowns');
+        // Enhanced page visibility handler - close dropdowns when page becomes hidden
+        this.visibilityChangeHandler = () => {
+            try {
+                if (document.hidden && this.currentDropdown) {
+                    console.log('👁️ Page hidden, closing dropdown');
+                    this.forceCloseCurrentDropdown();
+                }
+            } catch (error) {
+                console.warn('⚠️ Error in visibility handler:', error);
+                this.forceReset();
+            }
+        };
+        
+        // Add all event listeners
+        document.addEventListener('click', this.globalClickHandler, { passive: true });
+        document.addEventListener('keydown', this.globalEscapeHandler, { passive: true });
+        document.addEventListener('visibilitychange', this.visibilityChangeHandler, { passive: true });
+        
+        // Add window blur handler to close dropdowns when user switches tabs/windows
+        this.windowBlurHandler = () => {
+            try {
+                if (this.currentDropdown) {
+                    console.log('🪟 Window blur detected, closing dropdown');
+                    this.forceCloseCurrentDropdown();
+                }
+            } catch (error) {
+                console.warn('⚠️ Error in blur handler:', error);
+                this.forceReset();
+            }
+        };
+        
+        window.addEventListener('blur', this.windowBlurHandler, { passive: true });
+        
+        console.log('🎧 Enhanced global event listeners set up for inline dropdowns');
+    }
+    
+    /**
+     * Clean up global event listeners
+     */
+    removeGlobalListeners() {
+        try {
+            if (this.globalClickHandler) {
+                document.removeEventListener('click', this.globalClickHandler);
+                this.globalClickHandler = null;
+            }
+            
+            if (this.globalEscapeHandler) {
+                document.removeEventListener('keydown', this.globalEscapeHandler);
+                this.globalEscapeHandler = null;
+            }
+            
+            if (this.visibilityChangeHandler) {
+                document.removeEventListener('visibilitychange', this.visibilityChangeHandler);
+                this.visibilityChangeHandler = null;
+            }
+            
+            if (this.windowBlurHandler) {
+                window.removeEventListener('blur', this.windowBlurHandler);
+                this.windowBlurHandler = null;
+            }
+            
+            console.log('🧹 Global event listeners cleaned up');
+        } catch (error) {
+            console.warn('⚠️ Error cleaning up global listeners:', error);
+        }
+    }
+    
+    /**
+     * Destroy the dropdown manager and clean up all resources
+     */
+    destroy() {
+        try {
+            console.log('🗑️ Destroying InlineDropdownManager...');
+            
+            // Force close any open dropdowns
+            this.forceReset();
+            
+            // Remove all event listeners
+            this.removeGlobalListeners();
+            
+            // Clear all timeouts
+            if (this.loadingTimeout) {
+                clearTimeout(this.loadingTimeout);
+                this.loadingTimeout = null;
+            }
+            
+            // Clear references
+            this.apiClient = null;
+            this.searchPanel = null;
+            this.collectionManager = null;
+            this.mapManager = null;
+            this.notificationService = null;
+            this.aiSearchHelper = null;
+            
+            console.log('✅ InlineDropdownManager destroyed successfully');
+        } catch (error) {
+            console.error('❌ Error destroying InlineDropdownManager:', error);
+        }
     }
     
     /**

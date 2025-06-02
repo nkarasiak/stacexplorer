@@ -2324,18 +2324,367 @@ setupDropdownEditInputs() {
     }
     
     /**
-     * Convert a bounding box to WKT polygon
-     * @param {Array} bbox - Bounding box [minX, minY, maxX, maxY]
-     * @returns {string} WKT polygon
+     * Create collection dropdown content for inline dropdowns
+     * @returns {HTMLElement} Dropdown content element
      */
-    bboxToWkt(bbox) {
-        if (!bbox || bbox.length !== 4) {
-            return '';
+    createCollectionDropdown() {
+        const container = document.createElement('div');
+        container.className = 'ai-dropdown-content';
+        
+        // Create header
+        const header = document.createElement('div');
+        header.className = 'ai-dropdown-header';
+        header.innerHTML = `
+            <i class="material-icons">dataset</i>
+            <span>Select Data Source</span>
+        `;
+        
+        // Create search section
+        const searchSection = document.createElement('div');
+        searchSection.className = 'ai-search-section';
+        searchSection.innerHTML = `
+            <input type="text" class="ai-search-input" placeholder="Search collections..." />
+        `;
+        
+        // Create options section
+        const optionsSection = document.createElement('div');
+        optionsSection.className = 'ai-options-section';
+        
+        // Add EVERYTHING option first
+        const everythingOption = document.createElement('div');
+        everythingOption.className = 'ai-option ai-everything-option';
+        everythingOption.dataset.value = '';
+        everythingOption.innerHTML = `
+            <i class="material-icons">public</i>
+            <div class="ai-option-content">
+                <div class="ai-option-title">SOURCE EVERYTHING</div>
+                <div class="ai-option-subtitle">Search across all available data sources</div>
+            </div>
+        `;
+        optionsSection.appendChild(everythingOption);
+        
+        // Add separator
+        const separator = document.createElement('div');
+        separator.className = 'ai-source-separator';
+        optionsSection.appendChild(separator);
+        
+        // Group collections by source
+        const collections = this.allAvailableCollections || [];
+        const groupedCollections = this.groupCollectionsBySource(collections);
+        
+        // Add collections grouped by source
+        Object.keys(groupedCollections).forEach((source, sourceIndex) => {
+            // Add source group header
+            const sourceHeader = document.createElement('div');
+            sourceHeader.className = 'ai-source-group-header';
+            sourceHeader.textContent = this.getSourceDisplayName(source);
+            optionsSection.appendChild(sourceHeader);
+            
+            // Add collections for this source
+            groupedCollections[source].forEach(collection => {
+                const option = document.createElement('div');
+                option.className = 'ai-option';
+                option.dataset.value = collection.id;
+                option.dataset.source = collection.source;
+                
+                option.innerHTML = `
+                    <i class="material-icons">satellite_alt</i>
+                    <div class="ai-option-content">
+                        <div class="ai-option-title">${collection.title || collection.id}</div>
+                        <div class="ai-option-subtitle">${collection.id} • ${this.getSourceDisplayName(collection.source)}</div>
+                    </div>
+                    <button class="ai-option-details" data-collection-id="${collection.id}" data-collection-source="${collection.source}" title="View details">
+                        <i class="material-icons">info</i>
+                    </button>
+                `;
+                
+                optionsSection.appendChild(option);
+            });
+            
+            // Add separator between sources (except for last source)
+            if (sourceIndex < Object.keys(groupedCollections).length - 1) {
+                const sourceSeparator = document.createElement('div');
+                sourceSeparator.className = 'ai-source-separator';
+                optionsSection.appendChild(sourceSeparator);
+            }
+        });
+        
+        // If no collections available, show message
+        if (collections.length === 0) {
+            const noCollections = document.createElement('div');
+            noCollections.className = 'ai-no-results';
+            noCollections.innerHTML = `
+                <i class="material-icons">info</i>
+                <p>No collections available</p>
+                <small>Collections are being loaded...</small>
+            `;
+            optionsSection.appendChild(noCollections);
         }
         
-        const [minX, minY, maxX, maxY] = bbox;
+        // Assemble the dropdown
+        container.appendChild(header);
+        container.appendChild(searchSection);
+        container.appendChild(optionsSection);
         
-        // Create a WKT polygon from the bounding box
-        return `POLYGON((${minX} ${minY}, ${maxX} ${minY}, ${maxX} ${maxY}, ${minX} ${maxY}, ${minX} ${minY}))`;
+        return container;
     }
-}
+    
+    /**
+     * Group collections by their source
+     * @param {Array} collections - Array of collections
+     * @returns {Object} Collections grouped by source
+     */
+    groupCollectionsBySource(collections) {
+        const grouped = {};
+        
+        collections.forEach(collection => {
+            const source = collection.source || 'unknown';
+            if (!grouped[source]) {
+                grouped[source] = [];
+            }
+            grouped[source].push(collection);
+        });
+        
+        // Sort collections within each source by title
+        Object.keys(grouped).forEach(source => {
+            grouped[source].sort((a, b) => {
+                const titleA = (a.title || a.id).toLowerCase();
+                const titleB = (b.title || b.id).toLowerCase();
+                return titleA.localeCompare(titleB);
+            });
+        });
+        
+        return grouped;
+    }
+    
+    /**
+     * Get display name for data source
+     * @param {string} source - Source identifier
+     * @returns {string} Display name
+     */
+    getSourceDisplayName(source) {
+        const sourceNames = {
+            'copernicus': '🛰️ Copernicus Data Space',
+            'element84': '🌍 Element84 Earth Search',
+            'custom': '⚙️ Custom STAC Catalog',
+            'unknown': '❓ Unknown Source'
+        };
+        
+        return sourceNames[source] || `📡 ${source}`;
+    }
+    
+    /**
+     * Create location dropdown content for inline dropdowns
+     * @returns {HTMLElement} Dropdown content element
+     */
+    createLocationDropdown() {
+        const container = document.createElement('div');
+        container.className = 'ai-dropdown-content';
+        
+        // Create header
+        const header = document.createElement('div');
+        header.className = 'ai-dropdown-header';
+        header.innerHTML = `
+            <i class="material-icons">place</i>
+            <span>Select Location</span>
+        `;
+        
+        // Create search section
+        const searchSection = document.createElement('div');
+        searchSection.className = 'ai-search-section';
+        searchSection.innerHTML = `
+            <input type="text" class="ai-search-input" placeholder="Search for places (e.g., Paris, France)..." />
+        `;
+        
+        // Create search results container
+        const searchResults = document.createElement('div');
+        searchResults.id = 'location-results';
+        searchResults.className = 'ai-search-results';
+        
+        // Create options section
+        const optionsSection = document.createElement('div');
+        optionsSection.className = 'ai-options-section';
+        
+        // Add EVERYWHERE option
+        const everywhereOption = document.createElement('div');
+        everywhereOption.className = 'ai-option';
+        everywhereOption.dataset.value = 'everywhere';
+        everywhereOption.innerHTML = `
+            <i class="material-icons">public</i>
+            <div class="ai-option-content">
+                <div class="ai-option-title">THE WORLD</div>
+                <div class="ai-option-subtitle">Search everywhere without location restriction</div>
+            </div>
+        `;
+        optionsSection.appendChild(everywhereOption);
+        
+        // Add separator
+        const separator = document.createElement('div');
+        separator.className = 'ai-source-separator';
+        optionsSection.appendChild(separator);
+        
+        // Add manual input options
+        const manualOptions = [
+            {
+                id: 'draw-location',
+                icon: 'edit',
+                title: 'Draw on Map',
+                subtitle: 'Draw a bounding box on the map'
+            },
+            {
+                id: 'paste-geometry',
+                icon: 'content_paste',
+                title: 'Paste Geometry',
+                subtitle: 'Paste WKT or GeoJSON polygon'
+            }
+        ];
+        
+        manualOptions.forEach(option => {
+            const optionEl = document.createElement('div');
+            optionEl.className = 'ai-option';
+            optionEl.id = option.id;
+            optionEl.innerHTML = `
+                <i class="material-icons">${option.icon}</i>
+                <div class="ai-option-content">
+                    <div class="ai-option-title">${option.title}</div>
+                    <div class="ai-option-subtitle">${option.subtitle}</div>
+                </div>
+            `;
+            optionsSection.appendChild(optionEl);
+        });
+        
+        // Assemble the dropdown
+        container.appendChild(header);
+        container.appendChild(searchSection);
+        container.appendChild(searchResults);
+        container.appendChild(optionsSection);
+        
+        return container;
+    }
+    
+    /**
+     * Create date dropdown content for inline dropdowns
+     * @returns {HTMLElement} Dropdown content element
+     */
+    createDateDropdown() {
+        const container = document.createElement('div');
+        container.className = 'ai-dropdown-content';
+        
+        // Create header
+        const header = document.createElement('div');
+        header.className = 'ai-dropdown-header';
+        header.innerHTML = `
+            <i class="material-icons">schedule</i>
+            <span>Select Time Period</span>
+        `;
+        
+        // Create options section
+        const optionsSection = document.createElement('div');
+        optionsSection.className = 'ai-options-section';
+        
+        // Define date options
+        const dateOptions = [
+            {
+                value: 'anytime',
+                icon: 'all_inclusive',
+                title: 'ANYTIME',
+                subtitle: 'No date restriction'
+            },
+            {
+                value: 'today',
+                icon: 'today',
+                title: 'Today',
+                subtitle: 'Today only'
+            },
+            {
+                value: 'yesterday',
+                icon: 'history',
+                title: 'Yesterday',
+                subtitle: 'Yesterday only'
+            },
+            {
+                value: 'last7days',
+                icon: 'view_week',
+                title: 'Last 7 days',
+                subtitle: 'Past week including today'
+            },
+            {
+                value: 'thismonth',
+                icon: 'calendar_today',
+                title: 'This month',
+                subtitle: 'Current month'
+            },
+            {
+                value: 'lastmonth',
+                icon: 'skip_previous',
+                title: 'Last month',
+                subtitle: 'Previous month'
+            },
+            {
+                value: 'last90days',
+                icon: 'calendar_view_month',
+                title: 'Last 3 months',
+                subtitle: 'Past 3 months'
+            },
+            {
+                value: 'custom',
+                icon: 'tune',
+                title: 'Custom range...',
+                subtitle: 'Select your own dates'
+            }
+        ];
+        
+        // Add date options
+        dateOptions.forEach(option => {
+            const optionEl = document.createElement('div');
+            optionEl.className = 'ai-option';
+            optionEl.dataset.value = option.value;
+            
+            if (option.value === 'custom') {
+                optionEl.id = 'custom-date';
+            }
+            
+            optionEl.innerHTML = `
+                <i class="material-icons">${option.icon}</i>
+                <div class="ai-option-content">
+                    <div class="ai-option-title">${option.title}</div>
+                    <div class="ai-option-subtitle">${option.subtitle}</div>
+                </div>
+            `;
+            optionsSection.appendChild(optionEl);
+        });
+        
+        // Create custom date section (initially hidden)
+        const customSection = document.createElement('div');
+        customSection.id = 'custom-date-section';
+        customSection.className = 'ai-custom-section';
+        customSection.style.display = 'none';
+        
+        const today = new Date();
+        const lastWeek = new Date();
+        lastWeek.setDate(today.getDate() - 7);
+        
+        customSection.innerHTML = `
+            <div class="ai-date-inputs">
+                <div class="ai-date-group">
+                    <label for="date-start">From:</label>
+                    <input type="date" id="date-start" class="ai-date-input" value="${this.formatDate(lastWeek)}" />
+                </div>
+                <div class="ai-date-group">
+                    <label for="date-end">To:</label>
+                    <input type="date" id="date-end" class="ai-date-input" value="${this.formatDate(today)}" />
+                </div>
+            </div>
+            <button class="ai-apply-btn" id="apply-date-range">
+                <i class="material-icons">check</i>
+                Apply Date Range
+            </button>
+        `;
+        
+        // Assemble the dropdown
+        container.appendChild(header);
+        container.appendChild(optionsSection);
+        container.appendChild(customSection);
+        
+        return container;
+    }

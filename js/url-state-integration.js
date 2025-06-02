@@ -1,3 +1,4 @@
+
 /**
  * URL State Integration Script
  * Add this to integrate URL state management with existing search components
@@ -36,10 +37,10 @@ export function initializeURLStateManagement(components) {
     window.stacExplorer.urlStateManager = urlStateManager;
     
     // Add share URL functionality to UI
-    addShareURLButton(urlStateManager, notificationService);
+    // addShareURLButton(urlStateManager, notificationService);
     
     // Add URL state reset functionality
-    addResetURLButton(urlStateManager, notificationService);
+    // addResetURLButton(urlStateManager, notificationService);
     
     console.log('[SUCCESS] URL state management initialized');
     

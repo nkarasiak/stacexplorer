@@ -704,7 +704,7 @@ select.form-control {
 
 .dataset-item.active {
     background-color: var(--md-selected-overlay);
-    border-left: 4px solid var(--md-primary);
+    /* Removed green/blue border for cleaner appearance */
 }
 
 .dataset-content {
@@ -736,6 +736,9 @@ select.form-control {
     font-size: 16px;
     margin-bottom: 4px;
     color: var(--md-text-primary);
+    cursor: default !important;
+    pointer-events: none !important;
+    user-select: text;
 }
 
 .dataset-date {

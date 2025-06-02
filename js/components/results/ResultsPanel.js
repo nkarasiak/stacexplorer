@@ -74,9 +74,6 @@ export class ResultsPanel {
                     <button class="md-btn md-btn-secondary" id="modal-close-btn">
                         Close
                     </button>
-                    <button class="md-btn md-btn-primary" id="modal-copy-btn">
-                        <i class="material-icons">content_copy</i> Copy JSON
-                    </button>
                 </div>
             </div>
         `;
@@ -87,7 +84,6 @@ export class ResultsPanel {
         // Add event listeners
         const closeBtn = modalOverlay.querySelector('.modal-close');
         const closeBtnFooter = modalOverlay.querySelector('#modal-close-btn');
-        const copyBtn = modalOverlay.querySelector('#modal-copy-btn');
         
         closeBtn.addEventListener('click', () => this.closeModal());
         closeBtnFooter.addEventListener('click', () => this.closeModal());
@@ -100,8 +96,7 @@ export class ResultsPanel {
         // Store modal elements
         this.modal = {
             overlay: modalOverlay,
-            content: modalOverlay.querySelector('#modal-content'),
-            copyBtn: copyBtn
+            content: modalOverlay.querySelector('#modal-content')
         };
     }
     
@@ -145,16 +140,6 @@ export class ResultsPanel {
         // Update modal content
         this.modal.content.innerHTML = '';
         this.modal.content.appendChild(content);
-        
-        // Update copy button handler
-        this.modal.copyBtn.onclick = () => {
-            navigator.clipboard.writeText(formattedJson).then(() => {
-                this.notificationService.showNotification('JSON copied to clipboard', 'success');
-            }).catch(err => {
-                console.error('Failed to copy JSON:', err);
-                this.notificationService.showNotification('Failed to copy JSON', 'error');
-            });
-        };
         
         // Show modal
         this.modal.overlay.classList.add('active');
@@ -379,7 +364,7 @@ export class ResultsPanel {
             `);
         }
 
-        // Add formatted JSON data
+        // Add formatted JSON data - REMOVED COPY BUTTON
         const formattedJson = JSON.stringify(item, null, 2)
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
@@ -393,9 +378,6 @@ export class ResultsPanel {
             <div class="metadata-field json-view">
                 <div class="json-header">
                     <span class="metadata-label">Full JSON Data:</span>
-                    <button class="md-btn md-btn-secondary copy-json-btn" data-id="${item.id}">
-                        <i class="material-icons">content_copy</i> Copy
-                    </button>
                 </div>
                 <pre class="json-content">${formattedJson}</pre>
             </div>
@@ -433,7 +415,7 @@ export class ResultsPanel {
                                 <i class="material-icons">info</i>
                             </button>
                         </div>
-                        <div class="dataset-title">${title}</div>
+                        <div class="dataset-title" style="cursor: default; pointer-events: none;">${title}</div>
                     </div>
                 </div>
             `;

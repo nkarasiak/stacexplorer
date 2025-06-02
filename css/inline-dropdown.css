@@ -1,4 +1,35 @@
-/* Loading states for dropdowns */
+/* Enhanced details button with better positioning */
+.inline-dropdown-container .ai-option-details {
+    background: rgba(var(--md-text-secondary-rgb, 128, 128, 128), 0.1);
+    border: 1px solid transparent;
+    color: var(--md-text-secondary);
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    margin-left: 12px;
+    min-width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 3;
+    flex-shrink: 0;
+}
+
+.inline-dropdown-container .ai-option-details:hover {
+    background: var(--md-primary);
+    color: white;
+    transform: scale(1.05);
+    border-color: var(--md-primary);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.inline-dropdown-container .ai-option-details i {
+    font-size: 16px;
+    margin: 0;
+}/* Loading states for dropdowns */
 .inline-dropdown-container.loading-dropdown {
     pointer-events: none;
 }
@@ -58,22 +89,111 @@
  * Inline Dropdown Styles - Beautiful dropdowns for left menu items
  */
 
-/* Inline dropdown container - clean styling without debug borders */
+/* Enhanced z-index management for proper layering */
 .inline-dropdown-container {
     background: var(--md-surface);
     border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--md-border-color) !important;
     backdrop-filter: blur(10px);
     overflow: hidden;
-    z-index: 9999 !important; /* Force high z-index */
+    z-index: 99999 !important; /* Increased z-index for better layering */
     margin: 8px 0;
-    position: fixed !important; /* Ensure fixed positioning */
-    display: block !important; /* Force visibility */
+    position: fixed !important;
+    display: block !important;
     visibility: visible !important;
     pointer-events: auto !important;
-    /* Remove any debug borders */
     outline: none !important;
+    /* Ensure content is above everything */
+    isolation: isolate;
+}
+
+/* Force dropdown to be on top of everything */
+.inline-dropdown-container * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Enhanced source group headers with proper spacing and layering */
+.inline-dropdown-container .ai-source-group-header {
+    padding: 12px 16px 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--md-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    background: var(--md-surface-overlay);
+    border-bottom: 2px solid var(--md-primary);
+    margin: 0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    /* Prevent text overlap */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Enhanced visual separation */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced option styling with better text handling */
+.inline-dropdown-container .ai-option {
+    display: flex;
+    align-items: center;
+    padding: 14px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    position: relative;
+    z-index: 2;
+    /* Prevent text overflow issues */
+    min-height: 56px;
+    overflow: hidden;
+}
+
+/* Enhanced option content with better text layout */
+.inline-dropdown-container .ai-option-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    /* Ensure text doesn't overlap */
+    overflow: hidden;
+}
+
+/* Enhanced option title with better text handling */
+.inline-dropdown-container .ai-option-title {
+    font-weight: 600;
+    color: var(--md-text-primary);
+    font-size: 15px;
+    line-height: 1.3;
+    margin: 0;
+    /* Better text overflow handling */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Ensure proper positioning */
+    position: relative;
+    z-index: 1;
+}
+
+/* Enhanced option subtitle with better text handling */
+.inline-dropdown-container .ai-option-subtitle {
+    font-size: 13px;
+    color: var(--md-text-secondary);
+    line-height: 1.2;
+    margin: 0;
+    /* Better text overflow handling */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    /* Ensure proper positioning */
+    position: relative;
+    z-index: 1;
 }
 
 /* Clean hover styling that preserves original backgrounds */
@@ -279,34 +399,44 @@
     border-bottom: 1px solid var(--md-border-color);
 }
 
-/* Source separators */
+/* Enhanced source separators with better visual distinction */
 .inline-dropdown-container .ai-source-separator {
-    height: 1px;
-    background: var(--md-border-color);
-    margin: 4px 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--md-border-color), transparent);
+    margin: 8px 16px;
+    position: relative;
+    z-index: 1;
 }
 
-/* Details button */
-.inline-dropdown-container .ai-option-details {
-    background: none;
-    border: none;
-    color: var(--md-text-secondary);
-    cursor: pointer;
-    padding: 4px;
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    margin-left: 8px;
+/* Enhanced EVERYTHING option with better layering */
+.inline-dropdown-container .ai-everything-option {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(139, 92, 246, 0.15)) !important;
+    border: 2px solid rgba(33, 150, 243, 0.3);
+    margin: 12px;
+    border-radius: 10px;
+    position: relative;
+    z-index: 3;
+    /* Ensure content is properly layered */
+    isolation: isolate;
 }
 
-.inline-dropdown-container .ai-option-details:hover {
-    background: var(--md-primary);
-    color: white;
-    transform: scale(1.1);
+.inline-dropdown-container .ai-everything-option:hover {
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.25), rgba(139, 92, 246, 0.25)) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(33, 150, 243, 0.3);
+    border-color: rgba(33, 150, 243, 0.4);
 }
 
-.inline-dropdown-container .ai-option-details i {
-    font-size: 16px;
-    margin: 0;
+/* Enhanced options section with proper scrolling and layering */
+.inline-dropdown-container .ai-options-section {
+    padding: 8px 0;
+    max-height: 350px;
+    overflow-y: auto;
+    position: relative;
+    z-index: 2;
+    /* Better scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: var(--md-border-color) transparent;
 }
 
 /* Location search results container */

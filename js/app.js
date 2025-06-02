@@ -9,7 +9,7 @@ import { NotificationService } from './components/common/NotificationService.js'
 import { MapManager, getMapManager } from './components/map/MapManager.js';
 import { STACApiClient } from './components/api/StacApiClient.js';
 import { StateManager } from './utils/StateManager.js';
-import { ShareManager } from './utils/ShareManager.js';
+// import { ShareManager } from './utils/ShareManager.js'; // REMOVED - no longer needed
 import { initializeGeometrySync } from './utils/GeometrySync.js';
 
 // Import UI components
@@ -89,17 +89,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // FIX: Set up clickable search title
-        const searchTitle = document.getElementById('search-title');
-        if (searchTitle) {
-            searchTitle.addEventListener('click', () => {
-                console.log('[CLICK] Search title clicked - opening AI Smart Search with hidden menu');
-                aiSmartSearch.showMinimalistSearch({ hideMenuOnOpen: true });
-            });
-            console.log('[INIT] Clickable search title initialized');
-        } else {
-            console.error('[ERROR] Search title element not found');
-        }
+        // REMOVED: Clickable search title functionality
+        // Search title is no longer clickable
         
         // NEW: Initialize Inline Dropdown Manager for enhanced menu behavior
         const inlineDropdownManager = new InlineDropdownManager(
@@ -138,8 +129,8 @@ document.addEventListener('DOMContentLoaded', function() {
         // Initialize state manager after all components are ready
         const stateManager = new StateManager(catalogSelector, mapManager, searchPanel);
         
-        // Initialize share manager
-        const shareManager = new ShareManager(stateManager, notificationService);
+        // REMOVED: Share manager (no longer needed)
+        // const shareManager = new ShareManager(stateManager, notificationService);
         
         // Set up initial date range if configured
         if (CONFIG.appSettings.defaultDateRange > 0) {
@@ -156,9 +147,9 @@ document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('date-end').value = formatDateForInput(endDate);
         }
         
-        // Show welcome notification about the clickable search interface
+        // Show welcome notification about the search interface
         setTimeout(() => {
-            notificationService.showNotification('Click "Search" title or any search field to customize your search!', 'info');
+            notificationService.showNotification('Click any search field to customize your search!', 'info');
         }, 2000);
         
         // Sidebar is now visible by default - AI Smart Search Enhanced available via button click
@@ -185,7 +176,7 @@ document.addEventListener('DOMContentLoaded', function() {
             searchPanel,
             resultsPanel,
             stateManager,
-            shareManager,
+            // shareManager removed - no longer needed
             aiSmartSearch,
             inlineDropdownManager,
             urlStateManager,

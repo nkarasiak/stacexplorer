@@ -33,17 +33,20 @@
     will-change: opacity, transform;
 }
 
-/* Better visual feedback for active items */
+/* Better visual feedback for active items - no borders */
 .search-summary-item.dropdown-active {
     background: rgba(33, 150, 243, 0.15) !important;
     transform: translateX(4px) !important;
-    border-left: 3px solid var(--md-primary);
-    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+    /* Removed border-left to prevent green/colored borders */
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.2) !important;
+    border-radius: 4px !important;
+    border: none !important;
 }
 
 .search-summary-item.dropdown-active:hover {
-    background: rgba(33, 150, 243, 0.15) !important;
+    background: rgba(33, 150, 243, 0.2) !important;
     transform: translateX(4px) !important;
+    border: none !important;
 }
 
 /* Prevent multiple dropdowns visual issues */
@@ -55,12 +58,12 @@
  * Inline Dropdown Styles - Beautiful dropdowns for left menu items
  */
 
-/* Inline dropdown container */
+/* Inline dropdown container - clean styling without debug borders */
 .inline-dropdown-container {
     background: var(--md-surface);
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--md-border-color);
+    border: 1px solid var(--md-border-color) !important;
     backdrop-filter: blur(10px);
     overflow: hidden;
     z-index: 9999 !important; /* Force high z-index */
@@ -69,11 +72,34 @@
     display: block !important; /* Force visibility */
     visibility: visible !important;
     pointer-events: auto !important;
+    /* Remove any debug borders */
+    outline: none !important;
 }
 
-/* Debug styling for inline dropdowns */
+/* Clean hover styling that preserves original backgrounds */
+.search-summary-item {
+    border: none !important;
+    outline: none !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer;
+    position: relative;
+}
+
+/* Hover effect using box-shadow overlay to preserve original background */
+.search-summary-item:hover {
+    border: none !important;
+    outline: none !important;
+    transform: translateX(4px);
+    /* Use inset box-shadow to create overlay effect without changing background */
+    box-shadow: inset 0 0 0 2px rgba(33, 150, 243, 0.1) !important;
+    border-radius: 4px;
+}
+
+
+
+/* Remove debug styling - no more ugly dashed borders */
 .debug-inline-dropdown {
-    outline: 2px dashed #ff9800 !important;
+    /* Debug styling removed for clean appearance */
     background: var(--md-surface, #1e1e1e) !important;
 }
 
@@ -161,7 +187,7 @@
     overflow-y: auto;
 }
 
-/* Individual option styling */
+/* Individual option styling - preserve backgrounds on hover */
 .inline-dropdown-container .ai-option {
     display: flex;
     align-items: center;
@@ -176,13 +202,13 @@
 }
 
 .inline-dropdown-container .ai-option:hover {
-    background: var(--md-hover-overlay);
+    background: var(--md-hover-overlay, rgba(255, 255, 255, 0.05)) !important;
     transform: translateX(2px);
 }
 
 .inline-dropdown-container .ai-option:active {
     transform: translateX(0);
-    background: var(--md-selected-overlay);
+    background: var(--md-selected-overlay, rgba(255, 255, 255, 0.08)) !important;
 }
 
 .inline-dropdown-container .ai-option i {
@@ -215,18 +241,19 @@
     text-overflow: ellipsis;
 }
 
-/* Special styling for EVERYTHING option */
+/* Special styling for EVERYTHING option - preserve beautiful background */
 .inline-dropdown-container .ai-everything-option {
-    background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(139, 92, 246, 0.1));
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(139, 92, 246, 0.1)) !important;
     border: 1px solid rgba(33, 150, 243, 0.2);
     margin: 8px 12px;
     border-radius: 8px;
 }
 
 .inline-dropdown-container .ai-everything-option:hover {
-    background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(139, 92, 246, 0.15));
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(139, 92, 246, 0.2)) !important;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.25);
+    border-color: rgba(33, 150, 243, 0.3);
 }
 
 .inline-dropdown-container .ai-everything-option i {
@@ -282,23 +309,30 @@
     margin: 0;
 }
 
-/* Location search results */
+/* Location search results container */
 .inline-dropdown-container .ai-search-results {
     margin-top: 8px;
     border-top: 1px solid var(--md-border-color);
     padding-top: 8px;
 }
 
+/* Location search results - preserve backgrounds on hover without borders */
 .inline-dropdown-container .ai-location-result {
     display: flex;
     align-items: center;
     padding: 10px 16px;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    margin: 2px 8px;
+    border: none !important;
 }
 
 .inline-dropdown-container .ai-location-result:hover {
-    background: var(--md-hover-overlay);
+    background: rgba(33, 150, 243, 0.1) !important;
+    transform: translateX(2px);
+    /* Removed border to prevent colored borders */
+    border: none !important;
 }
 
 .inline-dropdown-container .ai-location-result i {
@@ -470,19 +504,22 @@
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* Search summary item active state - Updated */
+/* Active state styling that preserves original backgrounds */
 .search-summary-item.dropdown-active {
-    background: rgba(33, 150, 243, 0.15) !important;
     transform: translateX(4px) !important;
-    border-left: 3px solid var(--md-primary);
-    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+    /* Use stronger inset shadow for active state without changing background */
+    box-shadow: inset 0 0 0 3px rgba(33, 150, 243, 0.2) !important;
     position: relative;
     z-index: 10;
+    border-radius: 4px;
+    border: none !important;
 }
 
 .search-summary-item.dropdown-active:hover {
-    background: rgba(33, 150, 243, 0.15) !important;
     transform: translateX(4px) !important;
+    /* Combine active and hover effects */
+    box-shadow: inset 0 0 0 3px rgba(33, 150, 243, 0.25) !important;
+    border: none !important;
 }
 
 .search-summary-item.dropdown-active::after {
@@ -493,7 +530,7 @@
     transform: translateY(-50%);
     width: 0;
     height: 0;
-    border-left: 6px solid var(--md-primary);
+    border-left: 6px solid var(--md-primary, #2196F3);
     border-top: 4px solid transparent;
     border-bottom: 4px solid transparent;
 }

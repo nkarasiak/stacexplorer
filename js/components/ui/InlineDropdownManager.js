@@ -299,18 +299,18 @@ export class InlineDropdownManager {
             item.style.cursor = 'pointer';
             item.style.transition = 'all 0.2s ease';
             
-            // Add hover effects
+            // Add hover effects using CSS classes only - no inline styles
             item.addEventListener('mouseenter', () => {
                 if (!item.classList.contains('dropdown-active')) {
-                    item.style.transform = 'translateX(4px)';
-                    item.style.backgroundColor = 'rgba(33, 150, 243, 0.1)';
+                    // CSS handles the hover effects via :hover pseudo-class
+                    // No need for JavaScript hover effects
                 }
             });
             
             item.addEventListener('mouseleave', () => {
                 if (!item.classList.contains('dropdown-active')) {
-                    item.style.transform = 'translateX(0)';
-                    item.style.backgroundColor = 'transparent';
+                    // CSS handles the hover effects via :hover pseudo-class
+                    // No need for JavaScript hover effects
                 }
             });
         });
@@ -1174,7 +1174,6 @@ export class InlineDropdownManager {
                         <i class="material-icons">place</i>
                         <div class="ai-location-info">
                             <div class="ai-location-name">${result.formattedName}</div>
-                            <div class="ai-location-category">${result.category}</div>
                         </div>
                     </div>
                 `;

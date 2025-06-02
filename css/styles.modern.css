@@ -227,15 +227,15 @@ body, html {
     visibility: hidden;
 }
 
-/* Modern Toggle Button - now outside sidebar */
+/* Modern Toggle Button - positioned correctly for different states */
 .sidebar-toggle {
     position: fixed;
     top: 32px;
-    left: 20px; /* Default position when sidebar is hidden */
+    left: calc(var(--sidebar-width) - 20px); /* Default: at sidebar edge when visible */
     transform: translateY(-50%);
     width: 40px;
     height: 40px;
-    background: var(--primary-gradient);
+    background: var(--surface-elevated);
     backdrop-filter: var(--glass-blur-sm);
     -webkit-backdrop-filter: var(--glass-blur-sm);
     border: 1px solid var(--border-primary);
@@ -243,9 +243,9 @@ body, html {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: white;
+    color: var(--text-primary);
     cursor: pointer;
-    box-shadow: var(--shadow-xl);
+    box-shadow: var(--shadow-lg);
     z-index: 3000;
     transition: var(--transition-all);
 }
@@ -253,27 +253,19 @@ body, html {
 .sidebar-toggle:hover {
     transform: translateY(-50%) scale(1.1);
     box-shadow: var(--shadow-xl);
+}
+
+/* When sidebar is hidden - position toggle at left edge for easy access */
+.sidebar.hidden ~ .sidebar-toggle {
+    left: 20px;
     background: var(--primary-gradient);
+    color: white;
+    box-shadow: var(--shadow-xl);
 }
 
-/* When sidebar is visible - position toggle at sidebar edge */
-.sidebar:not(.hidden) ~ .sidebar-toggle {
-    left: calc(var(--sidebar-width) - 20px);
-    background: var(--surface-elevated);
-    color: var(--text-primary);
-    box-shadow: var(--shadow-lg);
-}
-
-.sidebar:not(.hidden) ~ .sidebar-toggle:hover {
-    background: var(--surface-elevated);
-    color: var(--text-primary);
-}
-
-/* When sidebar is collapsed - position outside collapsed sidebar */
-.sidebar.collapsed ~ .sidebar-toggle {
-    left: calc(var(--sidebar-collapsed-width) + 10px);
-    background: var(--surface-elevated);
-    color: var(--text-primary);
+.sidebar.hidden ~ .sidebar-toggle:hover {
+    background: var(--primary-gradient);
+    color: white;
 }
 
 /* Modern Theme Toggle */
@@ -1096,14 +1088,6 @@ select.form-control {
         visibility: hidden !important;
     }
     
-    /* Debug: Add visible border to see what's happening */
-    .sidebar {
-        border: 3px solid red !important;
-    }
-    
-    .sidebar:not(.hidden) {
-        border: 3px solid green !important;
-    }
 }
 
 /* Mobile Responsive Improvements */

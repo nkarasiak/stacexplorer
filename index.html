@@ -133,36 +133,7 @@
             color: var(--text-primary, #ffffff);
         }
         
-        /* Clickable Search Title */
-        .clickable-search-title {
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border-radius: 8px;
-            padding: 8px 12px;
-            margin: -8px -12px;
-            user-select: none;
-        }
-        
-        .clickable-search-title:hover {
-            background: var(--surface-secondary, #f8fafc);
-            color: var(--primary-600, #4f46e5);
-            transform: translateY(-1px);
-        }
-        
-        .clickable-search-title:active {
-            transform: translateY(0);
-            background: var(--surface-tertiary, #f1f5f9);
-        }
-        
-        .dark-theme .clickable-search-title:hover {
-            background: var(--surface-secondary, #2a2a2a);
-            color: var(--primary-400, #818cf8);
-        }
-        
-        .dark-theme .clickable-search-title:active {
-            background: var(--surface-tertiary, #3a3a3a);
-        }
-        
+
         /* Beautiful Search Summary Interface */
         .search-summary-interface {
             padding: 16px 0;
@@ -318,7 +289,7 @@
                 <!-- Card-Based Search Container -->
                 <div class="md-card" id="search-container">
                     <div class="md-card-header" id="search-container-header">
-                        <h2 class="clickable-search-title" id="search-title"><i class="material-icons">search</i> Search</h2>
+                        <h2 id="search-title"><i class="material-icons">search</i> Search</h2>
                     </div>
                     <div class="md-card-body">
                         <!-- Beautiful Search Summary Interface -->
@@ -442,7 +413,7 @@
 
         <!-- Sidebar Toggle Button (outside sidebar so it's always visible) -->
         <div class="sidebar-toggle" id="sidebar-toggle">
-            <i class="material-icons">chevron_right</i>
+            <i class="material-icons">chevron_left</i>
         </div>
 
         <!-- Map Container -->
@@ -485,8 +456,23 @@
                 this.sidebar = document.getElementById('sidebar');
                 this.sidebarToggle = document.getElementById('sidebar-toggle');
                 
-                // Set initial state
+                // Set initial state and icon based on current sidebar state
                 this.updateLayout();
+                this.setCorrectToggleIcon();
+            }
+            
+            setCorrectToggleIcon() {
+                if (!this.sidebarToggle) return;
+                
+                const toggleIcon = this.sidebarToggle.querySelector('i');
+                if (!toggleIcon) return;
+                
+                if (this.isDesktop) {
+                    // On desktop, check sidebar state
+                    const isHidden = this.sidebar.classList.contains('hidden');
+                    toggleIcon.textContent = isHidden ? 'chevron_right' : 'chevron_left';
+                    console.log(`🔧 Set initial desktop toggle icon: ${toggleIcon.textContent} (sidebar hidden: ${isHidden})`);
+                }
             }
             
             createMobileElements() {
@@ -678,35 +664,37 @@
                 console.log('🔄 Toggle clicked! Current classes:', this.sidebar.className);
                 console.log('🔄 Current computed width:', window.getComputedStyle(this.sidebar).width);
                 
-                const isHidden = this.sidebar.classList.contains('hidden');
-                console.log('🔄 Is hidden?', isHidden);
+                const isCurrentlyHidden = this.sidebar.classList.contains('hidden');
+                console.log('🔄 Is currently hidden?', isCurrentlyHidden);
                 
-                if (isHidden) {
-                    console.log('🔄 Removing hidden class...');
+                if (isCurrentlyHidden) {
+                    // Show the sidebar
+                    console.log('🔄 Showing sidebar...');
                     this.sidebar.classList.remove('hidden');
-                    // Update toggle button icon
+                    // Update toggle button icon to show it can hide
                     const toggleIcon = this.sidebarToggle.querySelector('i');
                     if (toggleIcon) {
                         toggleIcon.textContent = 'chevron_left';
                     }
-                    console.log('🔄 After remove - classes:', this.sidebar.className);
-                    
-                    // Force a recompute
-                    setTimeout(() => {
-                        console.log('🔄 New computed width:', window.getComputedStyle(this.sidebar).width);
-                        console.log('🔄 New computed transform:', window.getComputedStyle(this.sidebar).transform);
-                    }, 100);
+                    console.log('🔄 After show - classes:', this.sidebar.className);
                     
                 } else {
-                    console.log('🔄 Adding hidden class...');
+                    // Hide the sidebar
+                    console.log('🔄 Hiding sidebar...');
                     this.sidebar.classList.add('hidden');
-                    // Update toggle button icon  
+                    // Update toggle button icon to show it can show
                     const toggleIcon = this.sidebarToggle.querySelector('i');
                     if (toggleIcon) {
                         toggleIcon.textContent = 'chevron_right';
                     }
-                    console.log('🔄 After add - classes:', this.sidebar.className);
+                    console.log('🔄 After hide - classes:', this.sidebar.className);
                 }
+                
+                // Force a recompute
+                setTimeout(() => {
+                    console.log('🔄 New computed width:', window.getComputedStyle(this.sidebar).width);
+                    console.log('🔄 New computed transform:', window.getComputedStyle(this.sidebar).transform);
+                }, 100);
             }
             
             updateLayout() {
@@ -730,6 +718,9 @@
                     
                     // Update ARIA attributes
                     this.sidebar.removeAttribute('aria-hidden');
+                    
+                    // Set correct toggle icon for desktop
+                    this.setCorrectToggleIcon();
                     
                 } else {
                     // Mobile layout

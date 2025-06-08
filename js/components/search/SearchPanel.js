@@ -31,14 +31,40 @@ export class SearchPanel {
         this.initTabs();
         
         // Initialize search button
-        document.getElementById('search-btn').addEventListener('click', () => {
-            this.performSearch();
-        });
+        const searchBtn = document.getElementById('execute-search');
+        if (searchBtn) {
+            searchBtn.addEventListener('click', () => {
+                this.performSearch();
+            });
+        } else {
+            console.error('Search button not found: execute-search');
+        }
+        
+        // Initialize summary search button
+        const summarySearchBtn = document.getElementById('summary-search-btn');
+        if (summarySearchBtn) {
+            summarySearchBtn.addEventListener('click', () => {
+                this.performSearch();
+            });
+        }
         
         // Initialize reset button
-        document.getElementById('reset-btn').addEventListener('click', () => {
-            this.resetSearch();
-        });
+        const resetBtn = document.getElementById('clear-all');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', () => {
+                this.resetSearch();
+            });
+        } else {
+            console.error('Reset button not found: clear-all');
+        }
+        
+        // Initialize summary reset button
+        const summaryResetBtn = document.getElementById('summary-reset-btn');
+        if (summaryResetBtn) {
+            summaryResetBtn.addEventListener('click', () => {
+                this.resetSearch();
+            });
+        }
 
         // Listen for catalog change to switch to collections tab
         document.addEventListener('catalogChanged', (event) => {
@@ -124,7 +150,18 @@ export class SearchPanel {
             // Perform the search
             const items = await this.apiClient.searchItems(searchParams);
             
-			// console.log('Results:', JSON.stringify(items, null, 2));
+            // Presign Planetary Computer thumbnail URLs
+            items.forEach(item => {
+                if (item.assets && item.assets.thumbnail && item.assets.thumbnail.href.includes('planetarycomputer')) {
+                    // Convert to presigned URL
+                    item.assets.thumbnail.href = item.assets.thumbnail.href.replace(
+                        'https://planetarycomputer.microsoft.com/api/stac/v1',
+                        'https://planetarycomputer.microsoft.com/api/data/v1'
+                    );
+                }
+            });
+
+            // console.log('Results:', JSON.stringify(items, null, 2));
 
             // Update results panel
             this.resultsPanel.setItems(items);

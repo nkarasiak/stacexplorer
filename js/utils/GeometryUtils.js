@@ -251,23 +251,37 @@ export function isGeoJSON(text) {
             return false;
         }
         
-        // Check for common GeoJSON types
-        const validTypes = ['Feature', 'FeatureCollection', 'Point', 'LineString', 
-                           'Polygon', 'MultiPoint', 'MultiLineString', 'MultiPolygon', 
-                           'GeometryCollection'];
+        // Check for common GeoJSON types (including Geometry objects)
+        const validTypes = [
+            'Feature', 'FeatureCollection',           // Feature types
+            'Point', 'LineString', 'Polygon',        // Geometry types
+            'MultiPoint', 'MultiLineString',         // Multi-geometry types  
+            'MultiPolygon', 'GeometryCollection'     // Collection types
+        ];
         
         if (!validTypes.includes(json.type)) {
             return false;
         }
         
-        // Check for geometry or coordinates depending on type
+        // For Feature objects, check for geometry
         if (json.type === 'Feature' && !json.geometry) {
             return false;
         }
         
+        // For FeatureCollection, check for features array
+        if (json.type === 'FeatureCollection' && !json.features) {
+            return false;
+        }
+        
+        // For Geometry objects, check for coordinates (except GeometryCollection)
         if (['Point', 'LineString', 'Polygon', 'MultiPoint', 
              'MultiLineString', 'MultiPolygon'].includes(json.type) && 
             !json.coordinates) {
+            return false;
+        }
+        
+        // For GeometryCollection, check for geometries array
+        if (json.type === 'GeometryCollection' && !json.geometries) {
             return false;
         }
         
@@ -296,6 +310,18 @@ export function parseGeoJSON(text) {
             return null;
         }
         
+        // If it's a Geometry object (not wrapped in Feature), wrap it
+        if (['Point', 'LineString', 'Polygon', 'MultiPoint', 
+             'MultiLineString', 'MultiPolygon', 'GeometryCollection'].includes(json.type)) {
+            // Convert Geometry to Feature for consistent handling
+            return {
+                type: 'Feature',
+                geometry: json,
+                properties: {}
+            };
+        }
+        
+        // Return as-is for Feature or FeatureCollection
         return json;
     } catch (error) {
         console.error('Error parsing GeoJSON:', error);

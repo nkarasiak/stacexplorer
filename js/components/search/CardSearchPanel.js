@@ -188,12 +188,20 @@ export class CardSearchPanel {
             collectionValue 
         });
         
-        // Only data source is required
-        const sourceCompleted = catalogValue !== '';
+        // Check if we're in AI Smart Search EVERYTHING mode
+        // This happens when no specific catalog is selected but collections are loaded from all sources
+        const isEverythingMode = catalogValue === '' && 
+                                this.collectionManager && 
+                                typeof this.collectionManager.getAllCollections === 'function' &&
+                                this.collectionManager.getAllCollections().length > 0;
+        
+        // Data source is required UNLESS we're in EVERYTHING mode
+        const sourceCompleted = catalogValue !== '' || isEverythingMode;
         const locationCompleted = true; // Location is now optional
         
         console.log('📊 Requirements status:', { 
             sourceCompleted, 
+            isEverythingMode,
             locationOptional: true,
             locationProvided: bboxValue !== '',
             collectionSelected: collectionValue !== ''
@@ -595,8 +603,19 @@ export class CardSearchPanel {
             
             // Validate required fields
             if (!this.areRequiredCardsCompleted()) {
-                this.notificationService.showNotification('Please select a Data Source to continue', 'warning');
-                return;
+                // Check if we're in EVERYTHING mode for better error messaging
+                const catalogValue = document.getElementById('catalog-select').value;
+                const isEverythingMode = catalogValue === '' && 
+                                        this.collectionManager && 
+                                        typeof this.collectionManager.getAllCollections === 'function' &&
+                                        this.collectionManager.getAllCollections().length > 0;
+                
+                if (isEverythingMode) {
+                    this.notificationService.showNotification('EVERYTHING mode active - continuing with search across all data sources', 'info');
+                } else {
+                    this.notificationService.showNotification('Please select a Data Source to continue', 'warning');
+                    return;
+                }
             }
             
             // Show loading indicator
@@ -611,34 +630,40 @@ export class CardSearchPanel {
             const selectedCollection = collectionSelect ? collectionSelect.value : '';
             
             console.log('🎯 Collection select element:', collectionSelect);
-            console.log('🎯 Selected collection value:', selectedCollection);
-            console.log('🎯 All collection options:', collectionSelect ? Array.from(collectionSelect.options).map(opt => `${opt.value} - ${opt.text}`) : 'No select element');
             
-            if (selectedCollection && selectedCollection !== '') {
+            // Add collection if specified
+            if (selectedCollection) {
                 searchParams.collections = [selectedCollection];
-                console.log('✅ Using collection from card UI:', selectedCollection);
-                console.log('✅ Collections parameter set to:', searchParams.collections);
-            } else {
-                // If no specific collection is selected, search all collections
-                delete searchParams.collections;
-                console.log('ℹ️ No specific collection selected, searching all collections');
             }
             
-            // Final parameter validation
-            console.log('📤 FINAL search parameters being sent to API:');
-            console.log(JSON.stringify(searchParams, null, 2));
+            // Check if we're in EVERYTHING mode
+            const catalogValue = document.getElementById('catalog-select').value;
+            const isEverythingMode = catalogValue === '';
             
-            // Double-check collections parameter specifically
-            if (searchParams.collections) {
-                console.log('🎯 Collections parameter confirmed:', searchParams.collections);
+            let items = [];
+            
+            if (isEverythingMode && !searchParams.collections) {
+                // Use multi-source search for EVERYTHING mode
+                console.log('🌍 Using multi-source search for EVERYTHING mode');
+                items = await this.performMultiSourceSearch(searchParams);
             } else {
-                console.log('⚠️ No collections parameter in final request!');
+                // Use regular single-source search
+                console.log('🎯 Using single-source search');
+                console.log('🌐 Making API request...');
+                items = await this.apiClient.searchItems(searchParams);
             }
-            
-            // Perform the search
-            console.log('🌐 Making API request...');
-            const items = await this.apiClient.searchItems(searchParams);
             console.log('📊 Search completed, received items:', items.length);
+
+            // Presign Planetary Computer rendered_preview URLs
+            items.forEach(item => {
+                if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
+                    // Convert to presigned URL
+                    item.assets.rendered_preview.href = item.assets.rendered_preview.href.replace(
+                        'https://planetarycomputer.microsoft.com/api/stac/v1',
+                        'https://planetarycomputer.microsoft.com/api/data/v1'
+                    );
+                }
+            });
             
             // Update results panel
             this.resultsPanel.setItems(items);
@@ -667,14 +692,22 @@ export class CardSearchPanel {
             
             // Show success notification with collection info
             if (items.length === 0) {
-                const searchContext = selectedCollection ? ` in collection "${selectedCollection}"` : ' across all collections';
+                const catalogValue = document.getElementById('catalog-select').value;
+                const isEverythingMode = catalogValue === '';
+                const searchContext = selectedCollection ? ` in collection "${selectedCollection}"` : 
+                                    isEverythingMode ? ' across ALL data sources (EVERYTHING mode)' : 
+                                    ' across all collections';
                 this.notificationService.showNotification(`No datasets found${searchContext} matching your search criteria.`, 'info');
             } else {
-                const collectionText = selectedCollection ? ` from collection "${selectedCollection}"` : ' from all collections';
+                const catalogValue = document.getElementById('catalog-select').value;
+                const isEverythingMode = catalogValue === '';
+                const collectionText = selectedCollection ? ` from collection "${selectedCollection}"` : 
+                                     isEverythingMode ? ' from ALL data sources (🌍 EVERYTHING mode)' : 
+                                     ' from all collections';
                 this.notificationService.showNotification(`Found ${items.length} datasets${collectionText}!`, 'success');
                 console.log('🎉 Search successful!', {
                     itemCount: items.length,
-                    collection: selectedCollection || 'all collections',
+                    collection: selectedCollection || (isEverythingMode ? 'EVERYTHING mode' : 'all collections'),
                     searchParams: searchParams
                 });
             }
@@ -699,6 +732,170 @@ export class CardSearchPanel {
                document.getElementById('date-start').value !== '' ||
                document.getElementById('date-end').value !== '' ||
                document.getElementById('cloud-cover-enabled').checked;
+    }
+    
+    /**
+     * Perform search across multiple data sources (EVERYTHING mode)
+     * @param {Object} baseSearchParams - Base search parameters to use for all sources
+     * @returns {Promise<Array>} Combined results from all sources
+     */
+    async performMultiSourceSearch(baseSearchParams) {
+        console.log('🌍 Starting EVERYTHING mode: Multi-source search across all data sources...');
+        
+        // Get all available data sources from config
+        const config = window.stacExplorer?.config;
+        if (!config?.stacEndpoints) {
+            throw new Error('No STAC endpoints configuration found');
+        }
+        
+        const allSources = Object.keys(config.stacEndpoints);
+        const validSources = allSources.filter(source => {
+            const endpoints = config.stacEndpoints[source];
+            
+            // Skip if no endpoints defined
+            if (!endpoints) return false;
+            
+            // For custom and local, require proper URL configuration
+            if (source === 'custom' || source === 'local') {
+                return endpoints.collections && 
+                       endpoints.collections.startsWith('http') && 
+                       endpoints.search && 
+                       endpoints.search.startsWith('http');
+            }
+            
+            // For other sources, just check if search URL exists
+            return endpoints.search && endpoints.search.startsWith('http');
+        });
+        
+        console.log(`🔍 Found ${validSources.length} valid data sources for EVERYTHING search:`, validSources);
+        
+        if (validSources.length === 0) {
+            throw new Error('No valid data sources found for EVERYTHING search');
+        }
+        
+        // Store original API client state
+        const originalEndpoints = this.apiClient.getCurrentEndpoints();
+        
+        let allResults = [];
+        const sourceResults = {};
+        const sourceErrors = {};
+        
+        // Search each data source
+        for (const source of validSources) {
+            try {
+                console.log(`🔎 Searching data source: ${source}`);
+                
+                // Get endpoints for this source
+                const endpoints = config.stacEndpoints[source];
+                
+                // Set API client to use this source
+                this.apiClient.setEndpoints(endpoints);
+                
+                // Create search parameters for this source
+                const sourceSearchParams = { ...baseSearchParams };
+                
+                // Perform search on this source
+                console.log(`📡 Making search request to ${source}:`, sourceSearchParams);
+                const results = await this.apiClient.searchItems(sourceSearchParams);
+                
+                // Presign Planetary Computer rendered_preview URLs
+                results.forEach(item => {
+                    if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
+                        // Convert to presigned URL
+                        item.assets.rendered_preview.href = item.assets.rendered_preview.href.replace(
+                            'https://planetarycomputer.microsoft.com/api/stac/v1',
+                            'https://planetarycomputer.microsoft.com/api/data/v1'
+                        );
+                    }
+                });
+                
+                // Add source information to each result
+                const resultsWithSource = results.map(item => ({
+                    ...item,
+                    _stacSource: source,
+                    _stacSourceLabel: this.getSourceLabel(source)
+                }));
+                
+                // Store results
+                sourceResults[source] = resultsWithSource;
+                allResults = allResults.concat(resultsWithSource);
+                
+                console.log(`✅ ${source}: Found ${results.length} results`);
+                
+            } catch (error) {
+                console.error(`❌ Error searching ${source}:`, error);
+                sourceErrors[source] = error.message;
+                
+                // Continue with other sources even if one fails
+                continue;
+            }
+        }
+        
+        // Restore original API client state
+        if (originalEndpoints) {
+            this.apiClient.setEndpoints(originalEndpoints);
+        }
+        
+        // Log final results
+        console.log('🎯 EVERYTHING search completed:');
+        console.log(`📊 Total results: ${allResults.length}`);
+        console.log('📈 Results by source:', Object.keys(sourceResults).map(source => 
+            `${source}: ${sourceResults[source].length}`
+        ).join(', '));
+        
+        if (Object.keys(sourceErrors).length > 0) {
+            console.warn('⚠️ Some sources had errors:', sourceErrors);
+        }
+        
+        // Show detailed notification
+        this.showMultiSourceSearchNotification(sourceResults, sourceErrors);
+        
+        return allResults;
+    }
+    
+    /**
+     * Get user-friendly label for data source
+     * @param {string} source - Data source key
+     * @returns {string} User-friendly label
+     */
+    getSourceLabel(source) {
+        const labels = {
+            copernicus: 'Copernicus Data Space',
+            element84: 'Element84 Earth Search',
+            local: 'Local STAC',
+            custom: 'Custom STAC'
+        };
+        return labels[source] || source;
+    }
+    
+    /**
+     * Show notification with multi-source search results
+     * @param {Object} sourceResults - Results by source
+     * @param {Object} sourceErrors - Errors by source
+     */
+    showMultiSourceSearchNotification(sourceResults, sourceErrors) {
+        const successfulSources = Object.keys(sourceResults);
+        const failedSources = Object.keys(sourceErrors);
+        const totalResults = Object.values(sourceResults).reduce((sum, results) => sum + results.length, 0);
+        
+        if (totalResults === 0) {
+            const message = failedSources.length > 0 ? 
+                `No results found. ${failedSources.length} source(s) had errors: ${failedSources.join(', ')}` :
+                'No results found across any data sources.';
+            this.notificationService.showNotification(message, 'info');
+        } else {
+            const breakdown = successfulSources.map(source => 
+                `${this.getSourceLabel(source)}: ${sourceResults[source].length}`
+            ).join(', ');
+            
+            let message = `🌍 EVERYTHING search: Found ${totalResults} datasets! (${breakdown})`;
+            
+            if (failedSources.length > 0) {
+                message += ` ⚠️ ${failedSources.length} source(s) failed: ${failedSources.join(', ')}`;
+            }
+            
+            this.notificationService.showNotification(message, 'success');
+        }
     }
     
     /**

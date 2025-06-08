@@ -1,0 +1,240 @@
+/* Enhanced Results Display - Beautiful Round Buttons (Matching Header Actions) */
+
+/* Fix for no-thumbnail layout using thumbnail-overlay style */
+.dataset-content.no-thumbnail {
+    border: 2px dashed var(--md-border-color);
+    border-radius: 12px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.03), rgba(139, 92, 246, 0.03));
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 80px;
+}
+
+.dataset-content.no-thumbnail:hover {
+    border-color: var(--md-primary);
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.08), rgba(139, 92, 246, 0.08));
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.15);
+}
+
+/* Dataset info layout for no-thumbnail items */
+.dataset-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+}
+
+/* Dataset metadata and thumbnail-overlay on same line */
+.dataset-info .dataset-metadata {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 5;
+}
+
+.dataset-info .thumbnail-overlay {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 5;
+    display: flex;
+    gap: 8px;
+}
+
+/* Dataset title positioning */
+.dataset-info .dataset-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--md-text-primary);
+    margin: 36px 0 0 0; /* Top margin to account for metadata/buttons */
+    line-height: 1.4;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+}
+
+/* Beautiful date badge styling for no-thumbnail items */
+.dataset-info .dataset-date {
+    background: linear-gradient(45deg, var(--md-primary), #8B5CF6);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+    backdrop-filter: blur(8px);
+}
+
+/* Enhanced thumbnail-overlay buttons for all items */
+.thumbnail-overlay {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+/* Beautiful round buttons (matching header-actions ai-button style) */
+.thumbnail-overlay .info-btn {
+    background: var(--md-primary);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%; /* Perfect circle */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Hover effects matching header-actions */
+.thumbnail-overlay .info-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Icon styling */
+.thumbnail-overlay .info-btn i {
+    font-size: 18px;
+    transition: transform 0.2s ease;
+}
+
+/* Subtle icon scale on hover */
+.thumbnail-overlay .info-btn:hover i {
+    transform: scale(1.05);
+}
+
+/* Optional: Different colors for different button types while maintaining round style */
+.thumbnail-overlay .view-map-btn {
+    background: var(--md-primary); /* Blue for map */
+}
+
+.thumbnail-overlay .details-btn {
+    background: var(--md-info); /* Light blue for info */
+}
+
+/* Active state */
+.thumbnail-overlay .info-btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced fallback button styling */
+.fallback-geometry-view {
+    display: flex;
+    justify-content: flex-end;
+    align-items: flex-start;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.05), rgba(139, 92, 246, 0.05));
+    border-radius: 8px;
+    border: 2px solid var(--md-border-color);
+    margin-top: 12px;
+    position: relative;
+}
+
+.fallback-geometry-view .thumbnail-overlay {
+    position: static;
+    top: auto;
+    right: auto;
+}
+
+.fallback-geometry-view .info-btn {
+    width: 36px;
+    height: 36px;
+}
+
+/* Dark theme adjustments */
+.dark-theme .thumbnail-overlay .info-btn {
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+.dark-theme .thumbnail-overlay .info-btn:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.dark-theme .dataset-content.no-thumbnail {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.08), rgba(139, 92, 246, 0.08));
+}
+
+.dark-theme .dataset-content.no-thumbnail:hover {
+    border-color: var(--md-primary);
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.15), rgba(139, 92, 246, 0.15));
+}
+
+/* Light theme adjustments */
+.light-theme .thumbnail-overlay .info-btn {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.light-theme .thumbnail-overlay .info-btn:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .thumbnail-overlay {
+        top: 6px;
+        right: 6px;
+        gap: 6px;
+    }
+    
+    .thumbnail-overlay .info-btn {
+        width: 28px;
+        height: 28px;
+    }
+    
+    .thumbnail-overlay .info-btn i {
+        font-size: 16px;
+    }
+    
+    .dataset-info .dataset-title {
+        font-size: 15px;
+        margin-top: 32px;
+    }
+    
+    .dataset-info .dataset-date {
+        font-size: 11px;
+        padding: 4px 10px;
+    }
+}
+
+/* Animation for when buttons appear */
+@keyframes buttonFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.thumbnail-overlay .info-btn {
+    animation: buttonFadeIn 0.3s ease forwards;
+}
+
+.thumbnail-overlay .info-btn:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.thumbnail-overlay .info-btn:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+/* Focus states for accessibility */
+.thumbnail-overlay .info-btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.3);
+}

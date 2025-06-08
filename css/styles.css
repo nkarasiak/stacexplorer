@@ -704,7 +704,7 @@ select.form-control {
 
 .dataset-item.active {
     background-color: var(--md-selected-overlay);
-    border-left: 4px solid var(--md-primary);
+    /* Removed green/blue border for cleaner appearance */
 }
 
 .dataset-content {
@@ -736,6 +736,9 @@ select.form-control {
     font-size: 16px;
     margin-bottom: 4px;
     color: var(--md-text-primary);
+    cursor: default !important;
+    pointer-events: none !important;
+    user-select: text;
 }
 
 .dataset-date {
@@ -1498,6 +1501,168 @@ body.sidebar-open {
     position: fixed;
     width: 100%;
     height: 100%;
+}
+
+/* No-thumbnail dataset items */
+.dataset-content.no-thumbnail {
+    border: 2px dashed var(--md-border-color);
+    border-radius: 8px;
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.05), rgba(139, 92, 246, 0.05));
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.dataset-content.no-thumbnail::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(33, 150, 243, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.dataset-content.no-thumbnail:hover {
+    border-color: var(--md-primary);
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(139, 92, 246, 0.1));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2);
+}
+
+.dataset-content.no-thumbnail:hover::before {
+    left: 100%;
+}
+
+.dataset-info {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.dataset-info .dataset-metadata {
+    position: static;
+    width: auto;
+    background: none;
+    backdrop-filter: none;
+}
+
+.dataset-info .dataset-date {
+    background: linear-gradient(45deg, var(--md-primary), #8B5CF6);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    width: fit-content;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dataset-info .dataset-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--md-text-primary);
+    margin: 0;
+    line-height: 1.3;
+}
+
+.dataset-action {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 4px;
+}
+
+.view-geometry-btn {
+    background: linear-gradient(45deg, #4A90E2, #8B5CF6);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    text-transform: none;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+}
+
+.view-geometry-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.view-geometry-btn:hover {
+    background: linear-gradient(45deg, #3B82F6, #7C3AED);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+}
+
+.view-geometry-btn:hover::before {
+    left: 100%;
+}
+
+.view-geometry-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+.view-geometry-btn i {
+    font-size: 18px;
+    margin-right: 0;
+}
+
+/* Fallback geometry button for failed thumbnails */
+.fallback-geometry-view {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.05), rgba(139, 92, 246, 0.05));
+    border-radius: 8px;
+    border: 2px solid var(--md-border-color);
+    margin-top: 8px;
+}
+
+.fallback-geometry-view .view-geometry-btn {
+    background: linear-gradient(45deg, #2196F3, #9C27B0);
+    font-size: 16px;
+    padding: 12px 20px;
+}
+
+.fallback-geometry-view .view-geometry-btn:hover {
+    background: linear-gradient(45deg, #1976D2, #7B1FA2);
+}
+
+/* Enhanced info button for no-thumbnail items */
+.dataset-action .info-btn {
+    background: rgba(33, 150, 243, 0.1);
+    color: var(--md-primary);
+    border: 2px solid var(--md-primary);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+}
+
+.dataset-action .info-btn:hover {
+    background: var(--md-primary);
+    color: white;
+    transform: scale(1.05);
 }
 
 /* Screen reader only class */

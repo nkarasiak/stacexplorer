@@ -1,0 +1,458 @@
+/**
+ * AI Smart Search Inline Styles
+ * Extends the enhanced AI search styles for inline use within the search dashboard
+ */
+
+/* Inline Container */
+.ai-inline-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 20px;
+    background: var(--card-background, rgba(255, 255, 255, 0.95));
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+}
+
+.dark-theme .ai-inline-container {
+    background: var(--card-background-dark, rgba(42, 42, 42, 0.95));
+    border-color: var(--border-color-dark, rgba(255, 255, 255, 0.1));
+}
+
+/* Inline Sentence Container */
+.ai-sentence-inline {
+    font-size: 18px;
+    line-height: 1.6;
+    text-align: center;
+    color: var(--text-color, #333);
+    font-weight: 400;
+    letter-spacing: 0.5px;
+    margin: 0;
+    padding: 15px;
+    background: var(--surface-primary, #f8f9fa);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.dark-theme .ai-sentence-inline {
+    color: var(--text-color-dark, #ddd);
+    background: var(--surface-primary-dark, #2a2a2a);
+}
+
+/* Inline Fields - Reuse existing ai-field styles but with inline-specific overrides */
+.ai-sentence-inline .ai-field {
+    display: inline-block;
+    padding: 8px 16px;
+    margin: 0 4px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 20px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.ai-sentence-inline .ai-field:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+.ai-sentence-inline .ai-field.active {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.5);
+    background: linear-gradient(135deg, #4c51bf 0%, #553c9a 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Empty field styling for inline */
+.ai-sentence-inline .ai-field.empty {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    box-shadow: 0 2px 8px rgba(148, 163, 184, 0.3);
+    font-style: italic;
+    opacity: 0.8;
+}
+
+.ai-sentence-inline .ai-field.empty:hover {
+    background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+    box-shadow: 0 6px 20px rgba(148, 163, 184, 0.4);
+    opacity: 1;
+}
+
+/* Execute button for inline */
+.ai-execute-inline {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.ai-execute-inline .ai-execute-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ai-execute-inline .ai-execute-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.ai-execute-inline .ai-execute-btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.ai-execute-inline .ai-execute-btn i {
+    font-size: 18px;
+}
+
+/* Responsive design for inline */
+@media (max-width: 768px) {
+    .ai-inline-container {
+        padding: 15px;
+    }
+    
+    .ai-sentence-inline {
+        font-size: 16px;
+        padding: 12px;
+    }
+    
+    .ai-sentence-inline .ai-field {
+        font-size: 14px;
+        padding: 6px 12px;
+        margin: 2px;
+    }
+    
+    .ai-execute-inline .ai-execute-btn {
+        padding: 10px 24px;
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 480px) {
+    .ai-sentence-inline {
+        font-size: 14px;
+        line-height: 1.8;
+        word-spacing: 2px;
+    }
+    
+    .ai-sentence-inline .ai-field {
+        font-size: 12px;
+        padding: 4px 8px;
+        margin: 1px;
+        border-radius: 15px;
+    }
+    
+    /* Stack fields on very small screens */
+    .ai-sentence-inline {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    .ai-sentence-inline::before {
+        content: "I want";
+        font-weight: 400;
+    }
+}
+
+/* Animation for field updates */
+.ai-sentence-inline .ai-field.updated {
+    animation: fieldUpdate 0.6s ease-in-out;
+}
+
+@keyframes fieldUpdate {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); box-shadow: 0 0 20px rgba(16, 185, 129, 0.5); }
+    100% { transform: scale(1); }
+}
+
+/* Integration with existing card styles */
+.md-card .ai-inline-container {
+    margin: 0;
+    background: transparent;
+    box-shadow: none;
+    border: none;
+}
+
+/* Wrapper for the inline AI search */
+.ai-search-inline-wrapper {
+    padding: 0;
+    margin: 20px 0;
+}
+
+/* Make it look like it belongs in the search dashboard */
+.search-container .ai-inline-container {
+    background: var(--card-background, rgba(255, 255, 255, 0.98));
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--border-color, rgba(0, 0, 0, 0.08));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.dark-theme .search-container .ai-inline-container {
+    background: var(--card-background-dark, rgba(42, 42, 42, 0.98));
+    border-color: var(--border-color-dark, rgba(255, 255, 255, 0.08));
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Header integration styles */
+.ai-inline-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
+}
+
+.dark-theme .ai-inline-header {
+    border-color: var(--border-color-dark, rgba(255, 255, 255, 0.1));
+}
+
+.ai-inline-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-color, #333);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dark-theme .ai-inline-title {
+    color: var(--text-color-dark, #ddd);
+}
+
+.ai-inline-subtitle {
+    font-size: 14px;
+    color: var(--text-secondary, #666);
+    margin-top: 2px;
+}
+
+.dark-theme .ai-inline-subtitle {
+    color: var(--text-secondary-dark, #aaa);
+}
+
+/* Override dropdown positioning for inline context */
+.ai-inline-container ~ .ai-dropdown-enhanced {
+    z-index: 1100; /* Lower than fullscreen but higher than cards */
+}
+
+/* Success state styling */
+.ai-inline-container.search-executed {
+    border-color: var(--success-color, #10b981);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.ai-inline-container.search-executed .ai-sentence-inline {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%);
+}
+
+/* Loading state */
+.ai-inline-container.loading .ai-execute-btn {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.ai-inline-container.loading .ai-execute-btn::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 8px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Dark theme adjustments */
+.dark-theme .ai-sentence-inline .ai-field.empty {
+    background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+    box-shadow: 0 2px 8px rgba(75, 85, 99, 0.3);
+}
+
+.dark-theme .ai-sentence-inline .ai-field.empty:hover {
+    background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+    box-shadow: 0 6px 20px rgba(75, 85, 99, 0.4);
+}
+
+/* Accessibility improvements */
+.ai-sentence-inline .ai-field:focus {
+    outline: 3px solid var(--focus-color, #3b82f6);
+    outline-offset: 2px;
+}
+
+.ai-execute-inline .ai-execute-btn:focus {
+    outline: 3px solid var(--focus-color, #3b82f6);
+    outline-offset: 2px;
+}
+
+/* Location search results styling */
+.ai-location-result {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    margin: 2px 0;
+}
+
+.ai-location-result:hover {
+    background: var(--surface-secondary, #f8f9fa);
+    border-color: var(--primary-200, #ddd6fe);
+    transform: translateX(2px);
+}
+
+.dark-theme .ai-location-result:hover {
+    background: var(--surface-secondary-dark, #374151);
+    border-color: var(--primary-600, #7c3aed);
+}
+
+.ai-location-result i {
+    color: var(--primary-500, #6366f1);
+    margin-right: 12px;
+    font-size: 20px;
+}
+
+.ai-location-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ai-location-name {
+    font-weight: 500;
+    color: var(--text-color, #333);
+    font-size: 14px;
+    line-height: 1.4;
+    margin-bottom: 2px;
+}
+
+.dark-theme .ai-location-name {
+    color: var(--text-color-dark, #ddd);
+}
+
+.ai-location-category {
+    font-size: 12px;
+    color: var(--text-secondary, #666);
+    text-transform: capitalize;
+    font-weight: 400;
+}
+
+.dark-theme .ai-location-category {
+    color: var(--text-secondary-dark, #aaa);
+}
+
+/* Category-specific styling */
+.ai-location-result[data-category="country"] i {
+    color: #dc2626;
+}
+
+.ai-location-result[data-category="city"] i,
+.ai-location-result[data-category="town"] i {
+    color: #059669;
+}
+
+.ai-location-result[data-category="state"] i,
+.ai-location-result[data-category="administrative"] i {
+    color: #7c2d12;
+}
+
+.ai-location-result[data-category="natural"] i {
+    color: #15803d;
+}
+
+/* Loading and error states */
+.ai-loading, .ai-error, .ai-no-results {
+    padding: 16px;
+    text-align: center;
+    font-size: 14px;
+    color: var(--text-secondary, #666);
+}
+
+.dark-theme .ai-loading,
+.dark-theme .ai-error,
+.dark-theme .ai-no-results {
+    color: var(--text-secondary-dark, #aaa);
+}
+
+.ai-error {
+    color: var(--error-color, #dc2626);
+}
+
+.dark-theme .ai-error {
+    color: var(--error-color-dark, #f87171);
+}
+
+.ai-loading::before {
+    content: "🔍";
+    margin-right: 8px;
+}
+
+.ai-error::before {
+    content: "⚠️";
+    margin-right: 8px;
+}
+
+.ai-no-results::before {
+    content: "🤷";
+    margin-right: 8px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .ai-sentence-inline .ai-field {
+        border: 2px solid currentColor;
+    }
+    
+    .ai-execute-inline .ai-execute-btn {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .ai-sentence-inline .ai-field {
+        transition: background-color 0.2s ease;
+    }
+    
+    .ai-execute-inline .ai-execute-btn {
+        transition: background-color 0.2s ease;
+    }
+    
+    .ai-sentence-inline .ai-field:hover,
+    .ai-sentence-inline .ai-field.active {
+        transform: none;
+    }
+    
+    .ai-execute-inline .ai-execute-btn:hover {
+        transform: none;
+    }
+}

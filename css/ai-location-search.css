@@ -1,0 +1,532 @@
+/**
+ * AI Smart Search Location Enhancement Styles
+ * 
+ * Styles for the enhanced location dropdown with geocoding functionality
+ */
+
+/* Location Search Container */
+.ai-location-search-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 16px;
+}
+
+/* Location Search Input */
+.ai-location-search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 14px;
+    background: var(--surface-color);
+    color: var(--text-primary);
+    transition: all 0.2s ease;
+}
+
+.ai-location-search-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.1);
+    outline: none;
+}
+
+/* Location Search Results Container */
+.ai-location-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--surface-color);
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    margin-top: 4px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.ai-location-search-result {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-bottom: 1px solid var(--border-light);
+}
+
+.ai-location-search-result:last-child {
+    border-bottom: none;
+}
+
+.ai-location-search-result:hover {
+    background: var(--hover-color);
+}
+
+.ai-location-search-result-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.ai-location-search-result-content i {
+    color: var(--primary-color);
+    font-size: 16px;
+    margin-top: 2px;
+}
+
+.ai-location-info {
+    flex: 1;
+}
+
+.ai-location-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 2px;
+}
+
+.ai-location-country {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.ai-error, .ai-no-results {
+    padding: 16px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.ai-error {
+    color: var(--error-color);
+}
+
+.ai-location-no-results {
+    color: var(--text-muted);
+}
+
+/* Location Result Items */
+.ai-location-result-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-light);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: transparent;
+}
+
+.ai-location-result-item:last-child {
+    border-bottom: none;
+}
+
+.ai-location-result-item:hover,
+.ai-location-result-item.selected {
+    background: var(--hover-background);
+    transform: translateX(2px);
+}
+
+.ai-location-result-item:active {
+    background: var(--active-background);
+}
+
+.ai-location-result-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.ai-location-result-icon {
+    color: var(--primary-color);
+    font-size: 20px;
+    opacity: 0.8;
+}
+
+.ai-location-result-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.ai-location-result-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ai-location-result-details {
+    display: flex;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    align-items: center;
+}
+
+.ai-location-result-category {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.ai-location-result-bbox {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--surface-color);
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.ai-location-result-actions {
+    display: flex;
+    align-items: center;
+}
+
+.ai-location-result-select {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+}
+
+.ai-location-result-select:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+}
+
+.ai-location-result-select .material-icons {
+    font-size: 16px;
+}
+
+/* Quick Options Section */
+.ai-location-quick-options {
+    margin-bottom: 16px;
+}
+
+.ai-location-quick-options .ai-dropdown-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--card-background);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.ai-location-quick-options .ai-dropdown-item:hover {
+    background: var(--hover-background);
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Selected Location Display */
+.ai-location-selected {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: var(--primary-50);
+    border-radius: 6px;
+    margin-top: 8px;
+    animation: fadeIn 0.3s ease;
+}
+
+.ai-location-selected-icon {
+    color: var(--primary-color);
+}
+
+.ai-location-selected-text {
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Manual Input Section */
+.ai-location-manual-input {
+    background: var(--surface-color);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid var(--border-light);
+}
+
+.ai-location-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 16px;
+    color: var(--text-secondary);
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.ai-location-section-header .material-icons {
+    font-size: 18px;
+    color: var(--primary-color);
+}
+
+.ai-location-option {
+    margin-bottom: 16px;
+}
+
+.ai-location-option:last-child {
+    margin-bottom: 0;
+}
+
+.ai-location-option-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: 8px;
+    font-style: italic;
+}
+
+/* Enhanced Action Buttons */
+.ai-location-action {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ai-location-action:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+}
+
+.ai-location-action:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ai-location-action-small {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+.ai-location-action .material-icons {
+    font-size: 18px;
+}
+
+.ai-location-action-small .material-icons {
+    font-size: 16px;
+}
+
+/* Geometry Input Section */
+.ai-location-geometry-input {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.ai-location-textarea {
+    width: 100%;
+    min-height: 80px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--input-background);
+    color: var(--text-primary);
+    font-family: 'Roboto Mono', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    resize: vertical;
+    transition: all 0.2s ease;
+}
+
+.ai-location-textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color-alpha);
+}
+
+.ai-location-textarea::placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.ai-location-geometry-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+/* Location Search Input Enhancement */
+#ai-location-search-input.ai-dropdown-edit-input {
+    background: var(--input-background);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+#ai-location-search-input.ai-dropdown-edit-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color-alpha);
+}
+
+#ai-location-search-input.ai-dropdown-edit-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .ai-location-search-results {
+        max-height: 200px;
+    }
+    
+    .ai-location-result-item {
+        padding: 10px 12px;
+    }
+    
+    .ai-location-result-details {
+        flex-direction: column;
+        gap: 4px;
+        align-items: flex-start;
+    }
+    
+    .ai-location-result-bbox {
+        font-size: 9px;
+    }
+    
+    .ai-location-manual-input {
+        padding: 12px;
+    }
+    
+    .ai-location-action {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+}
+
+/* Dark Theme Adjustments */
+[data-theme="dark"] .ai-location-result-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .ai-location-result-bbox {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="dark"] .ai-location-manual-input {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .ai-location-textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+/* Loading Animation */
+.ai-location-loading .material-icons {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Selection Highlight */
+.ai-location-result-item.selected {
+    background: var(--primary-color-alpha);
+    border-left: 3px solid var(--primary-color);
+}
+
+.ai-location-result-item.selected .ai-location-result-name {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+/* Category-specific styling */
+.ai-location-result-category.country {
+    background: linear-gradient(135deg, #4CAF50, #45a049);
+}
+
+.ai-location-result-category.city {
+    background: linear-gradient(135deg, #2196F3, #1976D2);
+}
+
+.ai-location-result-category.state {
+    background: linear-gradient(135deg, #FF9800, #F57C00);
+}
+
+.ai-location-result-category.administrative {
+    background: linear-gradient(135deg, #9C27B0, #7B1FA2);
+}
+
+.ai-location-result-category.natural {
+    background: linear-gradient(135deg, #795548, #5D4037);
+}
+
+/* Accessibility */
+.ai-location-result-item:focus {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.ai-location-action:focus {
+    outline: 2px solid rgba(255, 255, 255, 0.5);
+    outline-offset: 2px;
+}
+
+/* Animation for results appearing */
+.ai-location-result-item {
+    animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

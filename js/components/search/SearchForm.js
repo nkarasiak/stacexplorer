@@ -415,7 +415,34 @@ export class SearchForm {
                 
                 // Display geometry on map
                 if (this.mapManager) {
-                    this.mapManager.displayGeometry(geojson, bbox);
+                    try {
+                        console.log('🗺️ Displaying geometry on map from SearchForm');
+                        
+                        // Display geometry with beautiful styling
+                        if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
+                            this.mapManager.addBeautifulGeometryLayer(
+                                geojson, 
+                                `searchform-geometry-${Date.now()}`
+                            );
+                        } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
+                            this.mapManager.addGeoJsonLayer(
+                                geojson, 
+                                `searchform-geometry-${Date.now()}`
+                            );
+                        }
+                        
+                        // Zoom to the geometry bounds
+                        if (typeof this.mapManager.fitToBounds === 'function') {
+                            this.mapManager.fitToBounds(bbox);
+                        } else if (typeof this.mapManager.fitMapToBbox === 'function') {
+                            this.mapManager.fitMapToBbox(bbox);
+                        }
+                        
+                        console.log('✅ Geometry successfully displayed and zoomed on map');
+                    } catch (mapError) {
+                        console.error('❌ Error displaying geometry on map:', mapError);
+                        // Continue anyway - the bbox is still updated
+                    }
                 }
                 
                 // Show notification
@@ -511,8 +538,23 @@ export class SearchForm {
         const bboxInput = document.getElementById('bbox-input');
         if (bboxInput) {
             bboxInput.addEventListener('change', (event) => {
-                if (this.mapManager) {
-                    this.mapManager.updateBBoxFromInput(event.target.value);
+                if (this.mapManager && event.target.value) {
+                    try {
+                        // Parse the bbox input and update map
+                        const bboxValues = event.target.value.split(',').map(Number);
+                        if (bboxValues.length === 4 && !bboxValues.some(isNaN)) {
+                            console.log('🗺️ Updating map from bbox input:', bboxValues);
+                            
+                            // Use the correct MapManager method
+                            if (typeof this.mapManager.setBboxFromCoordinates === 'function') {
+                                this.mapManager.setBboxFromCoordinates(bboxValues);
+                            } else if (typeof this.mapManager.fitToBounds === 'function') {
+                                this.mapManager.fitToBounds(bboxValues);
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ Error updating map from bbox input:', error);
+                    }
                 }
             });
         }
@@ -567,6 +609,45 @@ export class SearchForm {
     }
     
     /**
+     * Check if the selected collections are non-optical data types that don't use cloud cover
+     * @param {string} collections - Comma-separated list of collection IDs
+     * @returns {boolean} - True if collections are non-optical types
+     */
+    isNonOpticalCollection(collections) {
+        if (!collections) return false;
+        
+        const collectionIds = collections.toLowerCase();
+        
+        // Keywords that indicate non-optical data types
+        const nonOpticalKeywords = [
+            'sar',           // Synthetic Aperture Radar
+            'radar',         // Radar data
+            'dem',           // Digital Elevation Model
+            'dsm',           // Digital Surface Model
+            'dtm',           // Digital Terrain Model
+            'elevation',     // Elevation data
+            'lidar',         // LiDAR data
+            'thermal',       // Thermal infrared (may not use cloud cover)
+            'temperature',   // Temperature data
+            'precipitation', // Weather data
+            'wind',          // Wind data
+            'pressure',      // Atmospheric pressure
+            'humidity',      // Humidity data
+            'bathymetry',    // Underwater topography
+            'sonar',         // Sonar data
+            'cop-dem',       // Copernicus DEM
+            'srtm',          // SRTM elevation data
+            'aster-dem',     // ASTER DEM
+            'nasadem'        // NASA DEM
+        ];
+        
+        // Check if any of the keywords match the collection IDs
+        return nonOpticalKeywords.some(keyword => 
+            collectionIds.includes(keyword)
+        );
+    }
+    
+    /**
      * Get search parameters from form
      * @returns {Object} - Search parameters
      */
@@ -588,8 +669,8 @@ export class SearchForm {
             // Add date range if provided
             const startDate = document.getElementById('date-start')?.value;
             const endDate = document.getElementById('date-end')?.value;
-            if (startDate || endDate) {
-                params.datetime = `${startDate ? startDate + 'T00:00:00Z' : ''}/${endDate ? endDate + 'T23:59:59Z' : ''}`;
+            if (startDate && endDate) {
+                params.datetime = `${startDate}T00:00:00Z/${endDate}T23:59:59Z`;
             }
             
             // Add geometry or bbox
@@ -614,20 +695,18 @@ export class SearchForm {
             if (cloudCoverEnabled?.checked && cloudCoverInput && !cloudCoverInput.disabled) {
                 const cloudCoverValue = parseInt(cloudCoverInput.value);
                 if (!isNaN(cloudCoverValue)) {
-                    params["filter-lang"] = "cql2-json";
-                    params.filter = {
-                        "op": "and",
-                        "args": [
-                            {
-                                "op": ">=",
-                                "args": [{ "property": "eo:cloud_cover" }, 0]
-                            },
-                            {
-                                "op": "<",
-                                "args": [{ "property": "eo:cloud_cover" }, cloudCoverValue]
-                            }
-                        ]
-                    };
+                    // Check if we're dealing with collections that typically don't have cloud cover
+                    const collections = document.getElementById('collections')?.value || '';
+                    const isNonOpticalData = this.isNonOpticalCollection(collections);
+                    
+                    if (!isNonOpticalData) {
+                        // Only apply cloud cover filter for optical data collections
+                        params["eo:cloud_cover"] = { "lte": cloudCoverValue };
+                        console.log(`🌥️ Applying cloud cover filter: <= ${cloudCoverValue}%`);
+                    } else {
+                        console.log(`📡 Skipping cloud cover filter for non-optical data: ${collections}`);
+                    }
+                    // For non-optical data (SAR, DEM, etc.), skip the cloud cover filter entirely
                 }
             }
 

@@ -133,7 +133,9 @@ body, html {
 
 /* Modern Glassmorphism Sidebar - Reduced Spacing */
 .sidebar {
-    width: var(--sidebar-width);
+    width: var(--sidebar-width);  /* Default: 380px - FULL WIDTH */
+    min-width: var(--sidebar-width); /* Ensure minimum width */
+    max-width: var(--sidebar-width); /* Ensure maximum width */
     background: var(--surface-primary);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
@@ -145,11 +147,25 @@ body, html {
     overflow: hidden;
     position: relative;
     box-shadow: var(--shadow-xl);
+    transform: translateX(0); /* Default: fully visible */
 }
 
+/* Hidden sidebar - completely invisible */
+.sidebar.hidden {
+    transform: translateX(-100%) !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Collapsed sidebar - narrow but visible (keeping for potential future use) */
 .sidebar.collapsed {
-    width: var(--sidebar-collapsed-width);
-    min-width: var(--sidebar-collapsed-width);
+    width: var(--sidebar-collapsed-width) !important;  /* 70px */
+    min-width: var(--sidebar-collapsed-width) !important;
+    max-width: var(--sidebar-collapsed-width) !important;
+    transform: translateX(0); /* Still visible, just narrow */
 }
 
 /* Modern Gradient Header - Reduced Height */
@@ -187,6 +203,8 @@ body, html {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     position: relative;
     z-index: 1;
+    opacity: 1;  /* Default: visible */
+    visibility: visible;
 }
 
 .sidebar-header h1 i {
@@ -204,11 +222,16 @@ body, html {
     margin-right: 0;
 }
 
-/* Modern Toggle Button */
+.sidebar.hidden .sidebar-header h1 {
+    opacity: 0;
+    visibility: hidden;
+}
+
+/* Modern Toggle Button - positioned correctly for different states */
 .sidebar-toggle {
     position: fixed;
-    top: 32px;  /* Adjusted for new header height */
-    left: calc(var(--sidebar-width) - 20px);
+    top: 32px;
+    left: calc(var(--sidebar-width) - 20px); /* Default: at sidebar edge when visible */
     transform: translateY(-50%);
     width: 40px;
     height: 40px;
@@ -230,39 +253,77 @@ body, html {
 .sidebar-toggle:hover {
     transform: translateY(-50%) scale(1.1);
     box-shadow: var(--shadow-xl);
-    background: var(--surface-elevated);
 }
 
-.sidebar.collapsed .sidebar-toggle {
-    left: calc(var(--sidebar-collapsed-width) - 20px);
+/* When sidebar is hidden - position toggle at left edge for easy access */
+.sidebar.hidden ~ .sidebar-toggle {
+    left: 20px;
+    background: var(--primary-gradient);
+    color: white;
+    box-shadow: var(--shadow-xl);
+}
+
+.sidebar.hidden ~ .sidebar-toggle:hover {
+    background: var(--primary-gradient);
+    color: white;
 }
 
 /* Modern Theme Toggle */
 .theme-toggle {
     position: absolute;
-    top: 16px;  /* Adjusted */
-    right: 60px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: var(--glass-blur-sm);
-    -webkit-backdrop-filter: var(--glass-blur-sm);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
+    top: 16px;
+    right: 74px; /* 32px (settings button width) + 10px gap + 32px (right edge) */
+    background: var(--primary-gradient);
+    border: none;
     color: white;
-    font-size: 20px;
-    cursor: pointer;
-    z-index: 1002;
-    transition: var(--transition-all);
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1002;
 }
 
 .theme-toggle:hover {
-    transform: rotate(30deg) scale(1.1);
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.theme-toggle i {
+    font-size: 18px;
+}
+
+/* Settings Button */
+.ai-button {
+    position: absolute;
+    top: 16px;
+    right: 32px; /* Increased from 16px to 32px */
+    background: var(--primary-gradient);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1002;
+}
+
+.ai-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.ai-button i {
+    font-size: 18px;
 }
 
 /* Sidebar Content - Reduced Padding */
@@ -274,9 +335,16 @@ body, html {
     flex-direction: column;
     gap: 16px;  /* Reduced from 20px */
     transition: var(--transition-all);
+    opacity: 1;  /* Default: visible */
+    visibility: visible;
 }
 
 .sidebar.collapsed .sidebar-content {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.sidebar.hidden .sidebar-content {
     opacity: 0;
     visibility: hidden;
 }
@@ -1024,6 +1092,34 @@ select.form-control {
     }
 }
 
+/* Desktop-specific sidebar rules - DEBUGGING VERSION */
+@media (min-width: 769px) {
+    /* When sidebar is visible (not hidden) - FORCE full width */
+    .sidebar:not(.hidden) {
+        width: 380px !important;
+        min-width: 380px !important;
+        max-width: 380px !important;
+        transform: translateX(0) !important;
+        position: relative !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: flex !important;
+        background: rgba(30, 30, 50, 0.85) !important;
+        border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+    
+    /* When sidebar is hidden - FORCE hidden */
+    .sidebar.hidden {
+        width: 0px !important;
+        min-width: 0px !important;
+        max-width: 0px !important;
+        transform: translateX(-100%) !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+    }
+    
+}
+
 /* Mobile Responsive Improvements */
 @media (max-width: 768px) {
     .sidebar {
@@ -1031,7 +1127,8 @@ select.form-control {
         left: 0;
         top: 0;
         height: 100vh;
-        width: var(--sidebar-width);
+        width: var(--sidebar-width) !important;
+        min-width: var(--sidebar-width) !important;
         max-width: 85vw;
         transform: translateX(-100%);
         transition: var(--transition-all);
@@ -1043,12 +1140,21 @@ select.form-control {
     }
     
     .sidebar.collapsed {
-        width: var(--sidebar-width);
+        width: var(--sidebar-width) !important;
+        min-width: var(--sidebar-width) !important;
         max-width: 85vw;
         transform: translateX(-100%);
     }
     
-    .sidebar.collapsed .sidebar-content {
+    .sidebar.hidden {
+        width: var(--sidebar-width) !important;
+        min-width: var(--sidebar-width) !important;
+        max-width: 85vw;
+        transform: translateX(-100%);
+    }
+    
+    .sidebar.collapsed .sidebar-content,
+    .sidebar.hidden .sidebar-content {
         opacity: 1;
         visibility: visible;
     }
@@ -1114,6 +1220,16 @@ select.form-control {
     transition: var(--transition-all);
     backdrop-filter: var(--glass-blur-sm);
     -webkit-backdrop-filter: var(--glass-blur-sm);
+}
+
+@media (max-width: 768px) {
+    .sidebar-toggle {
+        display: none !important; /* Hide desktop toggle on mobile */
+    }
+    
+    .mobile-menu-btn {
+        display: flex;
+    }
 }
 
 .mobile-menu-btn:hover {

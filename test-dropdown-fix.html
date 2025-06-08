@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dropdown Bug Fix Test</title>
+    <link rel="stylesheet" href="css/inline-dropdown.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #1e1e1e;
+            color: #ffffff;
+        }
+        
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+        
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #363636;
+            border-radius: 8px;
+        }
+        
+        .search-summary-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: #404040;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+        
+        .search-summary-item:hover {
+            background: #4a4a4a;
+            transform: translateX(4px);
+            border-color: #2196F3;
+        }
+        
+        .search-summary-item.dropdown-active {
+            background: #2196F3;
+            color: white;
+            transform: translateX(4px);
+        }
+        
+        .search-summary-label {
+            font-weight: 600;
+            min-width: 80px;
+        }
+        
+        .search-summary-value {
+            flex: 1;
+            font-family: monospace;
+            background: rgba(255,255,255,0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .test-button {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .test-button:hover {
+            background: #1976D2;
+            transform: translateY(-1px);
+        }
+        
+        .test-button.danger {
+            background: #f44336;
+        }
+        
+        .test-button.danger:hover {
+            background: #d32f2f;
+        }
+        
+        .status-display {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .success { color: #4caf50; }
+        .warning { color: #ff9800; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+        
+        h1, h2 {
+            color: #2196F3;
+        }
+        
+        .instructions {
+            background: rgba(33, 150, 243, 0.1);
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 0 6px 6px 0;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🔧 Dropdown Bug Fix Test</h1>
+        
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Click on any search summary item below to open a dropdown</li>
+                <li>Try clicking away without selecting anything (this used to cause the bug)</li>
+                <li>Try clicking another search item - it should work properly now!</li>
+                <li>Use the debug tools below to monitor and test the fix</li>
+            </ol>
+        </div>
+        
+        <div class="test-section">
+            <h2>Search Summary Items (Click to Test)</h2>
+            
+            <div class="search-summary-item" data-field="collection">
+                <span class="search-summary-label">Collection:</span>
+                <span class="search-summary-value">EVERYTHING</span>
+            </div>
+            
+            <div class="search-summary-item" data-field="location">
+                <span class="search-summary-label">Location:</span>
+                <span class="search-summary-value">THE WORLD</span>
+            </div>
+            
+            <div class="search-summary-item" data-field="date">
+                <span class="search-summary-label">Date:</span>
+                <span class="search-summary-value">ANYTIME</span>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Debug Tools</h2>
+            
+            <button class="test-button" onclick="checkStatus()">Check Status</button>
+            <button class="test-button" onclick="runDiagnostics()">Run Diagnostics</button>
+            <button class="test-button danger" onclick="forceRecover()">Force Recovery</button>
+            <button class="test-button" onclick="startMonitoring()">Start Monitoring</button>
+            <button class="test-button" onclick="clearLog()">Clear Log</button>
+            
+            <div id="status-log" class="status-display">Ready to test dropdown functionality...\n</div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Scenarios</h2>
+            <button class="test-button" onclick="testNormalFlow()">Test Normal Flow</button>
+            <button class="test-button" onclick="testClickAway()">Test Click Away (Bug Scenario)</button>
+            <button class="test-button" onclick="testEscapeKey()">Test Escape Key</button>
+            <button class="test-button" onclick="testRapidClicks()">Test Rapid Clicks</button>
+        </div>
+    </div>
+
+    <!-- Load the debug tool -->
+    <script src="debug-dropdown-recovery.js"></script>
+    
+    <script>
+        // Mock minimal infrastructure for testing
+        window.stacExplorer = window.stacExplorer || {};
+        
+        // Mock notification service
+        const mockNotificationService = {
+            showNotification: (message, type = 'info') => {
+                log(`📢 ${type.toUpperCase()}: ${message}`, type);
+            }
+        };
+        
+        // Mock inline dropdown manager (simplified for testing)
+        class MockInlineDropdownManager {
+            constructor() {
+                this.isLoading = false;
+                this.currentDropdown = null;
+                this.currentField = null;
+                this.loadingStartTime = null;
+                this.loadingTimeout = null;
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                document.querySelectorAll('.search-summary-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const field = item.dataset.field;
+                        log(`🎯 Clicked ${field} field`);
+                        this.showInlineDropdown(field, item);
+                    });
+                });
+                
+                this.setupGlobalListeners();
+            }
+            
+            async showInlineDropdown(fieldType, triggerElement) {
+                try {
+                    log(`📋 Opening dropdown for: ${fieldType}`);
+                    
+                    // Close existing dropdown
+                    this.forceCloseCurrentDropdown();
+                    
+                    // Check loading state with recovery
+                    if (this.isLoading) {
+                        if (!this.loadingStartTime || (Date.now() - this.loadingStartTime) > 10000) {
+                            log('⚠️ Loading state stuck, forcing reset...', 'warning');
+                            this.forceReset();
+                        } else {
+                            log('⏳ Already loading, please wait...', 'warning');
+                            return;
+                        }
+                    }
+                    
+                    this.isLoading = true;
+                    this.loadingStartTime = Date.now();
+                    this.currentField = fieldType;
+                    
+                    // Add active state
+                    triggerElement.classList.add('dropdown-active');
+                    
+                    // Set timeout to prevent stuck states
+                    this.loadingTimeout = setTimeout(() => {
+                        if (this.isLoading) {
+                            log('⚠️ Dropdown loading timeout, forcing reset...', 'warning');
+                            this.forceReset();
+                        }
+                    }, 15000);
+                    
+                    // Create mock dropdown
+                    this.createMockDropdown(fieldType, triggerElement);
+                    
+                    log(`✅ Dropdown opened for: ${fieldType}`, 'success');
+                    
+                } catch (error) {
+                    log(`❌ Error opening dropdown: ${error.message}`, 'error');
+                    this.forceReset();
+                } finally {
+                    if (this.loadingTimeout) {
+                        clearTimeout(this.loadingTimeout);
+                        this.loadingTimeout = null;
+                    }
+                    this.isLoading = false;
+                    this.loadingStartTime = null;
+                }
+            }
+            
+            createMockDropdown(fieldType, triggerElement) {
+                const dropdown = document.createElement('div');
+                dropdown.className = 'inline-dropdown-container';
+                dropdown.innerHTML = `
+                    <div style="
+                        position: fixed;
+                        background: #2d2d2d;
+                        border: 2px solid #2196F3;
+                        border-radius: 8px;
+                        padding: 20px;
+                        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+                        z-index: 9999;
+                        min-width: 200px;
+                    ">
+                        <h3 style="margin: 0 0 15px 0; color: #2196F3;">Mock ${fieldType} Dropdown</h3>
+                        <div style="margin-bottom: 10px;">Option 1</div>
+                        <div style="margin-bottom: 10px;">Option 2</div>
+                        <div style="margin-bottom: 15px;">Option 3</div>
+                        <button onclick="window.stacExplorer.inlineDropdownManager.closeCurrentDropdown()" 
+                                style="background: #2196F3; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">
+                            Close
+                        </button>
+                    </div>
+                `;
+                
+                // Position dropdown
+                const rect = triggerElement.getBoundingClientRect();
+                const dropdownContent = dropdown.firstElementChild;
+                dropdownContent.style.left = rect.left + 'px';
+                dropdownContent.style.top = (rect.bottom + 8) + 'px';
+                
+                document.body.appendChild(dropdown);
+                this.currentDropdown = dropdown;
+            }
+            
+            closeCurrentDropdown() {
+                try {
+                    if (this.currentDropdown) {
+                        if (this.currentDropdown.parentNode) {
+                            this.currentDropdown.parentNode.removeChild(this.currentDropdown);
+                        }
+                        this.currentDropdown = null;
+                    }
+                    
+                    // Clear active states
+                    document.querySelectorAll('.dropdown-active').forEach(item => {
+                        item.classList.remove('dropdown-active');
+                    });
+                    
+                    // Reset state
+                    this.currentField = null;
+                    this.isLoading = false;
+                    this.loadingStartTime = null;
+                    
+                    if (this.loadingTimeout) {
+                        clearTimeout(this.loadingTimeout);
+                        this.loadingTimeout = null;
+                    }
+                    
+                    log('🚪 Dropdown closed', 'success');
+                    
+                } catch (error) {
+                    log(`❌ Error closing dropdown: ${error.message}`, 'error');
+                    this.forceReset();
+                }
+            }
+            
+            forceCloseCurrentDropdown() {
+                if (this.currentDropdown) {
+                    try {
+                        if (this.currentDropdown.parentNode) {
+                            this.currentDropdown.parentNode.removeChild(this.currentDropdown);
+                        }
+                    } catch (e) {
+                        log('⚠️ Error force removing dropdown', 'warning');
+                    }
+                    this.currentDropdown = null;
+                }
+                
+                // Clear states
+                document.querySelectorAll('.dropdown-active').forEach(item => {
+                    item.classList.remove('dropdown-active');
+                });
+                
+                this.currentField = null;
+                this.isLoading = false;
+                this.loadingStartTime = null;
+                
+                if (this.loadingTimeout) {
+                    clearTimeout(this.loadingTimeout);
+                    this.loadingTimeout = null;
+                }
+            }
+            
+            forceReset() {
+                try {
+                    log('🔄 Executing force reset...', 'warning');
+                    
+                    // Clear timeouts
+                    if (this.loadingTimeout) {
+                        clearTimeout(this.loadingTimeout);
+                        this.loadingTimeout = null;
+                    }
+                    
+                    // Remove all dropdowns
+                    document.querySelectorAll('.inline-dropdown-container').forEach(dropdown => {
+                        if (dropdown.parentNode) {
+                            dropdown.parentNode.removeChild(dropdown);
+                        }
+                    });
+                    
+                    // Clear active states
+                    document.querySelectorAll('.dropdown-active').forEach(item => {
+                        item.classList.remove('dropdown-active');
+                        item.style.cssText = '';
+                    });
+                    
+                    // Reset state
+                    this.currentDropdown = null;
+                    this.currentField = null;
+                    this.isLoading = false;
+                    this.loadingStartTime = null;
+                    
+                    log('✅ Force reset completed', 'success');
+                    
+                } catch (error) {
+                    log(`❌ Critical error in force reset: ${error.message}`, 'error');
+                }
+            }
+            
+            setupGlobalListeners() {
+                // Click outside to close
+                document.addEventListener('click', (e) => {
+                    if (this.currentDropdown && 
+                        !this.currentDropdown.contains(e.target) && 
+                        !e.target.closest('.search-summary-item')) {
+                        log('👆 Click outside detected');
+                        this.closeCurrentDropdown();
+                    }
+                });
+                
+                // Escape key to close
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && this.currentDropdown) {
+                        log('⌨️ Escape key pressed');
+                        this.closeCurrentDropdown();
+                    }
+                });
+            }
+        }
+        
+        // Initialize mock manager
+        window.stacExplorer.inlineDropdownManager = new MockInlineDropdownManager();
+        
+        // Logging functions
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('status-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const typeClass = type === 'success' ? 'success' : 
+                            type === 'warning' ? 'warning' : 
+                            type === 'error' ? 'error' : 'info';
+            
+            logElement.innerHTML += `<span class="${typeClass}">[${timestamp}] ${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('status-log').innerHTML = 'Log cleared...\n';
+        }
+        
+        function checkStatus() {
+            if (window.dropdownDebug) {
+                log('🔍 Running status check...');
+                const status = window.dropdownDebug.status();
+                log(`Status: ${JSON.stringify(status, null, 2)}`);
+            } else {
+                log('❌ Debug tool not available', 'error');
+            }
+        }
+        
+        function runDiagnostics() {
+            if (window.dropdownDebug) {
+                log('🧪 Running diagnostics...');
+                const results = window.dropdownDebug.test();
+                log(`Diagnostics completed: ${results.filter(r => r.passed).length}/${results.length} passed`);
+            } else {
+                log('❌ Debug tool not available', 'error');
+            }
+        }
+        
+        function forceRecover() {
+            if (window.dropdownDebug) {
+                log('🔧 Forcing recovery...');
+                const success = window.dropdownDebug.recover();
+                log(success ? '✅ Recovery successful' : '❌ Recovery failed', success ? 'success' : 'error');
+            } else {
+                log('❌ Debug tool not available', 'error');
+            }
+        }
+        
+        let monitoring = null;
+        function startMonitoring() {
+            if (monitoring) {
+                monitoring.stop();
+                monitoring = null;
+                log('⏹️ Monitoring stopped');
+                return;
+            }
+            
+            if (window.dropdownDebug) {
+                log('👀 Starting monitoring for 30 seconds...');
+                monitoring = window.dropdownDebug.monitor(30000);
+            } else {
+                log('❌ Debug tool not available', 'error');
+            }
+        }
+        
+        // Test scenarios
+        function testNormalFlow() {
+            log('🧪 Testing normal flow...');
+            // Simulate clicking collection field
+            document.querySelector('[data-field="collection"]').click();
+            setTimeout(() => {
+                if (window.stacExplorer.inlineDropdownManager.currentDropdown) {
+                    window.stacExplorer.inlineDropdownManager.closeCurrentDropdown();
+                    log('✅ Normal flow test passed', 'success');
+                } else {
+                    log('❌ Normal flow test failed', 'error');
+                }
+            }, 500);
+        }
+        
+        function testClickAway() {
+            log('🧪 Testing click away scenario (the original bug)...');
+            // Open dropdown
+            document.querySelector('[data-field="location"]').click();
+            setTimeout(() => {
+                // Click away (simulate the bug scenario)
+                document.body.click();
+                setTimeout(() => {
+                    // Try to open another dropdown
+                    document.querySelector('[data-field="date"]').click();
+                    setTimeout(() => {
+                        if (window.stacExplorer.inlineDropdownManager.currentDropdown) {
+                            log('✅ Click away test passed - new dropdown opened successfully', 'success');
+                            window.stacExplorer.inlineDropdownManager.closeCurrentDropdown();
+                        } else {
+                            log('❌ Click away test failed - stuck state detected', 'error');
+                        }
+                    }, 300);
+                }, 300);
+            }, 300);
+        }
+        
+        function testEscapeKey() {
+            log('🧪 Testing escape key...');
+            document.querySelector('[data-field="collection"]').click();
+            setTimeout(() => {
+                // Simulate escape key
+                const escapeEvent = new KeyboardEvent('keydown', { key: 'Escape' });
+                document.dispatchEvent(escapeEvent);
+                setTimeout(() => {
+                    if (!window.stacExplorer.inlineDropdownManager.currentDropdown) {
+                        log('✅ Escape key test passed', 'success');
+                    } else {
+                        log('❌ Escape key test failed', 'error');
+                    }
+                }, 100);
+            }, 300);
+        }
+        
+        function testRapidClicks() {
+            log('🧪 Testing rapid clicks (stress test)...');
+            const fields = ['collection', 'location', 'date'];
+            let clickCount = 0;
+            
+            const rapidClick = () => {
+                if (clickCount < 6) {
+                    const field = fields[clickCount % 3];
+                    document.querySelector(`[data-field="${field}"]`).click();
+                    clickCount++;
+                    setTimeout(rapidClick, 100);
+                } else {
+                    setTimeout(() => {
+                        if (!window.stacExplorer.inlineDropdownManager.isLoading) {
+                            log('✅ Rapid clicks test passed - no stuck state', 'success');
+                        } else {
+                            log('❌ Rapid clicks test failed - stuck in loading state', 'error');
+                        }
+                    }, 500);
+                }
+            };
+            
+            rapidClick();
+        }
+        
+        // Initialize
+        log('🚀 Dropdown bug fix test initialized');
+        log('Click on search summary items above to test the fix!');
+    </script>
+</body>
+</html>

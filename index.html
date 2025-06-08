@@ -22,6 +22,226 @@
     <link rel="stylesheet" href="css/geometry-input.css">
     <!-- Card-Style Buttons CSS -->
     <link rel="stylesheet" href="css/card-style-buttons.css">
+    <!-- Settings Panel CSS -->
+    <link rel="stylesheet" href="css/settings-panel.css">
+    <!-- Collection Details Modal CSS -->
+    <link rel="stylesheet" href="css/collection-details-modal.css">
+    <!-- Enhanced Results Buttons CSS -->
+    <link rel="stylesheet" href="css/enhanced-results-buttons.css">
+    <!-- Inline Dropdown CSS -->
+    <link rel="stylesheet" href="css/inline-dropdown.css">
+    <!-- AI Button Styling -->
+    <link rel="stylesheet" href="css/map-fix.css">
+    <style>
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Enhanced Collection Dropdown Styling */
+        #collection-select optgroup {
+            font-weight: 600;
+            font-size: 14px;
+            color: var(--primary-600, #4f46e5);
+            background-color: var(--surface-secondary, #f8f9fa);
+            padding: 8px 0;
+            margin: 4px 0;
+        }
+        
+        #collection-select optgroup option {
+            font-weight: 400;
+            color: var(--text-color, #333);
+            padding: 6px 16px;
+            background-color: white;
+        }
+        
+        .dark-theme #collection-select optgroup {
+            color: var(--primary-300, #a5b4fc);
+            background-color: var(--surface-tertiary, #2a2a2a);
+        }
+        
+        .dark-theme #collection-select optgroup option {
+            color: #ddd;
+            background-color: var(--surface-primary, #1a1a1a);
+        }
+        
+        /* AI Search Info Styling */
+        .ai-search-info {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-secondary, #666);
+        }
+        
+        .ai-search-info p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        .ai-search-info kbd {
+            background: var(--surface-tertiary, #f1f5f9);
+            border: 1px solid var(--border-light, #e2e8f0);
+            border-radius: 4px;
+            padding: 2px 6px;
+            margin: 0 2px;
+            font-family: monospace;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-primary, #1a1a1a);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .dark-theme .ai-search-info {
+            color: var(--text-secondary, #aaa);
+        }
+        
+        .dark-theme .ai-search-info kbd {
+            background: var(--surface-tertiary, #2a2a2a);
+            border-color: var(--border-dark, #444);
+            color: var(--text-primary, #ffffff);
+        }
+        
+
+        /* Beautiful Search Summary Interface */
+        .search-summary-interface {
+            padding: 16px 0;
+        }
+        
+        .search-summary-row {
+            margin-bottom: 12px;
+        }
+        
+        .search-summary-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .search-summary-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--surface-secondary, #f8fafc);
+            border: 1px solid transparent;
+            user-select: none;
+        }
+        
+        .search-summary-item:hover {
+            background: var(--surface-tertiary, #f1f5f9);
+            border-color: var(--primary-200, #c7d2fe);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
+        }
+        
+        .search-summary-item:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 4px rgba(79, 70, 229, 0.1);
+        }
+        
+        .search-summary-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: var(--primary-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+        
+        .search-summary-icon i {
+            color: white;
+            font-size: 18px;
+        }
+        
+        .search-summary-content {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .search-summary-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-secondary, #64748b);
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .search-summary-value {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary, #1a1a1a);
+            font-family: 'Roboto', sans-serif;
+        }
+        
+        /* Dark theme support */
+        .dark-theme .search-summary-item {
+            background: var(--surface-secondary, #2a2a2a);
+        }
+        
+        .dark-theme .search-summary-item:hover {
+            background: var(--surface-tertiary, #3a3a3a);
+            border-color: var(--primary-600, #4f46e5);
+            box-shadow: 0 2px 8px rgba(129, 140, 248, 0.15);
+        }
+        
+        .dark-theme .search-summary-item:active {
+            box-shadow: 0 1px 4px rgba(129, 140, 248, 0.15);
+        }
+        
+        .dark-theme .search-summary-label {
+            color: var(--text-secondary, #94a3b8);
+        }
+        
+        .dark-theme .search-summary-value {
+            color: var(--text-primary, #ffffff);
+        }
+        
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .search-summary-interface {
+                padding: 12px 0;
+            }
+            
+            .search-summary-item {
+                padding: 10px 12px;
+            }
+            
+            .search-summary-icon {
+                width: 32px;
+                height: 32px;
+                margin-right: 10px;
+            }
+            
+            .search-summary-icon i {
+                font-size: 16px;
+            }
+            
+            .search-summary-label {
+                font-size: 11px;
+            }
+            
+            .search-summary-value {
+                font-size: 13px;
+            }
+        }
+        
+        /* Animation effects */
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        @keyframes highlight {
+            0% { background-color: transparent; }
+            50% { background-color: rgba(79, 70, 229, 0.2); }
+            100% { background-color: transparent; }
+        }
+    </style>
 </head>
 <body>
     <div class="app-container">
@@ -32,221 +252,104 @@
                 <button id="theme-toggle" class="theme-toggle">
                     <i class="material-icons">light_mode</i>
                 </button>
-                <div class="sidebar-toggle" id="sidebar-toggle">
-                    <i class="material-icons">chevron_left</i>
-                </div>
+                <button id="settings-button" class="ai-button" title="Settings">
+                    <i class="material-icons">settings</i>
+                </button>
             </div>
             <div class="sidebar-content">
                 <!-- Card-Based Search Container -->
                 <div class="md-card" id="search-container">
                     <div class="md-card-header" id="search-container-header">
-                        <h2><i class="material-icons">dashboard</i> Search Dashboard</h2>
-                        <span class="md-badge">Smart</span>
+                        <h2 id="search-title"><i class="material-icons">search</i> Search</h2>
                     </div>
                     <div class="md-card-body">
-                        <!-- Quick Setup Options (Removed) -->
-                        <div class="quick-setup" style="display: none;">
+                        <!-- Beautiful Search Summary Interface -->
+                        <div class="search-summary-interface">
+                            <div class="search-summary-row">
+                                <div class="search-summary-item" id="summary-source" data-field="collection">
+                                    <div class="search-summary-icon">
+                                        <i class="material-icons">public</i>
+                                    </div>
+                                    <div class="search-summary-content">
+                                        <div class="search-summary-label">Source</div>
+                                        <div class="search-summary-value">EVERYTHING</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="search-summary-row">
+                                <div class="search-summary-item" id="summary-location" data-field="location">
+                                    <div class="search-summary-icon">
+                                        <i class="material-icons">place</i>
+                                    </div>
+                                    <div class="search-summary-content">
+                                        <div class="search-summary-label">Location</div>
+                                        <div class="search-summary-value">THE WORLD</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="search-summary-row">
+                                <div class="search-summary-item" id="summary-date" data-field="date">
+                                    <div class="search-summary-icon">
+                                        <i class="material-icons">schedule</i>
+                                    </div>
+                                    <div class="search-summary-content">
+                                        <div class="search-summary-label">Time</div>
+                                        <div class="search-summary-value">ANYTIME</div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
-                        <!-- Simple Search Buttons -->
-                        <div class="search-buttons-container">
-                            <button id="execute-search" class="card-style-button card-style-button-primary">
-                                <i class="material-icons">search</i>
-                                Search
-                            </button>
-                            <button id="clear-all" class="card-style-button card-style-button-secondary reset-button">
-                                <i class="material-icons">clear</i>
-                                Clear
-                            </button>
+                        <!-- Hidden form inputs for compatibility with existing components -->
+                        <div style="display: none;">
+                            <!-- Hidden card structures for component compatibility -->
+                            <div id="location-card">
+                                <div class="search-card-body">
+                                    <div class="card-form-group"></div>
+                                </div>
+                            </div>
+                            <div id="source-card"></div>
+                            <div id="dataset-card"></div>
+                            <div id="time-card"></div>
+                            <div id="quality-card"></div>
+                            <div id="cloud-cover-controls"></div>
+                            <div id="global-summary">
+                                <div class="summary-text">
+                                    <span id="summary-details">Configure your search</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Form elements -->
+                            <select id="catalog-select">
+                                <option value="">Auto-detect from selected dataset</option>
+                                <option value="copernicus">🛰️ Copernicus Data Space</option>
+                                <option value="element84">🌍 Element84 Earth Search</option>
+                                <option value="custom">⚙️ Custom STAC Catalog</option>
+                            </select>
+                            <select id="collection-select">
+                                <option value="">All datasets</option>
+                            </select>
+                            <input type="text" id="bbox-input">
+                            <input type="date" id="date-start">
+                            <input type="date" id="date-end">
+                            <input type="checkbox" id="cloud-cover-enabled">
+                            <input type="range" id="cloud-cover" min="0" max="100" value="20">
+                            <span id="cloud-cover-value">20%</span>
+                            <input type="text" id="custom-catalog-url">
+                            <input type="text" id="collections">
+                            <button id="connect-catalog-btn">Connect</button>
+                            <div id="custom-catalog-container"></div>
+                            <button id="criteria-draw-bbox-btn">Draw Area</button>
+                            <button id="collection-info-btn">Info</button>
+                            <button id="preset-2024">2024</button>
+                            <button id="summary-search-btn">Search</button>
+                            <button id="summary-reset-btn">Reset</button>
+                            <button id="execute-search">Execute Search</button>
+                            <button id="clear-all">Clear All</button>
+                            <input type="hidden" id="search-input">
                         </div>
-
-                        <!-- Card-Based Search -->
-                        <div class="card-search-container">
-                            <!-- Data Source Card -->
-                            <div class="search-card active highlight-required" id="source-card">
-                                <div class="search-card-header">
-                                    <div class="card-header-left">
-                                        <div class="card-icon">
-                                            <i class="material-icons">cloud</i>
-                                        </div>
-                                        <div class="card-title-section">
-                                            <div class="card-title">Data Source</div>
-                                            <div class="card-subtitle">Choose your catalog</div>
-                                        </div>
-                                    </div>
-                                    <div class="card-header-right">
-                                        <div class="card-status required">Required</div>
-                                        <i class="material-icons card-expand-icon">expand_more</i>
-                                    </div>
-                                </div>
-                                <div class="search-card-body">
-                                    <div class="card-form-group">
-                                        <div class="inline-form">
-                                            <div class="card-select">
-                                                <select class="form-control" id="catalog-select">
-                                                    <option value="">Select a data source (required)</option>
-                                                    <option value="copernicus">🛰️ Copernicus Data Space</option>
-                                                    <option value="element84">🌍 Element84 Earth Search</option>
-                                                    <option value="custom">⚙️ Custom STAC Catalog</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div id="custom-catalog-container" class="form-group mt-2" style="display: none;">
-                                            <div class="inline-form">
-                                                <input type="text" id="custom-catalog-url" class="form-control" 
-                                                    placeholder="Enter STAC catalog URL..." value="">
-                                                <button id="connect-catalog-btn" class="md-btn md-btn-primary compact-btn">
-                                                    <i class="material-icons">link</i> Connect
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="connection-line"></div>
-
-                            <!-- Dataset Type Card -->
-                            <div class="search-card" id="dataset-card">
-                                <div class="search-card-header">
-                                    <div class="card-header-left">
-                                        <div class="card-icon">
-                                            <i class="material-icons">layers</i>
-                                        </div>
-                                        <div class="card-title-section">
-                                            <div class="card-title">Dataset Type</div>
-                                            <div class="card-subtitle">Sentinel-2, Landsat, etc.</div>
-                                        </div>
-                                    </div>
-                                    <div class="card-header-right">
-                                        <div class="card-status optional">Optional</div>
-                                        <i class="material-icons card-expand-icon">expand_more</i>
-                                    </div>
-                                </div>
-                                <div class="search-card-body">
-                                    <div class="card-form-group">
-                                        <div class="inline-form">
-                                            <div class="card-select">
-                                                <select class="form-control" id="collection-select">
-                                                    <option value="">All datasets</option>
-                                                    <option value="sentinel-s2-l2a-cogs">🛰️ Sentinel-2 Level-2A</option>
-                                                    <option value="sentinel-s1-grd">📡 Sentinel-1 GRD</option>
-                                                    <option value="landsat-c2-l2">🛰️ Landsat Collection 2</option>
-                                                </select>
-                                            </div>
-                                            <button class="md-btn md-btn-secondary compact-btn" id="collection-info-btn">
-                                                <i class="material-icons">info</i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="connection-line"></div>
-
-                            <!-- Location Card -->
-                            <div class="search-card" id="location-card">
-                                <div class="search-card-header">
-                                    <div class="card-header-left">
-                                        <div class="card-icon">
-                                            <i class="material-icons">place</i>
-                                        </div>
-                                        <div class="card-title-section">
-                                            <div class="card-title">Location</div>
-                                            <div class="card-subtitle">Area of interest</div>
-                                        </div>
-                                    </div>
-                                    <div class="card-header-right">
-                                        <div class="card-status optional">Optional</div>
-                                        <i class="material-icons card-expand-icon">expand_more</i>
-                                    </div>
-                                </div>
-                                <div class="search-card-body">
-                                    <div class="card-form-group">
-                                        <div class="inline-form">
-                                            <button class="md-btn md-btn-primary compact-btn" id="criteria-draw-bbox-btn">
-                                                <i class="material-icons">crop_square</i>
-                                                Draw Area
-                                            </button>
-                                            <input type="text" class="form-control" id="bbox-input" placeholder="Or enter coordinates...">
-                                            <div class="smart-badge success">
-                                                <i class="material-icons">gps_fixed</i>
-                                                GPS
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="connection-line"></div>
-
-                            <!-- Time Period Card -->
-                            <div class="search-card" id="time-card">
-                                <div class="search-card-header">
-                                    <div class="card-header-left">
-                                        <div class="card-icon">
-                                            <i class="material-icons">schedule</i>
-                                        </div>
-                                        <div class="card-title-section">
-                                            <div class="card-title">Time Period</div>
-                                            <div class="card-subtitle">Date range</div>
-                                        </div>
-                                    </div>
-                                    <div class="card-header-right">
-                                        <div class="card-status optional">Optional</div>
-                                        <i class="material-icons card-expand-icon">expand_more</i>
-                                    </div>
-                                </div>
-                                <div class="search-card-body">
-                                    <div class="card-form-group">
-                                        <div class="date-range-inline">
-                                            <input type="date" class="form-control" id="date-start">
-                                            <span class="date-separator">to</span>
-                                            <input type="date" class="form-control" id="date-end">
-                                            <button class="md-btn md-btn-secondary compact-btn" id="preset-2024">
-                                                2024
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="connection-line"></div>
-
-                            <!-- Quality Filters Card -->
-                            <div class="search-card" id="quality-card">
-                                <div class="search-card-header">
-                                    <div class="card-header-left">
-                                        <div class="card-icon">
-                                            <i class="material-icons">tune</i>
-                                        </div>
-                                        <div class="card-title-section">
-                                            <div class="card-title">Quality Filters</div>
-                                            <div class="card-subtitle">Cloud cover, etc.</div>
-                                        </div>
-                                    </div>
-                                    <div class="card-header-right">
-                                        <div class="card-status optional">Optional</div>
-                                        <i class="material-icons card-expand-icon">expand_more</i>
-                                    </div>
-                                </div>
-                                <div class="search-card-body">
-                                    <div class="card-form-group">
-                                        <div class="cloud-cover-inline">
-                                            <input type="checkbox" id="cloud-cover-enabled" class="form-check-input">
-                                            <label for="cloud-cover-enabled" class="form-check-label">Max cloud cover:</label>
-                                            <input type="range" id="cloud-cover" class="form-range" min="0" max="100" value="50" disabled>
-                                            <span class="cloud-percentage" id="cloud-cover-value">50%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons (Removed) -->
-                        
-                        <!-- Hidden inputs for compatibility -->
-                        <input type="hidden" id="search-input">
                     </div>
                 </div>
 
@@ -278,6 +381,11 @@
                 </div>
             </div>
         </aside>
+
+        <!-- Sidebar Toggle Button (outside sidebar so it's always visible) -->
+        <div class="sidebar-toggle" id="sidebar-toggle">
+            <i class="material-icons">chevron_left</i>
+        </div>
 
         <!-- Map Container -->
         <main class="map-container">
@@ -319,8 +427,23 @@
                 this.sidebar = document.getElementById('sidebar');
                 this.sidebarToggle = document.getElementById('sidebar-toggle');
                 
-                // Set initial state
+                // Set initial state and icon based on current sidebar state
                 this.updateLayout();
+                this.setCorrectToggleIcon();
+            }
+            
+            setCorrectToggleIcon() {
+                if (!this.sidebarToggle) return;
+                
+                const toggleIcon = this.sidebarToggle.querySelector('i');
+                if (!toggleIcon) return;
+                
+                if (this.isDesktop) {
+                    // On desktop, check sidebar state
+                    const isHidden = this.sidebar.classList.contains('hidden');
+                    toggleIcon.textContent = isHidden ? 'chevron_right' : 'chevron_left';
+                    console.log(`🔧 Set initial desktop toggle icon: ${toggleIcon.textContent} (sidebar hidden: ${isHidden})`);
+                }
             }
             
             createMobileElements() {
@@ -509,13 +632,40 @@
             toggleDesktopSidebar() {
                 if (!this.isDesktop) return;
                 
-                const isCollapsed = this.sidebar.classList.contains('collapsed');
+                console.log('🔄 Toggle clicked! Current classes:', this.sidebar.className);
+                console.log('🔄 Current computed width:', window.getComputedStyle(this.sidebar).width);
                 
-                if (isCollapsed) {
-                    this.sidebar.classList.remove('collapsed');
+                const isCurrentlyHidden = this.sidebar.classList.contains('hidden');
+                console.log('🔄 Is currently hidden?', isCurrentlyHidden);
+                
+                if (isCurrentlyHidden) {
+                    // Show the sidebar
+                    console.log('🔄 Showing sidebar...');
+                    this.sidebar.classList.remove('hidden');
+                    // Update toggle button icon to show it can hide
+                    const toggleIcon = this.sidebarToggle.querySelector('i');
+                    if (toggleIcon) {
+                        toggleIcon.textContent = 'chevron_left';
+                    }
+                    console.log('🔄 After show - classes:', this.sidebar.className);
+                    
                 } else {
-                    this.sidebar.classList.add('collapsed');
+                    // Hide the sidebar
+                    console.log('🔄 Hiding sidebar...');
+                    this.sidebar.classList.add('hidden');
+                    // Update toggle button icon to show it can show
+                    const toggleIcon = this.sidebarToggle.querySelector('i');
+                    if (toggleIcon) {
+                        toggleIcon.textContent = 'chevron_right';
+                    }
+                    console.log('🔄 After hide - classes:', this.sidebar.className);
                 }
+                
+                // Force a recompute
+                setTimeout(() => {
+                    console.log('🔄 New computed width:', window.getComputedStyle(this.sidebar).width);
+                    console.log('🔄 New computed transform:', window.getComputedStyle(this.sidebar).transform);
+                }, 100);
             }
             
             updateLayout() {
@@ -540,9 +690,13 @@
                     // Update ARIA attributes
                     this.sidebar.removeAttribute('aria-hidden');
                     
+                    // Set correct toggle icon for desktop
+                    this.setCorrectToggleIcon();
+                    
                 } else {
                     // Mobile layout
                     this.sidebar.classList.remove('collapsed'); // Remove desktop collapsed state
+                    this.sidebar.classList.remove('hidden'); // Remove desktop hidden state
                     
                     // Show hamburger menu only when sidebar is closed
                     if (!this.isOpen) {
@@ -602,7 +756,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Wait a bit more to ensure all components are initialized
             setTimeout(function() {
-                // Get the button
+                // Get the button (now it's hidden but still needs to work)
                 const criteriaBboxBtn = document.getElementById('criteria-draw-bbox-btn');
                 
                 if (criteriaBboxBtn) {
@@ -612,7 +766,7 @@
                     
                     // Add a new event listener
                     newBtn.addEventListener('click', function() {
-                        console.log('Criteria Draw Bbox button clicked');
+                        console.log('Criteria Draw Bbox button clicked (hidden)');
                         
                         if (window.stacExplorer && window.stacExplorer.mapManager) {
                             console.log('Starting drawing mode...');
@@ -626,16 +780,53 @@
                             console.log('Drawing mode activated');
                         } else {
                             console.error('Map manager not available');
-                            alert('Drawing functionality is not available. Please refresh the page and try again.');
                         }
                     });
                     
-                    console.log('Draw Bounding Box button initialized');
+                    console.log('Draw Bounding Box button initialized (hidden)');
                 } else {
                     console.error('Could not find the criteria-draw-bbox-btn element');
                 }
+                
+                // Also set up the preset 2024 button
+                const preset2024Btn = document.getElementById('preset-2024');
+                if (preset2024Btn) {
+                    preset2024Btn.addEventListener('click', function() {
+                        console.log('2024 preset clicked (hidden)');
+                        document.getElementById('date-start').value = '2024-01-01';
+                        document.getElementById('date-end').value = '2024-12-31';
+                        // Trigger change events
+                        document.getElementById('date-start').dispatchEvent(new Event('change'));
+                        document.getElementById('date-end').dispatchEvent(new Event('change'));
+                    });
+                    console.log('2024 preset button initialized (hidden)');
+                }
+                
+                // Set up collection info button
+                const collectionInfoBtn = document.getElementById('collection-info-btn');
+                if (collectionInfoBtn) {
+                    collectionInfoBtn.addEventListener('click', function() {
+                        console.log('Collection info button clicked (hidden)');
+                        // This can be a no-op since the inline AI search handles collection details
+                    });
+                    console.log('Collection info button initialized (hidden)');
+                }
+                
             }, 1000); // Wait 1 second to ensure everything is loaded
         });
     </script>
+    <script src="url-sync-fix.js"></script>
+    <script src="url-parameter-preserve-fix.js"></script>
+    <script src="search-integration-fix.js"></script>
+    <script src="search-button-fix.js"></script>
+    <!-- Core JavaScript -->
+    <script src="js/MapManager.js"></script>
+    <script src="js/map-auto-init.js"></script>
+    <script src="js/components/search/GeometryInput.js"></script>
+    <script src="js/components/search/CardBasedSearch.js"></script>
+    <script src="js/components/search/CollectionDetailsModal.js"></script>
+    <script src="js/components/search/EnhancedResultsButtons.js"></script>
+    <script src="js/components/search/InlineDropdown.js"></script>
+    <script src="js/components/search/SettingsPanel.js"></script>
 </body>
 </html>

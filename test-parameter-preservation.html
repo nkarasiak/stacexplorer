@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Parameter Preservation Test - STAC Explorer</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .test-section h3 { margin-top: 0; color: #2196F3; border-bottom: 2px solid #E3F2FD; padding-bottom: 10px; }
+        button { padding: 10px 20px; margin: 5px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #1976D2; }
+        button.danger { background: #f44336; }
+        button.danger:hover { background: #d32f2f; }
+        button.success { background: #4caf50; }
+        button.success:hover { background: #388e3c; }
+        .result { margin-top: 15px; padding: 15px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; overflow-x: auto; max-height: 300px; overflow-y: auto; }
+        .success { background: #e8f5e8; color: #2e7d32; border-left: 4px solid #4caf50; }
+        .error { background: #ffebee; color: #c62828; border-left: 4px solid #f44336; }
+        .info { background: #e3f2fd; color: #1565c0; border-left: 4px solid #2196f3; }
+        .warning { background: #fff3e0; color: #ef6c00; border-left: 4px solid #ff9800; }
+        .url-display { background: #f5f5f5; padding: 10px; border-radius: 4px; margin: 10px 0; word-break: break-all; font-size: 12px; }
+        .step { margin: 15px 0; padding: 15px; border: 1px solid #ddd; border-radius: 4px; }
+        .step h4 { margin-top: 0; color: #333; }
+        .button-group { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+        .current-url { position: sticky; top: 0; background: #1976D2; color: white; padding: 10px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 URL Parameter Preservation Test</h1>
+        
+        <div class="current-url">
+            <strong>Current URL:</strong> <span id="current-url-display"></span>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Problem Description</h3>
+            <p>This test addresses the issue where <strong>location search clears existing URL parameters</strong> (lq, lg, g, ln) instead of preserving them.</p>
+            <p>The fix ensures that when you search for a location and it zooms/displays the polygon, it <strong>preserves existing URL parameters</strong> while updating location-specific ones.</p>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Step-by-Step Test</h3>
+            
+            <div class="step">
+                <h4>Step 1: Setup Test URL with Parameters</h4>
+                <p>First, let's add some test parameters to the URL to simulate existing state:</p>
+                <div class="button-group">
+                    <button onclick="setupTestURL()">Setup Test URL</button>
+                    <button onclick="clearURL()">Clear URL</button>
+                </div>
+                <div id="setup-result" class="result" style="display:none;"></div>
+            </div>
+
+            <div class="step">
+                <h4>Step 2: Backup Current Parameters</h4>
+                <p>Backup the current URL parameters before testing location search:</p>
+                <div class="button-group">
+                    <button onclick="backupParameters()">Backup Parameters</button>
+                    <button onclick="showBackup()">Show Backup</button>
+                </div>
+                <div id="backup-result" class="result" style="display:none;"></div>
+            </div>
+
+            <div class="step">
+                <h4>Step 3: Simulate Location Search</h4>
+                <p>This simulates what happens when you search for a location via the left menu:</p>
+                <div class="button-group">
+                    <button onclick="simulateLocationSearch()">Simulate Location Search</button>
+                    <button onclick="simulateLocationSearchOld()">Simulate OLD Behavior (Destructive)</button>
+                </div>
+                <div id="location-result" class="result" style="display:none;"></div>
+            </div>
+
+            <div class="step">
+                <h4>Step 4: Compare Parameters</h4>
+                <p>Compare parameters before and after location search to verify preservation:</p>
+                <div class="button-group">
+                    <button onclick="compareParameters()">Compare Parameters</button>
+                    <button onclick="restoreParameters()">Restore Backup</button>
+                </div>
+                <div id="compare-result" class="result" style="display:none;"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Automated Test</h3>
+            <p>Run a comprehensive automated test to verify parameter preservation:</p>
+            <div class="button-group">
+                <button class="success" onclick="runAutomatedTest()">Run Full Test</button>
+                <button onclick="testParameterPreservation()">Quick Preservation Test</button>
+            </div>
+            <div id="automated-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Parameter History</h3>
+            <p>View the history of URL parameter changes:</p>
+            <div class="button-group">
+                <button onclick="showParameterHistory()">Show History</button>
+                <button onclick="clearHistory()">Clear History</button>
+            </div>
+            <div id="history-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🚀 Real App Test</h3>
+            <p>Go to the main app to test with actual location searches:</p>
+            <div class="button-group">
+                <button class="success" onclick="goToMainApp()">Open Main App</button>
+                <button onclick="openMainAppWithParams()">Open Main App (With Test Parameters)</button>
+            </div>
+            <div class="info result">
+                <strong>Instructions for Real App Test:</strong>
+                1. Open main app with test parameters
+                2. Use left menu to search for a location (e.g., "Paris")
+                3. Select a location from the dropdown
+                4. Check that URL still contains the test parameters
+                5. The location should zoom/display while preserving other parameters
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update current URL display
+        function updateURLDisplay() {
+            document.getElementById('current-url-display').textContent = window.location.href;
+        }
+
+        // Update URL display every second
+        setInterval(updateURLDisplay, 1000);
+        updateURLDisplay();
+
+        // Setup test URL with sample parameters
+        function setupTestURL() {
+            const testParams = new URLSearchParams();
+            testParams.set('c', 'test-collection');
+            testParams.set('cs', 'test-source');
+            testParams.set('dt', 'thismonth');
+            testParams.set('cc', '30');
+            testParams.set('custom', 'test-value');
+            
+            const newURL = `${window.location.pathname}?${testParams.toString()}`;
+            window.history.replaceState({}, '', newURL);
+            
+            showResult('setup-result', `Test URL setup complete!\nAdded parameters: ${testParams.toString()}`, 'success');
+            updateURLDisplay();
+        }
+
+        // Clear URL parameters
+        function clearURL() {
+            window.history.replaceState({}, '', window.location.pathname);
+            showResult('setup-result', 'URL cleared!', 'info');
+            updateURLDisplay();
+        }
+
+        // Backup current parameters
+        function backupParameters() {
+            if (window.backupURLParameters) {
+                const backup = window.backupURLParameters();
+                showResult('backup-result', `Parameters backed up:\n${JSON.stringify(backup, null, 2)}`, 'success');
+            } else {
+                showResult('backup-result', 'Backup function not available. Make sure the main app is loaded first.', 'error');
+            }
+        }
+
+        // Show current backup
+        function showBackup() {
+            if (window.stacExplorer?.urlStateManager?._parameterBackup) {
+                const backup = window.stacExplorer.urlStateManager._parameterBackup;
+                showResult('backup-result', `Current backup:\n${JSON.stringify(backup, null, 2)}`, 'info');
+            } else {
+                showResult('backup-result', 'No backup available. Create a backup first.', 'warning');
+            }
+        }
+
+        // Simulate location search (NEW behavior with preservation)
+        function simulateLocationSearch() {
+            if (window.stacExplorer?.urlStateManager?.updateLocationParameters) {
+                const locationState = {
+                    locationBbox: [2.2241, 48.8155, 2.4699, 48.9021],
+                    locationName: 'Paris Test',
+                    locationQuery: 'paris',
+                    geometry: 'POLYGON((2.2241 48.8155, 2.4699 48.8155, 2.4699 48.9021, 2.2241 48.9021, 2.2241 48.8155))'
+                };
+
+                const newURL = window.stacExplorer.urlStateManager.updateLocationParameters(locationState);
+                showResult('location-result', `Location search simulated (NEW behavior)!\nLocation: ${locationState.locationName}\nURL: ${newURL}\n\nExisting parameters should be preserved!`, 'success');
+            } else {
+                showResult('location-result', 'Location parameter update function not available. Make sure fixes are loaded.', 'error');
+            }
+            updateURLDisplay();
+        }
+
+        // Simulate OLD destructive behavior
+        function simulateLocationSearchOld() {
+            // This simulates the old destructive behavior
+            const locationParams = new URLSearchParams();
+            locationParams.set('ln', 'Paris Old');
+            locationParams.set('lb', '2.2241,48.8155,2.4699,48.9021');
+            locationParams.set('lq', 'paris');
+            
+            const newURL = `${window.location.pathname}?${locationParams.toString()}`;
+            window.history.replaceState({}, '', newURL);
+            
+            showResult('location-result', `Location search simulated (OLD destructive behavior)!\nThis CLEARS existing parameters!\nURL: ${newURL}`, 'error');
+            updateURLDisplay();
+        }
+
+        // Compare parameters
+        function compareParameters() {
+            if (window.compareURLParameters) {
+                const comparison = window.compareURLParameters();
+                showResult('compare-result', `Parameter comparison:\n${JSON.stringify(comparison, null, 2)}`, 'info');
+            } else {
+                showResult('compare-result', 'Compare function not available.', 'error');
+            }
+        }
+
+        // Restore parameters
+        function restoreParameters() {
+            if (window.restoreURLParameters) {
+                const restored = window.restoreURLParameters();
+                if (restored) {
+                    showResult('compare-result', `Parameters restored!\nURL: ${restored}`, 'success');
+                    updateURLDisplay();
+                } else {
+                    showResult('compare-result', 'No backup to restore.', 'warning');
+                }
+            } else {
+                showResult('compare-result', 'Restore function not available.', 'error');
+            }
+        }
+
+        // Run automated test
+        function runAutomatedTest() {
+            showResult('automated-result', 'Running automated test...', 'info');
+            
+            setTimeout(() => {
+                try {
+                    // Step 1: Setup test URL
+                    setupTestURL();
+                    
+                    setTimeout(() => {
+                        // Step 2: Backup parameters
+                        if (window.backupURLParameters) {
+                            const backup = window.backupURLParameters();
+                            
+                            setTimeout(() => {
+                                // Step 3: Simulate location search
+                                simulateLocationSearch();
+                                
+                                setTimeout(() => {
+                                    // Step 4: Compare parameters
+                                    if (window.compareURLParameters) {
+                                        const comparison = window.compareURLParameters();
+                                        
+                                        const testResults = {
+                                            backup,
+                                            comparison,
+                                            success: Object.keys(comparison.removed || {}).length === 0,
+                                            preservedParams: Object.keys(comparison.current || {}).length > 4, // Should have location + original params
+                                            currentURL: window.location.href
+                                        };
+                                        
+                                        const resultClass = testResults.success && testResults.preservedParams ? 'success' : 'error';
+                                        showResult('automated-result', `Automated test completed!\n\n${JSON.stringify(testResults, null, 2)}`, resultClass);
+                                    }
+                                }, 500);
+                            }, 500);
+                        }
+                    }, 500);
+                } catch (error) {
+                    showResult('automated-result', `Test failed: ${error.message}`, 'error');
+                }
+            }, 100);
+        }
+
+        // Test parameter preservation
+        function testParameterPreservation() {
+            if (window.testParameterPreservation) {
+                const result = window.testParameterPreservation();
+                showResult('automated-result', `Parameter preservation test: ${result ? 'PASSED' : 'FAILED'}`, result ? 'success' : 'error');
+            } else {
+                showResult('automated-result', 'Test function not available.', 'error');
+            }
+        }
+
+        // Show parameter history
+        function showParameterHistory() {
+            if (window.getParameterHistory) {
+                const history = window.getParameterHistory();
+                showResult('history-result', `Parameter History:\n${JSON.stringify(history, null, 2)}`, 'info');
+            } else {
+                showResult('history-result', 'History function not available.', 'error');
+            }
+        }
+
+        // Clear history
+        function clearHistory() {
+            if (window.urlParameterFix) {
+                window.urlParameterFix.parameterHistory = [];
+                showResult('history-result', 'History cleared!', 'info');
+            } else {
+                showResult('history-result', 'Cannot clear history - fix not loaded.', 'error');
+            }
+        }
+
+        // Go to main app
+        function goToMainApp() {
+            window.location.href = 'index.html';
+        }
+
+        // Open main app with test parameters
+        function openMainAppWithParams() {
+            const testParams = new URLSearchParams();
+            testParams.set('c', 'test-collection-from-test-page');
+            testParams.set('dt', 'thismonth');
+            testParams.set('cc', '25');
+            testParams.set('test', 'preserve-me');
+            
+            window.location.href = `index.html?${testParams.toString()}`;
+        }
+
+        // Utility function to show results
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        // Log initialization
+        console.log('🧪 URL Parameter Preservation Test page loaded');
+        console.log('💡 This page tests the fix for location search clearing URL parameters');
+        
+        // Show initial URL
+        updateURLDisplay();
+    </script>
+
+    <!-- Include the fixes -->
+    <script src="url-sync-fix.js"></script>
+    <script src="url-parameter-preserve-fix.js"></script>
+</body>
+</html>

@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Button Debug - STAC Explorer</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .test-section h3 { margin-top: 0; color: #2196F3; border-bottom: 2px solid #E3F2FD; padding-bottom: 10px; }
+        button { padding: 10px 20px; margin: 5px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #1976D2; }
+        button.danger { background: #f44336; }
+        button.success { background: #4caf50; }
+        .result { margin-top: 15px; padding: 15px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; overflow-x: auto; max-height: 400px; overflow-y: auto; }
+        .success { background: #e8f5e8; color: #2e7d32; border-left: 4px solid #4caf50; }
+        .error { background: #ffebee; color: #c62828; border-left: 4px solid #f44336; }
+        .info { background: #e3f2fd; color: #1565c0; border-left: 4px solid #2196f3; }
+        .warning { background: #fff3e0; color: #ef6c00; border-left: 4px solid #ff9800; }
+        .button-group { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+        .status-good { color: #4caf50; font-weight: bold; }
+        .status-bad { color: #f44336; font-weight: bold; }
+        .status-unknown { color: #ff9800; font-weight: bold; }
+        .debug-info { background: #f5f5f5; padding: 10px; border-radius: 4px; margin: 10px 0; font-size: 12px; }
+        .issue-box { background: #ffebee; border: 1px solid #f44336; border-radius: 4px; padding: 15px; margin: 10px 0; }
+        .issue-box h4 { color: #c62828; margin-top: 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Search Button Debug & Fix</h1>
+        
+        <div class="test-section">
+            <h3>🎯 Issue Description</h3>
+            <div class="issue-box">
+                <h4>❌ Problem: Search Button Not Appearing</h4>
+                <p>The search button that should appear in the left menu is not visible, even though the search integration fix was applied.</p>
+                <p><strong>Expected:</strong> A prominent blue search button should appear in the left menu below the search summary items.</p>
+                <p><strong>Actual:</strong> No search button is visible in the left menu.</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Search Button Status Check</h3>
+            <div class="button-group">
+                <button onclick="checkButtonExists()">Check If Button Exists</button>
+                <button onclick="checkButtonVisibility()">Check Button Visibility</button>
+                <button onclick="findPossibleContainers()">Find Containers</button>
+                <button onclick="checkDOMStructure()">Check DOM Structure</button>
+            </div>
+            <div id="status-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔨 Manual Search Button Creation</h3>
+            <div class="button-group">
+                <button class="success" onclick="forceCreateButton()">Force Create Button</button>
+                <button onclick="retryButtonCreation()">Retry Creation</button>
+                <button onclick="createButtonInDifferentLocation()">Try Different Location</button>
+                <button class="danger" onclick="removeExistingButton()">Remove Existing Button</button>
+            </div>
+            <div id="creation-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🐛 Debug Information</h3>
+            <div class="button-group">
+                <button onclick="debugSearchButtonFix()">Debug Search Button Fix</button>
+                <button onclick="debugSearchIntegrationFix()">Debug Search Integration</button>
+                <button onclick="checkConsoleErrors()">Check Console Errors</button>
+                <button onclick="showLoadedScripts()">Show Loaded Scripts</button>
+            </div>
+            <div id="debug-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Real-time Monitoring</h3>
+            <div class="button-group">
+                <button onclick="startButtonMonitoring()">Start Monitoring</button>
+                <button onclick="stopButtonMonitoring()">Stop Monitoring</button>
+                <button onclick="clearMonitorLog()">Clear Log</button>
+            </div>
+            <div id="monitor-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🚀 Quick Fix Test</h3>
+            <p>Test the search button fix with a simple container:</p>
+            <div id="test-container" style="border: 2px dashed #ccc; padding: 20px; margin: 20px 0; min-height: 100px;">
+                <p>Test container - Search button should appear below this text when created.</p>
+            </div>
+            <div class="button-group">
+                <button onclick="createButtonInTestContainer()">Create Button Here</button>
+                <button onclick="testButtonFunctionality()">Test Button Click</button>
+            </div>
+            <div id="test-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Go to Main App</h3>
+            <div class="button-group">
+                <button class="success" onclick="goToMainApp()">Open Main App</button>
+                <button onclick="openAppAndMonitor()">Open App + Start Monitoring</button>
+            </div>
+            <div class="info result">
+                <strong>Testing Steps:</strong><br>
+                1. Open main app and wait 5+ seconds<br>
+                2. Look for search button in left menu (below location/date items)<br>
+                3. If not visible, return here and run debug tests<br>
+                4. Use Force Create Button if needed<br>
+                5. Report results in browser console
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let monitoringInterval = null;
+        let monitorLog = [];
+        let testButton = null;
+
+        // Check if button exists
+        function checkButtonExists() {
+            const button = document.getElementById('left-menu-search-btn');
+            const exists = !!button;
+            
+            let result = `Search Button Existence Check:\n\n`;
+            result += `Button Element Found: ${exists ? '✅ YES' : '❌ NO'}\n`;
+            
+            if (exists) {
+                result += `Button ID: ${button.id}\n`;
+                result += `Button Class: ${button.className}\n`;
+                result += `Button Text: ${button.textContent}\n`;
+                result += `Button Parent: ${button.parentElement?.tagName} (${button.parentElement?.className})\n`;
+            } else {
+                result += `\nSearching for similar elements:\n`;
+                const similarButtons = document.querySelectorAll('button[id*="search"], button[class*="search"]');
+                result += `Found ${similarButtons.length} similar buttons:\n`;
+                similarButtons.forEach((btn, i) => {
+                    result += `  ${i + 1}. ID: ${btn.id}, Class: ${btn.className}\n`;
+                });
+            }
+            
+            showResult('status-result', result, exists ? 'success' : 'error');
+        }
+
+        // Check button visibility
+        function checkButtonVisibility() {
+            const button = document.getElementById('left-menu-search-btn');
+            
+            if (!button) {
+                showResult('status-result', 'Button does not exist, cannot check visibility', 'error');
+                return;
+            }
+
+            const rect = button.getBoundingClientRect();
+            const style = window.getComputedStyle(button);
+            const isVisible = rect.width > 0 && rect.height > 0 && 
+                             style.display !== 'none' && 
+                             style.visibility !== 'hidden' && 
+                             style.opacity !== '0';
+
+            let result = `Search Button Visibility Check:\n\n`;
+            result += `Button Visible: ${isVisible ? '✅ YES' : '❌ NO'}\n\n`;
+            result += `Detailed Analysis:\n`;
+            result += `Width: ${rect.width}px\n`;
+            result += `Height: ${rect.height}px\n`;
+            result += `Top: ${rect.top}px\n`;
+            result += `Left: ${rect.left}px\n`;
+            result += `Display: ${style.display}\n`;
+            result += `Visibility: ${style.visibility}\n`;
+            result += `Opacity: ${style.opacity}\n`;
+            result += `Position: ${style.position}\n`;
+            result += `Z-Index: ${style.zIndex}\n`;
+            result += `In Viewport: ${rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth}\n`;
+
+            showResult('status-result', result, isVisible ? 'success' : 'warning');
+        }
+
+        // Find possible containers
+        function findPossibleContainers() {
+            const containers = [
+                '.search-summary-interface',
+                '.global-search-summary', 
+                '#search-container .md-card-body',
+                '.md-card-body',
+                '.sidebar-content',
+                '#search-container'
+            ];
+
+            let result = `Container Search Results:\n\n`;
+
+            containers.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                result += `${selector}: Found ${elements.length} element(s)\n`;
+                
+                elements.forEach((el, i) => {
+                    const rect = el.getBoundingClientRect();
+                    result += `  [${i}] Size: ${rect.width}x${rect.height}, Visible: ${rect.width > 0 && rect.height > 0}\n`;
+                });
+                result += `\n`;
+            });
+
+            showResult('status-result', result, 'info');
+        }
+
+        // Check DOM structure
+        function checkDOMStructure() {
+            let result = `DOM Structure Analysis:\n\n`;
+
+            // Check sidebar structure
+            const sidebar = document.querySelector('.sidebar, #sidebar');
+            result += `Sidebar Found: ${!!sidebar}\n`;
+            
+            if (sidebar) {
+                result += `Sidebar Children:\n`;
+                Array.from(sidebar.children).forEach((child, i) => {
+                    result += `  ${i + 1}. ${child.tagName} (${child.className || 'no class'})\n`;
+                });
+            }
+
+            // Check search container
+            const searchContainer = document.querySelector('#search-container');
+            result += `\nSearch Container Found: ${!!searchContainer}\n`;
+            
+            if (searchContainer) {
+                result += `Search Container Structure:\n`;
+                const cardBody = searchContainer.querySelector('.md-card-body');
+                if (cardBody) {
+                    result += `Card Body Children:\n`;
+                    Array.from(cardBody.children).forEach((child, i) => {
+                        result += `  ${i + 1}. ${child.tagName} (${child.className || 'no class'}) - ${child.id || 'no id'}\n`;
+                    });
+                }
+            }
+
+            showResult('status-result', result, 'info');
+        }
+
+        // Force create button
+        function forceCreateButton() {
+            showResult('creation-result', 'Attempting to force create search button...', 'info');
+
+            try {
+                // Try to use the search button fix
+                if (window.addSearchButton) {
+                    window.addSearchButton();
+                    setTimeout(() => {
+                        const button = document.getElementById('left-menu-search-btn');
+                        const success = !!button;
+                        showResult('creation-result', 
+                            `Force creation ${success ? 'SUCCESS' : 'FAILED'}\n\n${success ? 'Button created successfully!' : 'Button still not found'}`,
+                            success ? 'success' : 'error'
+                        );
+                    }, 1000);
+                } else {
+                    showResult('creation-result', 'addSearchButton function not available. SearchButtonFix not loaded?', 'error');
+                }
+            } catch (error) {
+                showResult('creation-result', `Error forcing button creation: ${error.message}`, 'error');
+            }
+        }
+
+        // Retry button creation
+        function retryButtonCreation() {
+            showResult('creation-result', 'Retrying button creation...', 'info');
+
+            if (window.searchButtonFix) {
+                window.searchButtonFix.waitForComponentsAndAddButton();
+                setTimeout(() => checkButtonExists(), 1000);
+            } else {
+                showResult('creation-result', 'SearchButtonFix not available', 'error');
+            }
+        }
+
+        // Create button in different location
+        function createButtonInDifferentLocation() {
+            showResult('creation-result', 'Creating button in sidebar-content...', 'info');
+
+            const sidebarContent = document.querySelector('.sidebar-content');
+            if (!sidebarContent) {
+                showResult('creation-result', 'Sidebar content not found', 'error');
+                return;
+            }
+
+            // Remove existing button if any
+            const existingButton = document.getElementById('left-menu-search-btn-alt');
+            if (existingButton) existingButton.remove();
+
+            // Create button
+            const button = document.createElement('button');
+            button.id = 'left-menu-search-btn-alt';
+            button.innerHTML = '<i class="material-icons">search</i> Alternative Search';
+            button.style.cssText = `
+                width: 100%;
+                padding: 15px;
+                background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                margin: 20px 0;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            `;
+
+            button.addEventListener('click', () => {
+                alert('Alternative search button clicked! This proves button creation works.');
+            });
+
+            sidebarContent.appendChild(button);
+            showResult('creation-result', 'Alternative search button created in sidebar-content!', 'success');
+        }
+
+        // Remove existing button
+        function removeExistingButton() {
+            const buttons = [
+                document.getElementById('left-menu-search-btn'),
+                document.getElementById('left-menu-search-btn-alt')
+            ];
+
+            let removed = 0;
+            buttons.forEach(button => {
+                if (button) {
+                    button.remove();
+                    removed++;
+                }
+            });
+
+            showResult('creation-result', `Removed ${removed} button(s)`, removed > 0 ? 'success' : 'info');
+        }
+
+        // Debug search button fix
+        function debugSearchButtonFix() {
+            let result = `Search Button Fix Debug:\n\n`;
+
+            result += `SearchButtonFix Available: ${!!window.searchButtonFix}\n`;
+            result += `addSearchButton Function: ${typeof window.addSearchButton}\n`;
+            result += `checkSearchButton Function: ${typeof window.checkSearchButton}\n`;
+
+            if (window.searchButtonFix) {
+                const fix = window.searchButtonFix;
+                result += `\nSearchButtonFix Properties:\n`;
+                result += `Retry Attempts: ${fix.retryAttempts || 'N/A'}\n`;
+                result += `Max Retries: ${fix.maxRetries || 'N/A'}\n`;
+                result += `Search Button: ${!!fix.searchButton}\n`;
+                result += `Debug Mode: ${fix.debug || 'N/A'}\n`;
+            }
+
+            // Check if functions work
+            if (window.checkSearchButton) {
+                result += `\nRunning checkSearchButton()...\n`;
+                try {
+                    window.checkSearchButton();
+                    result += `checkSearchButton() executed successfully\n`;
+                } catch (error) {
+                    result += `checkSearchButton() error: ${error.message}\n`;
+                }
+            }
+
+            showResult('debug-result', result, 'info');
+        }
+
+        // Debug search integration fix
+        function debugSearchIntegrationFix() {
+            let result = `Search Integration Fix Debug:\n\n`;
+
+            result += `SearchIntegrationFix Available: ${!!window.searchIntegrationFix}\n`;
+            result += `STAC Explorer Available: ${!!window.stacExplorer}\n`;
+
+            if (window.stacExplorer) {
+                const components = window.stacExplorer;
+                result += `\nSTAC Explorer Components:\n`;
+                result += `inlineDropdownManager: ${!!components.inlineDropdownManager}\n`;
+                result += `aiSmartSearch: ${!!components.aiSmartSearch}\n`;
+                result += `searchPanel: ${!!components.searchPanel}\n`;
+                result += `mapManager: ${!!components.mapManager}\n`;
+                result += `urlStateManager: ${!!components.urlStateManager}\n`;
+            }
+
+            result += `\nDebug Functions:\n`;
+            result += `debugSearch: ${!!window.debugSearch}\n`;
+            if (window.debugSearch) {
+                result += `  getCurrentSearchState: ${typeof window.debugSearch.getCurrentSearchState}\n`;
+                result += `  testLeftMenuSearch: ${typeof window.debugSearch.testLeftMenuSearch}\n`;
+            }
+
+            showResult('debug-result', result, 'info');
+        }
+
+        // Check console errors
+        function checkConsoleErrors() {
+            let result = `Console Error Check:\n\n`;
+            result += `This is a manual check - open browser console (F12) and look for:\n\n`;
+            result += `❌ Errors related to:\n`;
+            result += `  - [SEARCH-BUTTON-FIX]\n`;
+            result += `  - [SEARCH-INTEGRATION-FIX]\n`;
+            result += `  - search-button-fix.js\n`;
+            result += `  - Element not found\n`;
+            result += `  - Cannot read property\n\n`;
+            result += `✅ Success messages:\n`;
+            result += `  - "Search button fix script loaded"\n`;
+            result += `  - "Search button added successfully"\n`;
+            result += `  - "Search Integration and synchronization fix loaded"\n\n`;
+            result += `📝 Check the Network tab for failed script loads\n`;
+
+            showResult('debug-result', result, 'info');
+        }
+
+        // Show loaded scripts
+        function showLoadedScripts() {
+            const scripts = Array.from(document.querySelectorAll('script[src]'));
+            let result = `Loaded Scripts:\n\n`;
+
+            const relevantScripts = scripts.filter(script => 
+                script.src.includes('search') || 
+                script.src.includes('fix') || 
+                script.src.includes('url')
+            );
+
+            result += `Relevant Scripts (${relevantScripts.length}):\n`;
+            relevantScripts.forEach((script, i) => {
+                const src = script.src.split('/').pop();
+                result += `${i + 1}. ${src}\n`;
+            });
+
+            result += `\nAll Scripts (${scripts.length}):\n`;
+            scripts.forEach((script, i) => {
+                const src = script.src.split('/').pop();
+                result += `${i + 1}. ${src}\n`;
+            });
+
+            showResult('debug-result', result, 'info');
+        }
+
+        // Create button in test container
+        function createButtonInTestContainer() {
+            const container = document.getElementById('test-container');
+            
+            // Remove existing test button
+            if (testButton) testButton.remove();
+
+            // Create test button
+            testButton = document.createElement('button');
+            testButton.innerHTML = '<i class="material-icons">search</i> Test Search Button';
+            testButton.style.cssText = `
+                width: 100%;
+                padding: 15px;
+                background: linear-gradient(45deg, #2196F3, #21CBF3);
+                color: white;
+                border: none;
+                border-radius: 8px;
+                font-size: 16px;
+                margin: 10px 0;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            `;
+
+            testButton.addEventListener('click', () => {
+                alert('Test search button works! 🎉');
+            });
+
+            container.appendChild(testButton);
+            showResult('test-result', 'Test search button created successfully!', 'success');
+        }
+
+        // Test button functionality
+        function testButtonFunctionality() {
+            if (testButton) {
+                testButton.click();
+                showResult('test-result', 'Test button clicked programmatically', 'success');
+            } else {
+                showResult('test-result', 'No test button to click. Create one first.', 'warning');
+            }
+        }
+
+        // Start monitoring
+        function startButtonMonitoring() {
+            if (monitoringInterval) {
+                showResult('monitor-result', 'Monitoring already active', 'warning');
+                return;
+            }
+
+            monitorLog = [];
+            showResult('monitor-result', 'Starting button monitoring...', 'info');
+
+            monitoringInterval = setInterval(() => {
+                const button = document.getElementById('left-menu-search-btn');
+                const timestamp = new Date().toLocaleTimeString();
+                
+                monitorLog.push({
+                    time: timestamp,
+                    exists: !!button,
+                    visible: button ? (button.getBoundingClientRect().width > 0) : false
+                });
+
+                // Keep only last 50 entries
+                if (monitorLog.length > 50) {
+                    monitorLog.shift();
+                }
+
+                // Update display
+                let logText = `Button Monitoring (Last ${Math.min(monitorLog.length, 10)} entries):\n\n`;
+                monitorLog.slice(-10).forEach(entry => {
+                    const status = entry.exists ? (entry.visible ? '✅' : '⚠️') : '❌';
+                    logText += `${entry.time}: ${status} Exists: ${entry.exists}, Visible: ${entry.visible}\n`;
+                });
+
+                showResult('monitor-result', logText, 'info');
+            }, 2000);
+        }
+
+        // Stop monitoring
+        function stopButtonMonitoring() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+                showResult('monitor-result', 'Monitoring stopped', 'info');
+            }
+        }
+
+        // Clear monitor log
+        function clearMonitorLog() {
+            monitorLog = [];
+            showResult('monitor-result', 'Monitor log cleared', 'info');
+        }
+
+        // Go to main app
+        function goToMainApp() {
+            window.location.href = 'index.html';
+        }
+
+        // Open app and start monitoring
+        function openAppAndMonitor() {
+            // Start monitoring first
+            startButtonMonitoring();
+            
+            // Open app in new tab
+            window.open('index.html', '_blank');
+            
+            showResult('monitor-result', 'Monitoring started. Main app opened in new tab.', 'success');
+        }
+
+        // Utility function to show results
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        // Auto-check on page load
+        setTimeout(() => {
+            console.log('🔍 Search Button Debug page loaded');
+            console.log('🔧 Running automatic checks...');
+            
+            // Check if main app components are available
+            if (window.stacExplorer) {
+                checkButtonExists();
+            } else {
+                showResult('status-result', 'Main app not loaded. Open main app first, then return here for debugging.', 'warning');
+            }
+        }, 1000);
+    </script>
+
+    <!-- Include all the fixes for testing -->
+    <script src="url-sync-fix.js"></script>
+    <script src="url-parameter-preserve-fix.js"></script>
+    <script src="search-integration-fix.js"></script>
+    <script src="search-button-fix.js"></script>
+</body>
+</html>

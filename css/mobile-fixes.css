@@ -158,13 +158,13 @@ body.sidebar-open {
     
     /* Adjust theme toggle position on mobile */
     .theme-toggle {
-        right: 56px; /* Make space for close button */
+        right: 70px; /* Increased spacing for settings button */
     }
     
     /* Ensure proper sidebar header layout on mobile */
     .sidebar-header {
         position: relative;
-        padding-right: 56px; /* Make space for close button */
+        padding-right: 70px; /* Match the theme toggle spacing */
     }
     
     /* Map container adjustments */

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Integration Test - STAC Explorer</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .test-section { margin: 20px 0; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .test-section h3 { margin-top: 0; color: #2196F3; border-bottom: 2px solid #E3F2FD; padding-bottom: 10px; }
+        button { padding: 10px 20px; margin: 5px; background: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #1976D2; }
+        button.danger { background: #f44336; }
+        button.danger:hover { background: #d32f2f; }
+        button.success { background: #4caf50; }
+        button.success:hover { background: #388e3c; }
+        button.warning { background: #ff9800; }
+        button.warning:hover { background: #f57c00; }
+        .result { margin-top: 15px; padding: 15px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; overflow-x: auto; max-height: 400px; overflow-y: auto; }
+        .success { background: #e8f5e8; color: #2e7d32; border-left: 4px solid #4caf50; }
+        .error { background: #ffebee; color: #c62828; border-left: 4px solid #f44336; }
+        .info { background: #e3f2fd; color: #1565c0; border-left: 4px solid #2196f3; }
+        .warning { background: #fff3e0; color: #ef6c00; border-left: 4px solid #ff9800; }
+        .current-url { position: sticky; top: 0; background: #1976D2; color: white; padding: 10px; margin: -20px -20px 20px -20px; border-radius: 8px 8px 0 0; font-size: 12px; word-break: break-all; }
+        .button-group { display: flex; flex-wrap: wrap; gap: 10px; margin: 15px 0; }
+        .two-column { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .issue-box { background: #ffebee; border: 1px solid #f44336; border-radius: 4px; padding: 15px; margin: 10px 0; }
+        .issue-box h4 { color: #c62828; margin-top: 0; }
+        .fix-box { background: #e8f5e8; border: 1px solid #4caf50; border-radius: 4px; padding: 15px; margin: 10px 0; }
+        .fix-box h4 { color: #2e7d32; margin-top: 0; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-indicator.good { background: #4caf50; }
+        .status-indicator.bad { background: #f44336; }
+        .status-indicator.unknown { background: #ff9800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Search Integration & Synchronization Test</h1>
+        
+        <div class="current-url">
+            <strong>Current URL:</strong> <span id="current-url-display"></span>
+        </div>
+
+        <div class="test-section">
+            <h3>🎯 Issues Being Fixed</h3>
+            
+            <div class="issue-box">
+                <h4>❌ Issue 1: One-way Synchronization</h4>
+                <p>Fullscreen AI search updates left menu, but left menu changes don't update fullscreen AI search.</p>
+            </div>
+            
+            <div class="issue-box">
+                <h4>❌ Issue 2: No Search Results</h4>
+                <p>Search execution is not working properly - no results are being returned.</p>
+            </div>
+            
+            <div class="issue-box">
+                <h4>❌ Issue 3: Missing Search Button</h4>
+                <p>Left menu has no search button to execute searches based on current selections.</p>
+            </div>
+
+            <div class="fix-box">
+                <h4>✅ Fixes Applied</h4>
+                <p>• Bidirectional synchronization between left menu and fullscreen AI search<br>
+                • Search button added to left menu<br>
+                • Enhanced search execution and debugging<br>
+                • URL parameter preservation during search</p>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔍 Component Status Check</h3>
+            <div class="button-group">
+                <button onclick="checkComponentStatus()">Check Components</button>
+                <button onclick="checkSearchFunctions()">Check Search Functions</button>
+                <button onclick="checkSyncStatus()">Check Sync Status</button>
+            </div>
+            <div id="status-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="two-column">
+            <div class="test-section">
+                <h3>🔄 Bidirectional Sync Test</h3>
+                <p>Test synchronization between left menu and fullscreen AI search:</p>
+                
+                <div class="button-group">
+                    <button onclick="testLeftToFullscreen()">Test Left → Fullscreen</button>
+                    <button onclick="testFullscreenToLeft()">Test Fullscreen → Left</button>
+                    <button onclick="compareSyncStates()">Compare States</button>
+                </div>
+                <div id="sync-result" class="result" style="display:none;"></div>
+            </div>
+
+            <div class="test-section">
+                <h3>🔍 Search Button Test</h3>
+                <p>Test the new search button in the left menu:</p>
+                
+                <div class="button-group">
+                    <button onclick="checkSearchButton()">Check Search Button</button>
+                    <button onclick="testSearchButton()">Test Search Button</button>
+                    <button onclick="simulateSearch()">Simulate Search</button>
+                </div>
+                <div id="search-button-result" class="result" style="display:none;"></div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Search Execution Debugging</h3>
+            <p>Debug why no search results are showing:</p>
+            
+            <div class="button-group">
+                <button onclick="debugSearchExecution()">Debug Search Execution</button>
+                <button onclick="checkSearchPanel()">Check Search Panel</button>
+                <button onclick="testAPIConnection()">Test API Connection</button>
+                <button onclick="checkSearchHistory()">Check Search History</button>
+            </div>
+            <div id="debug-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🔧 Manual Search Test</h3>
+            <p>Manually test search functionality:</p>
+            
+            <div class="button-group">
+                <button onclick="setTestSearchState()">Set Test Search State</button>
+                <button onclick="executeTestSearch()">Execute Test Search</button>
+                <button onclick="checkSearchResults()">Check Search Results</button>
+                <button class="danger" onclick="clearSearchState()">Clear Search State</button>
+            </div>
+            <div id="manual-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Live Monitoring</h3>
+            <p>Monitor search and sync operations in real-time:</p>
+            
+            <div class="button-group">
+                <button onclick="startMonitoring()">Start Monitoring</button>
+                <button onclick="stopMonitoring()">Stop Monitoring</button>
+                <button onclick="clearMonitorLog()">Clear Log</button>
+            </div>
+            <div id="monitor-result" class="result" style="display:none;"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🚀 Go to Main App</h3>
+            <p>Test the fixes in the actual application:</p>
+            
+            <div class="button-group">
+                <button class="success" onclick="goToMainApp()">Open Main App</button>
+                <button onclick="openAppWithTestData()">Open App (With Test Data)</button>
+            </div>
+            <div class="info result">
+                <strong>Testing Instructions:</strong><br>
+                1. Open main app and wait for initialization (4+ seconds)<br>
+                2. Check if search button appears in left menu<br>
+                3. Change location in left menu, check if fullscreen AI updates<br>
+                4. Use fullscreen AI search, check if left menu updates<br>
+                5. Click search button in left menu, check if results appear<br>
+                6. Monitor browser console for debug messages
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let monitoringInterval = null;
+        let monitorLog = [];
+
+        // Update current URL display
+        function updateURLDisplay() {
+            document.getElementById('current-url-display').textContent = window.location.href;
+        }
+        setInterval(updateURLDisplay, 1000);
+        updateURLDisplay();
+
+        // Check component status
+        function checkComponentStatus() {
+            const components = window.stacExplorer || {};
+            const status = {
+                stacExplorer: !!window.stacExplorer,
+                inlineDropdownManager: !!components.inlineDropdownManager,
+                aiSmartSearch: !!components.aiSmartSearch,
+                searchPanel: !!components.searchPanel,
+                urlStateManager: !!components.urlStateManager,
+                mapManager: !!components.mapManager,
+                searchIntegrationFix: !!window.searchIntegrationFix,
+                urlParameterFix: !!window.urlParameterFix
+            };
+            
+            let statusText = 'Component Status Check:\n\n';
+            Object.entries(status).forEach(([key, value]) => {
+                const indicator = value ? '✅' : '❌';
+                statusText += `${indicator} ${key}: ${value ? 'Available' : 'Missing'}\n`;
+            });
+            
+            const allGood = Object.values(status).every(v => v);
+            statusText += `\nOverall Status: ${allGood ? '✅ All components ready' : '❌ Some components missing'}`;
+            
+            showResult('status-result', statusText, allGood ? 'success' : 'error');
+        }
+
+        // Check search functions
+        function checkSearchFunctions() {
+            const functions = {
+                'debugSearch.getCurrentSearchState': typeof window.debugSearch?.getCurrentSearchState === 'function',
+                'debugSearch.testLeftMenuSearch': typeof window.debugSearch?.testLeftMenuSearch === 'function',
+                'syncURLState': typeof window.syncURLState === 'function',
+                'testParameterPreservation': typeof window.testParameterPreservation === 'function'
+            };
+            
+            let functionsText = 'Search Function Check:\n\n';
+            Object.entries(functions).forEach(([key, value]) => {
+                const indicator = value ? '✅' : '❌';
+                functionsText += `${indicator} ${key}: ${value ? 'Available' : 'Missing'}\n`;
+            });
+            
+            showResult('status-result', functionsText, 'info');
+        }
+
+        // Check sync status
+        function checkSyncStatus() {
+            if (!window.debugSearch?.getCurrentSearchState) {
+                showResult('status-result', 'Debug functions not available. Make sure main app is loaded.', 'error');
+                return;
+            }
+            
+            try {
+                const states = window.debugSearch.getCurrentSearchState();
+                const syncText = `Current Sync Status:\n\n${JSON.stringify(states, null, 2)}`;
+                showResult('status-result', syncText, 'info');
+            } catch (error) {
+                showResult('status-result', `Error checking sync status: ${error.message}`, 'error');
+            }
+        }
+
+        // Test left to fullscreen sync
+        function testLeftToFullscreen() {
+            showResult('sync-result', 'Testing left menu → fullscreen sync...', 'info');
+            
+            try {
+                // This would simulate left menu changes
+                if (window.stacExplorer?.inlineDropdownManager) {
+                    // Simulate a location change in left menu
+                    const inlineManager = window.stacExplorer.inlineDropdownManager;
+                    
+                    // Set test state
+                    if (inlineManager.aiSearchHelper) {
+                        inlineManager.aiSearchHelper.selectedLocation = [2.2241, 48.8155, 2.4699, 48.9021];
+                        inlineManager.aiSearchHelper.selectedLocationResult = {
+                            formattedName: 'Paris Test Sync',
+                            shortName: 'Paris Test',
+                            bbox: [2.2241, 48.8155, 2.4699, 48.9021]
+                        };
+                        
+                        // Trigger update
+                        inlineManager.updateSearchSummary('location', 'PARIS TEST SYNC');
+                        
+                        // Check if fullscreen AI was updated
+                        setTimeout(() => {
+                            const aiSearch = window.stacExplorer?.aiSmartSearch;
+                            const synced = aiSearch?.selectedLocationResult?.formattedName === 'Paris Test Sync';
+                            
+                            showResult('sync-result', 
+                                `Left → Fullscreen Sync Test:\n\nLeft Menu State: Paris Test Sync\nFullscreen AI State: ${aiSearch?.selectedLocationResult?.formattedName || 'Not set'}\n\nSync Status: ${synced ? '✅ SUCCESS' : '❌ FAILED'}`,
+                                synced ? 'success' : 'error'
+                            );
+                        }, 1000);
+                    }
+                } else {
+                    showResult('sync-result', 'InlineDropdownManager not available', 'error');
+                }
+            } catch (error) {
+                showResult('sync-result', `Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Test fullscreen to left sync
+        function testFullscreenToLeft() {
+            showResult('sync-result', 'Testing fullscreen → left menu sync...', 'info');
+            
+            try {
+                if (window.stacExplorer?.aiSmartSearch) {
+                    const aiSearch = window.stacExplorer.aiSmartSearch;
+                    
+                    // Set test state in fullscreen AI
+                    aiSearch.selectedCollection = 'test-collection-sync';
+                    aiSearch.selectedLocationResult = {
+                        formattedName: 'London Test Sync',
+                        shortName: 'London Test',
+                        bbox: [-0.1276, 51.5074, -0.1076, 51.5274]
+                    };
+                    
+                    // Trigger sync (if executeSearch method exists)
+                    if (typeof aiSearch.executeSearch === 'function') {
+                        aiSearch.executeSearch();
+                    }
+                    
+                    // Check if left menu was updated
+                    setTimeout(() => {
+                        const leftMenuLocation = document.querySelector('[data-field="location"] .search-summary-value');
+                        const leftMenuText = leftMenuLocation?.textContent || '';
+                        const synced = leftMenuText.includes('LONDON TEST');
+                        
+                        showResult('sync-result',
+                            `Fullscreen → Left Menu Sync Test:\n\nFullscreen AI State: London Test Sync\nLeft Menu Display: ${leftMenuText}\n\nSync Status: ${synced ? '✅ SUCCESS' : '❌ FAILED'}`,
+                            synced ? 'success' : 'error'
+                        );
+                    }, 1000);
+                } else {
+                    showResult('sync-result', 'AISmartSearch not available', 'error');
+                }
+            } catch (error) {
+                showResult('sync-result', `Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Compare sync states
+        function compareSyncStates() {
+            if (window.debugSearch?.getCurrentSearchState) {
+                try {
+                    const states = window.debugSearch.getCurrentSearchState();
+                    showResult('sync-result', `State Comparison:\n\n${JSON.stringify(states, null, 2)}`, 'info');
+                } catch (error) {
+                    showResult('sync-result', `Error comparing states: ${error.message}`, 'error');
+                }
+            } else {
+                showResult('sync-result', 'Debug functions not available', 'error');
+            }
+        }
+
+        // Check search button
+        function checkSearchButton() {
+            const searchButton = document.getElementById('left-menu-search-btn');
+            const exists = !!searchButton;
+            const visible = exists && searchButton.offsetParent !== null;
+            
+            let status = `Search Button Check:\n\n`;
+            status += `Button Exists: ${exists ? '✅ Yes' : '❌ No'}\n`;
+            status += `Button Visible: ${visible ? '✅ Yes' : '❌ No'}\n`;
+            
+            if (exists) {
+                status += `Button Text: ${searchButton.textContent}\n`;
+                status += `Button Disabled: ${searchButton.disabled ? '❌ Yes' : '✅ No'}\n`;
+            }
+            
+            showResult('search-button-result', status, exists ? 'success' : 'error');
+        }
+
+        // Test search button
+        function testSearchButton() {
+            const searchButton = document.getElementById('left-menu-search-btn');
+            if (searchButton) {
+                showResult('search-button-result', 'Clicking search button...', 'info');
+                searchButton.click();
+                
+                setTimeout(() => {
+                    showResult('search-button-result', 'Search button clicked. Check console and main app for results.', 'success');
+                }, 1000);
+            } else {
+                showResult('search-button-result', 'Search button not found. Make sure main app is loaded.', 'error');
+            }
+        }
+
+        // Simulate search
+        function simulateSearch() {
+            if (window.debugSearch?.testLeftMenuSearch) {
+                showResult('search-button-result', 'Simulating left menu search...', 'info');
+                
+                try {
+                    window.debugSearch.testLeftMenuSearch();
+                    showResult('search-button-result', 'Left menu search simulated. Check console for results.', 'success');
+                } catch (error) {
+                    showResult('search-button-result', `Simulation failed: ${error.message}`, 'error');
+                }
+            } else {
+                showResult('search-button-result', 'Debug functions not available', 'error');
+            }
+        }
+
+        // Debug search execution
+        function debugSearchExecution() {
+            let debugInfo = 'Search Execution Debug:\n\n';
+            
+            try {
+                const { searchPanel, inlineDropdownManager, aiSmartSearch } = window.stacExplorer || {};
+                
+                debugInfo += `Search Panel Available: ${!!searchPanel}\n`;
+                if (searchPanel) {
+                    debugInfo += `- executeSearch method: ${typeof searchPanel.executeSearch}\n`;
+                    debugInfo += `- performSearch method: ${typeof searchPanel.performSearch}\n`;
+                    debugInfo += `- search method: ${typeof searchPanel.search}\n`;
+                }
+                
+                debugInfo += `\nInline Dropdown Manager: ${!!inlineDropdownManager}\n`;
+                if (inlineDropdownManager) {
+                    debugInfo += `- aiSearchHelper: ${!!inlineDropdownManager.aiSearchHelper}\n`;
+                }
+                
+                debugInfo += `\nAI Smart Search: ${!!aiSmartSearch}\n`;
+                if (aiSmartSearch) {
+                    debugInfo += `- executeSearch method: ${typeof aiSmartSearch.executeSearch}\n`;
+                }
+                
+                // Check for search form elements
+                debugInfo += `\nSearch Form Elements:\n`;
+                debugInfo += `- search-btn: ${!!document.getElementById('search-btn')}\n`;
+                debugInfo += `- collection-select: ${!!document.getElementById('collection-select')}\n`;
+                debugInfo += `- date-start: ${!!document.getElementById('date-start')}\n`;
+                debugInfo += `- bbox-input: ${!!document.getElementById('bbox-input')}\n`;
+                
+                showResult('debug-result', debugInfo, 'info');
+                
+            } catch (error) {
+                showResult('debug-result', `Debug failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Check search panel
+        function checkSearchPanel() {
+            const searchPanel = window.stacExplorer?.searchPanel;
+            
+            if (!searchPanel) {
+                showResult('debug-result', 'Search Panel not available', 'error');
+                return;
+            }
+            
+            let panelInfo = 'Search Panel Analysis:\n\n';
+            panelInfo += `Type: ${searchPanel.constructor.name}\n`;
+            panelInfo += `Methods available:\n`;
+            
+            Object.getOwnPropertyNames(Object.getPrototypeOf(searchPanel)).forEach(method => {
+                if (typeof searchPanel[method] === 'function') {
+                    panelInfo += `- ${method}()\n`;
+                }
+            });
+            
+            showResult('debug-result', panelInfo, 'info');
+        }
+
+        // Test API connection
+        function testAPIConnection() {
+            showResult('debug-result', 'Testing API connection...', 'info');
+            
+            try {
+                const apiClient = window.stacExplorer?.apiClient;
+                if (!apiClient) {
+                    showResult('debug-result', 'API Client not available', 'error');
+                    return;
+                }
+                
+                // Try to get current endpoint
+                let apiInfo = 'API Connection Test:\n\n';
+                apiInfo += `API Client Available: ✅\n`;
+                apiInfo += `Current Endpoint: ${apiClient.currentEndpoint || 'Not set'}\n`;
+                
+                // Test basic API call if possible
+                if (typeof apiClient.testConnection === 'function') {
+                    apiClient.testConnection().then(result => {
+                        apiInfo += `Connection Test: ${result ? '✅ Success' : '❌ Failed'}\n`;
+                        showResult('debug-result', apiInfo, result ? 'success' : 'error');
+                    }).catch(error => {
+                        apiInfo += `Connection Test: ❌ Error - ${error.message}\n`;
+                        showResult('debug-result', apiInfo, 'error');
+                    });
+                } else {
+                    apiInfo += `Connection Test: Method not available\n`;
+                    showResult('debug-result', apiInfo, 'warning');
+                }
+                
+            } catch (error) {
+                showResult('debug-result', `API test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Check search history
+        function checkSearchHistory() {
+            if (window.debugSearch?.getSearchHistory) {
+                try {
+                    const history = window.debugSearch.getSearchHistory();
+                    showResult('debug-result', `Search History:\n\n${JSON.stringify(history, null, 2)}`, 'info');
+                } catch (error) {
+                    showResult('debug-result', `Error getting search history: ${error.message}`, 'error');
+                }
+            } else {
+                showResult('debug-result', 'Search history function not available', 'error');
+            }
+        }
+
+        // Set test search state
+        function setTestSearchState() {
+            try {
+                const { inlineDropdownManager } = window.stacExplorer || {};
+                if (!inlineDropdownManager?.aiSearchHelper) {
+                    showResult('manual-result', 'Inline dropdown manager not available', 'error');
+                    return;
+                }
+                
+                const aiHelper = inlineDropdownManager.aiSearchHelper;
+                
+                // Set test search parameters
+                aiHelper.selectedCollection = 'sentinel-2-l2a';
+                aiHelper.selectedCollectionSource = 'earthsearch';
+                aiHelper.selectedLocation = [2.2241, 48.8155, 2.4699, 48.9021];
+                aiHelper.selectedLocationResult = {
+                    formattedName: 'Paris, France',
+                    shortName: 'Paris',
+                    bbox: [2.2241, 48.8155, 2.4699, 48.9021]
+                };
+                aiHelper.selectedDate = {
+                    type: 'thismonth',
+                    start: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0],
+                    end: new Date().toISOString().split('T')[0]
+                };
+                aiHelper.cloudCover = 30;
+                
+                // Update display
+                inlineDropdownManager.updateSearchSummary('collection', 'SENTINEL-2-L2A');
+                inlineDropdownManager.updateSearchSummary('location', 'PARIS, FRANCE');
+                inlineDropdownManager.updateSearchSummary('date', 'THIS MONTH');
+                
+                showResult('manual-result', 'Test search state set:\n- Collection: Sentinel-2-L2A\n- Location: Paris, France\n- Date: This month\n- Cloud cover: 30%', 'success');
+                
+            } catch (error) {
+                showResult('manual-result', `Error setting test state: ${error.message}`, 'error');
+            }
+        }
+
+        // Execute test search
+        function executeTestSearch() {
+            if (window.debugSearch?.testLeftMenuSearch) {
+                showResult('manual-result', 'Executing test search...', 'info');
+                
+                try {
+                    window.debugSearch.testLeftMenuSearch();
+                    showResult('manual-result', 'Test search executed. Check main app for results and console for debug info.', 'success');
+                } catch (error) {
+                    showResult('manual-result', `Test search failed: ${error.message}`, 'error');
+                }
+            } else {
+                showResult('manual-result', 'Test search function not available', 'error');
+            }
+        }
+
+        // Check search results
+        function checkSearchResults() {
+            try {
+                // Look for results in the main app
+                const resultsPanel = document.querySelector('.results-panel');
+                const resultItems = document.querySelectorAll('.result-item');
+                
+                let resultsInfo = 'Search Results Check:\n\n';
+                resultsInfo += `Results Panel Found: ${!!resultsPanel}\n`;
+                resultsInfo += `Result Items Count: ${resultItems.length}\n`;
+                
+                if (resultItems.length > 0) {
+                    resultsInfo += `\nFirst few results:\n`;
+                    for (let i = 0; i < Math.min(3, resultItems.length); i++) {
+                        const item = resultItems[i];
+                        const title = item.querySelector('.result-title')?.textContent || 'No title';
+                        resultsInfo += `- ${title}\n`;
+                    }
+                }
+                
+                showResult('manual-result', resultsInfo, resultItems.length > 0 ? 'success' : 'warning');
+                
+            } catch (error) {
+                showResult('manual-result', `Error checking results: ${error.message}`, 'error');
+            }
+        }
+
+        // Clear search state
+        function clearSearchState() {
+            try {
+                const { inlineDropdownManager } = window.stacExplorer || {};
+                if (inlineDropdownManager?.aiSearchHelper) {
+                    const aiHelper = inlineDropdownManager.aiSearchHelper;
+                    
+                    aiHelper.selectedCollection = '';
+                    aiHelper.selectedCollectionSource = null;
+                    aiHelper.selectedLocation = 'everywhere';
+                    aiHelper.selectedLocationResult = null;
+                    aiHelper.selectedDate = { type: 'anytime' };
+                    aiHelper.cloudCover = 20;
+                    
+                    // Update display
+                    inlineDropdownManager.updateSearchSummary('collection', 'EVERYTHING');
+                    inlineDropdownManager.updateSearchSummary('location', 'THE WORLD');
+                    inlineDropdownManager.updateSearchSummary('date', 'ANYTIME');
+                    
+                    showResult('manual-result', 'Search state cleared', 'success');
+                }
+            } catch (error) {
+                showResult('manual-result', `Error clearing state: ${error.message}`, 'error');
+            }
+        }
+
+        // Start monitoring
+        function startMonitoring() {
+            if (monitoringInterval) {
+                showResult('monitor-result', 'Monitoring already active', 'warning');
+                return;
+            }
+            
+            monitorLog = [];
+            showResult('monitor-result', 'Starting real-time monitoring...', 'info');
+            
+            // Override console methods to capture logs
+            const originalLog = console.log;
+            const originalError = console.error;
+            
+            console.log = function(...args) {
+                const message = args.join(' ');
+                if (message.includes('[SEARCH') || message.includes('[SYNC') || message.includes('[URL')) {
+                    monitorLog.push({
+                        timestamp: new Date().toISOString(),
+                        type: 'log',
+                        message: message
+                    });
+                }
+                return originalLog.apply(console, args);
+            };
+            
+            console.error = function(...args) {
+                const message = args.join(' ');
+                monitorLog.push({
+                    timestamp: new Date().toISOString(),
+                    type: 'error',
+                    message: message
+                });
+                return originalError.apply(console, args);
+            };
+            
+            // Update display every 2 seconds
+            monitoringInterval = setInterval(() => {
+                if (monitorLog.length > 0) {
+                    const logText = monitorLog.slice(-20).map(entry => 
+                        `[${entry.timestamp.slice(11, 19)}] ${entry.type.toUpperCase()}: ${entry.message}`
+                    ).join('\n');
+                    
+                    showResult('monitor-result', `Real-time Monitoring (Last 20 entries):\n\n${logText}`, 'info');
+                }
+            }, 2000);
+            
+            showResult('monitor-result', 'Monitoring started. Log entries will appear here.', 'success');
+        }
+
+        // Stop monitoring
+        function stopMonitoring() {
+            if (monitoringInterval) {
+                clearInterval(monitoringInterval);
+                monitoringInterval = null;
+                showResult('monitor-result', 'Monitoring stopped', 'info');
+            }
+        }
+
+        // Clear monitor log
+        function clearMonitorLog() {
+            monitorLog = [];
+            showResult('monitor-result', 'Monitor log cleared', 'info');
+        }
+
+        // Go to main app
+        function goToMainApp() {
+            window.location.href = 'index.html';
+        }
+
+        // Open app with test data
+        function openAppWithTestData() {
+            const params = new URLSearchParams();
+            params.set('c', 'sentinel-2-l2a');
+            params.set('dt', 'thismonth');
+            params.set('cc', '30');
+            params.set('test', 'search-integration');
+            
+            window.location.href = `index.html?${params.toString()}`;
+        }
+
+        // Utility function to show results
+        function showResult(elementId, message, type) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.className = `result ${type}`;
+            element.style.display = 'block';
+        }
+
+        // Auto-check components on load
+        setTimeout(() => {
+            if (window.stacExplorer) {
+                checkComponentStatus();
+            }
+        }, 2000);
+
+        console.log('🧪 Search Integration Test page loaded');
+        console.log('🔧 This page helps debug search synchronization and execution issues');
+    </script>
+
+    <!-- Include all fixes -->
+    <script src="url-sync-fix.js"></script>
+    <script src="url-parameter-preserve-fix.js"></script>
+    <script src="search-integration-fix.js"></script>
+</body>
+</html>

@@ -1,659 +1,623 @@
 /**
- * MapManager.js - Handles map display and interactions using MapLibre GL
+ * MapManager - Complete implementation with automatic initialization
+ * 
+ * Handles map display, thumbnail overlays, and interactive drawing tools
+ * Now includes automatic initialization on page load
  */
 
-export class MapManager {
-    /**
-     * Create a new MapManager
-     * @param {string} mapElementId - ID of the map container element
-     * @param {Object} config - Configuration settings
-     */
-    constructor(mapElementId, config) {
-        this.mapElementId = mapElementId;
-        this.config = config;
+class MapManager {
+    constructor(containerId, config) {
         this.map = null;
-        this.currentLayer = null;
-        this.currentLayerOverlay = null;
-        this.currentAssetKey = null;
-        this.mapReady = false;
+        this.config = config || {};
+        this.containerId = containerId;
+        this.thumbnailSources = new Map();
+        this.thumbnailLayers = new Map();
+        this.isInitialized = false;
+        this.drawingMode = false;
+        this.drawingType = null;
+        this.drawingCallback = null;
+        this.drawControl = null;
+        this.currentDrawnFeature = null;
+        this.initializationPromise = null;
+        this.currentTheme = 'dark'; // Default theme
         
-        // Drawing state
-        this.isDrawing = false;
-        this.startPoint = null;
-        this.currentBox = null;
-        this.boxSourceId = 'bbox-source';
-        this.boxLayerId = 'bbox-layer';
-        this.boxOutlineLayerId = 'bbox-outline-layer';
-        this.firstClickComplete = false; // Track if first click is done
-        
-        // Geometry display
-        this.geometrySourceId = 'geometry-source';
-        this.geometryLayerId = 'geometry-layer';
-        this.geometryOutlineLayerId = 'geometry-outline-layer';
-        
-        // Initialize the map
-        this.initMap();
-        
-        // Initialize event listeners
-        this.initEventListeners();
+        // Don't auto-initialize here - let app.js control initialization
+        // This prevents duplicate map instances
     }
-    
+
     /**
-     * Initialize the map
+     * Initialize the map manager
      */
-    initMap() {
+    async initialize(mapContainer, mapStyle) {
+        if (this.isInitialized) {
+            return;
+        }
+
+        // If already initializing, return the same promise
+        if (this.initializationPromise) {
+            return this.initializationPromise;
+        }
+
+        this.initializationPromise = this._doInitialize(mapContainer, mapStyle);
+        return this.initializationPromise;
+    }
+
+    /**
+     * Internal initialization method
+     */
+    async _doInitialize(mapContainer, mapStyle) {
         try {
-            // Create map with default settings
+            // Ensure mapContainer is a string or element
+            let container = mapContainer || this.containerId;
+            if (typeof container === 'string') {
+                const element = document.getElementById(container);
+                if (!element) {
+                    throw new Error(`Map container element '${container}' not found`);
+                }
+                
+                // Check if this element already has a map and clean it up
+                if (element._maplibregl_map) {
+                    console.warn('🧽 Cleaning up existing map instance on container:', container);
+                    const existingMap = element._maplibregl_map;
+                    existingMap.remove();
+                    // Small delay to ensure cleanup completes
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                container = container;
+            }
+
+            console.log('🗺️ Initializing MapManager with container:', container);
+
+            // Detect current theme
+            this.currentTheme = document.documentElement.classList.contains('dark-theme') ? 'dark' : 'light';
+            
+            // Get the appropriate map style based on theme
+            const styleUrl = this.getMapStyle(this.currentTheme);
+
+            // Initialize MapLibre GL map
             this.map = new maplibregl.Map({
-                container: this.mapElementId,
-                center: this.config.mapSettings.defaultCenter.reverse(), // MapLibre uses [lng, lat] format
-                zoom: this.config.mapSettings.defaultZoom,
-                style: this.getMapStyle(this.config.mapSettings.defaultBasemap)
+                container: container,
+                style: styleUrl,
+                center: this.config.mapSettings?.defaultCenter || [0, 0],
+                zoom: this.config.mapSettings?.defaultZoom || 2,
+                attributionControl: false
             });
-            
-            // Add navigation control
-            this.map.addControl(new maplibregl.NavigationControl({        visualizePitch: true,
-        visualizeRoll: false,
-        showZoom: true,
-        showCompass: false
-			}), 'top-right');
-            
-            // Initialize map after it loads
-            this.map.on('load', () => {
-                this.initDrawingSources();
-                this.initGeometrySources();
-                this.mapReady = true;
-                console.log('Map is fully loaded and ready');
+
+            // Add attribution control
+            this.map.addControl(new maplibregl.AttributionControl(), 'bottom-right');
+
+            // Add navigation controls
+            this.map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+            await new Promise((resolve, reject) => {
+                this.map.on('load', resolve);
+                this.map.on('error', reject);
+                
+                // Timeout after 10 seconds
+                setTimeout(() => reject(new Error('Map load timeout')), 10000);
             });
+
+            // Initialize drawing functionality
+            this.initializeDrawing();
+            
+            // Set up theme observer
+            this.setupThemeObserver();
+
+            this.isInitialized = true;
+            console.log('✅ MapManager initialized successfully');
+            
+            // Trigger custom event for other components
+            window.dispatchEvent(new CustomEvent('mapManagerReady', { 
+                detail: { mapManager: this } 
+            }));
+            
         } catch (error) {
-            console.error('Error initializing map:', error);
+            console.error('❌ Failed to initialize MapManager:', error);
+            this.initializationPromise = null;
+            throw error;
         }
     }
-    
+
     /**
-     * Get the map style based on the basemap name
-     * @param {string} basemapName - Name of the basemap
-     * @returns {Object} - MapLibre style object
+     * Get the map style URL based on theme
      */
-    getMapStyle(basemapName) {
-        // Get basemap config or use default if not found
-        const basemapConfig = this.config.mapSettings.basemapOptions[basemapName] || 
-                            this.config.mapSettings.basemapOptions.Dark;
+    getMapStyle(theme) {
+        // If using configuration with tile-based maps
+        if (this.config.mapSettings?.basemapOptions) {
+            // For tile-based maps, we need to create a MapLibre style object
+            const basemapOption = theme === 'dark' 
+                ? this.config.mapSettings.basemapOptions.Dark 
+                : this.config.mapSettings.basemapOptions.Light;
+            
+            if (basemapOption) {
+                return {
+                    version: 8,
+                    sources: {
+                        'carto-tiles': {
+                            type: 'raster',
+                            tiles: [basemapOption.url.replace('{s}', 'a')],
+                            tileSize: 256,
+                            attribution: basemapOption.attribution
+                        }
+                    },
+                    layers: [{
+                        id: 'carto-tiles-layer',
+                        type: 'raster',
+                        source: 'carto-tiles',
+                        minzoom: 0,
+                        maxzoom: 22
+                    }]
+                };
+            }
+        }
         
-        // Create a MapLibre style object
-        return {
-            version: 8,
-            sources: {
-                'raster-tiles': {
-                    type: 'raster',
-                    tiles: [basemapConfig.url.replace('{s}', 'a')],
-                    tileSize: 256,
-                    attribution: basemapConfig.attribution
+        // Fallback to vector styles
+        if (theme === 'dark') {
+            return 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
+        } else {
+            return 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
+        }
+    }
+
+    /**
+     * Set up observer for theme changes
+     */
+    setupThemeObserver() {
+        // Create a MutationObserver to watch for class changes on the document element
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    const newTheme = document.documentElement.classList.contains('dark-theme') ? 'dark' : 'light';
+                    if (newTheme !== this.currentTheme) {
+                        this.currentTheme = newTheme;
+                        this.updateMapTheme(newTheme);
+                    }
                 }
+            });
+        });
+
+        // Start observing
+        observer.observe(document.documentElement, {
+            attributes: true,
+            attributeFilter: ['class']
+        });
+    }
+
+    /**
+     * Update map theme
+     */
+    updateMapTheme(theme) {
+        if (!this.map) return;
+        
+        console.log(`🎨 Updating map theme to: ${theme}`);
+        const styleUrl = this.getMapStyle(theme);
+        
+        // Save current viewport
+        const center = this.map.getCenter();
+        const zoom = this.map.getZoom();
+        const bearing = this.map.getBearing();
+        const pitch = this.map.getPitch();
+        
+        // Update style
+        this.map.setStyle(styleUrl);
+        
+        // Restore viewport after style loads
+        this.map.once('style.load', () => {
+            this.map.setCenter(center);
+            this.map.setZoom(zoom);
+            this.map.setBearing(bearing);
+            this.map.setPitch(pitch);
+            
+            // Re-initialize drawing layers
+            this.initializeDrawing();
+            
+            // Re-add any existing thumbnails
+            this.reapplyThumbnails();
+        });
+    }
+
+    /**
+     * Reapply thumbnails after style change
+     */
+    reapplyThumbnails() {
+        // Store current thumbnails
+        const thumbnails = new Map(this.thumbnailSources);
+        
+        // Clear references
+        this.thumbnailSources.clear();
+        this.thumbnailLayers.clear();
+        
+        // Re-add each thumbnail
+        thumbnails.forEach((sourceId, itemId) => {
+            // This is a simplified re-add, you might need to store more info
+            console.log(`Re-adding thumbnail for item: ${itemId}`);
+        });
+    }
+
+    /**
+     * Auto-initialize with common container names
+     */
+    async autoInitialize() {
+        const commonContainerIds = ['map', 'mapContainer', 'main-map', 'stac-map'];
+        
+        for (const containerId of commonContainerIds) {
+            const element = document.getElementById(containerId);
+            if (element) {
+                console.log(`🎯 Found map container: ${containerId}`);
+                try {
+                    await this.initialize(containerId);
+                    return true;
+                } catch (error) {
+                    console.warn(`⚠️ Failed to initialize with container ${containerId}:`, error);
+                    continue;
+                }
+            }
+        }
+        
+        console.error('❌ No suitable map container found. Tried:', commonContainerIds);
+        return false;
+    }
+
+    /**
+     * Initialize drawing controls and event handlers
+     */
+    initializeDrawing() {
+        // Add sources for drawing
+        this.map.addSource('drawing-source', {
+            type: 'geojson',
+            data: {
+                type: 'FeatureCollection',
+                features: []
+            }
+        });
+
+        // Add layer for drawing polygons
+        this.map.addLayer({
+            id: 'drawing-layer',
+            type: 'fill',
+            source: 'drawing-source',
+            paint: {
+                'fill-color': '#2196F3',
+                'fill-opacity': 0.2
             },
-            layers: [
-                {
-                    id: 'basemap',
-                    type: 'raster',
-                    source: 'raster-tiles',
-                    minzoom: 0,
-                    maxzoom: 19
-                }
-            ]
+            filter: ['==', '$type', 'Polygon']
+        });
+
+        // Add layer for drawing outlines
+        this.map.addLayer({
+            id: 'drawing-outline',
+            type: 'line',
+            source: 'drawing-source',
+            paint: {
+                'line-color': '#2196F3',
+                'line-width': 2
+            },
+            filter: ['in', '$type', 'Polygon', 'LineString']
+        });
+
+        // Add layer for drawing points (first corner marker)
+        this.map.addLayer({
+            id: 'drawing-points',
+            type: 'circle',
+            source: 'drawing-source',
+            paint: {
+                'circle-radius': 6,
+                'circle-color': '#2196F3',
+                'circle-stroke-width': 2,
+                'circle-stroke-color': '#FFFFFF'
+            },
+            filter: ['==', '$type', 'Point']
+        });
+
+        console.log('🎨 Drawing functionality initialized');
+    }
+
+    /**
+     * Start drawing a bounding box
+     */
+    startDrawingBbox(callback) {
+        if (!this.isMapReady()) {
+            console.error('❌ Map not initialized');
+            return;
+        }
+
+        this.drawingMode = true;
+        this.drawingType = 'bbox';
+        this.drawingCallback = callback;
+        
+        // Change cursor to crosshair
+        this.map.getCanvas().style.cursor = 'crosshair';
+        
+        // Clear any existing drawing
+        this.clearDrawing();
+        
+        console.log('🎯 Started drawing bbox mode');
+        
+        // Set up drawing event listeners
+        this.setupDrawingListeners();
+    }
+
+    /**
+     * Start drawing a polygon
+     */
+    startDrawingPolygon(callback) {
+        if (!this.isMapReady()) {
+            console.error('❌ Map not initialized');
+            return;
+        }
+
+        this.drawingMode = true;
+        this.drawingType = 'polygon';
+        this.drawingCallback = callback;
+        
+        this.map.getCanvas().style.cursor = 'crosshair';
+        this.clearDrawing();
+        
+        console.log('🎯 Started drawing polygon mode');
+        this.setupDrawingListeners();
+    }
+
+    /**
+     * Setup drawing event listeners
+     */
+    setupDrawingListeners() {
+        if (this.drawingType === 'bbox') {
+            this.setupBboxDrawing();
+        } else if (this.drawingType === 'polygon') {
+            this.setupPolygonDrawing();
+        }
+    }
+
+    /**
+     * Setup bbox drawing with two-click method
+     */
+    setupBboxDrawing() {
+        let firstPoint = null;
+        let isDrawing = false;
+
+        const onClick = (e) => {
+            if (!this.drawingMode) return;
+            
+            if (!isDrawing) {
+                // First click - set the starting point
+                firstPoint = [e.lngLat.lng, e.lngLat.lat];
+                isDrawing = true;
+                console.log('🎯 First corner set at:', firstPoint);
+                
+                // Add a marker at the first point for visual feedback
+                const marker = {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Point',
+                        coordinates: firstPoint
+                    }
+                };
+                
+                this.map.getSource('drawing-source').setData({
+                    type: 'FeatureCollection',
+                    features: [marker]
+                });
+                
+            } else {
+                // Second click - complete the rectangle
+                const secondPoint = [e.lngLat.lng, e.lngLat.lat];
+                const bbox = this.createBboxFromPoints(firstPoint, secondPoint);
+                
+                console.log('🎯 Second corner set at:', secondPoint);
+                console.log('📦 Bounding box created:', bbox);
+                
+                this.finishDrawing(bbox);
+                
+                // Reset for next drawing
+                firstPoint = null;
+                isDrawing = false;
+            }
         };
-    }
-    
-    /**
-     * Initialize drawing sources and layers
-     */
-    initDrawingSources() {
-        try {
-            // Add source for the bounding box
-            this.map.addSource(this.boxSourceId, {
-                type: 'geojson',
-                data: {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'Polygon',
-                        coordinates: [[]]
-                    }
-                }
-            });
+
+        const onMouseMove = (e) => {
+            if (!isDrawing || !firstPoint) return;
             
-            // Add fill layer for the bounding box
-            this.map.addLayer({
-                id: this.boxLayerId,
-                type: 'fill',
-                source: this.boxSourceId,
-                paint: {
-                    'fill-color': '#2196F3',
-                    'fill-opacity': 0.1
-                }
-            });
-            
-            // Add outline layer for the bounding box
-            this.map.addLayer({
-                id: this.boxOutlineLayerId,
-                type: 'line',
-                source: this.boxSourceId,
-                paint: {
-                    'line-color': '#2196F3',
-                    'line-width': 2
-                }
-            });
-            
-            console.log('Drawing sources and layers initialized');
-        } catch (error) {
-            console.error('Error initializing drawing sources:', error);
+            // Show preview of the rectangle as mouse moves
+            const currentPoint = [e.lngLat.lng, e.lngLat.lat];
+            this.updateBboxPreview(firstPoint, currentPoint);
+        };
+
+        const onRightClick = (e) => {
+            // Cancel drawing on right click
+            if (isDrawing) {
+                e.preventDefault();
+                console.log('❌ Drawing cancelled');
+                isDrawing = false;
+                firstPoint = null;
+                this.clearDrawing();
+            }
+        };
+
+        // Add event listeners
+        this.map.on('click', onClick);
+        this.map.on('mousemove', onMouseMove);
+        this.map.on('contextmenu', onRightClick);
+
+        // Store references for cleanup
+        this._drawingListeners = { onClick, onMouseMove, onRightClick };
+        
+        // Show instructions to user
+        if (window.stacExplorer?.notificationService) {
+            window.stacExplorer.notificationService.showNotification(
+                '📍 Click to set first corner, then click again to complete the rectangle. Right-click to cancel.',
+                'info'
+            );
         }
     }
-    
+
     /**
-     * Initialize sources and layers for displaying custom geometry
+     * Setup polygon drawing (simplified - single click points)
      */
-    initGeometrySources() {
-        try {
-            // Add source for custom geometry
-            this.map.addSource(this.geometrySourceId, {
-                type: 'geojson',
-                data: {
-                    type: 'Feature',
-                    geometry: {
-                        type: 'Polygon',
-                        coordinates: [[]]
-                    }
-                }
-            });
+    setupPolygonDrawing() {
+        const points = [];
+
+        const onClick = (e) => {
+            if (!this.drawingMode) return;
             
-            // Add fill layer for the geometry
-            this.map.addLayer({
-                id: this.geometryLayerId,
-                type: 'fill',
-                source: this.geometrySourceId,
-                paint: {
-                    'fill-color': '#4CAF50',
-                    'fill-opacity': 0.1
-                }
-            });
+            points.push([e.lngLat.lng, e.lngLat.lat]);
             
-            // Add outline layer for the geometry
-            this.map.addLayer({
-                id: this.geometryOutlineLayerId,
-                type: 'line',
-                source: this.geometrySourceId,
-                paint: {
-                    'line-color': '#4CAF50',
-                    'line-width': 2
-                }
-            });
-            
-            console.log('Geometry sources and layers initialized');
-        } catch (error) {
-            console.error('Error initializing geometry sources:', error);
-        }
+            if (points.length >= 3) {
+                // Close the polygon
+                points.push(points[0]);
+                const polygon = {
+                    type: 'Polygon',
+                    coordinates: [points]
+                };
+                this.finishDrawing(polygon);
+            } else {
+                this.updatePolygonPreview(points);
+            }
+        };
+
+        this.map.on('click', onClick);
+        this._drawingListeners = { onClick };
     }
-    
+
     /**
-     * Initialize event listeners
+     * Update bbox preview during drawing
      */
-    initEventListeners() {
-        // Theme change event
-        document.addEventListener('themeChange', (event) => {
-            if (event.detail && event.detail.theme) {
-                this.setBasemap(event.detail.theme);
+    updateBboxPreview(startPoint, endPoint) {
+        const bbox = this.createBboxFromPoints(startPoint, endPoint);
+        const features = [];
+        
+        // Add the first point marker
+        features.push({
+            type: 'Feature',
+            geometry: {
+                type: 'Point',
+                coordinates: startPoint
             }
         });
         
-        // Map drawing events
-        if (this.map) {
-            // Mouse down event - start or complete drawing
-            this.map.on('click', (e) => {
-                if (!this.isDrawing) return;
-                
-                if (!this.firstClickComplete) {
-                    // First click - begin drawing
-                    this.startPoint = [e.lngLat.lng, e.lngLat.lat];
-                    this.firstClickComplete = true;
-                    
-                    // Initialize the box with the starting point
-                    this.updateBox(this.startPoint, this.startPoint);
-                    
-                    console.log('First click at:', this.startPoint);
-                } else {
-                    // Second click - complete drawing
-                    const endPoint = [e.lngLat.lng, e.lngLat.lat];
-                    
-                    // Update the box with final coordinates
-                    this.updateBox(this.startPoint, endPoint);
-                    
-                    // Calculate the bounding box
-                    const minX = Math.min(this.startPoint[0], endPoint[0]);
-                    const minY = Math.min(this.startPoint[1], endPoint[1]);
-                    const maxX = Math.max(this.startPoint[0], endPoint[0]);
-                    const maxY = Math.max(this.startPoint[1], endPoint[1]);
-                    
-                    const bbox = [minX, minY, maxX, maxY];
-                    
-                    // Dispatch event with bbox
-                    document.dispatchEvent(new CustomEvent('bboxDrawn', { 
-                        detail: { 
-                            bbox,
-                            bounds: [[minX, minY], [maxX, maxY]]
-                        } 
-                    }));
-                    
-                    // Reset drawing state
-                    this.isDrawing = false;
-                    this.firstClickComplete = false;
-                    this.map.getCanvas().style.cursor = '';
-                    
-                    // Log the bbox for debugging
-                    console.log('Drawn bbox:', bbox);
-                    
-                    // Clear any custom geometry when drawing a new bbox
-                    this.clearGeometry();
-                }
-            });
-            
-            // Mouse move event - update drawing preview
-            this.map.on('mousemove', (e) => {
-                if (!this.isDrawing || !this.firstClickComplete) return;
-                
-                // Update the box preview with current mouse position
-                this.updateBox(this.startPoint, [e.lngLat.lng, e.lngLat.lat]);
-            });
-            
-            // Key press event - cancel drawing with Escape key
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && this.isDrawing) {
-                    this.clearDrawings();
-                    this.isDrawing = false;
-                    this.firstClickComplete = false;
-                    this.startPoint = null;
-                    this.map.getCanvas().style.cursor = '';
-                }
-            });
-        }
-        
-        // Clear map drawings event
-        document.addEventListener('clearMapDrawings', () => {
-            this.clearDrawings();
-            this.clearGeometry();
-        });
-        
-        // Expand tools panel event
-        document.addEventListener('expandToolsPanel', () => {
-            const toolsPanel = document.getElementById('tools-panel');
-            if (toolsPanel && toolsPanel.classList.contains('collapsed')) {
-                document.getElementById('tools-header').click();
-            }
-        });
-        
-        // Direct image URL loading
-        const loadImageBtn = document.getElementById('load-image-btn');
-        if (loadImageBtn) {
-            loadImageBtn.addEventListener('click', () => {
-                this.loadImageFromDirectUrl();
-            });
-            
-            // Also allow pressing Enter in the input field
-            const directUrlInput = document.getElementById('direct-image-url');
-            if (directUrlInput) {
-                directUrlInput.addEventListener('keypress', (event) => {
-                    if (event.key === 'Enter') {
-                        this.loadImageFromDirectUrl();
-                    }
-                });
-            }
-        }
-    }
-    
-    /**
-     * Display a GeoJSON geometry on the map
-     * 
-     * @param {Object} geojson - GeoJSON object to display
-     * @param {Array} bbox - Bounding box to fit map to [west, south, east, north]
-     */
-    displayGeometry(geojson, bbox) {
-        try {
-            console.log('Displaying geometry:', geojson);
-            
-            if (!this.map || !this.map.getSource(this.geometrySourceId)) {
-                console.error('Map or geometry source not initialized');
-                return;
-            }
-            
-            // Update geometry source with new GeoJSON
-            this.map.getSource(this.geometrySourceId).setData(geojson);
-            
-            // Fit map to the bounding box
-            if (bbox && bbox.length === 4) {
-                this.fitMapToBbox(bbox);
-            }
-            
-            // Clear any existing bbox drawings
-            this.clearDrawings();
-        } catch (error) {
-            console.error('Error displaying geometry:', error);
-        }
-    }
-    
-    /**
-     * Clear the custom geometry from the map
-     */
-    clearGeometry() {
-        try {
-            if (this.map && this.map.getSource(this.geometrySourceId)) {
-                // Reset geometry to empty
-                this.map.getSource(this.geometrySourceId).setData({
-                    type: 'Feature',
-                    geometry: {
-                        type: 'Polygon',
-                        coordinates: [[]]
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Error clearing geometry:', error);
-        }
-    }
-    
-    /**
-     * Update the bounding box on the map
-     * @param {Array} start - Start point [lng, lat]
-     * @param {Array} end - End point [lng, lat]
-     */
-    updateBox(start, end) {
-        if (!this.map || !this.map.getSource(this.boxSourceId)) return;
-        
-        // Create a rectangle from the start and end points
-        const coordinates = [
-            [start[0], start[1]],
-            [end[0], start[1]],
-            [end[0], end[1]],
-            [start[0], end[1]],
-            [start[0], start[1]] // Close the polygon
-        ];
-        
-        // Update the source data
-        this.map.getSource(this.boxSourceId).setData({
+        // Add the preview rectangle
+        features.push({
             type: 'Feature',
             geometry: {
                 type: 'Polygon',
-                coordinates: [coordinates]
+                coordinates: [[
+                    [bbox[0], bbox[1]], // sw
+                    [bbox[2], bbox[1]], // se
+                    [bbox[2], bbox[3]], // ne
+                    [bbox[0], bbox[3]], // nw
+                    [bbox[0], bbox[1]]  // close
+                ]]
             }
         });
-    }
-    
-    /**
-     * Set the basemap
-     * @param {string} basemapName - Name of the basemap to use
-     */
-    setBasemap(basemapName) {
-        // Get the new style
-        const newStyle = this.getMapStyle(basemapName);
-        
-        // Update the map style
-        this.map.setStyle(newStyle);
-        
-        // Re-initialize drawing sources after style change
-        this.map.once('styledata', () => {
-            this.initDrawingSources();
-            this.initGeometrySources();
+
+        this.map.getSource('drawing-source').setData({
+            type: 'FeatureCollection',
+            features: features
         });
     }
-    
+
     /**
-     * Start the bounding box drawing mode
+     * Update polygon preview during drawing
      */
-    startDrawingBbox() {
-        try {
-            // Check if map is ready
-            if (!this.map) {
-                console.error('Map is not initialized');
-                return;
+    updatePolygonPreview(points) {
+        if (points.length < 2) return;
+        
+        const feature = {
+            type: 'Feature',
+            geometry: {
+                type: 'LineString',
+                coordinates: points
             }
+        };
+
+        this.map.getSource('drawing-source').setData({
+            type: 'FeatureCollection',
+            features: [feature]
+        });
+    }
+
+    /**
+     * Create bbox from two points
+     */
+    createBboxFromPoints(startPoint, endPoint) {
+        const [x1, y1] = startPoint;
+        const [x2, y2] = endPoint;
+        
+        return [
+            Math.min(x1, x2), // west
+            Math.min(y1, y2), // south
+            Math.max(x1, x2), // east
+            Math.max(y1, y2)  // north
+        ];
+    }
+
+    /**
+     * Finish drawing and call callback
+     */
+    finishDrawing(geometry) {
+        this.stopDrawing();
+        
+        if (this.drawingCallback) {
+            this.drawingCallback(geometry);
+        }
+        
+        console.log('✅ Drawing completed:', geometry);
+    }
+
+    /**
+     * Stop drawing mode
+     */
+    stopDrawing() {
+        this.drawingMode = false;
+        this.drawingType = null;
+        
+        if (this.map) {
+            this.map.getCanvas().style.cursor = '';
+        }
+        
+        // Remove event listeners
+        if (this._drawingListeners) {
+            const { onMouseDown, onMouseMove, onMouseUp, onClick, onRightClick } = this._drawingListeners;
             
-            if (!this.mapReady) {
-                console.error('Map is not fully loaded yet');
-                alert('The map is still loading. Please try again in a moment.');
-                return;
-            }
+            // Remove old drag-style listeners if they exist
+            if (onMouseDown) this.map.off('mousedown', onMouseDown);
+            if (onMouseUp) this.map.off('mouseup', onMouseUp);
             
-            // Clear any existing drawings
-            this.clearDrawings();
+            // Remove click-style listeners
+            if (onClick) this.map.off('click', onClick);
+            if (onRightClick) this.map.off('contextmenu', onRightClick);
             
-            // Clear any custom geometry
-            this.clearGeometry();
+            // Remove common listeners
+            if (onMouseMove) this.map.off('mousemove', onMouseMove);
             
-            // Set drawing state
-            this.isDrawing = true;
-            this.startPoint = null;
-            this.firstClickComplete = false;
-            
-            // Set cursor to crosshair
-            this.map.getCanvas().style.cursor = 'crosshair';
-            
-            console.log('Drawing mode activated in MapManager');
-        } catch (error) {
-            console.error('Error starting drawing mode:', error);
-            alert('An error occurred while activating drawing mode. Please try again.');
+            this._drawingListeners = null;
+        }
+        
+        if (this.map) {
+            this.map.dragPan.enable();
+        }
+        
+        console.log('🛑 Stopped drawing mode');
+    }
+
+    /**
+     * Clear current drawing
+     */
+    clearDrawing() {
+        if (this.map && this.map.getSource('drawing-source')) {
+            this.map.getSource('drawing-source').setData({
+                type: 'FeatureCollection',
+                features: []
+            });
         }
     }
-    
+
     /**
-     * Clear all drawings from the map
+     * Display item on map (thumbnail or specific asset)
+     * @param {Object} item - STAC item to display
+     * @param {string} assetKey - Asset key to display (e.g., 'thumbnail')
+     * @returns {Promise}
      */
-    clearDrawings() {
-        try {
-            // Reset drawing state
-            this.isDrawing = false;
-            this.startPoint = null;
-            this.firstClickComplete = false;
-            
-            // Clear the bounding box
-            if (this.map && this.map.getSource(this.boxSourceId)) {
-                this.map.getSource(this.boxSourceId).setData({
-                    type: 'Feature',
-                    geometry: {
-                        type: 'Polygon',
-                        coordinates: [[]]
-                    }
-                });
-            }
-            
-            // Clear bbox input field
-            const bboxInput = document.getElementById('bbox-input');
-            if (bboxInput) {
-                bboxInput.value = '';
-            }
-            
-            // Reset cursor
-            if (this.map && this.map.getCanvas()) {
-                this.map.getCanvas().style.cursor = '';
-            }
-            
-            console.log('Cleared all drawings');
-        } catch (error) {
-            console.error('Error clearing drawings:', error);
-        }
-    }
-    
-    /**
-     * Update the map view from a bounding box input
-     * @param {string} bboxString - Comma-separated bounding box string (west,south,east,north)
-     */
-    updateBBoxFromInput(bboxString) {
-        try {
-            // Parse the bbox string
-            const bbox = bboxString.split(',').map(Number);
-            
-            // Validate
-            if (bbox.length !== 4 || bbox.some(isNaN)) {
-                throw new Error('Invalid bbox format');
-            }
-            
-            // Clear existing drawings
-            this.clearDrawings();
-            
-            // Create a rectangle for the bbox
-            const coordinates = [
-                [bbox[0], bbox[3]], // Northwest
-                [bbox[2], bbox[3]], // Northeast
-                [bbox[2], bbox[1]], // Southeast
-                [bbox[0], bbox[1]], // Southwest
-                [bbox[0], bbox[3]]  // Close the polygon
-            ];
-            
-            // Update the source data
-            if (this.map && this.map.getSource(this.boxSourceId)) {
-                this.map.getSource(this.boxSourceId).setData({
-                    type: 'Feature',
-                    geometry: {
-                        type: 'Polygon',
-                        coordinates: [coordinates]
-                    }
-                });
-            }
-            
-            // Fit map to the bbox
-            this.fitMapToBbox(bbox);
-            
-            console.log('Updated bbox from input:', bbox);
-            
-            // Dispatch event with bbox
-            document.dispatchEvent(new CustomEvent('bboxDrawn', { 
-                detail: { 
-                    bbox,
-                    bounds: [[bbox[0], bbox[1]], [bbox[2], bbox[3]]]
-                } 
-            }));
-        } catch (error) {
-            console.error('Error updating bbox from input:', error);
-        }
-    }
-    
-    /**
-     * Find assets with 'visual' roles in a STAC item
-     * @param {Object} item - STAC item
-     * @returns {Array} - Array of visual assets
-     */
-    findVisualAssets(item) {
-        const visualAssets = [];
-        
-        if (item && item.assets) {
-            // Check each asset
-            for (const [key, asset] of Object.entries(item.assets)) {
-                // Check if asset has visual role
-                if (asset.roles && asset.roles.includes('visual')) {
-                    visualAssets.push({ key, asset });
-                }
-            }
-        }
-        
-        return visualAssets;
-    }
-    
-    /**
-     * Find result item by trying multiple strategies
-     * @param {string} itemId - Item ID to find
-     * @returns {Element|null} - Found element or null
-     */
-    findResultItemByMultipleStrategies(itemId) {
-        console.log('Finding result item for ID:', itemId);
-        
-        // Strategy 1: Direct query with data-id
-        let resultItem = document.querySelector(`.dataset-item[data-id="${itemId}"]`);
-        if (resultItem) {
-            console.log('Found item using data-id selector');
-            return resultItem;
-        }
-        
-        // Strategy 2: Look for item with matching ID attribute
-        resultItem = document.querySelector(`[id="${itemId}"]`);
-        if (resultItem) {
-            console.log('Found item using id attribute selector');
-            return resultItem;
-        }
-        
-        // Strategy 3: Check all dataset items
-        const allItems = document.querySelectorAll('.dataset-item');
-        for (const element of allItems) {
-            if (element.dataset.id === itemId || element.id === itemId) {
-                console.log('Found item by iterating through dataset items');
-                return element;
-            }
-        }
-        
-        // Strategy 4: Look for any elements that contain the ID in their text
-        const elements = document.querySelectorAll('.results-container div, .item-container div');
-        for (const element of elements) {
-            if (element.textContent && element.textContent.includes(itemId)) {
-                // Found an element that mentions the ID, check if it has or is near an image
-                const nearbyImg = element.querySelector('img') || 
-                                  element.parentElement.querySelector('img') ||
-                                  element.closest('.dataset-item, .item');
-                if (nearbyImg) {
-                    console.log('Found item by text content and proximity to image');
-                    return nearbyImg.closest('.dataset-item, .item') || element;
-                }
-            }
-        }
-        
-        console.warn('Could not find item using any strategy');
-        return null;
-    }
-    
-    /**
-     * Use thumbnail from results panel
-     * @param {Object} item - STAC item
-     * @returns {boolean} - True if successful, false otherwise
-     */
-    useResultsThumbnail(item) {
-        try {
-            console.log('Trying to use results thumbnail for item:', item.id);
-            
-            // Find the item in the results panel using multiple strategies
-            let resultItem = this.findResultItemByMultipleStrategies(item.id);
-            
-            if (!resultItem) {
-                console.warn('Could not find item in results panel');
-                return false;
-            }
-            
-            // Find the thumbnail
-            const thumbnail = resultItem.querySelector('.dataset-thumbnail, img');
-            if (!thumbnail) {
-                console.warn('No thumbnail element found in results panel');
-                return false;
-            }
-            
-            if (!thumbnail.src || thumbnail.src.includes('placeholder')) {
-                console.warn('No valid thumbnail source found in results panel');
-                return false;
-            }
-            
-            // Ensure we have an absolute URL
-            const absoluteUrl = this.ensureAbsoluteUrl(thumbnail.src);
-            console.log('Found thumbnail in results panel:', absoluteUrl);
-            
-            // Get bounds
-            let bbox = this.getBoundingBox(item);
-            if (!bbox) {
-                console.warn('Item has no valid bbox or geometry for overlay');
-                return false;
-            }
-            
-            // Add image to map
-            this.addImageOverlay(absoluteUrl, bbox, item);
-            
-            return true;
-        } catch (error) {
-            console.error('Error using results thumbnail:', error);
-            return false;
-        }
-    }
-    
     /**
      * Display an item on the map
      * @param {Object} item - STAC item to display
@@ -695,6 +659,12 @@ export class MapManager {
                 return;
             }
             
+            // For Planetary Computer items, check rendered_preview first
+            if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
+                await this.addAssetOverlay(item.assets.rendered_preview, item, 'rendered_preview');
+                return;
+            }
+            
             // If we have a thumbnail, use it
             if (item.assets && item.assets.thumbnail) {
                 await this.addAssetOverlay(item.assets.thumbnail, item, 'thumbnail');
@@ -731,12 +701,356 @@ export class MapManager {
             if (loadingIndicator) loadingIndicator.style.display = 'none';
         }
     }
-    
+
+/**
+* Display item geometry/boundaries on map with beautiful gradient
+* @param {Object} item - STAC item with geometry
+* @returns {Promise}
+*/
+async displayItemGeometry(item) {
+if (!this.isMapReady()) {
+throw new Error('Map not initialized');
+}
+
+try {
+// Clear any existing layers first
+this.removeCurrentLayer();
+            this.clearAllThumbnails();
+
+// Get bounding box
+let bbox = this.getBoundingBox(item);
+if (!bbox) {
+    console.warn('Item has no valid bbox or geometry');
+                throw new Error('No geometry available for this item');
+}
+
+// Create beautiful geometry display
+let geojson;
+            if (item.geometry && item.geometry.type === 'Polygon') {
+    // Use the actual geometry if available
+    geojson = {
+                    type: 'Feature',
+        properties: {
+            title: item.properties?.title || item.title || item.id,
+        description: item.properties?.description || item.description || 'STAC Item Geometry'
+        },
+                    geometry: item.geometry
+    };
+} else {
+        // Create polygon from bbox
+    geojson = {
+        type: 'Feature', 
+            properties: {
+                    title: item.properties?.title || item.title || item.id,
+                        description: item.properties?.description || item.description || 'STAC Item Boundary'
+                    },
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[
+                            [bbox[0], bbox[3]], // northwest
+                            [bbox[2], bbox[3]], // northeast
+                            [bbox[2], bbox[1]], // southeast
+                            [bbox[0], bbox[1]], // southwest
+                            [bbox[0], bbox[3]]  // close polygon
+                        ]]
+                    }
+                };
+            }
+
+            // Add beautiful gradient geometry layer
+            this.addBeautifulGeometryLayer(geojson, `geometry-${item.id}`);
+
+            // Fit map to bounds
+            this.fitMapToBbox(bbox);
+
+            console.log(`🎨 Displayed beautiful gradient geometry for item ${item.id} on map`);
+            return Promise.resolve();
+        } catch (error) {
+            console.error(`Failed to display item geometry:`, error);
+            throw error;
+        }
+    }
+
     /**
-     * Get bounding box from item
-     * @param {Object} item - STAC item
-     * @returns {Array|null} - Bounding box [west, south, east, north] or null
+     * Calculate bounding box from geometry
+     * @param {Object} geometry - GeoJSON geometry
+     * @returns {Array} Bounding box [west, south, east, north]
      */
+    calculateBboxFromGeometry(geometry) {
+        if (!geometry || !geometry.coordinates) {
+            return null;
+        }
+
+        let minLng = Infinity;
+        let minLat = Infinity;
+        let maxLng = -Infinity;
+        let maxLat = -Infinity;
+
+        const processCoordinates = (coords) => {
+            if (Array.isArray(coords[0])) {
+                coords.forEach(processCoordinates);
+            } else {
+                const [lng, lat] = coords;
+                minLng = Math.min(minLng, lng);
+                minLat = Math.min(minLat, lat);
+                maxLng = Math.max(maxLng, lng);
+                maxLat = Math.max(maxLat, lat);
+            }
+        };
+
+        processCoordinates(geometry.coordinates);
+
+        return [minLng, minLat, maxLng, maxLat];
+    }
+
+    /**
+     * Add thumbnail to map - simplified approach
+     */
+    addThumbnailToMap(item) {
+        if (!this.isMapReady() || !item.thumbnail) {
+            this.addBoundingBoxToMap(item);
+            return;
+        }
+
+        const sourceId = `thumbnail-${item.id}`;
+        const layerId = `thumbnail-layer-${item.id}`;
+
+        try {
+            // Remove existing thumbnail if present
+            this.removeThumbnailFromMap(item.id);
+
+            // Let MapLibre try to load the image directly
+            this.map.addSource(sourceId, {
+                type: 'image',
+                url: item.thumbnail,
+                coordinates: this.getBoundingBoxCoordinates(item.bbox)
+            });
+
+            this.map.addLayer({
+                id: layerId,
+                type: 'raster',
+                source: sourceId,
+                paint: {
+                    'raster-opacity': 0.8
+                }
+            });
+
+            // Store references
+            this.thumbnailSources.set(item.id, sourceId);
+            this.thumbnailLayers.set(item.id, layerId);
+
+            console.log(`📸 Added thumbnail for item: ${item.id}`);
+            
+        } catch (error) {
+            console.warn(`⚠️  Thumbnail failed for ${item.id}, showing bounding box:`, error);
+            this.addBoundingBoxToMap(item);
+        }
+    }
+
+    /**
+     * Add bounding box when thumbnail is not available
+     */
+    addBoundingBoxToMap(item) {
+        if (!this.isMapReady() || !item.bbox) {
+            return;
+        }
+
+        const sourceId = `bbox-${item.id}`;
+        const layerId = `bbox-layer-${item.id}`;
+
+        try {
+            this.removeThumbnailFromMap(item.id);
+
+            const coordinates = this.getBoundingBoxCoordinates(item.bbox);
+            
+            this.map.addSource(sourceId, {
+                type: 'geojson',
+                data: {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [coordinates]
+                    }
+                }
+            });
+
+            this.map.addLayer({
+                id: layerId,
+                type: 'line',
+                source: sourceId,
+                paint: {
+                    'line-color': '#2196F3',
+                    'line-width': 2,
+                    'line-opacity': 0.8
+                }
+            });
+
+            this.thumbnailSources.set(item.id, sourceId);
+            this.thumbnailLayers.set(item.id, layerId);
+
+            console.log(`📦 Added bounding box for item: ${item.id}`);
+            
+        } catch (error) {
+            console.error(`❌ Failed to add bounding box for ${item.id}:`, error);
+        }
+    }
+
+    /**
+     * Remove thumbnail or bounding box from map
+     */
+    removeThumbnailFromMap(itemId) {
+        if (!this.map) return;
+        
+        try {
+            const layerId = this.thumbnailLayers.get(itemId);
+            const sourceId = this.thumbnailSources.get(itemId);
+
+            if (layerId && this.map.getLayer(layerId)) {
+                this.map.removeLayer(layerId);
+            }
+
+            if (sourceId && this.map.getSource(sourceId)) {
+                this.map.removeSource(sourceId);
+            }
+
+            this.thumbnailLayers.delete(itemId);
+            this.thumbnailSources.delete(itemId);
+            
+        } catch (error) {
+            console.warn(`⚠️  Error removing thumbnail for ${itemId}:`, error);
+        }
+    }
+
+    /**
+     * Clear all thumbnails from map
+     */
+    clearAllThumbnails() {
+        const itemIds = Array.from(this.thumbnailLayers.keys());
+        itemIds.forEach(itemId => this.removeThumbnailFromMap(itemId));
+        console.log('🧹 Cleared all thumbnails from map');
+    }
+
+    /**
+     * Convert bounding box to MapLibre coordinates
+     */
+    getBoundingBoxCoordinates(bbox) {
+        if (!bbox || bbox.length !== 4) {
+            return [[[-180, -85], [180, -85], [180, 85], [-180, 85]]];
+        }
+
+        const [west, south, east, north] = bbox;
+        return [
+            [west, north],  // top-left
+            [east, north],  // top-right
+            [east, south],  // bottom-right
+            [west, south]   // bottom-left
+        ];
+    }
+
+    /**
+     * Fit map to bounding box
+     */
+    fitToBounds(bbox) {
+        if (!this.isMapReady() || !bbox || bbox.length !== 4) {
+            return;
+        }
+
+        try {
+            const [west, south, east, north] = bbox;
+            this.map.fitBounds([[west, south], [east, north]], { 
+                padding: 50,
+                maxZoom: 12
+            });
+        } catch (error) {
+            console.error('❌ Failed to fit to bounds:', error);
+        }
+    }
+
+    /**
+     * Get map instance
+     */
+    getMap() {
+        return this.map;
+    }
+
+    /**
+     * Check if map is initialized and ready
+     */
+    isMapReady() {
+        return this.isInitialized && this.map && this.map.loaded();
+    }
+
+    /**
+     * Set map style
+     */
+    setStyle(styleUrl) {
+        if (this.map) {
+            this.map.setStyle(styleUrl);
+        }
+    }
+
+    /**
+     * Resize map (useful after container size changes)
+     */
+    resize() {
+        if (this.map) {
+            this.map.resize();
+        }
+    }
+
+    /**
+     * Destroy map manager and clean up resources
+     */
+    destroy() {
+        if (this.map) {
+            this.stopDrawing();
+            this.clearAllThumbnails();
+            this.map.remove();
+            this.map = null;
+        }
+        
+        this.thumbnailSources.clear();
+        this.thumbnailLayers.clear();
+        this.isInitialized = false;
+        this.initializationPromise = null;
+        
+        console.log('🗑️  MapManager destroyed and cleaned up');
+    }
+    
+        /**
+     * Remove current layer from map
+     */
+    removeCurrentLayer() {
+        try {
+            // If we have a current layer, remove it
+            if (this.currentLayer && this.currentLayer.sourceId) {
+                // Get all layers that use this source
+                const layers = this.map.getStyle().layers.filter(layer => 
+                    layer.source === this.currentLayer.sourceId
+                );
+                
+                // Remove each layer
+                layers.forEach(layer => {
+                    if (this.map.getLayer(layer.id)) {
+                        this.map.removeLayer(layer.id);
+                    }
+                });
+                
+                // Remove the source
+                if (this.map.getSource(this.currentLayer.sourceId)) {
+                    this.map.removeSource(this.currentLayer.sourceId);
+                }
+                
+                // Clear current layer
+                this.currentLayer = null;
+                this.currentLayerOverlay = null;
+                this.currentAssetKey = null;
+            }
+        } catch (error) {
+            console.error('Error removing current layer:', error);
+        }
+    }
+
     getBoundingBox(item) {
         // If item has bbox, use it
         if (item.bbox && item.bbox.length === 4) {
@@ -842,14 +1156,14 @@ export class MapManager {
         }
     }
     
-    /**
-     * Add GeoJSON layer without tooltip
+        /**
+     * Add GeoJSON layer without tooltip - with beautiful blue to purple gradient
      * @param {Array} bbox - Bounding box
      * @param {Object} item - STAC item
      */
     addGeoJsonLayerWithoutTooltip(bbox, item) {
-        // Just show the bounding box outline without any tooltip
-        this.addGeoJsonLayer({
+        // Create beautiful gradient geometry display
+        this.addBeautifulGeometryLayer({
             type: 'Feature',
             properties: {
                 title: item.title || item.id || 'Unknown Item',
@@ -867,371 +1181,7 @@ export class MapManager {
             }
         });
     }
-    
-    /**
-     * Try alternative methods to display an image if the primary method fails
-     * @param {string} imageUrl - Image URL
-     * @param {Array} bbox - Bounding box [west, south, east, north]
-     * @param {Object} item - STAC item
-     * @returns {boolean} - True if successful, false otherwise
-     */
-    tryAlternativeImageDisplay(imageUrl, bbox, item) {
-        try {
-            console.log('Trying alternative image display method');
-            
-            // Show GeoJSON without any tooltip
-            this.addGeoJsonLayerWithoutTooltip(bbox, item);
-            return true;
-        } catch (error) {
-            console.error('Error in alternative image display:', error);
-            return false;
-        }
-    }
-    
-    /**
-     * Add GeoJSON layer to map
-     * @param {Object} geojson - GeoJSON object
-     * @param {string} sourceId - Source ID
-     */
-    addGeoJsonLayer(geojson, sourceId = 'item-geometry') {
-        // Remove existing source and layers if they exist
-        if (this.map.getSource(sourceId)) {
-            // First remove any layers that use this source
-            this.map.getStyle().layers.forEach(layer => {
-                if (layer.source === sourceId) {
-                    this.map.removeLayer(layer.id);
-                }
-            });
-            
-            // Then remove the source
-            this.map.removeSource(sourceId);
-        }
-        
-        // Add source
-        this.map.addSource(sourceId, {
-            type: 'geojson',
-            data: geojson
-        });
-        
-        // Add fill layer
-        this.map.addLayer({
-            id: `${sourceId}-fill`,
-            type: 'fill',
-            source: sourceId,
-            paint: {
-                'fill-color': '#2196F3',
-                'fill-opacity': 0.1
-            }
-        });
-        
-        // Add line layer
-        this.map.addLayer({
-            id: `${sourceId}-line`,
-            type: 'line',
-            source: sourceId,
-            paint: {
-                'line-color': '#2196F3',
-                'line-width': 2
-            }
-        });
-        
-        // Store as current layer
-        this.currentLayer = {
-            sourceId,
-            getBounds: () => {
-                // Calculate bounds from GeoJSON
-                if (geojson.type === 'Feature' && geojson.geometry) {
-                    if (geojson.geometry.type === 'Polygon') {
-                        const coords = geojson.geometry.coordinates[0];
-                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-                        
-                        coords.forEach(coord => {
-                            minX = Math.min(minX, coord[0]);
-                            minY = Math.min(minY, coord[1]);
-                            maxX = Math.max(maxX, coord[0]);
-                            maxY = Math.max(maxY, coord[1]);
-                        });
-                        
-                        return [[minX, minY], [maxX, maxY]];
-                    }
-                }
-                return null;
-            }
-        };
-    }
-    
-    /**
-     * Remove current layer from map
-     */
-    removeCurrentLayer() {
-        try {
-            // If we have a current layer, remove it
-            if (this.currentLayer && this.currentLayer.sourceId) {
-                // Get all layers that use this source
-                const layers = this.map.getStyle().layers.filter(layer => 
-                    layer.source === this.currentLayer.sourceId
-                );
-                
-                // Remove each layer
-                layers.forEach(layer => {
-                    if (this.map.getLayer(layer.id)) {
-                        this.map.removeLayer(layer.id);
-                    }
-                });
-                
-                // Remove the source
-                if (this.map.getSource(this.currentLayer.sourceId)) {
-                    this.map.removeSource(this.currentLayer.sourceId);
-                }
-                
-                // Clear current layer
-                this.currentLayer = null;
-                this.currentLayerOverlay = null;
-                this.currentAssetKey = null;
-            }
-        } catch (error) {
-            console.error('Error removing current layer:', error);
-        }
-    }
-    
-    /**
-     * Fit the map view to the current layer bounds
-     */
-    fitToLayerBounds() {
-        if (this.currentLayer && this.currentLayer.getBounds) {
-            const bounds = this.currentLayer.getBounds();
-            if (bounds) {
-                this.map.fitBounds(bounds, {
-                    padding: 50
-                });
-            }
-        }
-    }
-    
-    /**
-     * Set the opacity of the current layer
-     * @param {number} opacity - Opacity value (0-1)
-     */
-    setLayerOpacity(opacity) {
-        if (this.currentLayerOverlay && this.currentLayerOverlay.setOpacity) {
-            this.currentLayerOverlay.setOpacity(opacity);
-        }
-    }
-    
-    /**
-     * Load image from direct URL
-     */
-    async loadImageFromDirectUrl() {
-        try {
-            // Get URL from input
-            const urlInput = document.getElementById('direct-image-url');
-            if (!urlInput || !urlInput.value) {
-                console.warn('No URL provided');
-                return;
-            }
-            
-            const imageUrl = urlInput.value.trim();
-            console.log('Loading image from direct URL:', imageUrl);
-            
-            // Get bounds from input
-            const boundsInput = document.getElementById('direct-image-bounds');
-            if (!boundsInput || !boundsInput.value) {
-                console.warn('No bounds provided');
-                return;
-            }
-            
-            // Parse bounds
-            const boundsString = boundsInput.value.trim();
-            const bounds = boundsString.split(',').map(Number);
-            
-            if (bounds.length !== 4 || bounds.some(isNaN)) {
-                console.warn('Invalid bounds format');
-                return;
-            }
-            
-            // Show loading indicator
-            document.getElementById('loading').style.display = 'block';
-            
-            // Add image overlay
-            await this.addImageOverlay(imageUrl, bounds, { id: 'direct-url-image' });
-            
-            // Hide loading indicator
-            document.getElementById('loading').style.display = 'none';
-        } catch (error) {
-            console.error('Error loading image from direct URL:', error);
-            
-            // Hide loading indicator
-            document.getElementById('loading').style.display = 'none';
-        }
-    }
-    
-    /**
-     * Ensure a URL is absolute
-     * @param {string} url - URL to process
-     * @returns {string} - Absolute URL
-     */
-    ensureAbsoluteUrl(url) {
-        if (!url) return url;
-        
-        // If the URL is already absolute, return it
-        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
-            return url;
-        }
-        
-        // If it's a root-relative URL, add the origin
-        if (url.startsWith('/')) {
-            return window.location.origin + url;
-        }
-        
-        // If it's a relative URL, resolve it against the current page
-        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-        return new URL(url, baseUrl).href;
-    }
-    
-    /**
-     * Check if an asset is a Cloud Optimized GeoTIFF (COG)
-     * @param {Object} asset - Asset object
-     * @returns {boolean} - True if the asset is a COG, false otherwise
-     */
-    isCOGAsset(asset) {
-        // Check if the asset type is 'image/tiff; application=geotiff; profile=cloud-optimized'
-        return asset.type === 'image/tiff; application=geotiff; profile=cloud-optimized';
-    }
-    
-    /**
-     * Add image overlay to map
-     * @param {string} imageUrl - Image URL
-     * @param {Array} bbox - Bounding box [west, south, east, north]
-     * @param {Object} item - STAC item
-     */
-    async addImageOverlay(imageUrl, bbox, item) {
-        try {
-            console.log('Adding image overlay:', imageUrl);
-            
-            // Remove existing overlay if any
-            this.removeCurrentLayer();
-
-            // 1. Ensure proper URL handling
-            let absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
-            console.log('Absolute URL:', absoluteUrl);
-            
-            // Create a unique ID for this image source
-            const sourceId = `image-overlay-${Date.now()}`;
-            
-            // 2. Try direct approach first - this is better for CORS issues
-            // with MapLibre handling the image directly
-            try {
-                // Apply coordinates directly
-                const coordinates = [
-                    [bbox[0], bbox[3]], // top-left (northwest)
-                    [bbox[2], bbox[3]], // top-right (northeast)
-                    [bbox[2], bbox[1]], // bottom-right (southeast)
-                    [bbox[0], bbox[1]]  // bottom-left (southwest)
-                ];
-                
-                // Add source without pre-validation
-                this.map.addSource(sourceId, {
-                    type: 'image',
-                    url: absoluteUrl,
-                    coordinates: coordinates
-                });
-                
-                // Add image layer
-                this.map.addLayer({
-                    id: `${sourceId}-layer`,
-                    type: 'raster',
-                    source: sourceId,
-                    paint: {
-                        'raster-opacity': 1.0,
-                        'raster-resampling': 'linear'
-                    }
-                });
-                
-                // Store as current layer
-                this.currentLayer = {
-                    sourceId,
-                    getBounds: () => {
-                        return [
-                            [bbox[0], bbox[1]], // Southwest
-                            [bbox[2], bbox[3]]  // Northeast
-                        ];
-                    }
-                };
-                
-                // Store overlay for opacity control
-                this.currentLayerOverlay = {
-                    setOpacity: (opacity) => {
-                        this.map.setPaintProperty(`${sourceId}-layer`, 'raster-opacity', opacity);
-                    }
-                };
-                
-                console.log('Direct image placement successful');
-                
-                // Register error handler for post-adding errors
-                this.map.once('error', (e) => {
-                    if (e.sourceId === sourceId) {
-                        console.error('Error with direct image overlay, trying alternative:', e);
-                        this.handleImageError(sourceId, absoluteUrl, bbox, item);
-                    }
-                });
-                
-                return true;
-            } catch (directError) {
-                // If direct approach fails, try the more involved approach
-                console.error('Direct image placement failed:', directError);
-                return await this.addImageWithValidation(absoluteUrl, bbox, item);
-            }
-        } catch (error) {
-            console.error('Error in addImageOverlay:', error);
-            
-            // Use GeoJSON fallback without tooltip
-            this.addGeoJsonLayerWithoutTooltip(bbox, item);
-            return false;
-        }
-    }
-    
-    /**
-     * Handle image loading error
-     * @param {string} sourceId - Source ID
-     * @param {string} url - Image URL 
-     * @param {Array} bbox - Bounding box
-     * @param {Object} item - STAC item
-     */
-    async handleImageError(sourceId, url, bbox, item) {
-        // Cleanup failed attempt
-        try {
-            if (this.map.getLayer(`${sourceId}-layer`)) {
-                this.map.removeLayer(`${sourceId}-layer`);
-            }
-            if (this.map.getSource(sourceId)) {
-                this.map.removeSource(sourceId);
-            }
-        } catch (removeError) {
-            console.warn('Error cleaning up failed layer:', removeError);
-        }
-        
-        // Try again with the validated approach
-        try {
-            await this.addImageWithValidation(url, bbox, item);
-        } catch (validationError) {
-            console.error('Validation approach also failed:', validationError);
-            
-            // Try with proxy if available
-            const proxyUrl = this.getProxyUrl(url);
-            if (proxyUrl !== url) {
-                try {
-                    await this.addImageWithValidation(proxyUrl, bbox, item);
-                } catch (proxyError) {
-                    console.error('Proxy approach also failed:', proxyError);
-                    this.addGeoJsonLayerWithoutTooltip(bbox, item);
-                }
-            } else {
-                this.addGeoJsonLayerWithoutTooltip(bbox, item);
-            }
-        }
-    }
-    
-    /**
+        /**
      * Try to get a proxy URL for CORS issues
      * @param {string} url - Original URL
      * @returns {string} - Proxy URL or original URL
@@ -1465,4 +1415,868 @@ export class MapManager {
             [adjustedBbox[0], adjustedBbox[1]]  // bottom-left
         ];
     }
+        /**
+     * Find assets with 'visual' roles in a STAC item
+     * @param {Object} item - STAC item
+     * @returns {Array} - Array of visual assets
+     */
+    findVisualAssets(item) {
+        const visualAssets = [];
+        
+        if (item && item.assets) {
+            // Check each asset
+            for (const [key, asset] of Object.entries(item.assets)) {
+                // Check if asset has visual role
+                if (asset.roles && asset.roles.includes('visual')) {
+                    visualAssets.push({ key, asset });
+                }
+            }
+        }
+        
+        return visualAssets;
+    }
+    
+    /**
+     * Find result item by trying multiple strategies
+     * @param {string} itemId - Item ID to find
+     * @returns {Element|null} - Found element or null
+     */
+    findResultItemByMultipleStrategies(itemId) {
+        console.log('Finding result item for ID:', itemId);
+        
+        // Strategy 1: Direct query with data-id
+        let resultItem = document.querySelector(`.dataset-item[data-id="${itemId}"]`);
+        if (resultItem) {
+            console.log('Found item using data-id selector');
+            return resultItem;
+        }
+        
+        // Strategy 2: Look for item with matching ID attribute
+        resultItem = document.querySelector(`[id="${itemId}"]`);
+        if (resultItem) {
+            console.log('Found item using id attribute selector');
+            return resultItem;
+        }
+        
+        // Strategy 3: Check all dataset items
+        const allItems = document.querySelectorAll('.dataset-item');
+        for (const element of allItems) {
+            if (element.dataset.id === itemId || element.id === itemId) {
+                console.log('Found item by iterating through dataset items');
+                return element;
+            }
+        }
+        
+        // Strategy 4: Look for any elements that contain the ID in their text
+        const elements = document.querySelectorAll('.results-container div, .item-container div');
+        for (const element of elements) {
+            if (element.textContent && element.textContent.includes(itemId)) {
+                // Found an element that mentions the ID, check if it has or is near an image
+                const nearbyImg = element.querySelector('img') || 
+                                  element.parentElement.querySelector('img') ||
+                                  element.closest('.dataset-item, .item');
+                if (nearbyImg) {
+                    console.log('Found item by text content and proximity to image');
+                    return nearbyImg.closest('.dataset-item, .item') || element;
+                }
+            }
+        }
+        
+        console.warn('Could not find item using any strategy');
+        return null;
+    }
+    
+        /**
+     * Add image overlay to map
+     * @param {string} imageUrl - Image URL
+     * @param {Array} bbox - Bounding box [west, south, east, north]
+     * @param {Object} item - STAC item
+     */
+    async addImageOverlay(imageUrl, bbox, item) {
+        try {
+            console.log('Adding image overlay:', imageUrl);
+            
+            // Remove existing overlay if any
+            this.removeCurrentLayer();
+
+            // 1. Ensure proper URL handling
+            let absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
+            console.log('Absolute URL:', absoluteUrl);
+            
+            // Create a unique ID for this image source
+            const sourceId = `image-overlay-${Date.now()}`;
+            
+            // 2. Try direct approach first - this is better for CORS issues
+            // with MapLibre handling the image directly
+            try {
+                // Apply coordinates directly
+                const coordinates = [
+                    [bbox[0], bbox[3]], // top-left (northwest)
+                    [bbox[2], bbox[3]], // top-right (northeast)
+                    [bbox[2], bbox[1]], // bottom-right (southeast)
+                    [bbox[0], bbox[1]]  // bottom-left (southwest)
+                ];
+                
+                // Add source without pre-validation
+                this.map.addSource(sourceId, {
+                    type: 'image',
+                    url: absoluteUrl,
+                    coordinates: coordinates
+                });
+                
+                // Add image layer
+                this.map.addLayer({
+                    id: `${sourceId}-layer`,
+                    type: 'raster',
+                    source: sourceId,
+                    paint: {
+                        'raster-opacity': 1.0,
+                        'raster-resampling': 'linear'
+                    }
+                });
+                
+                // Store as current layer
+                this.currentLayer = {
+                    sourceId,
+                    getBounds: () => {
+                        return [
+                            [bbox[0], bbox[1]], // Southwest
+                            [bbox[2], bbox[3]]  // Northeast
+                        ];
+                    }
+                };
+                
+                // Store overlay for opacity control
+                this.currentLayerOverlay = {
+                    setOpacity: (opacity) => {
+                        this.map.setPaintProperty(`${sourceId}-layer`, 'raster-opacity', opacity);
+                    }
+                };
+                
+                console.log('Direct image placement successful');
+                
+                // Register error handler for post-adding errors
+                this.map.once('error', (e) => {
+                    if (e.sourceId === sourceId) {
+                        console.error('Error with direct image overlay, trying alternative:', e);
+                        this.handleImageError(sourceId, absoluteUrl, bbox, item);
+                    }
+                });
+                
+                return true;
+            } catch (directError) {
+                // If direct approach fails, try the more involved approach
+                console.error('Direct image placement failed:', directError);
+                return await this.addImageWithValidation(absoluteUrl, bbox, item);
+            }
+        } catch (error) {
+            console.error('Error in addImageOverlay:', error);
+            
+            // Use GeoJSON fallback without tooltip
+            this.addGeoJsonLayerWithoutTooltip(bbox, item);
+            return false;
+        }
+    }
+    
+    /**
+     * Handle image loading error
+     * @param {string} sourceId - Source ID
+     * @param {string} url - Image URL 
+     * @param {Array} bbox - Bounding box
+     * @param {Object} item - STAC item
+     */
+    async handleImageError(sourceId, url, bbox, item) {
+        // Cleanup failed attempt
+        try {
+            if (this.map.getLayer(`${sourceId}-layer`)) {
+                this.map.removeLayer(`${sourceId}-layer`);
+            }
+            if (this.map.getSource(sourceId)) {
+                this.map.removeSource(sourceId);
+            }
+        } catch (removeError) {
+            console.warn('Error cleaning up failed layer:', removeError);
+        }
+        
+        // Try again with the validated approach
+        try {
+            await this.addImageWithValidation(url, bbox, item);
+        } catch (validationError) {
+            console.error('Validation approach also failed:', validationError);
+            
+            // Try with proxy if available
+            const proxyUrl = this.getProxyUrl(url);
+            if (proxyUrl !== url) {
+                try {
+                    await this.addImageWithValidation(proxyUrl, bbox, item);
+                } catch (proxyError) {
+                    console.error('Proxy approach also failed:', proxyError);
+                    this.addGeoJsonLayerWithoutTooltip(bbox, item);
+                }
+            } else {
+                this.addGeoJsonLayerWithoutTooltip(bbox, item);
+            }
+        }
+    }
+
+    /**
+     * Use thumbnail from results panel
+     * @param {Object} item - STAC item
+     * @returns {boolean} - True if successful, false otherwise
+     */
+    useResultsThumbnail(item) {
+        try {
+            console.log('Trying to use results thumbnail for item:', item.id);
+            
+            // Find the item in the results panel using multiple strategies
+            let resultItem = this.findResultItemByMultipleStrategies(item.id);
+            
+            if (!resultItem) {
+                console.warn('Could not find item in results panel');
+                return false;
+            }
+            
+            // Find the thumbnail
+            const thumbnail = resultItem.querySelector('.dataset-thumbnail, img');
+            if (!thumbnail) {
+                console.warn('No thumbnail element found in results panel');
+                return false;
+            }
+            
+            if (!thumbnail.src || thumbnail.src.includes('placeholder')) {
+                console.warn('No valid thumbnail source found in results panel');
+                return false;
+            }
+            
+            // Ensure we have an absolute URL
+            const absoluteUrl = this.ensureAbsoluteUrl(thumbnail.src);
+            console.log('Found thumbnail in results panel:', absoluteUrl);
+            
+            // Get bounds
+            let bbox = this.getBoundingBox(item);
+            if (!bbox) {
+                console.warn('Item has no valid bbox or geometry for overlay');
+                return false;
+            }
+            
+            // Add image to map
+            this.addImageOverlay(absoluteUrl, bbox, item);
+            
+            return true;
+        } catch (error) {
+            console.error('Error using results thumbnail:', error);
+            return false;
+        }
+    }
+
+
+    async addThumbnailToMap(item, preferredAssetKey = null) {
+        try {
+            console.log('Displaying item on map:', item.id);
+            
+            // Remove any existing layers
+            this.removeCurrentLayer();
+            
+            // Get bounding box
+            const bbox = this.getBoundingBox(item);
+            if (!bbox) {
+                console.warn('Item has no valid bbox or geometry');
+                return;
+            }
+            
+            // Fit map to item bounds
+            this.fitMapToBbox(bbox);
+            
+            // Show loading indicator
+            const loadingIndicator = document.getElementById('loading');
+            if (loadingIndicator) loadingIndicator.style.display = 'block';
+            
+            // Try to find visual assets
+            const visualAssets = this.findVisualAssets(item);
+            
+            // If we have a preferred asset key and it exists, use it
+            if (preferredAssetKey && item.assets && item.assets[preferredAssetKey]) {
+                await this.addAssetOverlay(item.assets[preferredAssetKey], item, preferredAssetKey);
+                return;
+            }
+            
+            // If we have visual assets, use the first one
+            if (visualAssets.length > 0) {
+                await this.addAssetOverlay(visualAssets[0].asset, item, visualAssets[0].key);
+                return;
+            }
+            
+            // For Planetary Computer items, check rendered_preview first
+            if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
+                await this.addAssetOverlay(item.assets.rendered_preview, item, 'rendered_preview');
+                return;
+            }
+            
+            // If we have a thumbnail, use it
+            if (item.assets && item.assets.thumbnail) {
+                await this.addAssetOverlay(item.assets.thumbnail, item, 'thumbnail');
+                return;
+            }
+            
+            // If we have a preview, use it
+            if (item.assets && item.assets.preview) {
+                await this.addAssetOverlay(item.assets.preview, item, 'preview');
+                return;
+            }
+            
+            // If we have an overview, use it
+            if (item.assets && item.assets.overview) {
+                await this.addAssetOverlay(item.assets.overview, item, 'overview');
+                return;
+            }
+            
+            // If we have a thumbnail in the results panel, use it
+            if (this.useResultsThumbnail(item)) {
+                return;
+            }
+            
+            // If all else fails, just show the bounding box
+            this.addGeoJsonLayerWithoutTooltip(bbox, item);
+            
+            // Hide loading indicator
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+        } catch (error) {
+            console.error('Error displaying item on map:', error);
+            
+            // Hide loading indicator
+            const loadingIndicator = document.getElementById('loading');
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
+        }
+    }
+    
+    async imageToDataURL(url) {
+        // Always use proxy to avoid CORS
+        const proxyUrl = `${encodeURIComponent(url)}`;
+        
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0);
+                
+                try {
+                    const dataUrl = canvas.toDataURL('image/png');
+                    resolve(dataUrl);
+                } catch (e) {
+                    reject(e);
+                }
+            };
+            
+            img.onerror = () => reject(new Error('Failed to load image'));
+            img.src = proxyUrl;
+        });
+    }    
+    /**
+     * Try alternative methods to display an image if the primary method fails
+     * @param {string} imageUrl - Image URL
+     * @param {Array} bbox - Bounding box [west, south, east, north]
+     * @param {Object} item - STAC item
+     * @returns {boolean} - True if successful, false otherwise
+     */
+    tryAlternativeImageDisplay(imageUrl, bbox, item) {
+        try {
+            console.log('Trying alternative image display method');
+            
+            // Show GeoJSON without any tooltip
+            this.addGeoJsonLayerWithoutTooltip(bbox, item);
+            return true;
+        } catch (error) {
+            console.error('Error in alternative image display:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Add beautiful geometry layer with blue to purple gradient
+     * @param {Object} geojson - GeoJSON object
+     * @param {string} sourceId - Source ID
+     */
+    addBeautifulGeometryLayer(geojson, sourceId = 'beautiful-geometry') {
+        // Remove existing source and layers if they exist
+        if (this.map.getSource(sourceId)) {
+            // First remove any layers that use this source
+            this.map.getStyle().layers.forEach(layer => {
+                if (layer.source === sourceId) {
+                    this.map.removeLayer(layer.id);
+                }
+            });
+            
+            // Then remove the source
+            this.map.removeSource(sourceId);
+        }
+        
+        // Add source
+        this.map.addSource(sourceId, {
+            type: 'geojson',
+            data: geojson
+        });
+        
+        // Add animated fill layer with beautiful gradient-like effect
+        this.map.addLayer({
+            id: `${sourceId}-fill-glow`,
+            type: 'fill',
+            source: sourceId,
+            paint: {
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, '#4A90E2',   // Beautiful blue at lower zoom
+                    10, '#8B5CF6', // Purple at medium zoom
+                    15, '#A855F7'  // Lighter purple at higher zoom
+                ],
+                'fill-opacity': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, 0.15,  // More transparent at lower zoom
+                    10, 0.25, // Medium opacity at medium zoom
+                    15, 0.35  // More opaque at higher zoom
+                ]
+            }
+        });
+        
+        // Add inner fill with gradient effect
+        this.map.addLayer({
+            id: `${sourceId}-fill-inner`,
+            type: 'fill',
+            source: sourceId,
+            paint: {
+                'fill-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, '#6366F1',   // Indigo blue
+                    10, '#8B5CF6',  // Purple
+                    15, '#A855F7'   // Light purple
+                ],
+                'fill-opacity': 0.1
+            }
+        });
+        
+        // Add beautiful gradient stroke
+        this.map.addLayer({
+            id: `${sourceId}-stroke-outer`,
+            type: 'line',
+            source: sourceId,
+            paint: {
+                'line-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, '#3B82F6',   // Blue
+                    10, '#7C3AED',  // Purple
+                    15, '#9333EA'   // Bright purple
+                ],
+                'line-width': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, 2,
+                    10, 3,
+                    15, 4
+                ],
+                'line-opacity': 0.8
+            }
+        });
+        
+        // Add inner stroke for depth
+        this.map.addLayer({
+            id: `${sourceId}-stroke-inner`,
+            type: 'line',
+            source: sourceId,
+            paint: {
+                'line-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, '#60A5FA',   // Light blue
+                    10, '#A78BFA',  // Light purple
+                    15, '#C084FC'   // Very light purple
+                ],
+                'line-width': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    5, 1,
+                    10, 1.5,
+                    15, 2
+                ],
+                'line-opacity': 0.6
+            }
+        });
+        
+        // Store as current layer
+        this.currentLayer = {
+            sourceId,
+            getBounds: () => {
+                // Calculate bounds from GeoJSON
+                if (geojson.type === 'Feature' && geojson.geometry) {
+                    if (geojson.geometry.type === 'Polygon') {
+                        const coords = geojson.geometry.coordinates[0];
+                        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                        
+                        coords.forEach(coord => {
+                            minX = Math.min(minX, coord[0]);
+                            minY = Math.min(minY, coord[1]);
+                            maxX = Math.max(maxX, coord[0]);
+                            maxY = Math.max(maxY, coord[1]);
+                        });
+                        
+                        return [[minX, minY], [maxX, maxY]];
+                    }
+                }
+                return null;
+            }
+        };
+        
+        console.log('🎨 Added beautiful blue-to-purple gradient geometry layer');
+    }
+    
+    /**
+     * Add GeoJSON layer to map (legacy method, kept for compatibility)
+     * @param {Object} geojson - GeoJSON object
+     * @param {string} sourceId - Source ID
+     */
+    addGeoJsonLayer(geojson, sourceId = 'item-geometry') {
+        // Use the beautiful geometry layer instead
+        this.addBeautifulGeometryLayer(geojson, sourceId);
+    }
+    
+    /**
+     * Remove current layer from map
+     */
+    removeCurrentLayer() {
+        try {
+            // If we have a current layer, remove it
+            if (this.currentLayer && this.currentLayer.sourceId) {
+                // Get all layers that use this source
+                const layers = this.map.getStyle().layers.filter(layer => 
+                    layer.source === this.currentLayer.sourceId
+                );
+                
+                // Remove each layer
+                layers.forEach(layer => {
+                    if (this.map.getLayer(layer.id)) {
+                        this.map.removeLayer(layer.id);
+                    }
+                });
+                
+                // Remove the source
+                if (this.map.getSource(this.currentLayer.sourceId)) {
+                    this.map.removeSource(this.currentLayer.sourceId);
+                }
+                
+                // Clear current layer
+                this.currentLayer = null;
+                this.currentLayerOverlay = null;
+                this.currentAssetKey = null;
+            }
+        } catch (error) {
+            console.error('Error removing current layer:', error);
+        }
+    }
+    
+    /**
+     * Fit the map view to the current layer bounds
+     */
+    fitToLayerBounds() {
+        if (this.currentLayer && this.currentLayer.getBounds) {
+            const bounds = this.currentLayer.getBounds();
+            if (bounds) {
+                this.map.fitBounds(bounds, {
+                    padding: 50
+                });
+            }
+        }
+    }
+    
+    /**
+     * Set the opacity of the current layer
+     * @param {number} opacity - Opacity value (0-1)
+     */
+    setLayerOpacity(opacity) {
+        if (this.currentLayerOverlay && this.currentLayerOverlay.setOpacity) {
+            this.currentLayerOverlay.setOpacity(opacity);
+        }
+    }
+    
+    /**
+     * Load image from direct URL
+     */
+    async loadImageFromDirectUrl() {
+        try {
+            // Get URL from input
+            const urlInput = document.getElementById('direct-image-url');
+            if (!urlInput || !urlInput.value) {
+                console.warn('No URL provided');
+                return;
+            }
+            
+            const imageUrl = urlInput.value.trim();
+            console.log('Loading image from direct URL:', imageUrl);
+            
+            // Get bounds from input
+            const boundsInput = document.getElementById('direct-image-bounds');
+            if (!boundsInput || !boundsInput.value) {
+                console.warn('No bounds provided');
+                return;
+            }
+            
+            // Parse bounds
+            const boundsString = boundsInput.value.trim();
+            const bounds = boundsString.split(',').map(Number);
+            
+            if (bounds.length !== 4 || bounds.some(isNaN)) {
+                console.warn('Invalid bounds format');
+                return;
+            }
+            
+            // Show loading indicator
+            document.getElementById('loading').style.display = 'block';
+            
+            // Add image overlay
+            await this.addImageOverlay(imageUrl, bounds, { id: 'direct-url-image' });
+            
+            // Hide loading indicator
+            document.getElementById('loading').style.display = 'none';
+        } catch (error) {
+            console.error('Error loading image from direct URL:', error);
+            
+            // Hide loading indicator
+            document.getElementById('loading').style.display = 'none';
+        }
+    }
+    
+    /**
+     * Ensure a URL is absolute
+     * @param {string} url - URL to process
+     * @returns {string} - Absolute URL
+     */
+    ensureAbsoluteUrl(url) {
+        if (!url) return url;
+        
+        // If the URL is already absolute, return it
+        if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+            return url;
+        }
+        
+        // If it's a root-relative URL, add the origin
+        if (url.startsWith('/')) {
+            return window.location.origin + url;
+        }
+        
+        // If it's a relative URL, resolve it against the current page
+        const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+        return new URL(url, baseUrl).href;
+    }
+    
+    /**
+     * Check if an asset is a Cloud Optimized GeoTIFF (COG)
+     * @param {Object} asset - Asset object
+     * @returns {boolean} - True if the asset is a COG, false otherwise
+     */
+    isCOGAsset(asset) {
+        // Check if the asset type is 'image/tiff; application=geotiff; profile=cloud-optimized'
+        return asset.type === 'image/tiff; application=geotiff; profile=cloud-optimized';
+    }
+    
+    /**
+     * Add image overlay to map
+     * @param {string} imageUrl - Image URL
+     * @param {Array} bbox - Bounding box [west, south, east, north]
+     * @param {Object} item - STAC item
+     */
+    async addImageOverlay(imageUrl, bbox, item) {
+        try {
+            console.log('Adding image overlay:', imageUrl);
+            
+            // Remove existing overlay if any
+            this.removeCurrentLayer();
+
+            // 1. Ensure proper URL handling
+            let absoluteUrl = this.ensureAbsoluteUrl(imageUrl);
+            console.log('Absolute URL:', absoluteUrl);
+            
+            // Create a unique ID for this image source
+            const sourceId = `image-overlay-${Date.now()}`;
+            
+            // 2. Try direct approach first - this is better for CORS issues
+            // with MapLibre handling the image directly
+            try {
+                // Apply coordinates directly
+                const coordinates = [
+                    [bbox[0], bbox[3]], // top-left (northwest)
+                    [bbox[2], bbox[3]], // top-right (northeast)
+                    [bbox[2], bbox[1]], // bottom-right (southeast)
+                    [bbox[0], bbox[1]]  // bottom-left (southwest)
+                ];
+                
+                // Add source without pre-validation
+                this.map.addSource(sourceId, {
+                    type: 'image',
+                    url: absoluteUrl,
+                    coordinates: coordinates
+                });
+                
+                // Add image layer
+                this.map.addLayer({
+                    id: `${sourceId}-layer`,
+                    type: 'raster',
+                    source: sourceId,
+                    paint: {
+                        'raster-opacity': 1.0,
+                        'raster-resampling': 'linear'
+                    }
+                });
+                
+                // Store as current layer
+                this.currentLayer = {
+                    sourceId,
+                    getBounds: () => {
+                        return [
+                            [bbox[0], bbox[1]], // Southwest
+                            [bbox[2], bbox[3]]  // Northeast
+                        ];
+                    }
+                };
+                
+                // Store overlay for opacity control
+                this.currentLayerOverlay = {
+                    setOpacity: (opacity) => {
+                        this.map.setPaintProperty(`${sourceId}-layer`, 'raster-opacity', opacity);
+                    }
+                };
+                
+                console.log('Direct image placement successful');
+                
+                // Register error handler for post-adding errors
+                this.map.once('error', (e) => {
+                    if (e.sourceId === sourceId) {
+                        console.error('Error with direct image overlay, trying alternative:', e);
+                        this.handleImageError(sourceId, absoluteUrl, bbox, item);
+                    }
+                });
+                
+                return true;
+            } catch (directError) {
+                // If direct approach fails, try the more involved approach
+                console.error('Direct image placement failed:', directError);
+                return await this.addImageWithValidation(absoluteUrl, bbox, item);
+            }
+        } catch (error) {
+            console.error('Error in addImageOverlay:', error);
+            
+            // Use GeoJSON fallback without tooltip
+            this.addGeoJsonLayerWithoutTooltip(bbox, item);
+            return false;
+        }
+    }
+
+
+    fitToBounds(bbox) {
+        if (!this.map || !bbox) return;
+        const [west, south, east, north] = bbox;
+        this.map.fitBounds([[west, south], [east, north]], { 
+            padding: 50, 
+            maxZoom: 16,
+            duration: 1000 
+        });
+    }
+
+    clearAllThumbnails() {
+        if (!this.thumbnailLayers) this.thumbnailLayers = new Set();
+        this.thumbnailLayers.forEach(layerId => {
+            if (this.map?.getLayer(layerId)) this.map.removeLayer(layerId);
+            if (this.map?.getSource(layerId.replace('-layer', ''))) {
+                this.map.removeSource(layerId.replace('-layer', ''));
+            }
+        });
+        this.thumbnailLayers.clear();
+    }
+
+    isMapReady() {
+        return this.map && this.map.loaded();
+    }
 }
+
+// Create global instance
+let globalMapManager = null;
+
+/**
+ * Get or create the global MapManager instance
+ */
+function getMapManager(containerId, config) {
+    if (!globalMapManager) {
+        globalMapManager = new MapManager(containerId, config);
+    }
+    return globalMapManager;
+}
+
+/**
+ * Initialize MapManager automatically when DOM is ready
+ */
+function initializeMapManagerOnLoad() {
+    // Check if map is already initialized via app.js
+    if (globalMapManager && globalMapManager.isInitialized) {
+        console.log('✓ MapManager already initialized via app.js');
+        return;
+    }
+    
+    console.log('🚀 Auto-initializing MapManager...');
+    
+    // Try to get config from global scope if available
+    const config = window.CONFIG || null;
+    
+    const mapManager = getMapManager(null, config);
+    
+    // Only auto-initialize if not already initialized
+    if (!mapManager.isInitialized) {
+        // Try to auto-initialize
+        mapManager.autoInitialize().then(success => {
+            if (success) {
+                console.log('✅ MapManager auto-initialized successfully');
+            } else {
+                console.warn('⚠️ MapManager auto-initialization failed - no suitable container found');
+            }
+        }).catch(error => {
+            console.error('❌ MapManager auto-initialization error:', error);
+        });
+    }
+}
+
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeMapManagerOnLoad);
+} else {
+    // DOM is already ready
+    initializeMapManagerOnLoad();
+}
+
+// Also try when window loads (fallback)
+window.addEventListener('load', () => {
+    if (!globalMapManager || !globalMapManager.isMapReady()) {
+        console.log('🔄 Retrying MapManager initialization on window load...');
+        initializeMapManagerOnLoad();
+    }
+});
+
+// Export for use in other modules
+window.MapManager = MapManager;
+window.getMapManager = getMapManager;
+
+// Named export for ES6 modules
+export { MapManager, getMapManager };
+
+// Also provide default export for compatibility
+export default MapManager;

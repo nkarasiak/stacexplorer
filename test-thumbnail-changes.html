@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thumbnail Changes Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .test-case {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case h3 {
+            color: #333;
+            margin-top: 0;
+        }
+        .code-block {
+            background: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+        }
+        .success {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+        .warning {
+            color: #FF9800;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>STAC Explorer Thumbnail Changes Test</h1>
+    <p>This page documents the changes made to improve thumbnail handling in the STAC Explorer.</p>
+
+    <div class="test-case">
+        <h3>✅ User Interface Options</h3>
+        <ul>
+            <li><strong>Click Thumbnail Image:</strong> Displays the thumbnail image overlaid on the map (original functionality restored)</li>
+            <li><strong>Click Map Button (🗺️):</strong> Shows dataset boundaries/geometry on the map (new option)</li>
+            <li><strong>Click Info Button (ℹ️):</strong> Opens detailed metadata modal</li>
+            <li><strong>No Thumbnail:</strong> Only map and info buttons available, card maintains proper height</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>✅ Changes Implemented</h3>
+        <ul>
+            <li><strong>Removed placeholder thumbnails:</strong> No more "No Preview" placeholder images</li>
+            <li><strong>Conditional thumbnail display:</strong> Thumbnails only show if valid URLs exist</li>
+            <li><strong>Enhanced error handling:</strong> Failed thumbnails are completely hidden</li>
+            <li><strong>New geometry display:</strong> Clicking images now shows dataset boundaries on map</li>
+            <li><strong>Improved UI:</strong> Added dedicated "View on Map" button with map icon</li>
+            <li><span class="success">Fixed card height:</span> Cards maintain consistent height even without thumbnails</li>
+            <li><span class="success">Better visibility:</span> Date and buttons are always visible with proper contrast</li>
+            <li><span class="success">Visual placeholder:</span> Subtle placeholder with image icon when no thumbnail available</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>📋 Key Code Changes</h3>
+        
+        <h4>1. MapManager.js - New displayItemGeometry() method</h4>
+        <div class="code-block">async displayItemGeometry(item) {
+    // Remove any existing layers
+    this.removeCurrentLayer();
+    
+    // Get bounding box or geometry
+    const bbox = this.getBoundingBox(item);
+    if (!bbox) return false;
+    
+    // Create GeoJSON for the item geometry
+    let geojson = {
+        type: 'Feature',
+        properties: { title: item.properties?.title || item.id },
+        geometry: item.geometry || createBBoxPolygon(bbox)
+    };
+    
+    // Display the geometry
+    this.displayGeometry(geojson, bbox);
+    return true;
+}</div>
+
+        <h4>2. ResultsPanel.js - Conditional thumbnail rendering</h4>
+        <div class="code-block">// Extract thumbnail URL - only if a valid thumbnail exists
+let thumbnailUrl = null;
+
+if (item.assets) {
+    if (item.assets.thumbnail?.href) {
+        thumbnailUrl = item.assets.thumbnail.href;
+    } else if (item.assets.preview?.href) {
+        thumbnailUrl = item.assets.preview.href;
+    }
+}
+
+// Construct HTML - conditionally include thumbnail
+let thumbnailHtml = '';
+if (thumbnailUrl) {
+    thumbnailHtml = `
+        &lt;div class="thumbnail-section"&gt;
+            &lt;img src="${thumbnailUrl}" 
+                 onerror="this.parentElement.style.display='none'"&gt;
+        &lt;/div&gt;
+    `;
+}</div>
+
+        <h4>3. Card Height and Layout Fixes</h4>
+        <div class="code-block">/* Ensure minimum height even without thumbnail */
+.thumbnail-container {
+    min-height: 120px;
+    background-color: var(--md-surface-overlay);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Visual placeholder when no thumbnail */
+.thumbnail-container.no-thumbnail {
+    background: linear-gradient(135deg, var(--md-surface-overlay) 0%, var(--md-hover-overlay) 100%);
+    border: 1px dashed var(--md-border-color);
+}
+
+.thumbnail-container.no-thumbnail::before {
+    content: 'image';
+    font-family: 'Material Icons';
+    font-size: 48px;
+    color: var(--md-text-secondary);
+    opacity: 0.3;
+}</div>
+
+        <h4>4. Adaptive Text Styling</h4>
+        <div class="code-block">/* Date styling adapts to background */
+.dataset-date.no-image {
+    color: var(--md-text-primary);
+    background-color: var(--md-surface);
+    text-shadow: none;
+    border: 1px solid var(--md-border-color);
+}
+
+/* Button styling adapts too */
+.no-thumbnail .info-btn {
+    background-color: var(--md-text-secondary);
+    color: var(--md-surface);
+}</div>
+
+        <h4>5. New Button Structure</h4>
+        <div class="code-block">&lt;div class="thumbnail-overlay"&gt;
+    &lt;button class="view-geometry-btn" title="View on map"&gt;
+        &lt;i class="material-icons"&gt;map&lt;/i&gt;
+    &lt;/button&gt;
+    &lt;button class="info-btn details-btn" title="Show details"&gt;
+        &lt;i class="material-icons"&gt;info&lt;/i&gt;
+    &lt;/button&gt;
+&lt;/div&gt;</div>
+    </div>
+
+    <div class="test-case">
+        <h3>🎯 User Experience Improvements</h3>
+        <ul>
+            <li><span class="success">Restored thumbnail image display</span> - Click thumbnails to see images on map (original behavior)</li>
+            <li><span class="success">Added geometry boundaries option</span> - Click map button to see dataset outlines</li>
+            <li><span class="success">No more broken placeholder images</span> - Clean interface when thumbnails aren't available</li>
+            <li><span class="success">Better error handling</span> - Failed images completely disappear instead of showing broken placeholders</li>
+            <li><span class="success">Consistent card heights</span> - All cards maintain proper height regardless of thumbnail availability</li>
+            <li><span class="success">Clearer UI</span> - Button tooltips clearly indicate what each action does</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>⚙️ Technical Benefits</h3>
+        <ul>
+            <li><span class="success">Reduced API calls</span> - No unnecessary requests for placeholder images</li>
+            <li><span class="success">Faster loading</span> - Geometry display doesn't depend on image loading</li>
+            <li><span class="success">Better accessibility</span> - Clear button labels and proper error handling</li>
+            <li><span class="success">Maintainable code</span> - Cleaner separation between thumbnail display and map interaction</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>🚀 How to Test</h3>
+        <ol>
+            <li>Start the STAC Explorer application</li>
+            <li>Perform a search to get results</li>
+            <li>For items WITH thumbnails:
+                <ul>
+                    <li><strong>Click the thumbnail image</strong> → Verify the image appears overlaid on the map</li>
+                    <li><strong>Click the map button (🗺️)</strong> → Verify the dataset boundaries appear on the map</li>
+                </ul>
+            </li>
+            <li>For items WITHOUT thumbnails:
+                <ul>
+                    <li>Verify cards maintain proper height (120px minimum)</li>
+                    <li>Verify date and buttons are visible</li>
+                    <li><strong>Click the map button (🗺️)</strong> → Verify boundaries appear on map</li>
+                </ul>
+            </li>
+            <li>Check that failed thumbnails are completely hidden (not showing placeholder)</li>
+            <li>Verify button tooltips show "View boundaries on map" vs "Show details"</li>
+        </ol>
+    </div>
+
+    <div class="test-case">
+        <h3>📝 Files Modified</h3>
+        <ul>
+            <li><code>/js/components/map/MapManager.js</code> - Added displayItemGeometry() method</li>
+            <li><code>/js/components/results/ResultsPanel.js</code> - Updated thumbnail handling and click behavior</li>
+            <li><code>/css/styles.css</code> - Added styles for new button layout</li>
+        </ul>
+    </div>
+
+    <p><em>Changes implemented successfully! The STAC Explorer now provides a cleaner, more reliable user experience with better thumbnail handling and intuitive map interaction.</em></p>
+</body>
+</html>

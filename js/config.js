@@ -15,11 +15,16 @@ export const CONFIG = {
             collections: 'https://stac.dataspace.copernicus.eu/v1/collections',
             search: 'https://stac.dataspace.copernicus.eu/v1/search'
         },
-		element84: {
-			root: 'https://earth-search.aws.element84.com/v1/',
-			collections: 'https://earth-search.aws.element84.com/v1/collections',
-			search: 'https://earth-search.aws.element84.com/v1/search'
-		},
+        element84: {
+            root: 'https://earth-search.aws.element84.com/v1',
+            collections: 'https://earth-search.aws.element84.com/v1/collections',
+            search: 'https://earth-search.aws.element84.com/v1/search'
+        },
+        planetary: {
+            root: 'https://planetarycomputer.microsoft.com/api/stac/v1',
+            collections: 'https://planetarycomputer.microsoft.com/api/stac/v1/collections',
+            search: 'https://planetarycomputer.microsoft.com/api/stac/v1/search'
+        },
         custom: {
             root: '',
             collections: '',
@@ -51,7 +56,8 @@ export const CONFIG = {
     
     // Application settings
     appSettings: {
-        defaultDateRange: 30, // Default date range in days
-        itemsPerPage: 10 // Number of items per page in results
+        defaultDateRange: 0, // Default date range in days (0 means no default)
+        itemsPerPage: 10, // Number of items per page in results
+        enabledProviders: ['copernicus', 'element84', 'planetary'] // Default enabled providers
     }
 };

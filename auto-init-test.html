@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚀 Auto-Initialize MapManager Test</title>
+    
+    <!-- MapLibre GL CSS -->
+    <link href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" rel="stylesheet" />
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .status-card.success {
+            background: #d4edda;
+            border-color: #c3e6cb;
+            color: #155724;
+        }
+        
+        .status-card.error {
+            background: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .status-card.warning {
+            background: #fff3cd;
+            border-color: #ffeaa7;
+            color: #856404;
+        }
+        
+        .status-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+            display: block;
+        }
+        
+        #map {
+            width: 100%;
+            height: 500px;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            margin: 20px 0;
+            background: #f8f9fa;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #2196F3, #21CBF3);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3);
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .log-container {
+            background: #2d3748;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 30px;
+        }
+        
+        .log-header {
+            background: #1a202c;
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .log {
+            color: #e2e8f0;
+            padding: 20px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 13px;
+            max-height: 250px;
+            overflow-y: auto;
+            line-height: 1.5;
+        }
+        
+        .info-box {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            border: 1px solid #2196f3;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Auto-Initialize MapManager Test</h1>
+            <p>Testing automatic MapManager initialization on page load</p>
+        </div>
+        
+        <div class="content">
+            <div class="info-box">
+                <h3>📋 What This Test Does</h3>
+                <ul>
+                    <li><strong>Automatic Detection:</strong> Finds the map container automatically</li>
+                    <li><strong>Auto-Initialize:</strong> Initializes MapManager without manual intervention</li>
+                    <li><strong>Status Monitoring:</strong> Shows real-time status of initialization</li>
+                    <li><strong>Function Testing:</strong> Tests all drawing and thumbnail functions</li>
+                </ul>
+            </div>
+            
+            <div class="status-grid">
+                <div id="maplibre-status" class="status-card">
+                    <span class="status-icon">⏳</span>
+                    <h4>MapLibre GL</h4>
+                    <div>Loading...</div>
+                </div>
+                
+                <div id="container-status" class="status-card">
+                    <span class="status-icon">⏳</span>
+                    <h4>Map Container</h4>
+                    <div>Checking...</div>
+                </div>
+                
+                <div id="manager-status" class="status-card">
+                    <span class="status-icon">⏳</span>
+                    <h4>MapManager</h4>
+                    <div>Initializing...</div>
+                </div>
+                
+                <div id="drawing-status" class="status-card">
+                    <span class="status-icon">⏳</span>
+                    <h4>Drawing Tools</h4>
+                    <div>Waiting...</div>
+                </div>
+            </div>
+            
+            <!-- This is the map container that will be auto-detected -->
+            <div id="map"></div>
+            
+            <div class="controls">
+                <button id="drawBboxBtn" class="btn" disabled>Draw Bounding Box</button>
+                <button id="drawPolygonBtn" class="btn" disabled>Draw Polygon</button>
+                <button id="stopDrawingBtn" class="btn" disabled>Stop Drawing</button>
+                <button id="clearBtn" class="btn" disabled>Clear Drawing</button>
+                <button id="addThumbnailBtn" class="btn" disabled>Add Test Thumbnail</button>
+                <button id="clearThumbnailsBtn" class="btn" disabled>Clear Thumbnails</button>
+                <button id="reinitBtn" class="btn">Force Re-initialize</button>
+            </div>
+            
+            <div class="log-container">
+                <div class="log-header">
+                    <span>📝</span>
+                    <span>Initialization Log</span>
+                    <button onclick="clearLog()" style="margin-left: auto; background: none; border: 1px solid #666; color: white; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Clear</button>
+                </div>
+                <div id="log" class="log"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MapLibre GL JavaScript -->
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    
+    <!-- Load MapManager (which auto-initializes) -->
+    <script type="module">
+        import { MapManager, getMapManager } from './js/components/map/MapManager.js';
+        
+        let mapManager = null;
+        
+        // Logging function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logElement = document.getElementById('log');
+            const colors = {
+                success: '#28a745',
+                error: '#dc3545', 
+                warning: '#ffc107',
+                info: '#17a2b8'
+            };
+            
+            const color = colors[type] || colors.info;
+            logElement.innerHTML += `<span style="color: #888">[${timestamp}]</span> <span style="color: ${color}">${message}</span>\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+            
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        // Update status card
+        function updateStatus(cardId, icon, title, message, type = 'info') {
+            const card = document.getElementById(cardId);
+            const iconMap = {
+                success: '✅',
+                error: '❌',
+                warning: '⚠️',
+                info: 'ℹ️'
+            };
+            
+            card.className = `status-card ${type}`;
+            card.innerHTML = `
+                <span class="status-icon">${icon || iconMap[type]}</span>
+                <h4>${title}</h4>
+                <div>${message}</div>
+            `;
+        }
+        
+        // Check MapLibre GL availability
+        function checkMapLibre() {
+            if (typeof maplibregl !== 'undefined') {
+                updateStatus('maplibre-status', '✅', 'MapLibre GL', 'Available', 'success');
+                log('MapLibre GL is available', 'success');
+                return true;
+            } else {
+                updateStatus('maplibre-status', '❌', 'MapLibre GL', 'NOT FOUND', 'error');
+                log('MapLibre GL not found!', 'error');
+                return false;
+            }
+        }
+        
+        // Check map container
+        function checkContainer() {
+            const container = document.getElementById('map');
+            if (container) {
+                updateStatus('container-status', '✅', 'Map Container', 'Found: #map', 'success');
+                log('Map container found: #map', 'success');
+                return true;
+            } else {
+                updateStatus('container-status', '❌', 'Map Container', 'NOT FOUND', 'error');
+                log('Map container #map not found!', 'error');
+                return false;
+            }
+        }
+        
+        // Monitor MapManager initialization
+        function monitorMapManager() {
+            updateStatus('manager-status', '⏳', 'MapManager', 'Initializing...', 'warning');
+            log('Waiting for MapManager auto-initialization...', 'info');
+            
+            // Check periodically
+            const checkInterval = setInterval(() => {
+                if (window.getMapManager) {
+                    mapManager = window.getMapManager();
+                    
+                    if (mapManager.isMapReady()) {
+                        clearInterval(checkInterval);
+                        updateStatus('manager-status', '✅', 'MapManager', 'Initialized & Ready', 'success');
+                        updateStatus('drawing-status', '✅', 'Drawing Tools', 'Available', 'success');
+                        log('MapManager is ready!', 'success');
+                        
+                        // Enable controls
+                        enableControls();
+                    }
+                }
+            }, 500);
+            
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                if (!mapManager || !mapManager.isMapReady()) {
+                    clearInterval(checkInterval);
+                    updateStatus('manager-status', '❌', 'MapManager', 'Initialization Failed', 'error');
+                    updateStatus('drawing-status', '❌', 'Drawing Tools', 'Unavailable', 'error');
+                    log('MapManager initialization timed out!', 'error');
+                }
+            }, 10000);
+        }
+        
+        // Enable control buttons
+        function enableControls() {
+            const buttons = ['drawBboxBtn', 'drawPolygonBtn', 'stopDrawingBtn', 'clearBtn', 'addThumbnailBtn', 'clearThumbnailsBtn'];
+            buttons.forEach(id => {
+                document.getElementById(id).disabled = false;
+            });
+        }
+        
+        // Drawing callback
+        function onDrawingComplete(geometry) {
+            log(`Drawing completed: ${JSON.stringify(geometry, null, 2)}`, 'success');
+        }
+        
+        // Event listeners
+        document.getElementById('drawBboxBtn').addEventListener('click', () => {
+            if (mapManager) {
+                log('Starting bbox drawing...', 'info');
+                mapManager.startDrawingBbox(onDrawingComplete);
+            }
+        });
+        
+        document.getElementById('drawPolygonBtn').addEventListener('click', () => {
+            if (mapManager) {
+                log('Starting polygon drawing...', 'info');
+                mapManager.startDrawingPolygon(onDrawingComplete);
+            }
+        });
+        
+        document.getElementById('stopDrawingBtn').addEventListener('click', () => {
+            if (mapManager) {
+                mapManager.stopDrawing();
+                log('Drawing stopped', 'info');
+            }
+        });
+        
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            if (mapManager) {
+                mapManager.clearDrawing();
+                log('Drawing cleared', 'info');
+            }
+        });
+        
+        document.getElementById('addThumbnailBtn').addEventListener('click', () => {
+            if (mapManager) {
+                const testItem = {
+                    id: 'test-thumbnail',
+                    thumbnail: 'https://via.placeholder.com/400x300/2196F3/white?text=AUTO-INIT+TEST',
+                    bbox: [-20, -20, 20, 20]
+                };
+                
+                mapManager.addThumbnailToMap(testItem);
+                mapManager.fitToBounds(testItem.bbox);
+                log('Test thumbnail added and fitted to bounds', 'success');
+            }
+        });
+        
+        document.getElementById('clearThumbnailsBtn').addEventListener('click', () => {
+            if (mapManager) {
+                mapManager.clearAllThumbnails();
+                log('All thumbnails cleared', 'info');
+            }
+        });
+        
+        document.getElementById('reinitBtn').addEventListener('click', async () => {
+            log('Force re-initializing MapManager...', 'warning');
+            updateStatus('manager-status', '⏳', 'MapManager', 'Re-initializing...', 'warning');
+            
+            try {
+                if (window.getMapManager) {
+                    const success = await window.getMapManager().autoInitialize();
+                    if (success) {
+                        log('Force re-initialization successful!', 'success');
+                        updateStatus('manager-status', '✅', 'MapManager', 'Re-initialized', 'success');
+                    } else {
+                        log('Force re-initialization failed', 'error');
+                        updateStatus('manager-status', '❌', 'MapManager', 'Re-init Failed', 'error');
+                    }
+                }
+            } catch (error) {
+                log(`Force re-initialization error: ${error.message}`, 'error');
+                updateStatus('manager-status', '❌', 'MapManager', 'Re-init Error', 'error');
+            }
+        });
+        
+        // Global clear log function
+        window.clearLog = function() {
+            document.getElementById('log').innerHTML = '';
+        };
+        
+        // Start the test sequence
+        log('🚀 Starting Auto-Initialize MapManager Test...', 'info');
+        log('====================================================', 'info');
+        
+        // Check prerequisites
+        const mapLibreOK = checkMapLibre();
+        const containerOK = checkContainer();
+        
+        if (mapLibreOK && containerOK) {
+            log('Prerequisites OK, monitoring auto-initialization...', 'success');
+            monitorMapManager();
+        } else {
+            log('Prerequisites failed! Check MapLibre GL and container.', 'error');
+        }
+        
+        // Listen for the custom event
+        window.addEventListener('mapManagerReady', (event) => {
+            log('Received mapManagerReady event!', 'success');
+            mapManager = event.detail.mapManager;
+        });
+    </script>
+</body>
+</html>

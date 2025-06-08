@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thumbnail Fix Test Results</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f5f5f5;
+            line-height: 1.6;
+        }
+        .header {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .test-case {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .success { color: #4CAF50; font-weight: bold; }
+        .warning { color: #FF9800; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+        .info { color: #2196F3; font-weight: bold; }
+        .console-log {
+            background: #1e1e1e;
+            color: #00ff41;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 10px 0;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .step {
+            background: #e3f2fd;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🖼️ Thumbnail Display Fix - Test Guide</h1>
+        <p>Use this guide to test if the thumbnail display issues have been resolved</p>
+    </div>
+
+    <div class="test-case">
+        <h3>🎯 What Was Fixed</h3>
+        <ul>
+            <li><span class="success">CORS Handling:</span> Added crossorigin="anonymous" to thumbnail images</li>
+            <li><span class="success">Smart Detection:</span> Only blocks truly problematic URL patterns</li>
+            <li><span class="success">Fallback Strategy:</span> Multiple attempts before giving up</li>
+            <li><span class="success">Better Logging:</span> Clearer debug messages</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>🧪 How to Test</h3>
+        
+        <div class="step">
+            <h4>Step 1: Open Browser Console</h4>
+            <p>Press <kbd>F12</kbd> and go to the <strong>Console</strong> tab to see debug messages</p>
+        </div>
+
+        <div class="step">
+            <h4>Step 2: Search for Datasets</h4>
+            <p>Search for datasets with thumbnails (e.g., "Sentinel-2", "Landsat")</p>
+        </div>
+
+        <div class="step">
+            <h4>Step 3: Wait for Thumbnails to Load</h4>
+            <p>Wait for thumbnail images to appear in the results panel</p>
+        </div>
+
+        <div class="step">
+            <h4>Step 4: Click on Thumbnails</h4>
+            <p>Click on a thumbnail image to display it on the map</p>
+        </div>
+
+        <div class="step">
+            <h4>Step 5: Check Console Messages</h4>
+            <p>Look for these messages in the console:</p>
+        </div>
+    </div>
+
+    <div class="test-case">
+        <h3>📊 Expected Console Output</h3>
+        
+        <h4><span class="success">Success Case</span> (crossOrigin works):</h4>
+        <div class="console-log">🖼️ Adding image overlay: [URL]
+📍 Using full bounding box: [coordinates]
+🔄 Attempting to get thumbnail from results panel...
+🔍 Looking for preloaded thumbnail for item: [ID]
+✅ Found result item in panel
+✅ Found thumbnail image element
+📊 Thumbnail status: {src: "...", complete: true, naturalWidth: 512, naturalHeight: 512, crossOrigin: "anonymous"}
+✅ Thumbnail has crossOrigin=anonymous, using source directly: [URL]
+✅ Using preloaded thumbnail from results panel
+📐 Using full bbox coordinates: [[...]]
+✅ Image layer appears to have loaded successfully</div>
+
+        <h4><span class="warning">Fallback Case</span> (direct URL attempt):</h4>
+        <div class="console-log">🖼️ Adding image overlay: [URL]
+📍 Using full bounding box: [coordinates]
+🔄 Attempting to get thumbnail from results panel...
+⚠️ Could not get preloaded thumbnail, trying direct image URL...
+🌐 Attempting to load external image URL: [URL]
+✅ Image layer appears to have loaded successfully</div>
+
+        <h4><span class="error">Blocked Case</span> (known problematic pattern):</h4>
+        <div class="console-log">🖼️ Adding image overlay: https://datahub.creodias.eu/odata/v1/Assets(...)/$value
+📍 Using full bounding box: [coordinates]
+🔄 Attempting to get thumbnail from results panel...
+⚠️ Could not get preloaded thumbnail, trying direct image URL...
+🚫 URL contains highly problematic pattern: https://datahub.creodias.eu/odata/v1/Assets(...)/$value
+🚫 External URL contains known problematic pattern, showing bounding box instead</div>
+    </div>
+
+    <div class="test-case">
+        <h3>✅ What Should Happen Now</h3>
+        <ul>
+            <li><span class="success">More thumbnails display:</span> Images from external sources should now appear on the map</li>
+            <li><span class="success">Fewer CORS errors:</span> Less "tainted canvas" errors in console</li>
+            <li><span class="success">Better fallbacks:</span> Graceful degradation to bounding boxes for truly problematic URLs</li>
+            <li><span class="success">Clearer debugging:</span> Console messages explain what's happening at each step</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>🔍 Troubleshooting</h3>
+        
+        <h4>If thumbnails still don't show:</h4>
+        <ol>
+            <li><strong>Check crossOrigin:</strong> Look for <code>crossOrigin: "anonymous"</code> in console output</li>
+            <li><strong>Verify image loading:</strong> Check if "Image layer appears to have loaded successfully" appears</li>
+            <li><strong>Look for errors:</strong> Any network errors or 404s in Network tab</li>
+            <li><strong>Check URL patterns:</strong> Some URLs might still be blocked due to known problematic patterns</li>
+        </ol>
+
+        <h4>Console Message Guide:</h4>
+        <ul>
+            <li><span class="success">"using source directly"</span> = Best case (crossOrigin working)</li>
+            <li><span class="info">"attempting to load external image URL"</span> = Fallback working</li>
+            <li><span class="warning">"Canvas tainted by CORS"</span> = Expected for some images</li>
+            <li><span class="error">"highly problematic pattern"</span> = URL correctly blocked</li>
+        </ul>
+    </div>
+
+    <div class="test-case">
+        <h3>🚀 Key Improvements</h3>
+        <ul>
+            <li><span class="success">Smart CORS Detection:</span> Only blocks truly problematic endpoints</li>
+            <li><span class="success">Multiple Strategies:</span> Tries several approaches before giving up</li>
+            <li><span class="success">Better Error Handling:</span> Specific error messages for different failure types</li>
+            <li><span class="success">Performance:</span> Reuses loaded thumbnails when possible</li>
+        </ul>
+    </div>
+
+    <p><strong>🎉 Test the application now and check if more thumbnails display on the map!</strong></p>
+</body>
+</html>

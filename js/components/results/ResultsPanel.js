@@ -74,9 +74,6 @@ export class ResultsPanel {
                     <button class="md-btn md-btn-secondary" id="modal-close-btn">
                         Close
                     </button>
-                    <button class="md-btn md-btn-primary" id="modal-copy-btn">
-                        <i class="material-icons">content_copy</i> Copy JSON
-                    </button>
                 </div>
             </div>
         `;
@@ -87,7 +84,6 @@ export class ResultsPanel {
         // Add event listeners
         const closeBtn = modalOverlay.querySelector('.modal-close');
         const closeBtnFooter = modalOverlay.querySelector('#modal-close-btn');
-        const copyBtn = modalOverlay.querySelector('#modal-copy-btn');
         
         closeBtn.addEventListener('click', () => this.closeModal());
         closeBtnFooter.addEventListener('click', () => this.closeModal());
@@ -100,8 +96,7 @@ export class ResultsPanel {
         // Store modal elements
         this.modal = {
             overlay: modalOverlay,
-            content: modalOverlay.querySelector('#modal-content'),
-            copyBtn: copyBtn
+            content: modalOverlay.querySelector('#modal-content')
         };
     }
     
@@ -145,16 +140,6 @@ export class ResultsPanel {
         // Update modal content
         this.modal.content.innerHTML = '';
         this.modal.content.appendChild(content);
-        
-        // Update copy button handler
-        this.modal.copyBtn.onclick = () => {
-            navigator.clipboard.writeText(formattedJson).then(() => {
-                this.notificationService.showNotification('JSON copied to clipboard', 'success');
-            }).catch(err => {
-                console.error('Failed to copy JSON:', err);
-                this.notificationService.showNotification('Failed to copy JSON', 'error');
-            });
-        };
         
         // Show modal
         this.modal.overlay.classList.add('active');
@@ -271,17 +256,40 @@ export class ResultsPanel {
         li.dataset.id = item.id;
         li.setAttribute('data-id', item.id);
         
-        // Extract thumbnail URL
-        let thumbnailUrl = 'https://api.placeholder.com/300/200?text=No+Preview';
+        // Extract thumbnail URL - no placeholder fallback
+        let thumbnailUrl = null;
+        let hasThumbnail = false;
         
         // Check various potential thumbnail locations in the STAC item
         if (item.assets) {
-            if (item.assets.thumbnail) {
-                thumbnailUrl = item.assets.thumbnail.href;
+            // For Planetary Computer items, check rendered_preview first
+            if (item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
+                // Convert to presigned URL
+                const presignedUrl = item.assets.rendered_preview.href.replace(
+                    'https://planetarycomputer.microsoft.com/api/stac/v1',
+                    'https://planetarycomputer.microsoft.com/api/data/v1'
+                );
+                thumbnailUrl = presignedUrl;
+                hasThumbnail = true;
+            } else if (item.assets.thumbnail) {
+                // For Planetary Computer items, use the presigned URL
+                if (item.assets.thumbnail.href.includes('planetarycomputer')) {
+                    // Convert to presigned URL
+                    const presignedUrl = item.assets.thumbnail.href.replace(
+                        'https://planetarycomputer.microsoft.com/api/stac/v1',
+                        'https://planetarycomputer.microsoft.com/api/data/v1'
+                    );
+                    thumbnailUrl = presignedUrl;
+                } else {
+                    thumbnailUrl = item.assets.thumbnail.href;
+                }
+                hasThumbnail = true;
             } else if (item.assets.preview) {
                 thumbnailUrl = item.assets.preview.href;
+                hasThumbnail = true;
             } else if (item.assets.overview) {
                 thumbnailUrl = item.assets.overview.href;
+                hasThumbnail = true;
             }
         }
         
@@ -333,85 +341,61 @@ export class ResultsPanel {
         // Prepare metadata fields
         const metadataFields = [];
         
-        metadataFields.push(`
-            <div class="metadata-field">
-                <span class="metadata-label">Description:</span> ${description}
-            </div>
-            <div class="metadata-field">
-                <span class="metadata-label">Collection:</span> ${collectionId}
-            </div>
-        `);
+        metadataFields.push({
+            label: 'Collection',
+            value: collectionId
+        });
         
-        // Add cloud cover if available
-        if (item.properties && (item.properties['eo:cloud_cover'] !== undefined)) {
-            metadataFields.push(`
-                <div class="metadata-field">
-                    <span class="metadata-label">Cloud Cover:</span> ${item.properties['eo:cloud_cover']}%
-                </div>
-            `);
+        metadataFields.push({
+            label: 'Date',
+            value: itemDate
+        });
+        
+        if (cloudIcon) {
+            metadataFields.push({
+                label: 'Cloud Cover',
+                value: cloudIcon
+            });
         }
         
-        // Add ground resolution if available
-        if (item.properties && (item.properties['eo:gsd'] !== undefined)) {
-            metadataFields.push(`
-                <div class="metadata-field">
-                    <span class="metadata-label">Ground Resolution:</span> ${item.properties['eo:gsd']} m
-                </div>
-            `);
-        }
-        
-        // Add provider if available
-        if (item.properties && item.properties.provider) {
-            metadataFields.push(`
-                <div class="metadata-field">
-                    <span class="metadata-label">Provider:</span> ${item.properties.provider}
-                </div>
-            `);
-        } else if (item.properties && item.properties.constellation) {
-            metadataFields.push(`
-                <div class="metadata-field">
-                    <span class="metadata-label">Constellation:</span> ${item.properties.constellation}
-                </div>
-            `);
-        }
-
-        // Add formatted JSON data
-        const formattedJson = JSON.stringify(item, null, 2)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;')
-            .replace(/\n/g, '<br>')
-            .replace(/ /g, '&nbsp;');
-
-        metadataFields.push(`
-            <div class="metadata-field json-view">
-                <div class="json-header">
-                    <span class="metadata-label">Full JSON Data:</span>
-                    <button class="md-btn md-btn-secondary copy-json-btn" data-id="${item.id}">
-                        <i class="material-icons">content_copy</i> Copy
-                    </button>
-                </div>
-                <pre class="json-content">${formattedJson}</pre>
-            </div>
-        `);
-        // Construct html
-        li.innerHTML = `
-            <div class="dataset-content">
-                <div class="thumbnail-container">
-                    <div class="dataset-metadata">
-                        <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
-                    </div>
-                    <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" onerror="this.src=''">
-                    <div class="thumbnail-overlay">
-                        <button class="info-btn details-btn" title="Show details">
-                            <i class="material-icons">info</i>
-                        </button>
+        // Construct html based on thumbnail availability
+        if (hasThumbnail && thumbnailUrl) {
+            li.innerHTML = `
+                <div class="dataset-content">
+                    <div class="thumbnail-container">
+                        <div class="dataset-metadata">
+                            <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
+                        </div>
+                        <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" onerror="this.handleThumbnailError(this)">
+                        <div class="thumbnail-overlay">
+                            <button class="info-btn details-btn" title="Show details">
+                                <i class="material-icons">info</i>
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        `;
+            `;
+        } else {
+            // No thumbnail available - show minimal info with thumbnail-overlay style buttons
+            li.innerHTML = `
+                <div class="dataset-content no-thumbnail">
+                    <div class="dataset-info">
+                        <div class="dataset-metadata">
+                            <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
+                        </div>
+                        <div class="thumbnail-overlay">
+                            <button class="info-btn view-map-btn" title="View geometry on map">
+                                <i class="material-icons">map</i>
+                            </button>
+                            <button class="info-btn details-btn" title="Show details">
+                                <i class="material-icons">info</i>
+                            </button>
+                        </div>
+                        <div class="dataset-title" style="cursor: default; pointer-events: none;">${title}</div>
+                    </div>
+                </div>
+            `;
+        }
         
         // Add event listeners after creating the element
         this.attachItemEventListeners(li, item);
@@ -425,19 +409,23 @@ export class ResultsPanel {
      * @param {Object} item - STAC item data
      */
     attachItemEventListeners(element, item) {
-        // Add event listener to thumbnail
+        // Add event listener to thumbnail (if exists)
         const thumbnail = element.querySelector('.dataset-thumbnail');
-        const infoBtn = element.querySelector('.info-btn');
+        const detailsBtn = element.querySelector('.details-btn'); // Select by specific class
+        const viewMapBtn = element.querySelector('.view-map-btn');
         
-        // Add click handler to thumbnail
-        thumbnail.addEventListener('click', () => {
+        // Function to handle map display with loading indicator
+        const displayOnMap = (useGeometry = false) => {
             // Show loading indicator
             document.getElementById('loading').style.display = 'flex';
             
             // Display item on map
             setTimeout(() => {
-                // Always use the thumbnail asset key when clicking View
-                this.mapManager.displayItemOnMap(item, 'thumbnail')
+                const displayPromise = useGeometry ? 
+                    this.mapManager.displayItemGeometry(item) :
+                    this.mapManager.displayItemOnMap(item, 'thumbnail');
+                    
+                displayPromise
                     .then(() => {
                         // Mark the item as active
                         document.querySelectorAll('.dataset-item').forEach(el => {
@@ -445,11 +433,11 @@ export class ResultsPanel {
                         });
                         element.classList.add('active');
                         
-                        // Dispatch item activated event with the thumbnail asset key
+                        // Dispatch item activated event
                         document.dispatchEvent(new CustomEvent('itemActivated', {
                             detail: { 
                                 itemId: item.id,
-                                assetKey: 'thumbnail'
+                                assetKey: useGeometry ? 'geometry' : 'thumbnail'
                             }
                         }));
                         
@@ -467,13 +455,109 @@ export class ResultsPanel {
                         document.getElementById('loading').style.display = 'none';
                     });
             }, 100); // Small delay to allow loading indicator to appear
-        });
+        };
         
-        // Add event listener to info button
-        if (infoBtn) {
-            infoBtn.addEventListener('click', () => {
+        // Add click handler to thumbnail (if exists)
+        if (thumbnail) {
+            // Handle thumbnail error
+            thumbnail.onerror = () => {
+                // Hide the entire thumbnail container on error
+                const thumbnailContainer = element.querySelector('.thumbnail-container');
+                if (thumbnailContainer) {
+                    thumbnailContainer.style.display = 'none';
+                }
+                // Add a replacement view geometry button
+                this.addFallbackGeometryButton(element, item);
+            };
+            
+            thumbnail.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                console.log('Thumbnail clicked for item:', item.id);
+                displayOnMap(false);
+            });
+        }
+        
+        // Add click handler to view map button (for items without thumbnails)
+        if (viewMapBtn) {
+            viewMapBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                console.log('Map button clicked for item:', item.id);
+                displayOnMap(true);
+            });
+        }
+        
+        // Add event listener to info/details button
+        if (detailsBtn) {
+            detailsBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                console.log('Details button clicked for item:', item.id);
                 this.showModal(item);
             });
+        }
+    }
+    
+    /**
+     * Add fallback geometry button when thumbnail fails to load
+     * @param {HTMLElement} element - Dataset item element
+     * @param {Object} item - STAC item data
+     */
+    addFallbackGeometryButton(element, item) {
+        const content = element.querySelector('.dataset-content');
+        if (content && !content.querySelector('.view-map-btn')) {
+            const fallbackHtml = `
+                <div class="fallback-geometry-view">
+                    <div class="thumbnail-overlay">
+                        <button class="info-btn view-map-btn" title="View geometry on map">
+                            <i class="material-icons">map</i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            content.insertAdjacentHTML('beforeend', fallbackHtml);
+            
+            // Add event listener to the new button
+            const newBtn = content.querySelector('.view-map-btn');
+            if (newBtn) {
+                newBtn.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent event bubbling
+                    console.log('Fallback map button clicked for item:', item.id);
+                    // Show loading indicator
+                    document.getElementById('loading').style.display = 'flex';
+                    
+                    // Display geometry on map
+                    setTimeout(() => {
+                        this.mapManager.displayItemGeometry(item)
+                            .then(() => {
+                                // Mark the item as active
+                                document.querySelectorAll('.dataset-item').forEach(el => {
+                                    el.classList.remove('active');
+                                });
+                                element.classList.add('active');
+                                
+                                // Dispatch item activated event
+                                document.dispatchEvent(new CustomEvent('itemActivated', {
+                                    detail: { 
+                                        itemId: item.id,
+                                        assetKey: 'geometry'
+                                    }
+                                }));
+                                
+                                // Expand tools panel if collapsed
+                                document.dispatchEvent(new CustomEvent('expandToolsPanel'));
+                                
+                                // Hide loading indicator
+                                document.getElementById('loading').style.display = 'none';
+                            })
+                            .catch(error => {
+                                this.notificationService.showNotification(
+                                    `Error displaying geometry on map: ${error.message}`, 
+                                    'error'
+                                );
+                                document.getElementById('loading').style.display = 'none';
+                            });
+                    }, 100);
+                });
+            }
         }
     }
     

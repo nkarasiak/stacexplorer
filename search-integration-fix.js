@@ -160,6 +160,23 @@ class SearchIntegrationFix {
             if (changedField === 'location' || !changedField) {
                 aiSmartSearch.selectedLocation = aiHelper.selectedLocation;
                 aiSmartSearch.selectedLocationResult = aiHelper.selectedLocationResult;
+                
+                // Ensure location is displayed on map when synced
+                if (aiHelper.selectedLocationResult && aiHelper.selectedLocationResult.bbox) {
+                    const mapManager = window.stacExplorer?.mapManager;
+                    if (mapManager) {
+                        // Display location geometry if available
+                        if (aiHelper.selectedLocationResult.geometry) {
+                            mapManager.addBeautifulGeometryLayer({
+                                type: 'Feature',
+                                geometry: aiHelper.selectedLocationResult.geometry
+                            });
+                        }
+                        
+                        // Zoom to location bounds
+                        mapManager.fitToBounds(aiHelper.selectedLocationResult.bbox);
+                    }
+                }
             }
 
             // Sync date

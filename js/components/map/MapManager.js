@@ -659,6 +659,12 @@ class MapManager {
                 return;
             }
             
+            // For Planetary Computer items, check rendered_preview first
+            if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
+                await this.addAssetOverlay(item.assets.rendered_preview, item, 'rendered_preview');
+                return;
+            }
+            
             // If we have a thumbnail, use it
             if (item.assets && item.assets.thumbnail) {
                 await this.addAssetOverlay(item.assets.thumbnail, item, 'thumbnail');
@@ -1697,6 +1703,12 @@ let geojson;
             // If we have visual assets, use the first one
             if (visualAssets.length > 0) {
                 await this.addAssetOverlay(visualAssets[0].asset, item, visualAssets[0].key);
+                return;
+            }
+            
+            // For Planetary Computer items, check rendered_preview first
+            if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
+                await this.addAssetOverlay(item.assets.rendered_preview, item, 'rendered_preview');
                 return;
             }
             

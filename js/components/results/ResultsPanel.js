@@ -262,8 +262,27 @@ export class ResultsPanel {
         
         // Check various potential thumbnail locations in the STAC item
         if (item.assets) {
-            if (item.assets.thumbnail) {
-                thumbnailUrl = item.assets.thumbnail.href;
+            // For Planetary Computer items, check rendered_preview first
+            if (item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
+                // Convert to presigned URL
+                const presignedUrl = item.assets.rendered_preview.href.replace(
+                    'https://planetarycomputer.microsoft.com/api/stac/v1',
+                    'https://planetarycomputer.microsoft.com/api/data/v1'
+                );
+                thumbnailUrl = presignedUrl;
+                hasThumbnail = true;
+            } else if (item.assets.thumbnail) {
+                // For Planetary Computer items, use the presigned URL
+                if (item.assets.thumbnail.href.includes('planetarycomputer')) {
+                    // Convert to presigned URL
+                    const presignedUrl = item.assets.thumbnail.href.replace(
+                        'https://planetarycomputer.microsoft.com/api/stac/v1',
+                        'https://planetarycomputer.microsoft.com/api/data/v1'
+                    );
+                    thumbnailUrl = presignedUrl;
+                } else {
+                    thumbnailUrl = item.assets.thumbnail.href;
+                }
                 hasThumbnail = true;
             } else if (item.assets.preview) {
                 thumbnailUrl = item.assets.preview.href;
@@ -322,66 +341,23 @@ export class ResultsPanel {
         // Prepare metadata fields
         const metadataFields = [];
         
-        metadataFields.push(`
-            <div class="metadata-field">
-                <span class="metadata-label">Description:</span> ${description}
-            </div>
-            <div class="metadata-field">
-                <span class="metadata-label">Collection:</span> ${collectionId}
-            </div>
-        `);
+        metadataFields.push({
+            label: 'Collection',
+            value: collectionId
+        });
         
-        // Add cloud cover if available
-        if (item.properties && (item.properties['eo:cloud_cover'] !== undefined)) {
-            metadataFields.push(`
-                <div class="metadata-field">
-                    <span class="metadata-label">Cloud Cover:</span> ${item.properties['eo:cloud_cover']}%
-                </div>
-            `);
+        metadataFields.push({
+            label: 'Date',
+            value: itemDate
+        });
+        
+        if (cloudIcon) {
+            metadataFields.push({
+                label: 'Cloud Cover',
+                value: cloudIcon
+            });
         }
         
-        // Add ground resolution if available
-        if (item.properties && (item.properties['eo:gsd'] !== undefined)) {
-            metadataFields.push(`
-                <div class="metadata-field">
-                    <span class="metadata-label">Ground Resolution:</span> ${item.properties['eo:gsd']} m
-                </div>
-            `);
-        }
-        
-        // Add provider if available
-        if (item.properties && item.properties.provider) {
-            metadataFields.push(`
-                <div class="metadata-field">
-                    <span class="metadata-label">Provider:</span> ${item.properties.provider}
-                </div>
-            `);
-        } else if (item.properties && item.properties.constellation) {
-            metadataFields.push(`
-                <div class="metadata-field">
-                    <span class="metadata-label">Constellation:</span> ${item.properties.constellation}
-                </div>
-            `);
-        }
-
-        // Add formatted JSON data - REMOVED COPY BUTTON
-        const formattedJson = JSON.stringify(item, null, 2)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#039;')
-            .replace(/\n/g, '<br>')
-            .replace(/ /g, '&nbsp;');
-
-        metadataFields.push(`
-            <div class="metadata-field json-view">
-                <div class="json-header">
-                    <span class="metadata-label">Full JSON Data:</span>
-                </div>
-                <pre class="json-content">${formattedJson}</pre>
-            </div>
-        `);
         // Construct html based on thumbnail availability
         if (hasThumbnail && thumbnailUrl) {
             li.innerHTML = `

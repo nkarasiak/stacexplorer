@@ -22,16 +22,8 @@
     <link rel="stylesheet" href="css/geometry-input.css">
     <!-- Card-Style Buttons CSS -->
     <link rel="stylesheet" href="css/card-style-buttons.css">
-    <!-- AI Smart Search Minimalist CSS -->
-    <!-- AI Collections CSS -->
-    <link rel="stylesheet" href="css/ai-collections.css">
-    <link rel="stylesheet" href="css/ai-smart-search-minimalist.css">
-    <!-- AI Location Search Enhancement CSS -->
-    <link rel="stylesheet" href="css/ai-location-search.css">
-    <!-- AI Smart Search Enhanced CSS -->
-    <link rel="stylesheet" href="css/ai-smart-search-enhanced.css">
-    <!-- Removed - AI Smart Search Inline CSS (no longer needed) -->
-    <!-- Removed - AI Smart Search Trigger CSS (no longer needed) -->
+    <!-- Settings Panel CSS -->
+    <link rel="stylesheet" href="css/settings-panel.css">
     <!-- Collection Details Modal CSS -->
     <link rel="stylesheet" href="css/collection-details-modal.css">
     <!-- Enhanced Results Buttons CSS -->
@@ -45,30 +37,6 @@
             display: flex;
             align-items: center;
             gap: 10px;
-        }
-        
-        .ai-button {
-            background: var(--primary-gradient);
-            border: none;
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        }
-        
-        .ai-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        }
-        
-        .ai-button i {
-            font-size: 18px;
         }
         
         /* Enhanced Collection Dropdown Styling */
@@ -283,6 +251,9 @@
                 <h1><i class="material-icons">satellite_alt</i> <span>STAC Explorer</span></h1>
                 <button id="theme-toggle" class="theme-toggle">
                     <i class="material-icons">light_mode</i>
+                </button>
+                <button id="settings-button" class="ai-button" title="Settings">
+                    <i class="material-icons">settings</i>
                 </button>
             </div>
             <div class="sidebar-content">
@@ -848,5 +819,14 @@
     <script src="url-parameter-preserve-fix.js"></script>
     <script src="search-integration-fix.js"></script>
     <script src="search-button-fix.js"></script>
+    <!-- Core JavaScript -->
+    <script src="js/MapManager.js"></script>
+    <script src="js/map-auto-init.js"></script>
+    <script src="js/components/search/GeometryInput.js"></script>
+    <script src="js/components/search/CardBasedSearch.js"></script>
+    <script src="js/components/search/CollectionDetailsModal.js"></script>
+    <script src="js/components/search/EnhancedResultsButtons.js"></script>
+    <script src="js/components/search/InlineDropdown.js"></script>
+    <script src="js/components/search/SettingsPanel.js"></script>
 </body>
 </html>

@@ -669,8 +669,8 @@ export class SearchForm {
             // Add date range if provided
             const startDate = document.getElementById('date-start')?.value;
             const endDate = document.getElementById('date-end')?.value;
-            if (startDate || endDate) {
-                params.datetime = `${startDate ? startDate + 'T00:00:00Z' : ''}/${endDate ? endDate + 'T23:59:59Z' : ''}`;
+            if (startDate && endDate) {
+                params.datetime = `${startDate}T00:00:00Z/${endDate}T23:59:59Z`;
             }
             
             // Add geometry or bbox

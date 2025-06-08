@@ -150,7 +150,18 @@ export class SearchPanel {
             // Perform the search
             const items = await this.apiClient.searchItems(searchParams);
             
-			// console.log('Results:', JSON.stringify(items, null, 2));
+            // Presign Planetary Computer thumbnail URLs
+            items.forEach(item => {
+                if (item.assets && item.assets.thumbnail && item.assets.thumbnail.href.includes('planetarycomputer')) {
+                    // Convert to presigned URL
+                    item.assets.thumbnail.href = item.assets.thumbnail.href.replace(
+                        'https://planetarycomputer.microsoft.com/api/stac/v1',
+                        'https://planetarycomputer.microsoft.com/api/data/v1'
+                    );
+                }
+            });
+
+            // console.log('Results:', JSON.stringify(items, null, 2));
 
             // Update results panel
             this.resultsPanel.setItems(items);

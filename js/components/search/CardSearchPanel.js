@@ -630,38 +630,17 @@ export class CardSearchPanel {
             const selectedCollection = collectionSelect ? collectionSelect.value : '';
             
             console.log('🎯 Collection select element:', collectionSelect);
-            console.log('🎯 Selected collection value:', selectedCollection);
-            console.log('🎯 All collection options:', collectionSelect ? Array.from(collectionSelect.options).map(opt => `${opt.value} - ${opt.text}`) : 'No select element');
             
-            if (selectedCollection && selectedCollection !== '') {
+            // Add collection if specified
+            if (selectedCollection) {
                 searchParams.collections = [selectedCollection];
-                console.log('✅ Using collection from card UI:', selectedCollection);
-                console.log('✅ Collections parameter set to:', searchParams.collections);
-            } else {
-                // If no specific collection is selected, search all collections
-                delete searchParams.collections;
-                console.log('ℹ️ No specific collection selected, searching all collections');
             }
             
-            // Final parameter validation
-            console.log('📤 FINAL search parameters being sent to API:');
-            console.log(JSON.stringify(searchParams, null, 2));
-            
-            // Double-check collections parameter specifically
-            if (searchParams.collections) {
-                console.log('🎯 Collections parameter confirmed:', searchParams.collections);
-            } else {
-                console.log('⚠️ No collections parameter in final request!');
-            }
-            
-            // Check if we should use multi-source search (EVERYTHING mode)
+            // Check if we're in EVERYTHING mode
             const catalogValue = document.getElementById('catalog-select').value;
-            const isEverythingMode = catalogValue === '' && 
-                                    this.collectionManager && 
-                                    typeof this.collectionManager.getAllCollections === 'function' &&
-                                    this.collectionManager.getAllCollections().length > 0;
+            const isEverythingMode = catalogValue === '';
             
-            let items;
+            let items = [];
             
             if (isEverythingMode && !searchParams.collections) {
                 // Use multi-source search for EVERYTHING mode
@@ -674,6 +653,17 @@ export class CardSearchPanel {
                 items = await this.apiClient.searchItems(searchParams);
             }
             console.log('📊 Search completed, received items:', items.length);
+
+            // Presign Planetary Computer rendered_preview URLs
+            items.forEach(item => {
+                if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
+                    // Convert to presigned URL
+                    item.assets.rendered_preview.href = item.assets.rendered_preview.href.replace(
+                        'https://planetarycomputer.microsoft.com/api/stac/v1',
+                        'https://planetarycomputer.microsoft.com/api/data/v1'
+                    );
+                }
+            });
             
             // Update results panel
             this.resultsPanel.setItems(items);
@@ -807,6 +797,17 @@ export class CardSearchPanel {
                 // Perform search on this source
                 console.log(`📡 Making search request to ${source}:`, sourceSearchParams);
                 const results = await this.apiClient.searchItems(sourceSearchParams);
+                
+                // Presign Planetary Computer rendered_preview URLs
+                results.forEach(item => {
+                    if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
+                        // Convert to presigned URL
+                        item.assets.rendered_preview.href = item.assets.rendered_preview.href.replace(
+                            'https://planetarycomputer.microsoft.com/api/stac/v1',
+                            'https://planetarycomputer.microsoft.com/api/data/v1'
+                        );
+                    }
+                });
                 
                 // Add source information to each result
                 const resultsWithSource = results.map(item => ({

@@ -271,29 +271,59 @@ body, html {
 /* Modern Theme Toggle */
 .theme-toggle {
     position: absolute;
-    top: 16px;  /* Adjusted */
-    right: 60px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: var(--glass-blur-sm);
-    -webkit-backdrop-filter: var(--glass-blur-sm);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
+    top: 16px;
+    right: 74px; /* 32px (settings button width) + 10px gap + 32px (right edge) */
+    background: var(--primary-gradient);
+    border: none;
     color: white;
-    font-size: 20px;
-    cursor: pointer;
-    z-index: 1002;
-    transition: var(--transition-all);
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1002;
 }
 
 .theme-toggle:hover {
-    transform: rotate(30deg) scale(1.1);
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.theme-toggle i {
+    font-size: 18px;
+}
+
+/* Settings Button */
+.ai-button {
+    position: absolute;
+    top: 16px;
+    right: 32px; /* Increased from 16px to 32px */
+    background: var(--primary-gradient);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1002;
+}
+
+.ai-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.ai-button i {
+    font-size: 18px;
 }
 
 /* Sidebar Content - Reduced Padding */

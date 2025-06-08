@@ -39,6 +39,16 @@ export class InlineDropdownManager {
         this.cacheTimestamp = null;
         this.CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
         
+        // Initialize with default values
+        this.aiSearchHelper.selectedDate = {
+            type: 'anytime',
+            start: null,
+            end: null
+        };
+        
+        // Update the search summary to show default values
+        this.updateSearchSummary('date', 'ANYTIME');
+        
         // Initialize event listeners
         this.initializeInlineDropdowns();
         this.setupGlobalListeners();
@@ -807,6 +817,13 @@ export class InlineDropdownManager {
             this.updateSearchSummary('collection', collectionTitle.toUpperCase());
             this.aiSearchHelper.selectedCollection = collectionId;
             this.aiSearchHelper.selectedCollectionSource = collectionSource;
+
+            // Update the collection select element
+            const collectionSelect = document.getElementById('collection-select');
+            if (collectionSelect) {
+                collectionSelect.value = collectionId;
+                collectionSelect.dispatchEvent(new Event('change'));
+            }
         }
         
         console.log(`🎯 Collection selected: ${collectionId || 'EVERYTHING'}`);
@@ -818,10 +835,31 @@ export class InlineDropdownManager {
      * @param {string} displayText - Display text
      */
     handleLocationSelection(location, displayText) {
+        // Update the search summary display
         this.updateSearchSummary('location', displayText);
-        this.aiSearchHelper.selectedLocation = location;
         
-        console.log(`📍 Location selected: ${location}`);
+        // If location is a bbox array, store it directly
+        if (Array.isArray(location) && location.length === 4) {
+            this.aiSearchHelper.selectedLocation = location;
+        } else {
+            // Otherwise, store the display text
+            this.aiSearchHelper.selectedLocation = displayText;
+        }
+        
+        // Update the bbox input
+        const bboxInput = document.getElementById('bbox-input');
+        if (bboxInput && Array.isArray(location) && location.length === 4) {
+            bboxInput.value = location.join(',');
+            bboxInput.dispatchEvent(new Event('change'));
+        }
+        
+        // Close the dropdown after selection
+        this.closeCurrentDropdown();
+        
+        // Show success notification
+        this.notificationService.showNotification(`📍 Location selected: ${displayText}`, 'success');
+        
+        console.log(`📍 Location selected: ${displayText}`, location);
     }
     
     /**
@@ -1146,7 +1184,12 @@ export class InlineDropdownManager {
      * @param {HTMLElement} dropdown - Dropdown container
      */
     searchLocations(query, dropdown) {
-        const resultsContainer = dropdown.querySelector('#location-results');
+        const resultsContainer = dropdown.querySelector('.ai-location-results');
+        if (!resultsContainer) {
+            console.error('Results container not found');
+            return;
+        }
+
         if (!query || query.length < 2) {
             resultsContainer.innerHTML = '';
             return;
@@ -1629,17 +1672,6 @@ export class InlineDropdownManager {
                 locationBbox = [lon - offset, lat - offset, lon + offset, lat + offset];
             }
             
-            this.aiSearchHelper.selectedLocation = locationBbox;
-            this.aiSearchHelper.selectedLocationResult = {
-                formattedName: name,
-                shortName: shortName,
-                bbox: locationBbox,
-                coordinates: [lon, lat],
-                category: 'searched',
-                originalQuery: originalQuery,
-                searchQuery: originalQuery // For URL state
-            };
-            
             // Create GeoJSON geometry for the location
             const [west, south, east, north] = locationBbox;
             const locationGeometry = {
@@ -1662,9 +1694,19 @@ export class InlineDropdownManager {
                 }
             };
             
-            // Store geometry for URL state
-            this.aiSearchHelper.selectedLocationResult.geojson = locationGeometry;
-            this.aiSearchHelper.selectedLocationResult.wkt = this.geojsonToWKT(locationGeometry.geometry);
+            // Store the location with complete information
+            this.aiSearchHelper.selectedLocation = locationBbox;
+            this.aiSearchHelper.selectedLocationResult = {
+                formattedName: name,
+                shortName: shortName,
+                bbox: locationBbox,
+                coordinates: [lon, lat],
+                category: 'searched',
+                originalQuery: originalQuery,
+                searchQuery: originalQuery, // For URL state
+                geojson: locationGeometry,
+                wkt: this.geojsonToWKT(locationGeometry.geometry)
+            };
             
             // Update the display
             this.updateSearchSummary('location', (shortName || name).toUpperCase());
@@ -1680,6 +1722,9 @@ export class InlineDropdownManager {
                 `[LOCATION] Selected: ${shortName || name}`, 
                 'success'
             );
+            
+            // Emit state change event to ensure all components are updated
+            this.emitStateChangeEvent();
             
             console.log(`[SUCCESS] Enhanced location selection complete for: ${name}`);
             
@@ -1729,7 +1774,7 @@ export class InlineDropdownManager {
                         data: locationGeometry
                     });
                     
-                    // Add basic polygon layer
+                    // Add fill layer
                     map.addLayer({
                         id: `${layerId}-fill`,
                         type: 'fill',
@@ -1740,7 +1785,7 @@ export class InlineDropdownManager {
                         }
                     });
                     
-                    // Add stroke
+                    // Add stroke layer
                     map.addLayer({
                         id: `${layerId}-stroke`,
                         type: 'line',
@@ -1772,6 +1817,9 @@ export class InlineDropdownManager {
                     });
                 }
             }
+            
+            // Store the current layer for later cleanup
+            this.currentLocationLayerId = layerId;
             
             console.log(`[SUCCESS] Location "${name}" successfully displayed and zoomed on map (Layer: ${layerId})`);
             

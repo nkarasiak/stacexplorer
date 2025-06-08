@@ -77,7 +77,8 @@ export class CollectionManagerEnhanced {
                 const sourceInfo = Object.keys(groupedCollections).map(source => {
                     const count = groupedCollections[source].length;
                     const label = source === 'copernicus' ? 'Copernicus' : 
-                                 source === 'element84' ? 'Element84' : source;
+                                 source === 'element84' ? 'Element84' :
+                                 source === 'planetary' ? 'Microsoft Planetary Computer' : source;
                     return `${label}: ${count}`;
                 }).join(', ');
                 
@@ -112,11 +113,13 @@ export class CollectionManagerEnhanced {
      */
     async loadAllCollections() {
         const allCollections = [];
-        const dataSources = ['copernicus', 'element84'];
+        // Get enabled providers from config
+        const dataSources = this.config?.appSettings?.enabledProviders || ['copernicus', 'element84'];
         const errors = [];
         
         console.log('🔄 Loading collections from all data sources...');
         console.log('📍 Available endpoints:', this.config?.stacEndpoints);
+        console.log('🔍 Enabled providers:', dataSources);
         
         for (const source of dataSources) {
             try {
@@ -163,8 +166,12 @@ export class CollectionManagerEnhanced {
                     const collectionsWithSource = collections.map(collection => ({
                         ...collection,
                         source: source,
-                        sourceLabel: source === 'copernicus' ? 'Copernicus' : 'Element84',
-                        displayTitle: `${collection.title || collection.id} (${source === 'copernicus' ? 'Copernicus' : 'Element84'})`
+                        sourceLabel: source === 'copernicus' ? 'Copernicus' : 
+                                   source === 'element84' ? 'Element84' :
+                                   source === 'planetary' ? 'Microsoft Planetary Computer' : source,
+                        displayTitle: `${collection.title || collection.id} (${source === 'copernicus' ? 'Copernicus' : 
+                                                                           source === 'element84' ? 'Element84' :
+                                                                           source === 'planetary' ? 'Microsoft Planetary Computer' : source})`
                     }));
                     
                     allCollections.push(...collectionsWithSource);

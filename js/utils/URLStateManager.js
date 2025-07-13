@@ -332,7 +332,7 @@ export class URLStateManager {
                 
                 let displayText = 'ANYTIME';
                 if (state.dateType === 'thismonth') {
-                    displayText = 'THIS MONTH';
+                    displayText = 'LAST 30 DAYS';
                 } else if (state.dateType === 'custom' && state.dateStart && state.dateEnd) {
                     displayText = `${state.dateStart} to ${state.dateEnd}`.toUpperCase();
                 }

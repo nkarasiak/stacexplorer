@@ -919,7 +919,7 @@ export class InlineDropdownManager {
                 break;
             case 'thismonth':
                 dateRange = this.calculateCurrentMonthRange();
-                displayText = 'THIS MONTH';
+                displayText = 'LAST 30 DAYS';
                 break;
             default:
                 console.warn(`Unknown date preset: ${dateType}`);

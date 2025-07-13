@@ -1334,15 +1334,15 @@ export class AISmartSearchEnhanced {
         separator.className = 'ai-source-separator';
         optionsSection.appendChild(separator);
         
-        // Add THIS MONTH option
+        // Add LAST 30 DAYS option
         const thisMonthOption = document.createElement('div');
         thisMonthOption.className = 'ai-option ai-this-month-option';
         thisMonthOption.dataset.value = 'thismonth';
         thisMonthOption.innerHTML = `
             <i class="material-icons">calendar_month</i>
             <div class="ai-option-content">
-                <div class="ai-option-title">THIS MONTH</div>
-                <div class="ai-option-subtitle">Search within the current month</div>
+                <div class="ai-option-title">Last 30 days</div>
+                <div class="ai-option-subtitle">Search within the last 30 days</div>
             </div>
         `;
         optionsSection.appendChild(thisMonthOption);

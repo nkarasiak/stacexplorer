@@ -6,6 +6,8 @@
     <title>STAC Catalog Explorer</title>
     <!-- MapLibre GL CSS -->
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" />
+    <!-- Leaflet CSS for mini maps -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
     <!-- Material Icons -->
@@ -16,20 +18,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <!-- Modern Glassmorphism CSS -->
     <link rel="stylesheet" href="css/styles.modern.css">
-    <!-- Card-Based Search CSS -->
-    <link rel="stylesheet" href="css/card-based-search.css">
-    <!-- Geometry Input CSS -->
-    <link rel="stylesheet" href="css/geometry-input.css">
-    <!-- Card-Style Buttons CSS -->
-    <link rel="stylesheet" href="css/card-style-buttons.css">
-    <!-- Settings Panel CSS -->
-    <link rel="stylesheet" href="css/settings-panel.css">
-    <!-- Collection Details Modal CSS -->
-    <link rel="stylesheet" href="css/collection-details-modal.css">
-    <!-- Enhanced Results Buttons CSS -->
-    <link rel="stylesheet" href="css/enhanced-results-buttons.css">
-    <!-- Inline Dropdown CSS -->
-    <link rel="stylesheet" href="css/inline-dropdown.css">
+    <!-- Inline Dropdown Enhanced CSS -->
+    <link rel="stylesheet" href="css/inline-dropdown-enhanced.css">
     <!-- AI Button Styling -->
     <link rel="stylesheet" href="css/map-fix.css">
     <style>
@@ -241,6 +231,125 @@
             50% { background-color: rgba(79, 70, 229, 0.2); }
             100% { background-color: transparent; }
         }
+        
+        /* Debug test - simple red background to verify class is applied */
+        .dropdown-active {
+            background: red !important;
+        }
+        
+        /* Enhanced Dropdown Active State Styling */
+        .search-summary-interface .search-summary-item.dropdown-active {
+            /* Enhanced active state with modern glassmorphism design */
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.15) 100%) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            transform: translateX(4px) translateY(-2px) !important;
+            box-shadow: 
+                0 8px 32px rgba(102, 126, 234, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                0 0 0 1px rgba(102, 126, 234, 0.3) !important;
+            border-radius: 12px !important;
+            border: 1px solid rgba(102, 126, 234, 0.4) !important;
+            position: relative !important;
+            z-index: 999998 !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        .search-summary-interface .search-summary-item.dropdown-active:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.25) 100%) !important;
+            transform: translateX(6px) translateY(-3px) !important;
+            box-shadow: 
+                0 12px 40px rgba(102, 126, 234, 0.35),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                0 0 0 1px rgba(102, 126, 234, 0.5) !important;
+            border: 1px solid rgba(102, 126, 234, 0.6) !important;
+        }
+
+        .search-summary-interface .search-summary-item.dropdown-active::after {
+            content: '⚡' !important;
+            position: absolute !important;
+            right: 16px !important;
+            top: 50% !important;
+            transform: translateY(-50%) !important;
+            font-size: 16px !important;
+            color: rgba(102, 126, 234, 0.9) !important;
+            text-shadow: 0 0 8px rgba(102, 126, 234, 0.6) !important;
+            z-index: 2 !important;
+            animation: pulse-glow 2s infinite ease-in-out !important;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { 
+                opacity: 0.8;
+                text-shadow: 0 0 8px rgba(102, 126, 234, 0.6);
+            }
+            50% { 
+                opacity: 1;
+                text-shadow: 0 0 16px rgba(102, 126, 234, 0.9);
+            }
+        }
+        
+        /* Collection Details Modal - Hide by default and prevent scrolling */
+        .collection-details-modal-overlay {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0, 0, 0, 0.8) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            z-index: 10000 !important;
+            display: none !important; /* Hidden by default */
+            justify-content: center !important;
+            align-items: center !important;
+            overflow: hidden !important; /* Prevent scrolling */
+        }
+        
+        .collection-details-modal-overlay.active {
+            display: flex !important;
+        }
+        
+        /* Prevent body scrolling when modal is open */
+        body.modal-open {
+            overflow: hidden !important;
+            height: 100vh !important;
+        }
+        
+        /* Modal dialog styling */
+        .collection-details-modal-dialog {
+            background: var(--surface-primary, #1e1e1e) !important;
+            border-radius: 12px !important;
+            max-width: 800px !important;
+            max-height: 90vh !important;
+            width: 90% !important;
+            overflow-y: auto !important;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        }
+        
+        /* Modal header */
+        .collection-details-modal-header {
+            padding: 20px !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+        }
+        
+        /* Modal body */
+        .collection-details-modal-body {
+            padding: 20px !important;
+            color: var(--text-primary, #ffffff) !important;
+        }
+        
+        /* Modal footer */
+        .collection-details-modal-footer {
+            padding: 20px !important;
+            border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+            display: flex !important;
+            justify-content: flex-end !important;
+        }
     </style>
 </head>
 <body>
@@ -272,7 +381,7 @@
                                     </div>
                                     <div class="search-summary-content">
                                         <div class="search-summary-label">Source</div>
-                                        <div class="search-summary-value">EVERYTHING</div>
+                                        <div class="search-summary-value">📂 Everything</div>
                                     </div>
                                 </div>
                             </div>
@@ -284,7 +393,7 @@
                                     </div>
                                     <div class="search-summary-content">
                                         <div class="search-summary-label">Location</div>
-                                        <div class="search-summary-value">THE WORLD</div>
+                                        <div class="search-summary-value">🌍 Worldwide</div>
                                     </div>
                                 </div>
                             </div>
@@ -296,7 +405,7 @@
                                     </div>
                                     <div class="search-summary-content">
                                         <div class="search-summary-label">Time</div>
-                                        <div class="search-summary-value">ANYTIME</div>
+                                        <div class="search-summary-value">🕐 Anytime</div>
                                     </div>
                                 </div>
                             </div>
@@ -814,19 +923,75 @@
                 
             }, 1000); // Wait 1 second to ensure everything is loaded
         });
+        
+        // Fix collection details modal to prevent scrolling issues
+        document.addEventListener('DOMContentLoaded', function() {
+            // Force hide any existing modal overlay
+            const modalOverlay = document.getElementById('collection-details-modal');
+            if (modalOverlay) {
+                modalOverlay.style.display = 'none';
+                modalOverlay.classList.remove('active');
+                console.log('✅ Hidden collection details modal overlay');
+            }
+            
+            // Ensure body doesn't have modal-open class
+            document.body.classList.remove('modal-open');
+            
+            // Additional check to prevent scrolling issues
+            setTimeout(() => {
+                const modal = document.querySelector('.collection-details-modal-overlay');
+                if (modal) {
+                    modal.style.display = 'none';
+                    modal.classList.remove('active');
+                }
+                
+                // Ensure app is not scrollable
+                document.documentElement.style.overflow = 'hidden';
+                document.body.style.overflow = 'hidden';
+                document.body.style.height = '100vh';
+                
+                console.log('✅ Fixed scrolling and modal issues');
+            }, 2000);
+        });
     </script>
     <script src="url-sync-fix.js"></script>
     <script src="url-parameter-preserve-fix.js"></script>
     <script src="search-integration-fix.js"></script>
     <script src="search-button-fix.js"></script>
+    <!-- Leaflet JavaScript for mini maps -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Core JavaScript -->
     <script src="js/MapManager.js"></script>
     <script src="js/map-auto-init.js"></script>
     <script src="js/components/search/GeometryInput.js"></script>
     <script src="js/components/search/CardBasedSearch.js"></script>
-    <script src="js/components/search/CollectionDetailsModal.js"></script>
     <script src="js/components/search/EnhancedResultsButtons.js"></script>
     <script src="js/components/search/InlineDropdown.js"></script>
     <script src="js/components/search/SettingsPanel.js"></script>
+    
+    <!-- Initialize shared URL handling for collection details -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle shared URLs for collection details
+            const urlParams = new URLSearchParams(window.location.search);
+            const collectionId = urlParams.get('collection');
+            const source = urlParams.get('source');
+            const action = urlParams.get('action');
+            
+            if (collectionId && action === 'details') {
+                console.log('🔗 Handling shared collection URL:', collectionId, source);
+                
+                // Wait for app to initialize, then trigger collection details
+                setTimeout(() => {
+                    document.dispatchEvent(new CustomEvent('loadSharedCollection', {
+                        detail: {
+                            collectionId: collectionId,
+                            source: source
+                        }
+                    }));
+                }, 2000);
+            }
+        });
+    </script>
 </body>
 </html>

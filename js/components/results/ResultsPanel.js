@@ -58,11 +58,19 @@ export class ResultsPanel {
         modalOverlay.className = 'modal-overlay';
         modalOverlay.id = 'details-modal';
         
-        // Create modal dialog
+        // Create modal dialog with enhanced layout
         modalOverlay.innerHTML = `
             <div class="modal-dialog">
                 <div class="modal-header">
-                    <h3 class="modal-title">Dataset Details</h3>
+                    <div class="modal-header-content">
+                        <h3 class="modal-title">
+                            <i class="material-icons">dataset</i>
+                            <span id="item-title">Dataset Details</span>
+                        </h3>
+                        <div class="item-collection-badge" id="item-collection-badge">
+                            Unknown Collection
+                        </div>
+                    </div>
                     <button class="modal-close">
                         <i class="material-icons">close</i>
                     </button>
@@ -71,9 +79,21 @@ export class ResultsPanel {
                     <div id="modal-content"></div>
                 </div>
                 <div class="modal-footer">
-                    <button class="md-btn md-btn-secondary" id="modal-close-btn">
-                        Close
-                    </button>
+                    <div class="footer-actions-left">
+                        <button class="md-btn md-btn-secondary" id="copy-item-btn">
+                            <i class="material-icons">content_copy</i>
+                            Copy Item Info
+                        </button>
+                        <button class="md-btn md-btn-secondary" id="show-item-on-map-btn" style="display: none;">
+                            <i class="material-icons">map</i>
+                            Show on Map
+                        </button>
+                    </div>
+                    <div class="footer-actions-right">
+                        <button class="md-btn md-btn-secondary" id="modal-close-btn">
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -96,8 +116,30 @@ export class ResultsPanel {
         // Store modal elements
         this.modal = {
             overlay: modalOverlay,
-            content: modalOverlay.querySelector('#modal-content')
+            content: modalOverlay.querySelector('#modal-content'),
+            title: modalOverlay.querySelector('#item-title'),
+            collectionBadge: modalOverlay.querySelector('#item-collection-badge'),
+            copyItemBtn: modalOverlay.querySelector('#copy-item-btn'),
+            showOnMapBtn: modalOverlay.querySelector('#show-item-on-map-btn')
         };
+        
+        // Setup enhanced event listeners
+        this.setupEnhancedEventListeners();
+    }
+    
+    /**
+     * Setup enhanced event listeners for new modal features
+     */
+    setupEnhancedEventListeners() {
+        // Copy item button
+        this.modal.copyItemBtn.addEventListener('click', () => {
+            this.copyItemInfo();
+        });
+        
+        // Show on map button
+        this.modal.showOnMapBtn.addEventListener('click', () => {
+            this.showItemOnMap();
+        });
     }
     
     /**
@@ -105,41 +147,106 @@ export class ResultsPanel {
      * @param {Object} item - STAC item to display
      */
     showModal(item) {
+        this.currentItem = item;
+        
+        // Update header
+        this.modal.title.textContent = item.properties?.title || item.id;
+        this.modal.collectionBadge.textContent = item.collection || 'Unknown Collection';
+        
         // Format the JSON for display
         const formattedJson = JSON.stringify(item, null, 2);
         
-        // Create content
+        // Create enhanced content
         const content = document.createElement('div');
         content.innerHTML = `
-            <div class="metadata-field">
-                <h4 class="mb-2">Basic Information</h4>
-                <div class="info-group mb-3">
-                    <div><strong>Title:</strong> ${item.properties?.title || item.id}</div>
-                    <div><strong>ID:</strong> ${item.id}</div>
-                    <div><strong>Collection:</strong> ${item.collection || 'N/A'}</div>
-                    <div><strong>Date:</strong> ${item.properties?.datetime ? new Date(item.properties.datetime).toLocaleString() : 'N/A'}</div>
+            <div class="item-details">
+                <div class="item-section">
+                    <h4 class="item-section-title">
+                        <i class="material-icons">info</i>
+                        Basic Information
+                    </h4>
+                    <div class="item-info-grid">
+                        <div class="item-info-item">
+                            <div class="info-label">
+                                <i class="material-icons">fingerprint</i>
+                                ID
+                            </div>
+                            <div class="info-value">${item.id}</div>
+                        </div>
+                        <div class="item-info-item">
+                            <div class="info-label">
+                                <i class="material-icons">title</i>
+                                Title
+                            </div>
+                            <div class="info-value">${item.properties?.title || 'N/A'}</div>
+                        </div>
+                        <div class="item-info-item">
+                            <div class="info-label">
+                                <i class="material-icons">folder</i>
+                                Collection
+                            </div>
+                            <div class="info-value">${item.collection || 'N/A'}</div>
+                        </div>
+                        <div class="item-info-item">
+                            <div class="info-label">
+                                <i class="material-icons">schedule</i>
+                                Date
+                            </div>
+                            <div class="info-value">${item.properties?.datetime ? new Date(item.properties.datetime).toLocaleString() : 'N/A'}</div>
+                        </div>
+                    </div>
                 </div>
                 
-                <h4 class="mb-2">Properties</h4>
-                <div class="info-group mb-3">
-                    ${item.properties?.['eo:cloud_cover'] !== undefined ? 
-                        `<div><strong>Cloud Cover:</strong> ${item.properties['eo:cloud_cover']}%</div>` : ''}
-                    ${item.properties?.['eo:gsd'] !== undefined ? 
-                        `<div><strong>Ground Resolution:</strong> ${item.properties['eo:gsd']} m</div>` : ''}
-                    ${item.properties?.provider ? 
-                        `<div><strong>Provider:</strong> ${item.properties.provider}</div>` : ''}
-                    ${item.properties?.constellation ? 
-                        `<div><strong>Constellation:</strong> ${item.properties.constellation}</div>` : ''}
+                <div class="item-section">
+                    <h4 class="item-section-title">
+                        <i class="material-icons">tune</i>
+                        Properties
+                    </h4>
+                    <div class="item-properties-grid">
+                        ${Object.entries(item.properties || {}).slice(0, 10).map(([key, value]) => `
+                            <div class="property-item">
+                                <div class="property-key">${key}</div>
+                                <div class="property-value">${String(value).substring(0, 100)}${String(value).length > 100 ? '...' : ''}</div>
+                            </div>
+                        `).join('')}
+                    </div>
                 </div>
                 
-                <h4 class="mb-2">Full JSON Data</h4>
-                <pre class="json-content">${formattedJson}</pre>
+                <div class="item-section">
+                    <h4 class="item-section-title">
+                        <i class="material-icons">code</i>
+                        Full JSON Data
+                        <button class="item-toggle-json" id="toggle-item-json">
+                            <i class="material-icons">expand_more</i>
+                            Show JSON
+                        </button>
+                    </h4>
+                    <div class="item-json-container" id="item-json-container" style="display: none;">
+                        <pre class="json-content">${formattedJson}</pre>
+                    </div>
+                </div>
             </div>
         `;
         
         // Update modal content
         this.modal.content.innerHTML = '';
         this.modal.content.appendChild(content);
+        
+        // Setup JSON toggle
+        const toggleBtn = content.querySelector('#toggle-item-json');
+        const jsonContainer = content.querySelector('#item-json-container');
+        toggleBtn.addEventListener('click', () => {
+            if (jsonContainer.style.display === 'none') {
+                jsonContainer.style.display = 'block';
+                toggleBtn.innerHTML = '<i class="material-icons">expand_less</i> Hide JSON';
+            } else {
+                jsonContainer.style.display = 'none';
+                toggleBtn.innerHTML = '<i class="material-icons">expand_more</i> Show JSON';
+            }
+        });
+        
+        // Setup action buttons
+        this.updateActionButtons(item);
         
         // Show modal
         this.modal.overlay.classList.add('active');
@@ -154,6 +261,9 @@ export class ResultsPanel {
     closeModal() {
         this.modal.overlay.classList.remove('active');
         document.removeEventListener('keydown', this.handleEscapeKey);
+        
+        // Reset current item
+        this.currentItem = null;
     }
     
     /**
@@ -568,6 +678,96 @@ export class ResultsPanel {
     handleAssetDisplayed(event) {
         if (event.detail && event.detail.assetKey) {
             this.currentAssetKey = event.detail.assetKey;
+        }
+    }
+    
+    
+    /**
+     * Update action buttons based on item capabilities
+     * @param {Object} item - STAC item
+     */
+    updateActionButtons(item) {
+        const showOnMapBtn = this.modal.showOnMapBtn;
+        
+        // Show 'Show on Map' button if item has geometry
+        if (item.geometry && item.geometry.coordinates) {
+            showOnMapBtn.style.display = 'inline-flex';
+        } else {
+            showOnMapBtn.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Copy item information to clipboard
+     */
+    async copyItemInfo() {
+        try {
+            if (!this.currentItem) return;
+            
+            const item = this.currentItem;
+            const info = {
+                id: item.id,
+                collection: item.collection,
+                properties: item.properties,
+                geometry: item.geometry,
+                assets: Object.keys(item.assets || {}).slice(0, 5).reduce((acc, key) => {
+                    acc[key] = item.assets[key];
+                    return acc;
+                }, {})
+            };
+            
+            const infoText = JSON.stringify(info, null, 2);
+            await navigator.clipboard.writeText(infoText);
+            
+            this.notificationService.showNotification(
+                'Item information copied to clipboard!', 
+                'success'
+            );
+        } catch (error) {
+            console.error('❌ Error copying item info:', error);
+            this.notificationService.showNotification(
+                'Failed to copy item information', 
+                'error'
+            );
+        }
+    }
+    
+    
+    /**
+     * Show item geometry on the main map
+     */
+    showItemOnMap() {
+        try {
+            if (!this.currentItem?.geometry) {
+                this.notificationService.showNotification(
+                    'No geometry available for this item', 
+                    'warning'
+                );
+                return;
+            }
+            
+            // Dispatch event to show on main map
+            document.dispatchEvent(new CustomEvent('showItemOnMap', {
+                detail: {
+                    item: this.currentItem,
+                    geometry: this.currentItem.geometry
+                }
+            }));
+            
+            this.notificationService.showNotification(
+                'Item geometry shown on map', 
+                'success'
+            );
+            
+            // Close modal to show map
+            this.closeModal();
+            
+        } catch (error) {
+            console.error('❌ Error showing item on map:', error);
+            this.notificationService.showNotification(
+                'Failed to show item on map', 
+                'error'
+            );
         }
     }
 }

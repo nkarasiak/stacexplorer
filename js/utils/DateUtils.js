@@ -12,7 +12,7 @@ export class DateUtils {
      */
     static DATE_PRESETS = {
         'anytime': {
-            label: 'ANYTIME',
+            label: '🕐 Anytime',
             description: 'No date restriction',
             icon: 'all_inclusive',
             category: 'any',
@@ -308,13 +308,13 @@ export class DateUtils {
      */
     static getDateDisplayText(dateSelection) {
         if (!dateSelection || !dateSelection.type) {
-            return 'ANYTIME';
+            return '🕐 Anytime';
         }
 
         const preset = DateUtils.DATE_PRESETS[dateSelection.type];
         
         if (!preset) {
-            return 'ANYTIME';
+            return '🕐 Anytime';
         }
 
         if (dateSelection.type === 'custom' && dateSelection.start && dateSelection.end) {

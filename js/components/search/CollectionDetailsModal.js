@@ -76,6 +76,10 @@ export class CollectionDetailsModal {
                             <div class="collection-extent-info" id="extent-info">
                                 <!-- Content populated dynamically -->
                             </div>
+                            <div class="collection-mini-map-container" id="mini-map-container" style="display: none;">
+                                <h5><i class="material-icons">map</i> Geometry Preview</h5>
+                                <div class="mini-map" id="collection-mini-map"></div>
+                            </div>
                         </div>
                         
                         <!-- Providers Section -->
@@ -139,13 +143,29 @@ export class CollectionDetailsModal {
                 </div>
                 
                 <div class="collection-details-modal-footer">
-                    <button class="md-btn md-btn-secondary" id="collection-close-btn">
-                        Close
-                    </button>
-                    <button class="md-btn md-btn-primary" id="select-collection-btn">
-                        <i class="material-icons">check</i>
-                        Select This Collection
-                    </button>
+                    <div class="footer-actions-left">
+                        <button class="md-btn md-btn-secondary" id="copy-collection-btn">
+                            <i class="material-icons">content_copy</i>
+                            Copy Collection Info
+                        </button>
+                        <button class="md-btn md-btn-secondary" id="share-collection-btn">
+                            <i class="material-icons">share</i>
+                            Share URL
+                        </button>
+                        <button class="md-btn md-btn-secondary" id="show-on-map-btn" style="display: none;">
+                            <i class="material-icons">map</i>
+                            Show on Map
+                        </button>
+                    </div>
+                    <div class="footer-actions-right">
+                        <button class="md-btn md-btn-secondary" id="collection-close-btn">
+                            Close
+                        </button>
+                        <button class="md-btn md-btn-primary" id="select-collection-btn">
+                            <i class="material-icons">check</i>
+                            Select This Collection
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -168,13 +188,23 @@ export class CollectionDetailsModal {
             jsonContainer: modalOverlay.querySelector('#json-container'),
             jsonContent: modalOverlay.querySelector('#json-content'),
             copyJsonBtn: modalOverlay.querySelector('#copy-json-btn'),
-            downloadJsonBtn: modalOverlay.querySelector('#download-json-btn')
+            downloadJsonBtn: modalOverlay.querySelector('#download-json-btn'),
+            miniMapContainer: modalOverlay.querySelector('#mini-map-container'),
+            miniMap: modalOverlay.querySelector('#collection-mini-map'),
+            copyCollectionBtn: modalOverlay.querySelector('#copy-collection-btn'),
+            shareCollectionBtn: modalOverlay.querySelector('#share-collection-btn'),
+            showOnMapBtn: modalOverlay.querySelector('#show-on-map-btn')
         };
+        
+        // Initialize mini map
+        this.miniMapInstance = null;
         
         // Setup modal event listeners
         this.setupModalEventListeners();
         
         console.log('✅ CollectionDetailsModal created');
+        console.log('📍 Modal overlay classes:', modalOverlay.className);
+        console.log('📍 Modal dialog classes:', modalOverlay.querySelector('.collection-details-modal-dialog').className);
     }
     
     /**
@@ -211,6 +241,21 @@ export class CollectionDetailsModal {
         this.modal.downloadJsonBtn.addEventListener('click', () => {
             this.downloadJson();
         });
+        
+        // Copy collection button
+        this.modal.copyCollectionBtn.addEventListener('click', () => {
+            this.copyCollectionInfo();
+        });
+        
+        // Share collection button
+        this.modal.shareCollectionBtn.addEventListener('click', () => {
+            this.shareCollection();
+        });
+        
+        // Show on map button
+        this.modal.showOnMapBtn.addEventListener('click', () => {
+            this.showOnMap();
+        });
     }
     
     /**
@@ -242,7 +287,11 @@ export class CollectionDetailsModal {
             this.currentCollection = collection;
             
             // Show modal and loading state
+            console.log('🔍 Showing modal for collection:', collection.id);
+            console.log('📍 Modal overlay element:', this.modal.overlay);
+            console.log('📍 Adding active class...');
             this.modal.overlay.classList.add('active');
+            console.log('📍 Modal overlay classes after adding active:', this.modal.overlay.className);
             this.modal.loading.style.display = 'flex';
             this.modal.content.style.display = 'none';
             
@@ -338,10 +387,12 @@ export class CollectionDetailsModal {
     populateCollectionDetails(collection) {
         this.populateBasicInfo(collection);
         this.populateExtentInfo(collection);
+        this.populateMiniMap(collection);
         this.populateProvidersInfo(collection);
         this.populateAssetsInfo(collection);
         this.populatePropertiesInfo(collection);
         this.populateJsonContent(collection);
+        this.updateActionButtons(collection);
     }
     
     /**
@@ -421,6 +472,93 @@ export class CollectionDetailsModal {
         }
         
         extentInfo.innerHTML = extentHTML || '<div class="no-data">No extent information available</div>';
+    }
+    
+    /**
+     * Populate mini map with collection geometry
+     * @param {Object} collection - Collection object
+     */
+    populateMiniMap(collection) {
+        const miniMapContainer = this.modal.miniMapContainer;
+        const miniMapElement = this.modal.miniMap;
+        
+        // Clean up existing map
+        if (this.miniMapInstance) {
+            this.miniMapInstance.remove();
+            this.miniMapInstance = null;
+        }
+        
+        // Check if we have spatial extent
+        if (!collection.extent?.spatial?.bbox?.[0]) {
+            miniMapContainer.style.display = 'none';
+            return;
+        }
+        
+        try {
+            miniMapContainer.style.display = 'block';
+            
+            // Clear any existing content
+            miniMapElement.innerHTML = '';
+            
+            // Create map with minimal controls
+            this.miniMapInstance = L.map(miniMapElement, {
+                zoomControl: false,
+                attributionControl: false,
+                dragging: false,
+                touchZoom: false,
+                scrollWheelZoom: false,
+                doubleClickZoom: false,
+                boxZoom: false,
+                keyboard: false,
+                tap: false
+            });
+            
+            // Add a simple tile layer
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 18
+            }).addTo(this.miniMapInstance);
+            
+            // Get bounding box
+            const bbox = collection.extent.spatial.bbox[0];
+            const bounds = [[bbox[1], bbox[0]], [bbox[3], bbox[2]]];
+            
+            // Create rectangle for the extent
+            const rectangle = L.rectangle(bounds, {
+                color: '#667eea',
+                weight: 2,
+                fillColor: '#667eea',
+                fillOpacity: 0.2
+            }).addTo(this.miniMapInstance);
+            
+            // Fit map to bounds
+            this.miniMapInstance.fitBounds(bounds, { padding: [10, 10] });
+            
+            // Add click handler to open full map view
+            this.miniMapInstance.on('click', () => {
+                this.showOnMap();
+            });
+            
+            console.log('✅ Mini map created for collection');
+            
+        } catch (error) {
+            console.error('❌ Error creating mini map:', error);
+            miniMapContainer.style.display = 'none';
+        }
+    }
+    
+    /**
+     * Update action buttons based on collection capabilities
+     * @param {Object} collection - Collection object
+     */
+    updateActionButtons(collection) {
+        const showOnMapBtn = this.modal.showOnMapBtn;
+        
+        // Show 'Show on Map' button if collection has spatial extent
+        if (collection.extent?.spatial?.bbox?.[0]) {
+            showOnMapBtn.style.display = 'inline-flex';
+        } else {
+            showOnMapBtn.style.display = 'none';
+        }
     }
     
     /**
@@ -665,15 +803,134 @@ export class CollectionDetailsModal {
     }
     
     /**
+     * Copy collection information to clipboard
+     */
+    async copyCollectionInfo() {
+        try {
+            if (!this.currentCollection) return;
+            
+            const collection = this.currentCollection;
+            const info = {
+                id: collection.id,
+                title: collection.title,
+                description: collection.description,
+                license: collection.license,
+                keywords: collection.keywords,
+                extent: collection.extent,
+                providers: collection.providers,
+                links: collection.links?.filter(link => ['self', 'items', 'data'].includes(link.rel))
+            };
+            
+            const infoText = JSON.stringify(info, null, 2);
+            await navigator.clipboard.writeText(infoText);
+            
+            this.notificationService.showNotification(
+                'Collection information copied to clipboard!', 
+                'success'
+            );
+        } catch (error) {
+            console.error('❌ Error copying collection info:', error);
+            this.notificationService.showNotification(
+                'Failed to copy collection information', 
+                'error'
+            );
+        }
+    }
+    
+    /**
+     * Share collection with a URL
+     */
+    async shareCollection() {
+        try {
+            if (!this.currentCollection) return;
+            
+            const collection = this.currentCollection;
+            const baseUrl = window.location.origin + window.location.pathname;
+            const params = new URLSearchParams({
+                collection: collection.id,
+                source: collection.source || 'unknown',
+                action: 'details'
+            });
+            
+            const shareUrl = `${baseUrl}?${params.toString()}`;
+            
+            // Copy to clipboard
+            await navigator.clipboard.writeText(shareUrl);
+            
+            this.notificationService.showNotification(
+                'Share URL copied to clipboard!', 
+                'success'
+            );
+            
+            console.log('📋 Share URL created:', shareUrl);
+            
+        } catch (error) {
+            console.error('❌ Error creating share URL:', error);
+            this.notificationService.showNotification(
+                'Failed to create share URL', 
+                'error'
+            );
+        }
+    }
+    
+    /**
+     * Show collection extent on the main map
+     */
+    showOnMap() {
+        try {
+            if (!this.currentCollection?.extent?.spatial?.bbox?.[0]) {
+                this.notificationService.showNotification(
+                    'No spatial extent available for this collection', 
+                    'warning'
+                );
+                return;
+            }
+            
+            const bbox = this.currentCollection.extent.spatial.bbox[0];
+            const bounds = [[bbox[1], bbox[0]], [bbox[3], bbox[2]]];
+            
+            // Dispatch event to show on main map
+            document.dispatchEvent(new CustomEvent('showCollectionOnMap', {
+                detail: {
+                    collection: this.currentCollection,
+                    bounds: bounds
+                }
+            }));
+            
+            this.notificationService.showNotification(
+                'Collection extent shown on map', 
+                'success'
+            );
+            
+            // Close modal to show map
+            this.close();
+            
+        } catch (error) {
+            console.error('❌ Error showing collection on map:', error);
+            this.notificationService.showNotification(
+                'Failed to show collection on map', 
+                'error'
+            );
+        }
+    }
+    
+    /**
      * Close the modal
      */
     close() {
         this.modal.overlay.classList.remove('active');
         this.currentCollection = null;
         
-        // Reset JSON display
+        // Clean up mini map
+        if (this.miniMapInstance) {
+            this.miniMapInstance.remove();
+            this.miniMapInstance = null;
+        }
+        
+        // Reset displays
         this.modal.jsonContainer.style.display = 'none';
         this.modal.toggleJsonBtn.innerHTML = '<i class="material-icons">expand_more</i> Show JSON';
+        this.modal.miniMapContainer.style.display = 'none';
     }
     
     /**
@@ -688,7 +945,37 @@ export class CollectionDetailsModal {
             document.removeEventListener('keydown', this.escapeHandler);
         }
         
+        // Clean up mini map
+        if (this.miniMapInstance) {
+            this.miniMapInstance.remove();
+            this.miniMapInstance = null;
+        }
+        
         this.modal = null;
         this.currentCollection = null;
+    }
+    
+    /**
+     * Handle shared URLs on page load
+     */
+    static handleSharedUrl() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const collectionId = urlParams.get('collection');
+        const source = urlParams.get('source');
+        const action = urlParams.get('action');
+        
+        if (collectionId && action === 'details') {
+            console.log('📋 Handling shared collection URL:', collectionId, source);
+            
+            // Wait for app to initialize, then show collection details
+            setTimeout(() => {
+                document.dispatchEvent(new CustomEvent('loadSharedCollection', {
+                    detail: {
+                        collectionId: collectionId,
+                        source: source
+                    }
+                }));
+            }, 1000);
+        }
     }
 }

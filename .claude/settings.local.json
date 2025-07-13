@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rm:*)",
+      "Bash(npm start)",
+      "Bash(npm run serve:*)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(ls:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

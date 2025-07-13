@@ -36,8 +36,8 @@
 .ai-dropdown-header {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 16px 20px;
+    justify-content: space-between;
+    padding: 12px 16px;
     background: linear-gradient(135deg, rgba(33, 150, 243, 0.05), rgba(156, 39, 176, 0.03));
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     font-weight: 600;
@@ -62,9 +62,9 @@
     overflow-y: auto;
 }
 
-/* Search section */
+/* Search section - compact height */
 .ai-search-section {
-    padding: 16px 20px;
+    padding: 8px 0px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
@@ -74,11 +74,12 @@
 
 .ai-search-input {
     width: 100%;
-    padding: 10px 12px;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    border-radius: 8px;
+    padding: 10px 16px;
+    border: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 0;
     font-size: 14px;
-    background: rgba(0, 0, 0, 0.02);
+    background: transparent;
     transition: all 0.2s ease;
 }
 
@@ -102,15 +103,15 @@
 
 /* Options section */
 .ai-options-section {
-    padding: 8px 0;
+    padding: 4px 0;
 }
 
 /* Individual option */
 .ai-option {
     display: flex;
     align-items: center;
-    gap: 16px;
-    padding: 14px 20px;
+    gap: 12px;
+    padding: 8px 16px;
     cursor: pointer;
     transition: all 0.2s ease;
     border: none;
@@ -118,6 +119,7 @@
     width: 100%;
     text-align: left;
     position: relative;
+    min-height: 40px;
 }
 
 .ai-option:hover {
@@ -183,8 +185,8 @@
 
 /* Source group headers */
 .ai-source-group-header {
-    padding: 12px 20px 8px 20px;
-    font-size: 12px;
+    padding: 8px 16px 4px 16px;
+    font-size: 11px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.8px;
@@ -226,9 +228,9 @@
 
 .ai-option-title {
     font-weight: 600;
-    font-size: 15px;
+    font-size: 14px;
     color: #333;
-    margin-bottom: 2px;
+    margin-bottom: 1px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -239,7 +241,7 @@
 }
 
 .ai-option-subtitle {
-    font-size: 13px;
+    font-size: 12px;
     color: #666;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -514,24 +516,25 @@
     .ai-search-section,
     .ai-custom-section,
     .ai-param-section {
-        padding: 14px 16px;
+        padding: 6px 0px;
     }
     
     .ai-option {
-        padding: 12px 16px;
-        gap: 12px;
+        padding: 10px 14px;
+        gap: 10px;
+        min-height: 44px;
     }
     
     .ai-option .material-icons {
-        font-size: 20px;
+        font-size: 18px;
     }
     
     .ai-option-title {
-        font-size: 14px;
+        font-size: 13px;
     }
     
     .ai-option-subtitle {
-        font-size: 12px;
+        font-size: 11px;
     }
     
     .ai-date-inputs {
@@ -678,19 +681,20 @@
     padding-right: 48px;
 }
 
-/* EVERYTHING option special styling */
+/* EVERYTHING option minimal styling */
 .ai-everything-option {
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(139, 195, 74, 0.05));
-    border: 1px solid rgba(76, 175, 80, 0.2);
-    border-radius: 8px;
-    margin: 8px 12px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(76, 175, 80, 0.3);
+    border-radius: 0;
+    margin: 0;
     font-weight: 600;
 }
 
 .ai-everything-option:hover {
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(139, 195, 74, 0.1));
-    border-color: rgba(76, 175, 80, 0.3);
-    transform: translateX(2px);
+    background: rgba(76, 175, 80, 0.1);
+    border-bottom-color: rgba(76, 175, 80, 0.5);
+    transform: none;
 }
 
 .ai-everything-option .material-icons {
@@ -710,13 +714,13 @@
 }
 
 .dark-theme .ai-everything-option {
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(139, 195, 74, 0.1));
-    border-color: rgba(76, 175, 80, 0.3);
+    background: transparent;
+    border-bottom-color: rgba(76, 175, 80, 0.4);
 }
 
 .dark-theme .ai-everything-option:hover {
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(139, 195, 74, 0.15));
-    border-color: rgba(76, 175, 80, 0.4);
+    background: rgba(76, 175, 80, 0.15);
+    border-bottom-color: rgba(76, 175, 80, 0.6);
 }
 
 .dark-theme .ai-everything-option .ai-option-title {
@@ -725,4 +729,51 @@
 
 .dark-theme .ai-everything-option .ai-option-subtitle {
     color: #a5d6a7;
+}
+
+/* Hidden options for filtering */
+.ai-option.filtered-hidden {
+    display: none !important;
+}
+
+/* Hidden source group headers for filtering */
+.ai-source-group-header.filtered-hidden {
+    display: none !important;
+}
+
+/* Close button styling */
+.ai-dropdown-header-content {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.ai-dropdown-close {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    min-width: 28px;
+    height: 28px;
+}
+
+.ai-dropdown-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.1);
+}
+
+.ai-dropdown-close:active {
+    transform: scale(0.95);
+}
+
+.ai-dropdown-close i {
+    font-size: 16px;
+    margin: 0;
 }

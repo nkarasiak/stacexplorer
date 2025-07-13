@@ -1,0 +1,89 @@
+/* Time Search Component Styles */
+.time-search-container {
+    padding: 16px;
+    background: var(--surface-secondary, #f8fafc);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.date-range-picker {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.date-input {
+    flex: 1;
+    position: relative;
+}
+
+.date-input input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 4px;
+    font-size: 14px;
+    color: var(--text-color, #1a1a1a);
+    background: white;
+}
+
+.date-input input:focus {
+    outline: none;
+    border-color: var(--primary-color, #4f46e5);
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.date-separator {
+    color: var(--text-secondary, #64748b);
+    font-weight: 500;
+}
+
+.date-presets {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.date-preset-button {
+    padding: 6px 12px;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 4px;
+    background: white;
+    color: var(--text-color, #1a1a1a);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.date-preset-button:hover {
+    background: var(--surface-tertiary, #f1f5f9);
+    border-color: var(--primary-color, #4f46e5);
+}
+
+.date-preset-button.active {
+    background: var(--primary-color, #4f46e5);
+    color: white;
+    border-color: var(--primary-color, #4f46e5);
+}
+
+/* Dark theme support */
+.dark-theme .time-search-container {
+    background: var(--surface-secondary, #2a2a2a);
+}
+
+.dark-theme .date-input input {
+    background: var(--surface-primary, #1a1a1a);
+    border-color: var(--border-dark, #444);
+    color: var(--text-color-light, #ffffff);
+}
+
+.dark-theme .date-preset-button {
+    background: var(--surface-primary, #1a1a1a);
+    border-color: var(--border-dark, #444);
+    color: var(--text-color-light, #ffffff);
+}
+
+.dark-theme .date-preset-button:hover {
+    background: var(--surface-tertiary, #3a3a3a);
+    border-color: var(--primary-color, #4f46e5);
+} 

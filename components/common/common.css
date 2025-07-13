@@ -1,0 +1,184 @@
+/* Common Styles */
+:root {
+    /* Colors */
+    --primary-color: #4f46e5;
+    --primary-color-dark: #4338ca;
+    --primary-color-darker: #3730a3;
+    --primary-200: #c7d2fe;
+    --primary-300: #a5b4fc;
+    --primary-600: #4f46e5;
+    
+    /* Surface colors */
+    --surface-primary: #ffffff;
+    --surface-secondary: #f8fafc;
+    --surface-tertiary: #f1f5f9;
+    
+    /* Text colors */
+    --text-color: #1a1a1a;
+    --text-secondary: #64748b;
+    --text-color-light: #ffffff;
+    --text-secondary-light: #94a3b8;
+    
+    /* Border colors */
+    --border-color: #e2e8f0;
+    --border-dark: #444;
+    
+    /* Error color */
+    --error-color: #ef4444;
+}
+
+/* Dark theme */
+.dark-theme {
+    --surface-primary: #1a1a1a;
+    --surface-secondary: #2a2a2a;
+    --surface-tertiary: #3a3a3a;
+}
+
+/* Common utility classes */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 16px;
+}
+
+.section {
+    margin-bottom: 32px;
+}
+
+.section-title {
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 16px;
+}
+
+.dark-theme .section-title {
+    color: var(--text-color-light);
+}
+
+/* Common button styles */
+.button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.button-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.button-primary:hover {
+    background: var(--primary-color-dark);
+}
+
+.button-secondary {
+    background: var(--surface-tertiary);
+    color: var(--text-color);
+}
+
+.button-secondary:hover {
+    background: var(--surface-secondary);
+}
+
+.dark-theme .button-secondary {
+    background: var(--surface-tertiary);
+    color: var(--text-color-light);
+}
+
+.dark-theme .button-secondary:hover {
+    background: var(--surface-secondary);
+}
+
+/* Common form styles */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-color);
+}
+
+.dark-theme .form-label {
+    color: var(--text-color-light);
+}
+
+.form-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    color: var(--text-color);
+    background: var(--surface-primary);
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+.dark-theme .form-input {
+    background: var(--surface-primary);
+    border-color: var(--border-dark);
+    color: var(--text-color-light);
+}
+
+/* Common card styles */
+.card {
+    background: var(--surface-primary);
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    padding: 16px;
+}
+
+.dark-theme .card {
+    background: var(--surface-primary);
+}
+
+/* Common loading spinner */
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--surface-tertiary);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Common transitions */
+.fade-enter {
+    opacity: 0;
+}
+
+.fade-enter-active {
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.fade-exit {
+    opacity: 1;
+}
+
+.fade-exit-active {
+    opacity: 0;
+    transition: opacity 0.2s;
+} 

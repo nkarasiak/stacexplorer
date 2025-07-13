@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2025-07-13
+
+### Added
+- **Enhanced Dataset Details Modal**: Completely redesigned modal for individual STAC items with modern layout
+- **Copy Item Information**: New button to copy item metadata (ID, collection, properties, geometry, assets) to clipboard
+- **Show on Map Integration**: Enhanced "Show on Map" button for items with geometry data
+- **Improved Modal Styling**: Modern glassmorphism design with organized sections and responsive layout
+- **Leaflet Dependencies**: Added Leaflet CSS and JavaScript for mini map functionality
+- **Enhanced Modal Footer**: Reorganized action buttons with proper left/right alignment
+
+### Enhanced
+- **Modal Content Layout**: Redesigned with structured sections for basic information, properties, and JSON data
+- **JSON Viewer**: Collapsible JSON section with toggle functionality for better space utilization
+- **Responsive Design**: Improved mobile and desktop layouts for dataset details modal
+- **Visual Hierarchy**: Better organized content with icons, improved typography, and consistent spacing
+- **Action Button Management**: Dynamic show/hide of action buttons based on item capabilities
+- **CSS Grid Layout**: Modern grid system for information display with auto-fitting columns
+
+### Changed
+- **Dataset Content Height**: Increased minimum height to 80px to properly accommodate action buttons
+- **Modal Structure**: Updated from simple layout to organized sections with clear visual hierarchy
+- **Button Layout**: Reorganized modal footer with left and right action groups
+- **Event Handling**: Enhanced event listeners for new modal features
+
+### Improved
+- **User Experience**: More intuitive modal interface with better information organization
+- **Performance**: Optimized modal creation and cleanup processes
+- **Accessibility**: Better keyboard navigation and screen reader support
+- **Code Organization**: Cleaner separation of concerns in modal management
+
+### Technical Details
+
+#### Modal Enhancements
+- Modern flex-based layout with organized sections
+- Dynamic content generation based on item properties
+- Improved event handling for new interactive elements
+- Better CSS organization with specific modal styling
+- Enhanced responsive design for various screen sizes
+
+#### Integration Features
+- Seamless integration with main map for "Show on Map" functionality
+- Clipboard API integration for copy functionality
+- Event-driven architecture for modal interactions
+- Proper cleanup and memory management
+
 ## [2.0.0] - 2025-05-29
 
 ### Added

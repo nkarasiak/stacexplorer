@@ -57,18 +57,3 @@
     background: #1a1a1a;
 }
 
-/* Loading state for map */
-#map.map-loading {
-    background: var(--surface-primary);
-}
-
-#map.map-loading::after {
-    content: 'Loading map...';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: var(--text-secondary);
-    font-size: 14px;
-    font-weight: 500;
-}

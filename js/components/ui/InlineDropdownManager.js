@@ -47,7 +47,7 @@ export class InlineDropdownManager {
         };
         
         // Update the search summary to show default values
-        this.updateSearchSummary('date', 'ANYTIME');
+        this.updateSearchSummary('date', '🕐 Anytime');
         
         // Initialize event listeners
         this.initializeInlineDropdowns();
@@ -425,15 +425,20 @@ export class InlineDropdownManager {
         dropdown.className = 'inline-dropdown-container loading-dropdown';
         dropdown.setAttribute('data-field', fieldType);
         
-        // Add loading content
+        // Add loading content with close button
         dropdown.innerHTML = `
             <div class="ai-dropdown-content">
                 <div class="ai-dropdown-header">
-                    <i class="material-icons">${
-                        fieldType === 'collection' ? 'dataset' :
-                        fieldType === 'location' ? 'place' : 'event'
-                    }</i>
-                    <span>Loading ${fieldType}...</span>
+                    <div class="ai-dropdown-header-content">
+                        <i class="material-icons">${
+                            fieldType === 'collection' ? 'dataset' :
+                            fieldType === 'location' ? 'place' : 'event'
+                        }</i>
+                        <span>Loading ${fieldType}...</span>
+                    </div>
+                    <button class="ai-dropdown-close" title="Close">
+                        <i class="material-icons">close</i>
+                    </button>
                 </div>
                 <div class="ai-loading-section">
                     <div class="ai-loading">
@@ -449,6 +454,9 @@ export class InlineDropdownManager {
         
         // Add to document body for better positioning control
         document.body.appendChild(dropdown);
+        
+        // Set up close button handler for loading dropdown
+        this.setupCloseButtonHandler(dropdown);
         
         // Add a debug class for easier identification
         dropdown.classList.add('debug-inline-dropdown');
@@ -481,6 +489,9 @@ export class InlineDropdownManager {
         // Set up dropdown-specific event handlers
         this.setupDropdownHandlers(this.currentDropdown, fieldType);
         
+        // Set up close button handler
+        this.setupCloseButtonHandler(this.currentDropdown);
+        
         // Focus first interactive element
         const firstInput = this.currentDropdown.querySelector('input, button, [tabindex]');
         if (firstInput) {
@@ -511,18 +522,18 @@ export class InlineDropdownManager {
         console.log(`📍 Positioning dropdown - Sidebar:`, sidebarRect);
         console.log(`📍 Positioning dropdown - Viewport: ${viewportWidth}x${viewportHeight}`);
         
-        // Enhanced positioning logic
+        // Enhanced positioning logic - always position at top of viewport
         dropdown.style.position = 'fixed';
         dropdown.style.zIndex = '9999'; // Higher z-index
-        dropdown.style.maxHeight = '400px';
+        dropdown.style.maxHeight = '300px'; // Reduced height for more compact dropdown
         dropdown.style.overflowY = 'auto';
         dropdown.style.borderRadius = '12px';
         dropdown.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.3)';
         
-        // Calculate positioning
+        // Calculate positioning - always at top of viewport for maximum space
         let left = sidebarRect.left + 8;
-        let top = triggerRect.bottom + 8;
-        let width = Math.max(sidebarRect.width - 16, 300); // Minimum width of 300px
+        let top = 16; // Always position near top of viewport
+        let width = Math.max(sidebarRect.width - 16, 320); // Slightly wider minimum
         
         // Ensure dropdown stays within viewport bounds
         if (left + width > viewportWidth) {
@@ -534,16 +545,9 @@ export class InlineDropdownManager {
             width = Math.min(width, viewportWidth - 16);
         }
         
-        // Check if dropdown would go below viewport
-        if (top + 400 > viewportHeight) {
-            // Position above trigger instead
-            top = triggerRect.top - 408; // 400px height + 8px gap
-            if (top < 8) {
-                // If still not enough space, position at viewport edge
-                top = 8;
-                dropdown.style.maxHeight = `${triggerRect.top - 16}px`;
-            }
-        }
+        // Calculate available height from top
+        const availableHeight = viewportHeight - top - 32; // Leave 32px bottom margin
+        dropdown.style.maxHeight = `${Math.min(300, availableHeight)}px`;
         
         // Apply calculated positions
         dropdown.style.left = `${left}px`;
@@ -668,6 +672,22 @@ export class InlineDropdownManager {
     }
     
     /**
+     * Set up close button handler for dropdown
+     * @param {HTMLElement} dropdown - Dropdown container
+     */
+    setupCloseButtonHandler(dropdown) {
+        const closeButton = dropdown.querySelector('.ai-dropdown-close');
+        if (closeButton) {
+            closeButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                console.log('🚪 Close button clicked');
+                this.closeCurrentDropdown();
+            });
+        }
+    }
+    
+    /**
      * Set up event handlers for dropdown interactions
      * @param {HTMLElement} dropdown - Dropdown container
      * @param {string} fieldType - Field type
@@ -699,7 +719,7 @@ export class InlineDropdownManager {
             }
             
             // Handle option selection for other types
-            const option = e.target.closest('.ai-option');
+            const option = e.target.closest('.ai-option, .ai-location-option');
             if (option) {
                 this.handleOptionSelection(option, fieldType);
                 return;
@@ -743,7 +763,7 @@ export class InlineDropdownManager {
         });
         
         // Handle search input
-        const searchInput = dropdown.querySelector('.ai-search-input');
+        const searchInput = dropdown.querySelector('.ai-search-input') || dropdown.querySelector('.ai-location-search-input');
         if (searchInput) {
             if (fieldType === 'collection') {
                 searchInput.addEventListener('input', (e) => {
@@ -756,6 +776,11 @@ export class InlineDropdownManager {
                     searchTimeout = setTimeout(() => {
                         this.searchLocations(e.target.value, dropdown);
                     }, 300);
+                });
+                
+                // Also handle focus for better UX
+                searchInput.addEventListener('focus', () => {
+                    console.log('🔍 Location search input focused in inline dropdown');
                 });
             }
         }
@@ -785,8 +810,16 @@ export class InlineDropdownManager {
                 this.handleCollectionSelection(value, option);
                 break;
             case 'location':
-                if (value === 'everywhere') {
-                    this.handleLocationSelection('everywhere', 'THE WORLD');
+                switch (value) {
+                    case 'everywhere':
+                        this.handleLocationSelection('everywhere', '🌍 Worldwide');
+                        break;
+                    case 'draw':
+                        this.handleDrawLocation();
+                        return; // Don't close dropdown immediately
+                    case 'paste':
+                        this.handlePasteGeometry();
+                        return; // Don't close dropdown immediately
                 }
                 break;
             case 'date':
@@ -806,7 +839,7 @@ export class InlineDropdownManager {
     handleCollectionSelection(collectionId, option) {
         if (collectionId === '') {
             // EVERYTHING mode
-            this.updateSearchSummary('collection', 'EVERYTHING');
+            this.updateSearchSummary('collection', '📂 Everything');
             this.aiSearchHelper.selectedCollection = '';
             this.aiSearchHelper.selectedCollectionSource = null;
         } else {
@@ -826,7 +859,7 @@ export class InlineDropdownManager {
             }
         }
         
-        console.log(`🎯 Collection selected: ${collectionId || 'EVERYTHING'}`);
+        console.log(`🎯 Collection selected: ${collectionId || '📂 Everything'}`);
     }
     
     /**
@@ -875,7 +908,7 @@ export class InlineDropdownManager {
         switch (dateType) {
             case 'anytime':
                 dateRange = { start: null, end: null };
-                displayText = 'ANYTIME';
+                displayText = '🕐 Anytime';
                 break;
             case 'thismonth':
                 dateRange = this.calculateCurrentMonthRange();
@@ -948,15 +981,52 @@ export class InlineDropdownManager {
     handleDrawLocation() {
         this.closeCurrentDropdown();
         
-        if (this.mapManager) {
-            this.mapManager.startDrawingBbox((bbox) => {
-                this.aiSearchHelper.selectedLocation = bbox;
-                this.updateSearchSummary('location', 'MAP SELECTION');
-                
-                this.notificationService.showNotification('Location drawn on map!', 'success');
-            });
+        if (this.mapManager && typeof this.mapManager.startDrawingBbox === 'function') {
+            // Update sidebar to show drawing in progress
+            this.updateSearchSummary('location', '🖊️ Drawing...');
             
-            this.notificationService.showNotification('Draw a bounding box on the map', 'info');
+            // Show instruction notification
+            this.notificationService.showNotification('🖊️ Click two points on the map to draw a bounding box', 'info');
+            
+            // Start drawing with proper callback
+            this.mapManager.startDrawingBbox((bbox) => {
+                if (bbox && Array.isArray(bbox) && bbox.length === 4) {
+                    console.log('📍 Drawing completed with bbox:', bbox);
+                    
+                    // Store location data in AI search helper
+                    this.aiSearchHelper.selectedLocation = bbox;
+                    this.aiSearchHelper.selectedLocationResult = {
+                        formattedName: 'MAP SELECTION',
+                        shortName: 'MAP SELECTION',
+                        bbox: bbox,
+                        category: 'drawn'
+                    };
+                    
+                    // Update the sidebar summary
+                    this.updateSearchSummary('location', 'MAP SELECTION');
+                    
+                    // Display on map if not already displayed
+                    if (typeof this.aiSearchHelper.displayLocationOnMap === 'function') {
+                        this.aiSearchHelper.displayLocationOnMap(bbox, 'MAP SELECTION', 'drawn');
+                    }
+                    
+                    // Update search parameters
+                    if (typeof this.aiSearchHelper.updateSearchParameters === 'function') {
+                        this.aiSearchHelper.updateSearchParameters();
+                    }
+                    
+                    // Show success notification
+                    this.notificationService.showNotification('✅ Location drawn and applied successfully!', 'success');
+                    
+                    console.log('✅ Map drawing completed and location set');
+                } else {
+                    console.warn('⚠️ Invalid bbox returned from drawing:', bbox);
+                    this.notificationService.showNotification('⚠️ Drawing incomplete - please try again', 'warning');
+                }
+            });
+        } else {
+            console.error('❌ Map drawing not available - MapManager or startDrawingBbox method not found');
+            this.notificationService.showNotification('⚠️ Map drawing functionality not available', 'warning');
         }
     }
     
@@ -1150,23 +1220,103 @@ export class InlineDropdownManager {
     }
     
     /**
-     * Filter collections in dropdown
+     * Filter collections in dropdown with enhanced search
      * @param {string} query - Search query
      * @param {HTMLElement} dropdown - Dropdown container
      */
     filterCollections(query, dropdown) {
         const options = dropdown.querySelectorAll('.ai-option[data-value]');
-        const normalizedQuery = query.toLowerCase();
+        const normalizedQuery = query.toLowerCase().trim();
         
         let visibleCount = 0;
         
+        // Track visible collections by source
+        const sourceVisibility = {};
+        
         options.forEach(option => {
-            const title = option.querySelector('.ai-option-title').textContent.toLowerCase();
-            const subtitle = option.querySelector('.ai-option-subtitle').textContent.toLowerCase();
-            const matches = title.includes(normalizedQuery) || subtitle.includes(normalizedQuery);
+            const collectionId = option.dataset.value?.toLowerCase() || '';
+            const title = option.querySelector('.ai-option-title')?.textContent?.toLowerCase() || '';
+            const subtitle = option.querySelector('.ai-option-subtitle')?.textContent?.toLowerCase() || '';
             
-            option.style.display = matches ? 'flex' : 'none';
-            if (matches) visibleCount++;
+            // Find the actual collection object for more detailed search
+            let collectionDescription = '';
+            let collectionKeywords = '';
+            let collection = null;
+            
+            if (this.aiSearchHelper.allAvailableCollections && collectionId) {
+                // Try to find collection by ID - handle case sensitivity and exact match
+                collection = this.aiSearchHelper.allAvailableCollections.find(c => 
+                    c.id && c.id.toLowerCase() === collectionId
+                );
+                
+                if (collection) {
+                    collectionDescription = (collection.description || '').toLowerCase();
+                    collectionKeywords = (collection.keywords || []).join(' ').toLowerCase();
+                }
+            }
+            
+            // Enhanced matching: search in ID, title, subtitle, description, keywords, and source
+            const matches = normalizedQuery === '' || // Show all if query is empty
+                          collectionId.includes(normalizedQuery) ||
+                          title.includes(normalizedQuery) ||
+                          subtitle.includes(normalizedQuery) ||
+                          collectionDescription.includes(normalizedQuery) ||
+                          collectionKeywords.includes(normalizedQuery) ||
+                          (collection && collection.source && collection.source.toLowerCase().includes(normalizedQuery));
+            
+            if (matches) {
+                option.classList.remove('filtered-hidden');
+                visibleCount++;
+                
+                // Track which sources have visible collections
+                if (collection && collection.source) {
+                    sourceVisibility[collection.source] = true;
+                }
+            } else {
+                option.classList.add('filtered-hidden');
+            }
+            
+            // Debug logging for specific search terms
+            if (normalizedQuery === 'rtc' && collection) {
+                console.log(`🔍 Checking collection for 'rtc':`, {
+                    id: collection.id,
+                    title: collection.title,
+                    description: collection.description,
+                    keywords: collection.keywords,
+                    source: collection.source,
+                    matches: matches
+                });
+            }
+        });
+        
+        // Hide/show source group headers based on whether they have visible collections
+        const sourceHeaders = dropdown.querySelectorAll('.ai-source-group-header');
+        sourceHeaders.forEach(header => {
+            const headerText = header.textContent.toLowerCase();
+            let hasVisibleCollections = false;
+            
+            // Check if this source has any visible collections
+            Object.keys(sourceVisibility).forEach(source => {
+                const sourceDisplayName = this.aiSearchHelper.getSourceDisplayName ? 
+                    this.aiSearchHelper.getSourceDisplayName(source).toLowerCase() : 
+                    source.toLowerCase();
+                
+                if (headerText.includes(sourceDisplayName) || 
+                    sourceDisplayName.includes(headerText.replace(/\s+sources?$/i, ''))) {
+                    hasVisibleCollections = true;
+                }
+            });
+            
+            // Also check if this is for a source mentioned in the search query
+            if (normalizedQuery && headerText.includes(normalizedQuery)) {
+                hasVisibleCollections = true;
+            }
+            
+            if (hasVisibleCollections || normalizedQuery === '') {
+                header.classList.remove('filtered-hidden');
+            } else {
+                header.classList.add('filtered-hidden');
+            }
         });
         
         // Update header count
@@ -1175,6 +1325,17 @@ export class InlineDropdownManager {
             const total = this.aiSearchHelper.allAvailableCollections ? 
                          this.aiSearchHelper.allAvailableCollections.length : 0;
             header.textContent = `Search Results (${visibleCount} of ${total})`;
+        } else if (header) {
+            header.textContent = 'Select Data Source';
+        }
+        
+        // Log debug info for troubleshooting
+        if (query.trim() && visibleCount === 0) {
+            console.warn(`⚠️ No collections found for query: "${query}"`);
+            console.log('Available collections:', this.aiSearchHelper.allAvailableCollections?.map(c => ({
+                id: c.id,
+                title: c.title
+            })));
         }
     }
     
@@ -1184,52 +1345,103 @@ export class InlineDropdownManager {
      * @param {HTMLElement} dropdown - Dropdown container
      */
     searchLocations(query, dropdown) {
-        const resultsContainer = dropdown.querySelector('.ai-location-results');
+        const resultsContainer = dropdown.querySelector('.ai-location-search-results');
         if (!resultsContainer) {
-            console.error('Results container not found');
+            console.error('❌ Location results container not found in dropdown');
             return;
         }
 
         if (!query || query.length < 2) {
             resultsContainer.innerHTML = '';
+            resultsContainer.style.display = 'none';
             return;
         }
         
-        resultsContainer.innerHTML = '<div class="ai-loading">Searching...</div>';
+        resultsContainer.innerHTML = '<div class="ai-location-loading"><i class="material-icons spinning">refresh</i> Searching...</div>';
+        resultsContainer.style.display = 'block';
         
-        this.aiSearchHelper.geocodingService.searchLocations(query, (results, error) => {
-            if (error) {
-                resultsContainer.innerHTML = '<div class="ai-error">Search failed</div>';
-                return;
-            }
-            
+        // Use the geocoding service to search for locations
+        this.aiSearchHelper.geocodingService.geocodeLocation(query).then(results => {
             if (!results || results.length === 0) {
-                resultsContainer.innerHTML = '<div class="ai-no-results">No results found</div>';
+                resultsContainer.innerHTML = '<div class="ai-no-results"><i class="material-icons">search_off</i><p>No locations found</p></div>';
                 return;
             }
             
-            const resultItems = results.slice(0, 5).map(result => {
-                return `
-                    <div class="ai-location-result" 
-                         data-bbox="${result.bbox ? result.bbox.join(',') : ''}" 
-                         data-name="${result.formattedName}"
-                         data-short-name="${result.shortName}">
+            // Clear previous results
+            resultsContainer.innerHTML = '';
+            
+            // Add each result with proper click handling
+            results.slice(0, 6).forEach((result, index) => {
+                const resultItem = document.createElement('div');
+                resultItem.className = 'ai-location-result-item';
+                resultItem.setAttribute('role', 'option');
+                resultItem.setAttribute('tabindex', '0');
+                resultItem.dataset.index = index;
+
+                // Extract location data
+                const locationName = result.shortName || result.name || result.display_name;
+                const displayName = result.formattedName || result.display_name || locationName;
+                
+                // Set data attributes for enhanced handling
+                if (result.bbox) {
+                    resultItem.dataset.bbox = result.bbox.join(',');
+                }
+                resultItem.dataset.name = displayName;
+                resultItem.dataset.shortName = locationName;
+                if (result.lat && result.lon) {
+                    resultItem.dataset.lat = result.lat;
+                    resultItem.dataset.lon = result.lon;
+                }
+                resultItem.dataset.category = result.category || 'location';
+                
+                // Extract country from address if available
+                const country = result.address?.country || result.address?.country_code?.toUpperCase() || '';
+                const locationDisplay = country ? `${locationName}, ${country}` : locationName;
+                
+                resultItem.innerHTML = `
+                    <div class="ai-location-result-content">
                         <i class="material-icons">place</i>
                         <div class="ai-location-info">
-                            <div class="ai-location-name">${result.formattedName}</div>
+                            <div class="ai-location-name">${locationDisplay}</div>
                         </div>
                     </div>
                 `;
-            }).join('');
-            
-            resultsContainer.innerHTML = resultItems;
-            
-            // Add click handlers with enhanced functionality (same as fullscreen AI search)
-            resultsContainer.querySelectorAll('.ai-location-result').forEach(resultEl => {
-                resultEl.addEventListener('click', () => {
-                    this.handleLocationSelectionEnhanced(resultEl, query);
+
+                // Add comprehensive click handler
+                resultItem.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    console.log('🎯 Inline location result clicked:', result);
+                    
+                    this.handleLocationSelectionEnhanced(resultItem, query);
                 });
+
+                // Add keyboard navigation
+                resultItem.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        resultItem.click();
+                    }
+                });
+
+                // Add hover effects
+                resultItem.addEventListener('mouseenter', () => {
+                    resultItem.classList.add('hovered');
+                });
+
+                resultItem.addEventListener('mouseleave', () => {
+                    resultItem.classList.remove('hovered');
+                });
+
+                resultsContainer.appendChild(resultItem);
             });
+            
+            console.log(`✅ Displayed ${results.length} location results in inline dropdown`);
+            
+        }).catch(error => {
+            console.error('❌ Error searching locations in inline dropdown:', error);
+            resultsContainer.innerHTML = '<div class="ai-error"><i class="material-icons">error</i><p>Search error</p></div>';
         });
     }
     

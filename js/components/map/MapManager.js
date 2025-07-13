@@ -1059,21 +1059,55 @@ let geojson;
         
         // If item has geometry, calculate bbox
         if (item.geometry && item.geometry.type === 'Polygon') {
-            // Extract bounds from polygon coordinates
-            const coords = item.geometry.coordinates[0];
-            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-            
-            coords.forEach(coord => {
-                minX = Math.min(minX, coord[0]);
-                minY = Math.min(minY, coord[1]);
-                maxX = Math.max(maxX, coord[0]);
-                maxY = Math.max(maxY, coord[1]);
-            });
-            
-            return [minX, minY, maxX, maxY];
+            return this.getGeometryBounds(item.geometry);
         }
         
         return null;
+    }
+    
+    /**
+     * Get bounds from any geometry type
+     * @param {Object} geometry - GeoJSON geometry
+     * @returns {Array} Bounding box [west, south, east, north]
+     */
+    getGeometryBounds(geometry) {
+        if (!geometry || !geometry.coordinates) {
+            return null;
+        }
+        
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        
+        const updateBounds = (coord) => {
+            minX = Math.min(minX, coord[0]);
+            minY = Math.min(minY, coord[1]);
+            maxX = Math.max(maxX, coord[0]);
+            maxY = Math.max(maxY, coord[1]);
+        };
+        
+        const processCoords = (coords, depth = 0) => {
+            if (typeof coords[0] === 'number') {
+                // This is a coordinate pair
+                updateBounds(coords);
+            } else {
+                // This is an array of coordinates
+                coords.forEach(coord => processCoords(coord, depth + 1));
+            }
+        };
+        
+        processCoords(geometry.coordinates);
+        
+        return [minX, minY, maxX, maxY];
+    }
+    
+    /**
+     * Fit map to geometry bounds
+     * @param {Object} geometry - GeoJSON geometry
+     */
+    fitMapToGeometry(geometry) {
+        const bounds = this.getGeometryBounds(geometry);
+        if (bounds) {
+            this.fitMapToBbox(bounds);
+        }
     }
     
     /**
@@ -1094,8 +1128,9 @@ let geojson;
      * @param {Object} asset - Asset object
      * @param {Object} item - STAC item
      * @param {string} assetKey - Asset key
+     * @param {Object|Array} geometryOrBounds - Either GeoJSON geometry or bbox array
      */
-    async addAssetOverlay(asset, item, assetKey) {
+    async addAssetOverlay(asset, item, assetKey, geometryOrBounds = null) {
         try {
             console.log(`Adding asset overlay for ${assetKey}:`, asset);
             
@@ -1109,7 +1144,7 @@ let geojson;
             }
             
             // Add visual overlay
-            await this.addVisualOverlay(asset, item);
+            await this.addVisualOverlay(asset, item, geometryOrBounds);
             
             // Hide loading indicator
             const loadingIndicator = document.getElementById('loading');
@@ -1131,16 +1166,34 @@ let geojson;
      * Add visual overlay to map
      * @param {Object} asset - Asset object
      * @param {Object} item - STAC item
+     * @param {Object|Array} geometryOrBounds - Either GeoJSON geometry or bbox array
      */
-    async addVisualOverlay(asset, item) {
+    async addVisualOverlay(asset, item, geometryOrBounds = null) {
         try {
             console.log('Adding visual overlay for asset:', asset);
             
             // Get image URL
             const imageUrl = asset.href;
             
-            // Get bounds
-            let bbox = this.getBoundingBox(item);
+            // Use provided geometry/bounds or get from item
+            let bbox;
+            if (geometryOrBounds) {
+                // If geometry object is provided, extract bounds from it
+                if (geometryOrBounds.type && geometryOrBounds.coordinates) {
+                    console.log('Using provided geometry for overlay bounds');
+                    bbox = this.getGeometryBounds(geometryOrBounds);
+                } else if (Array.isArray(geometryOrBounds) && geometryOrBounds.length === 4) {
+                    // If bounds array is provided directly
+                    console.log('Using provided bounds for overlay');
+                    bbox = geometryOrBounds;
+                }
+            }
+            
+            // Fallback to item bounds if no geometry/bounds provided
+            if (!bbox) {
+                bbox = this.getBoundingBox(item);
+            }
+            
             if (!bbox) {
                 console.warn('Item has no valid bbox or geometry for overlay');
                 return false;
@@ -1677,15 +1730,30 @@ let geojson;
             // Remove any existing layers
             this.removeCurrentLayer();
             
-            // Get bounding box
-            const bbox = this.getBoundingBox(item);
-            if (!bbox) {
-                console.warn('Item has no valid bbox or geometry');
-                return;
+            // Check if item has geometry - use it directly for more accurate positioning
+            let bounds = null;
+            let useGeometry = false;
+            
+            if (item.geometry && item.geometry.type) {
+                console.log('Using item geometry for positioning:', item.geometry.type);
+                bounds = this.getGeometryBounds(item.geometry);
+                useGeometry = true;
+            } else {
+                // Fallback to bbox
+                const bbox = this.getBoundingBox(item);
+                if (!bbox) {
+                    console.warn('Item has no valid bbox or geometry');
+                    return;
+                }
+                bounds = bbox;
             }
             
             // Fit map to item bounds
-            this.fitMapToBbox(bbox);
+            if (useGeometry) {
+                this.fitMapToGeometry(item.geometry);
+            } else {
+                this.fitMapToBbox(bounds);
+            }
             
             // Show loading indicator
             const loadingIndicator = document.getElementById('loading');
@@ -1696,37 +1764,37 @@ let geojson;
             
             // If we have a preferred asset key and it exists, use it
             if (preferredAssetKey && item.assets && item.assets[preferredAssetKey]) {
-                await this.addAssetOverlay(item.assets[preferredAssetKey], item, preferredAssetKey);
+                await this.addAssetOverlay(item.assets[preferredAssetKey], item, preferredAssetKey, useGeometry ? item.geometry : bounds);
                 return;
             }
             
             // If we have visual assets, use the first one
             if (visualAssets.length > 0) {
-                await this.addAssetOverlay(visualAssets[0].asset, item, visualAssets[0].key);
+                await this.addAssetOverlay(visualAssets[0].asset, item, visualAssets[0].key, useGeometry ? item.geometry : bounds);
                 return;
             }
             
             // For Planetary Computer items, check rendered_preview first
             if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
-                await this.addAssetOverlay(item.assets.rendered_preview, item, 'rendered_preview');
+                await this.addAssetOverlay(item.assets.rendered_preview, item, 'rendered_preview', useGeometry ? item.geometry : bounds);
                 return;
             }
             
             // If we have a thumbnail, use it
             if (item.assets && item.assets.thumbnail) {
-                await this.addAssetOverlay(item.assets.thumbnail, item, 'thumbnail');
+                await this.addAssetOverlay(item.assets.thumbnail, item, 'thumbnail', useGeometry ? item.geometry : bounds);
                 return;
             }
             
             // If we have a preview, use it
             if (item.assets && item.assets.preview) {
-                await this.addAssetOverlay(item.assets.preview, item, 'preview');
+                await this.addAssetOverlay(item.assets.preview, item, 'preview', useGeometry ? item.geometry : bounds);
                 return;
             }
             
             // If we have an overview, use it
             if (item.assets && item.assets.overview) {
-                await this.addAssetOverlay(item.assets.overview, item, 'overview');
+                await this.addAssetOverlay(item.assets.overview, item, 'overview', useGeometry ? item.geometry : bounds);
                 return;
             }
             

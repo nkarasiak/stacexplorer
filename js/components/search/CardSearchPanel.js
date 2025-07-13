@@ -516,6 +516,22 @@ export class CardSearchPanel {
                 this.resetSearch();
             });
         }
+        
+        // Main search button (fixed controls)
+        const mainSearchBtn = document.getElementById('main-search-btn');
+        if (mainSearchBtn) {
+            mainSearchBtn.addEventListener('click', () => {
+                this.performSearch();
+            });
+        }
+        
+        // Main reset button (fixed controls)
+        const mainResetBtn = document.getElementById('main-reset-btn');
+        if (mainResetBtn) {
+            mainResetBtn.addEventListener('click', () => {
+                this.resetSearch();
+            });
+        }
     }
     
     /**

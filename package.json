@@ -9,10 +9,6 @@
     "dev": "concurrently \"npm run proxy\" \"npm run watch\"",
     "proxy": "node proxy.js",
     "watch": "nodemon --watch js --watch css --ext js,css --exec \"echo 'Files changed - refresh browser'\"",
-    "build": "npm run lint && npm run test",
-    "lint": "eslint js/**/*.js",
-    "lint:fix": "eslint js/**/*.js --fix",
-    "test": "jest",
     "serve": "http-server -p 3000 -c-1 --cors"
   },
   "dependencies": {
@@ -21,11 +17,8 @@
     "node-fetch": "^2.6.9"
   },
   "devDependencies": {
-    "@eslint/js": "^9.0.0",
     "concurrently": "^8.2.2",
-    "eslint": "^9.0.0",
     "http-server": "^14.1.1",
-    "jest": "^29.7.0",
     "nodemon": "^3.0.2"
   },
   "keywords": ["stac", "geospatial", "earth-observation", "catalog", "explorer"],

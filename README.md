@@ -1,222 +1,244 @@
-# STAC Explorer
+# 🛰️ STAC Explorer
 
-A modern, high-performance web application for searching and visualizing Earth observation data using STAC APIs. This application provides an intuitive interface for discovering satellite imagery and related Earth observation datasets.
+> A modern, interactive web application for exploring SpatioTemporal Asset Catalog (STAC) datasets with advanced search capabilities and beautiful visualizations.
+
+![STAC Explorer](https://img.shields.io/badge/STAC-Explorer-blue?style=for-the-badge&logo=satellite)
+![Version](https://img.shields.io/badge/version-2.1.4-green?style=for-the-badge)
+![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
+
+## ✨ Features
+
+### 🔍 **Smart Search Interface**
+- **AI-Enhanced Search**: Intelligent location and dataset discovery
+- **Advanced Filters**: Date ranges, cloud cover, collections, and spatial filters
+- **Multiple Search Methods**: Text search, map drawing, WKT geometry input
+- **Real-time Results**: Instant feedback with modern UI components
+
+### 🗺️ **Interactive Mapping**
+- **Dynamic Map Visualization**: Leaflet-based interactive maps
+- **Geometry Display**: View dataset footprints and boundaries
+- **Drawing Tools**: Draw bounding boxes directly on the map
+- **Multiple Basemaps**: CartoDB Dark/Light themes
+
+### 📱 **Modern User Experience**
+- **Responsive Design**: Works seamlessly on desktop and mobile
+- **Dark/Light Themes**: Automatic theme switching
+- **Glassmorphism UI**: Modern, beautiful interface design
+- **Card-Based Layout**: Intuitive search and results organization
+
+### 🌐 **Multi-Source Support**
+- **Copernicus Data Space**: European Space Agency satellite data
+- **Element84 Earth Search**: Comprehensive Earth observation datasets
+- **Custom STAC Catalogs**: Connect to any STAC-compliant API
+- **Cross-Catalog Search**: Search across multiple data sources
+
+### 📊 **Dataset Management**
+- **Enhanced Dataset Modals**: Detailed item information with copy functionality
+- **Thumbnail Previews**: Visual dataset previews when available
+- **Metadata Display**: Comprehensive dataset properties and JSON viewer
+- **Export Capabilities**: Copy dataset information to clipboard
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Node.js 18+ or Python 3.8+
-- Git
+- Node.js 18+ and npm
+- Modern web browser with ES2022 support
 
-### Installation & Setup
+### Installation
 
 ```bash
 # Clone the repository
 git clone https://github.com/nkarasiak/stacexplorer.git
 cd stacexplorer
 
-# Install dependencies (for enhanced features)
+# Install dependencies
 npm install
 
 # Start development server
 npm run dev
 ```
 
-### Alternative Setup Options
+The application will be available at `http://localhost:3000`
 
-#### Option 1: Python HTTP Server (Simplest)
-```bash
-python -m http.server 8000
-# Open http://localhost:8000
-```
+### Production Deployment
 
-#### Option 2: Node.js with CORS Proxy (Recommended)
 ```bash
+# Start production server
 npm start
-# Open http://localhost:3000
+
+# Or serve static files
+npm run serve
 ```
-
-#### Option 3: Static File Server
-```bash
-npx http-server -p 3000 -c-1 --cors
-```
-
-## ✨ Features
-
-### 🗺️ Interactive Map Interface
-- Visual area selection using drawing tools
-- Real-time bounding box coordinate display
-- Dynamic map updates based on search results
-
-### 🔍 Advanced Search Capabilities
-- Full-text search across titles and descriptions
-- Date range filtering with calendar integration
-- Cloud cover percentage filtering with slider control
-- Bounding box spatial filtering
-- Collection-specific searches
-
-### 📊 Results Visualization
-- Thumbnail previews of datasets
-- Cloud cover indicators with intuitive icons
-- Dataset metadata display
-- Quick-view information modal
-
-### 💫 Modern User Experience
-- Responsive design
-- Material Design styling
-- Real-time search updates
-- URL state management for shareable searches
-
-### 🚄 Enhanced Performance (v2.0+)
-- **Automatic retry logic** for failed API requests
-- **Request caching** to reduce redundant calls
-- **Performance monitoring** with Core Web Vitals
-- **Enhanced error handling** with detailed feedback
-- **Memory optimization** and leak prevention
-
-## 🎯 Live Demo
-
-Visit the live application: [https://nkarasiak.github.io/stacexplorer](https://nkarasiak.github.io/stacexplorer)
-
-## 📖 Usage Guide
-
-### Basic Search
-1. Enter search terms in the search box to find datasets by title or description
-2. Use the date picker to filter results by time range
-3. Adjust the cloud cover slider to filter images based on cloud percentage
-
-### Spatial Search
-1. Use the drawing tools on the map to define a search area
-2. The bounding box coordinates will automatically update
-3. You can also manually enter coordinates in the format: `west,south,east,north`
-
-### Managing Results
-- Click the information icon (ℹ️) on any dataset to view detailed metadata
-- Cloud cover percentage is displayed with intuitive icons:
-  - ☀️ 0-10% clouds
-  - 🌤️ 11-30% clouds
-  - ⛅ 31-60% clouds
-  - 🌥️ 61-90% clouds
-  - ☁️ 91-100% clouds
-
-### URL Parameters
-The application supports URL parameters for sharing searches:
-- `cloudCover`: Maximum cloud cover percentage
-- `collections`: Comma-separated list of collection IDs
-- `bbox`: Bounding box coordinates (west,south,east,north)
-- `datetime`: Date range in ISO format
 
 ## 🛠️ Development
 
-### Available Scripts
-```bash
-npm run dev          # Development server with hot reload
-npm test             # Run test suite with coverage
-npm run lint         # Check code style
-npm run lint:fix     # Fix auto-fixable issues
-npm run build        # Production build with quality checks
-```
-
 ### Project Structure
+
 ```
 stacexplorer/
-├── .github/workflows/     # CI/CD pipelines
-├── css/                   # Stylesheets
-├── js/
-│   ├── components/        # Modular UI components
-│   │   ├── api/          # API client modules
-│   │   ├── common/       # Shared utilities
-│   │   ├── map/          # Map-related components
-│   │   ├── results/      # Results display components
-│   │   └── search/       # Search functionality
-│   ├── utils/            # Utility functions
-│   ├── app.js            # Main application entry
-│   └── config.js         # Configuration settings
-├── tests/                # Test files
-├── proxy.js              # CORS proxy server
-└── README.md
+├── 📁 js/
+│   ├── 📁 components/
+│   │   ├── 📁 api/          # STAC API client
+│   │   ├── 📁 map/          # Map management
+│   │   ├── 📁 results/      # Results display
+│   │   ├── 📁 search/       # Search components
+│   │   ├── 📁 ui/           # UI components
+│   │   └── 📁 utils/        # Utility functions
+│   ├── 📄 app.js            # Main application
+│   └── 📄 config.js         # Configuration
+├── 📁 css/
+│   └── 📄 styles.modern.css # Modern styling
+├── 📄 index.html            # Main HTML
+├── 📄 proxy.js              # CORS proxy server
+└── 📄 package.json          # Dependencies
 ```
 
-### Testing
+### Available Scripts
+
 ```bash
-# Run all tests
-npm test
+# Development with hot reload
+npm run dev
 
-# Run with coverage report
-npm test -- --coverage
+# Production server
+npm start
 
-# Watch mode for development
-npm run test:watch
+# Serve static files
+npm run serve
+
+# Development proxy only
+npm run proxy
 ```
 
-## 🔧 Configuration
+### Configuration
 
-### Environment Variables
-Create `.env.development` for local development:
-```env
-NODE_ENV=development
-PORT=3000
-DEFAULT_STAC_ENDPOINT=copernicus
-ENABLE_PROXY=true
-ENABLE_DEBUG=true
-```
+The application supports multiple STAC catalogs configured in `js/config.js`:
 
-### STAC Endpoints
-Configure additional STAC API endpoints in `js/config.js`:
 ```javascript
-stacEndpoints: {
-    copernicus: {
-        root: 'https://stac.dataspace.copernicus.eu/v1',
-        collections: 'https://stac.dataspace.copernicus.eu/v1/collections',
-        search: 'https://stac.dataspace.copernicus.eu/v1/search'
-    },
-    // Add your custom endpoints here
-}
+export const CONFIG = {
+    // Default STAC endpoints
+    STAC_ENDPOINTS: {
+        'copernicus': 'https://catalogue.dataspace.copernicus.eu/stac',
+        'element84': 'https://earth-search.aws.element84.com/v1',
+        // Add custom endpoints here
+    }
+};
 ```
+
+## 🎯 Usage Guide
+
+### Basic Search
+
+1. **Select Data Source**: Choose from Copernicus, Element84, or custom catalogs
+2. **Choose Location**: 
+   - Search by place name (e.g., "Paris, France")
+   - Draw area on map
+   - Enter WKT geometry
+3. **Set Time Range**: 
+   - Anytime (default)
+   - Last 30 days
+   - Custom date range
+4. **Apply Filters**: Cloud cover, collections, etc.
+5. **Search**: Click the search button to find datasets
+
+### Advanced Features
+
+#### Location Search
+- **Geocoding**: Type any location name for automatic geocoding
+- **Map Drawing**: Use drawing tools to select precise areas
+- **WKT Input**: Paste Well-Known Text geometry directly
+
+#### Dataset Exploration
+- **Dataset Details**: Click info button for comprehensive metadata
+- **Map Visualization**: View dataset footprints on the interactive map
+- **Copy Information**: Export dataset metadata to clipboard
+
+#### Multi-Source Search
+- Enable "Everything" mode to search across all configured catalogs
+- Results are aggregated and deduplicated automatically
+
+## 🔧 Technical Details
+
+### Architecture
+
+- **Frontend**: Vanilla JavaScript ES2022 modules
+- **Styling**: Modern CSS with CSS variables and glassmorphism
+- **Mapping**: Leaflet.js with custom styling
+- **API**: STAC-compliant REST APIs
+- **Deployment**: Static files with optional Node.js proxy
+
+### Key Components
+
+- **CardSearchPanel**: Main search interface with card-based layout
+- **MapManager**: Interactive map with drawing tools
+- **InlineDropdownManager**: Smart search dropdowns with autocomplete
+- **ResultsPanel**: Paginated results with enhanced modals
+- **StacApiClient**: STAC API communication with error handling
+
+### Performance Features
+
+- **Efficient Rendering**: Virtual scrolling for large result sets
+- **Caching**: API response caching for better performance  
+- **Lazy Loading**: On-demand component loading
+- **Responsive Images**: Optimized thumbnail loading
+
+## 🌟 Recent Updates (v2.1.4)
+
+### ✅ Fixed
+- **Location Search Integration**: Search now properly respects selected locations
+- **Enhanced Dataset Modals**: Beautiful modal redesign with copy functionality
+- **UI Improvements**: Removed clutter, added visible search button
+- **GitHub CI**: Simplified deployment workflow
+
+### 🆕 Added  
+- **Visible Search Button**: Prominent search interface
+- **Copy Dataset Info**: One-click metadata copying
+- **Show on Map**: Direct dataset-to-map integration
+- **Modern Styling**: Glassmorphism design improvements
+
+### 🗑️ Removed
+- **Development Artifacts**: Cleaned up 69+ test and debug files
+- **Unused Dependencies**: Simplified package.json
+- **Settings Panel**: Streamlined interface
+
+## 📋 Browser Support
+
+- Chrome 90+
+- Firefox 88+
+- Safari 14+
+- Edge 90+
 
 ## 🤝 Contributing
 
-We welcome contributions! Please follow these steps:
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit changes: `git commit -m 'Add amazing feature'`
+4. Push to branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Write tests** for your changes
-4. **Run the test suite**: `npm test`
-5. **Commit your changes**: `git commit -m 'feat: add amazing feature'`
-6. **Push to the branch**: `git push origin feature/amazing-feature`
-7. **Open a Pull Request**
+## 📝 License
 
-### Commit Convention
-We follow [Conventional Commits](https://www.conventionalcommits.org/):
-- `feat:` new features
-- `fix:` bug fixes
-- `docs:` documentation changes
-- `style:` formatting changes
-- `refactor:` code refactoring
-- `test:` adding tests
-- `chore:` maintenance tasks
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
-- [STAC Specification](https://stacspec.org/) contributors
-- [MapLibre GL JS](https://maplibre.org/) community
-- Earth observation data providers
-- Open source community
+- [STAC Specification](https://stacspec.org/) - SpatioTemporal Asset Catalog standard
+- [Copernicus Data Space](https://dataspace.copernicus.eu/) - European satellite data
+- [Element84](https://www.element84.com/) - Earth Search API
+- [Leaflet](https://leafletjs.com/) - Interactive mapping library
+- [Material Design Icons](https://material.io/icons/) - Beautiful iconography
 
-## 📋 Changelog
+## 📞 Support
 
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
-
-## 🆘 Support
-
-- **Issues**: [GitHub Issues](https://github.com/nkarasiak/stacexplorer/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/nkarasiak/stacexplorer/discussions)
-- **Documentation**: [Enhanced README](README.enhanced.md)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/nkarasiak/stacexplorer/issues)
+- 📧 **Contact**: Create an issue for questions and support
+- 📖 **Documentation**: See inline code documentation
 
 ---
 
-**Made with ❤️ for the Earth observation community**
+<div align="center">
+
+**[🚀 Live Demo](https://nkarasiak.github.io/stacexplorer/) • [📖 STAC Spec](https://stacspec.org/) • [🛰️ Copernicus](https://dataspace.copernicus.eu/)**
+
+*Made with ❤️ for the Earth observation community*
+
+</div>

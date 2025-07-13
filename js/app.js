@@ -158,12 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 dateField.textContent = 'ANYTIME';
             }
         }
-        
-        // Show welcome notification about the search interface
-        setTimeout(() => {
-            notificationService.showNotification('Click any search field to customize your search!', 'info');
-        }, 2000);
-        
+                
         // Sidebar is now visible by default - AI Smart Search Enhanced available via button click
         if (!stateManager.hasUrlStateParams()) {
             console.log('[AI] No URL state detected, sidebar visible with AI Smart Search ready');
@@ -194,8 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
             inlineDropdownManager,
             urlStateManager,
             geometrySync,
-            config: CONFIG,
-            settingsPanel // Expose for debugging
+            config: CONFIG
         };
     } catch (error) {
         console.error('Error initializing application:', error);

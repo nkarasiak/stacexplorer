@@ -86,6 +86,12 @@ export class StateManager {
             await this.restoreActiveItem(params);
         }
         
+        // Execute search if we have search parameters
+        if (this.hasSearchParams(params)) {
+            console.log('🔍 Executing search with restored parameters...');
+            await this.executeSearchAfterRestore();
+        }
+        
         this.isRestoringFromUrl = false;
         console.log('✅ State restoration from URL completed');
     }
@@ -155,8 +161,9 @@ export class StateManager {
      * @param {URLSearchParams} params - URL parameters
      */
     async restoreCatalogState(params) {
-        if (params.has('catalog') && params.get('catalog') !== 'copernicus') {
+        if (params.has('catalog')) {
             const catalog = params.get('catalog');
+            console.log(`🔗 Restoring catalog: ${catalog}`);
             
             if (catalog === 'custom') {
                 const customUrl = params.get('catalogUrl');
@@ -168,9 +175,23 @@ export class StateManager {
             
             const catalogSelect = document.getElementById('catalog-select');
             if (catalogSelect) {
+                // Set the catalog value regardless of what it is (copernicus, element84, custom)
                 catalogSelect.value = catalog;
-                this.catalogSelector.handleCatalogChange(catalog);
+                
+                // Trigger the catalog change
+                if (this.catalogSelector && typeof this.catalogSelector.handleCatalogChange === 'function') {
+                    this.catalogSelector.handleCatalogChange(catalog);
+                    console.log(`✅ Triggered catalog change to: ${catalog}`);
+                } else {
+                    // Fallback - dispatch change event
+                    catalogSelect.dispatchEvent(new Event('change'));
+                    console.log(`✅ Dispatched change event for catalog: ${catalog}`);
+                }
+            } else {
+                console.warn('⚠️ Catalog select element not found');
             }
+        } else {
+            console.log('🔗 No catalog parameter in URL, using default');
         }
     }
     
@@ -202,13 +223,48 @@ export class StateManager {
      * @param {URLSearchParams} params - URL parameters
      */
     async restoreSearchState(params) {
+        console.log('🔗 Restoring search state from URL parameters...');
+        
         // Restore collection selection
         if (params.has('collection')) {
             const collection = params.get('collection');
+            console.log(`🔗 Restoring collection: ${collection}`);
+            
             const collectionSelect = document.getElementById('collection-select');
             if (collectionSelect) {
-                collectionSelect.value = collection;
-                collectionSelect.dispatchEvent(new Event('change'));
+                // Wait a bit more to ensure collection options are fully loaded
+                await new Promise(resolve => setTimeout(resolve, 300));
+                
+                // Check if the collection exists in the dropdown
+                const collectionOption = Array.from(collectionSelect.options).find(option => option.value === collection);
+                if (collectionOption) {
+                    collectionSelect.value = collection;
+                    collectionSelect.dispatchEvent(new Event('change'));
+                    console.log(`✅ Successfully set collection to: ${collection}`);
+                } else {
+                    console.warn(`⚠️ Collection '${collection}' not found in dropdown options`);
+                    console.log('Available options:', Array.from(collectionSelect.options).map(opt => opt.value));
+                }
+                
+                // Also update inline dropdown summary if it exists
+                if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
+                    try {
+                        // Find collection details to update display name
+                        const collectionManager = window.stacExplorer.collectionManager;
+                        if (collectionManager) {
+                            const collectionObj = collectionManager.getCollectionById(collection);
+                            if (collectionObj) {
+                                const displayName = collectionObj.title || collectionObj.id;
+                                window.stacExplorer.inlineDropdownManager.updateSearchSummary('collection', displayName.toUpperCase());
+                                console.log(`✅ Updated inline dropdown collection display: ${displayName}`);
+                            }
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ Could not update inline dropdown collection display:', error);
+                    }
+                }
+            } else {
+                console.warn('⚠️ Collection select element not found');
             }
         }
         
@@ -220,24 +276,57 @@ export class StateManager {
         
         if (params.has('dateStart')) {
             const dateStartInput = document.getElementById('date-start');
-            if (dateStartInput) dateStartInput.value = params.get('dateStart');
+            if (dateStartInput) {
+                dateStartInput.value = params.get('dateStart');
+                console.log(`🔗 Restored date start: ${params.get('dateStart')}`);
+            }
         }
         
         if (params.has('dateEnd')) {
             const dateEndInput = document.getElementById('date-end');
-            if (dateEndInput) dateEndInput.value = params.get('dateEnd');
+            if (dateEndInput) {
+                dateEndInput.value = params.get('dateEnd');
+                console.log(`🔗 Restored date end: ${params.get('dateEnd')}`);
+            }
         }
         
         if (params.has('bbox')) {
+            const bboxValue = params.get('bbox');
+            console.log(`🔗 Restoring bbox: ${bboxValue}`);
+            
             const bboxInput = document.getElementById('bbox-input');
             if (bboxInput) {
-                bboxInput.value = params.get('bbox');
+                bboxInput.value = bboxValue;
+                
+                // Update inline dropdown summary for location
+                if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
+                    try {
+                        window.stacExplorer.inlineDropdownManager.updateSearchSummary('location', 'MAP SELECTION');
+                        console.log('✅ Updated inline dropdown location display');
+                    } catch (error) {
+                        console.warn('⚠️ Could not update inline dropdown location display:', error);
+                    }
+                }
+                
                 // Update map bbox if the map manager has this method
                 if (this.mapManager.updateBBoxFromInput) {
-                    this.mapManager.updateBBoxFromInput(params.get('bbox'));
+                    this.mapManager.updateBBoxFromInput(bboxValue);
+                } else if (this.mapManager.displayBboxOnMap) {
+                    // Try alternative method
+                    try {
+                        const coords = bboxValue.split(',').map(Number);
+                        if (coords.length === 4) {
+                            this.mapManager.displayBboxOnMap(coords, 'URL Selection');
+                            console.log('✅ Displayed bbox on map from URL');
+                        }
+                    } catch (error) {
+                        console.warn('⚠️ Could not display bbox on map:', error);
+                    }
                 }
             }
         }
+        
+        console.log('✅ Search state restoration completed');
     }
     
     /**
@@ -401,17 +490,39 @@ export class StateManager {
     logCurrentSearchParameters() {
         console.log('📋 Current search parameters:');
         
+        const catalog = document.getElementById('catalog-select')?.value;
         const collection = document.getElementById('collection-select')?.value;
         const search = document.getElementById('search-input')?.value;
         const dateStart = document.getElementById('date-start')?.value;
         const dateEnd = document.getElementById('date-end')?.value;
         const bbox = document.getElementById('bbox-input')?.value;
         
+        console.log(`   Catalog: ${catalog || 'not set'}`);
         console.log(`   Collection: ${collection || 'not set'}`);
         console.log(`   Search text: ${search || 'not set'}`);
         console.log(`   Date start: ${dateStart || 'not set'}`);
         console.log(`   Date end: ${dateEnd || 'not set'}`);
         console.log(`   Bbox: ${bbox || 'not set'}`);
+        
+        // Also check the collection select element state
+        const collectionSelect = document.getElementById('collection-select');
+        if (collectionSelect) {
+            console.log(`   Collection element found: YES (options: ${collectionSelect.options.length})`);
+            console.log(`   Selected option text: ${collectionSelect.selectedOptions[0]?.text || 'none'}`);
+        } else {
+            console.log(`   Collection element found: NO`);
+        }
+        
+        // Validate all required elements are present
+        const elementsStatus = {
+            'catalog-select': !!document.getElementById('catalog-select'),
+            'collection-select': !!document.getElementById('collection-select'),
+            'search-input': !!document.getElementById('search-input'),
+            'date-start': !!document.getElementById('date-start'),
+            'date-end': !!document.getElementById('date-end'),
+            'bbox-input': !!document.getElementById('bbox-input')
+        };
+        console.log('   Element availability:', elementsStatus);
     }
     
     /**
@@ -694,6 +805,76 @@ export class StateManager {
         window.history.pushState({}, '', newUrl);
     }
     
+    /**
+     * Execute search after URL state restoration
+     */
+    async executeSearchAfterRestore() {
+        try {
+            // Try multiple search execution methods
+            console.log('🔍 Attempting to execute search after URL state restoration...');
+            
+            // First, validate that collection parameter is properly set
+            this.logCurrentSearchParameters();
+            
+            // Method 1: Click the main search button
+            const mainSearchBtn = document.getElementById('main-search-btn');
+            if (mainSearchBtn) {
+                console.log('🔍 Triggering search via main search button');
+                
+                // Add a small delay to ensure the DOM is fully ready
+                setTimeout(() => {
+                    this.logCurrentSearchParameters(); // Log again right before click
+                    mainSearchBtn.click();
+                }, 200);
+                return;
+            }
+            
+            // Method 2: Click the execute search button
+            const executeSearchBtn = document.getElementById('execute-search');
+            if (executeSearchBtn) {
+                console.log('🔍 Triggering search via execute search button');
+                
+                // Add a small delay to ensure the DOM is fully ready
+                setTimeout(() => {
+                    this.logCurrentSearchParameters(); // Log again right before click
+                    executeSearchBtn.click();
+                }, 200);
+                return;
+            }
+            
+            // Method 3: Use search panel if available (CardSearchPanel)
+            if (window.stacExplorer && window.stacExplorer.searchPanel) {
+                console.log('🔍 Triggering search via search panel (CardSearchPanel)');
+                if (typeof window.stacExplorer.searchPanel.performSearch === 'function') {
+                    // Add a small delay to ensure the DOM is fully ready
+                    setTimeout(async () => {
+                        this.logCurrentSearchParameters(); // Log again right before search
+                        await window.stacExplorer.searchPanel.performSearch();
+                    }, 200);
+                    return;
+                }
+            }
+            
+            // Method 4: Trigger search via inline dropdown manager
+            if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
+                console.log('🔍 Triggering search via inline dropdown manager');
+                if (typeof window.stacExplorer.inlineDropdownManager.executeSearch === 'function') {
+                    // Add a small delay to ensure the DOM is fully ready
+                    setTimeout(async () => {
+                        this.logCurrentSearchParameters(); // Log again right before search
+                        await window.stacExplorer.inlineDropdownManager.executeSearch();
+                    }, 200);
+                    return;
+                }
+            }
+            
+            console.warn('⚠️ No search execution method available');
+            
+        } catch (error) {
+            console.error('❌ Error executing search after URL restore:', error);
+        }
+    }
+
     /**
      * Check if URL parameters contain any search criteria
      * @param {URLSearchParams} params - URL parameters

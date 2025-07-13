@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.7] - 2025-07-13
+
+### Fixed
+- **URL State Restoration**: Fixed "collection is required" error when sharing URLs with collection parameters
+- **Search Execution**: Enhanced collection parameter validation and timing during URL state restoration
+- **Debug Logging**: Added comprehensive logging for search parameter validation and collection dropdown state
+
+### Enhanced
+- **StateManager**: Improved search execution timing with proper delays and validation
+- **CardSearchPanel**: Added collection parameter validation before API calls
+- **Error Messages**: Better error reporting when collection parameters are missing
+
+### Technical Details
+- Fixed timing issues in `StateManager.restoreSearchState()` to ensure collection dropdown is fully populated
+- Enhanced `CardSearchPanel.performSearch()` with validation for required collection parameters
+- Added detailed logging throughout URL restoration process for better debugging
+- Improved collection parameter handling in search execution flow
+
 ## [2.1.6] - 2025-07-13
 
 ### Added

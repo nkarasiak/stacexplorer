@@ -655,15 +655,32 @@ export class CardSearchPanel {
             const selectedCollection = collectionSelect ? collectionSelect.value : '';
             
             console.log('🎯 Collection select element:', collectionSelect);
+            console.log('🎯 Selected collection value:', selectedCollection);
+            console.log('🎯 Collection select options count:', collectionSelect?.options.length || 0);
             
             // Add collection if specified
             if (selectedCollection) {
                 searchParams.collections = [selectedCollection];
+                console.log('✅ Added collection to search params:', selectedCollection);
+            } else {
+                console.log('⚠️ No collection selected - proceeding without collection parameter');
             }
             
             // Check if we're in EVERYTHING mode
             const catalogValue = document.getElementById('catalog-select').value;
             const isEverythingMode = catalogValue === '';
+            
+            // CRITICAL: Validate that we have required parameters for the search
+            console.log('🔍 Final search parameters before API call:', JSON.stringify(searchParams, null, 2));
+            
+            // Check if we're missing collection for single-source search
+            if (!isEverythingMode && !searchParams.collections) {
+                const errorMsg = 'Collection is required for single-source search but none was selected';
+                console.error('❌', errorMsg);
+                this.notificationService.showNotification(errorMsg, 'error');
+                document.getElementById('loading').style.display = 'none';
+                return;
+            }
             
             let items = [];
             

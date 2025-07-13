@@ -79,6 +79,31 @@ export class MobileSidebarManager {
             }
         });
         
+        // Listen for URL changes to update mobile toggle visibility
+        window.addEventListener('popstate', () => {
+            if (!this.isDesktop) {
+                this.updateLayout();
+            }
+        });
+        
+        // Listen for pushstate events (programmatic navigation)
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
+        
+        history.pushState = (...args) => {
+            originalPushState.apply(history, args);
+            if (!this.isDesktop) {
+                setTimeout(() => this.updateLayout(), 100);
+            }
+        };
+        
+        history.replaceState = (...args) => {
+            originalReplaceState.apply(history, args);
+            if (!this.isDesktop) {
+                setTimeout(() => this.updateLayout(), 100);
+            }
+        };
+        
         // Existing desktop toggle
         if (this.sidebarToggle) {
             this.sidebarToggle.addEventListener('click', () => {
@@ -254,10 +279,15 @@ export class MobileSidebarManager {
             // Mobile layout
             this.sidebar.classList.remove('collapsed'); // Remove desktop collapsed state
             
-            // Show mobile elements
-            this.mobileMenuBtn.style.display = 'flex';
+            // Check if we should show mobile menu toggle based on current page
+            const shouldShowMobileToggle = this.shouldShowMobileToggle();
+            
+            // Show/hide mobile hamburger menu based on page context
+            this.mobileMenuBtn.style.display = shouldShowMobileToggle ? 'flex' : 'none';
+            
+            // Mobile close button visibility depends on sidebar state
             if (this.mobileCloseBtn) {
-                this.mobileCloseBtn.style.display = 'flex';
+                this.mobileCloseBtn.style.display = (this.isOpen && shouldShowMobileToggle) ? 'flex' : 'none';
             }
             
             // Hide desktop toggle
@@ -266,8 +296,10 @@ export class MobileSidebarManager {
             }
             
             // Update ARIA attributes
-            this.sidebar.setAttribute('aria-hidden', 'true');
-            this.mobileMenuBtn.setAttribute('aria-expanded', 'false');
+            this.sidebar.setAttribute('aria-hidden', this.isOpen ? 'false' : 'true');
+            if (shouldShowMobileToggle) {
+                this.mobileMenuBtn.setAttribute('aria-expanded', this.isOpen ? 'true' : 'false');
+            }
         }
     }
     
@@ -292,6 +324,28 @@ export class MobileSidebarManager {
         }, 1000);
     }
     
+    /**
+     * Determine if the mobile menu toggle should be shown
+     * Show the toggle when user is on the root/landing page (no URL parameters)
+     * @returns {boolean} Whether to show the mobile toggle
+     */
+    shouldShowMobileToggle() {
+        // Check if there are any URL parameters that indicate we're not on the landing page
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasSearchParams = urlParams.toString().length > 0;
+        
+        // Check if there's a hash that indicates a specific view/state
+        const hasHash = window.location.hash && window.location.hash.length > 1;
+        
+        // Show mobile toggle on the landing page (no parameters)
+        // Hide mobile toggle when there are URL parameters or hash (indicating user is in a specific view)
+        const shouldShow = !hasSearchParams && !hasHash;
+        
+        console.log(`Mobile toggle visibility: ${shouldShow ? 'visible' : 'hidden'} (params: ${hasSearchParams}, hash: ${hasHash})`);
+        
+        return shouldShow;
+    }
+
     // Public API methods
     isMobile() {
         return !this.isDesktop;

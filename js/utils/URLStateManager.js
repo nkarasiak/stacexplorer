@@ -19,11 +19,11 @@ export class URLStateManager {
         
         // URL parameter keys
         this.urlKeys = {
-            collection: 'c',
+            collection: 'cn',
             collectionSource: 'cs',
             location: 'l',
             locationName: 'ln',
-            locationBbox: 'lb',
+            locationBbox: 'bbox',
             locationQuery: 'lq', // Original search query like "Nice"
             dateType: 'dt',
             dateStart: 'ds',
@@ -331,7 +331,7 @@ export class URLStateManager {
                 };
                 
                 let displayText = 'ANYTIME';
-                if (state.dateType === 'thismonth') {
+                if (state.dateType === 'last30days') {
                     displayText = 'LAST 30 DAYS';
                 } else if (state.dateType === 'custom' && state.dateStart && state.dateEnd) {
                     displayText = `${state.dateStart} to ${state.dateEnd}`.toUpperCase();

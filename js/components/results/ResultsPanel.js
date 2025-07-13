@@ -84,10 +84,6 @@ export class ResultsPanel {
                             <i class="material-icons">content_copy</i>
                             Copy Item Info
                         </button>
-                        <button class="md-btn md-btn-secondary" id="show-item-on-map-btn" style="display: none;">
-                            <i class="material-icons">map</i>
-                            Show on Map
-                        </button>
                     </div>
                     <div class="footer-actions-right">
                         <button class="md-btn md-btn-secondary" id="modal-close-btn">
@@ -119,8 +115,7 @@ export class ResultsPanel {
             content: modalOverlay.querySelector('#modal-content'),
             title: modalOverlay.querySelector('#item-title'),
             collectionBadge: modalOverlay.querySelector('#item-collection-badge'),
-            copyItemBtn: modalOverlay.querySelector('#copy-item-btn'),
-            showOnMapBtn: modalOverlay.querySelector('#show-item-on-map-btn')
+            copyItemBtn: modalOverlay.querySelector('#copy-item-btn')
         };
         
         // Setup enhanced event listeners
@@ -134,11 +129,6 @@ export class ResultsPanel {
         // Copy item button
         this.modal.copyItemBtn.addEventListener('click', () => {
             this.copyItemInfo();
-        });
-        
-        // Show on map button
-        this.modal.showOnMapBtn.addEventListener('click', () => {
-            this.showItemOnMap();
         });
     }
     
@@ -245,8 +235,7 @@ export class ResultsPanel {
             }
         });
         
-        // Setup action buttons
-        this.updateActionButtons(item);
+        // Action buttons are now static (just copy button)
         
         // Show modal
         this.modal.overlay.classList.add('active');
@@ -471,7 +460,7 @@ export class ResultsPanel {
         // Construct html based on thumbnail availability
         if (hasThumbnail && thumbnailUrl) {
             li.innerHTML = `
-                <div class="dataset-content">
+                <div class="dataset-content clickable-card" title="Click to view on map">
                     <div class="thumbnail-container">
                         <div class="dataset-metadata">
                             <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
@@ -486,22 +475,19 @@ export class ResultsPanel {
                 </div>
             `;
         } else {
-            // No thumbnail available - show minimal info with thumbnail-overlay style buttons
+            // No thumbnail available - show minimal info as clickable card
             li.innerHTML = `
-                <div class="dataset-content no-thumbnail">
+                <div class="dataset-content clickable-card no-thumbnail" title="Click to view on map">
                     <div class="dataset-info">
                         <div class="dataset-metadata">
                             <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                         </div>
                         <div class="thumbnail-overlay">
-                            <button class="info-btn view-map-btn" title="View geometry on map">
-                                <i class="material-icons">map</i>
-                            </button>
                             <button class="info-btn details-btn" title="Show details">
                                 <i class="material-icons">info</i>
                             </button>
                         </div>
-                        <div class="dataset-title" style="cursor: default; pointer-events: none;">${title}</div>
+                        <div class="dataset-title">${title}</div>
                     </div>
                 </div>
             `;
@@ -519,23 +505,18 @@ export class ResultsPanel {
      * @param {Object} item - STAC item data
      */
     attachItemEventListeners(element, item) {
-        // Add event listener to thumbnail (if exists)
+        const clickableCard = element.querySelector('.clickable-card');
+        const detailsBtn = element.querySelector('.details-btn');
         const thumbnail = element.querySelector('.dataset-thumbnail');
-        const detailsBtn = element.querySelector('.details-btn'); // Select by specific class
-        const viewMapBtn = element.querySelector('.view-map-btn');
         
         // Function to handle map display with loading indicator
-        const displayOnMap = (useGeometry = false) => {
+        const displayOnMap = () => {
             // Show loading indicator
             document.getElementById('loading').style.display = 'flex';
             
-            // Display item on map
+            // Display item thumbnail on map (reverted back to thumbnail display)
             setTimeout(() => {
-                const displayPromise = useGeometry ? 
-                    this.mapManager.displayItemGeometry(item) :
-                    this.mapManager.displayItemOnMap(item, 'thumbnail');
-                    
-                displayPromise
+                this.mapManager.displayItemOnMap(item, 'thumbnail')
                     .then(() => {
                         // Mark the item as active
                         document.querySelectorAll('.dataset-item').forEach(el => {
@@ -547,7 +528,7 @@ export class ResultsPanel {
                         document.dispatchEvent(new CustomEvent('itemActivated', {
                             detail: { 
                                 itemId: item.id,
-                                assetKey: useGeometry ? 'geometry' : 'thumbnail'
+                                assetKey: 'thumbnail'
                             }
                         }));
                         
@@ -556,6 +537,12 @@ export class ResultsPanel {
                         
                         // Hide loading indicator
                         document.getElementById('loading').style.display = 'none';
+                        
+                        // Show success notification
+                        this.notificationService.showNotification(
+                            `Viewing ${item.properties?.title || item.id} on map`, 
+                            'success'
+                        );
                     })
                     .catch(error => {
                         this.notificationService.showNotification(
@@ -567,109 +554,54 @@ export class ResultsPanel {
             }, 100); // Small delay to allow loading indicator to appear
         };
         
-        // Add click handler to thumbnail (if exists)
+        // Add click handler to the entire card
+        if (clickableCard) {
+            clickableCard.addEventListener('click', (e) => {
+                // Don't trigger if clicking on the details button
+                if (e.target.closest('.details-btn')) {
+                    return;
+                }
+                
+                console.log('Card clicked for item:', item.id);
+                displayOnMap();
+            });
+            
+            // Add hover effects
+            clickableCard.addEventListener('mouseenter', () => {
+                clickableCard.style.transform = 'translateY(-2px)';
+                clickableCard.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+            });
+            
+            clickableCard.addEventListener('mouseleave', () => {
+                clickableCard.style.transform = '';
+                clickableCard.style.boxShadow = '';
+            });
+        }
+        
+        // Handle thumbnail error (if exists)
         if (thumbnail) {
-            // Handle thumbnail error
             thumbnail.onerror = () => {
                 // Hide the entire thumbnail container on error
                 const thumbnailContainer = element.querySelector('.thumbnail-container');
                 if (thumbnailContainer) {
                     thumbnailContainer.style.display = 'none';
                 }
-                // Add a replacement view geometry button
-                this.addFallbackGeometryButton(element, item);
+                // Card will still be clickable for geometry display
+                console.log('Thumbnail failed to load for item:', item.id);
             };
-            
-            thumbnail.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent event bubbling
-                console.log('Thumbnail clicked for item:', item.id);
-                displayOnMap(false);
-            });
         }
         
-        // Add click handler to view map button (for items without thumbnails)
-        if (viewMapBtn) {
-            viewMapBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent event bubbling
-                console.log('Map button clicked for item:', item.id);
-                displayOnMap(true);
-            });
-        }
-        
-        // Add event listener to info/details button
+        // Add event listener to info/details button (stops propagation)
         if (detailsBtn) {
             detailsBtn.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent event bubbling
+                e.stopPropagation(); // Prevent card click
                 console.log('Details button clicked for item:', item.id);
                 this.showModal(item);
             });
         }
     }
     
-    /**
-     * Add fallback geometry button when thumbnail fails to load
-     * @param {HTMLElement} element - Dataset item element
-     * @param {Object} item - STAC item data
-     */
-    addFallbackGeometryButton(element, item) {
-        const content = element.querySelector('.dataset-content');
-        if (content && !content.querySelector('.view-map-btn')) {
-            const fallbackHtml = `
-                <div class="fallback-geometry-view">
-                    <div class="thumbnail-overlay">
-                        <button class="info-btn view-map-btn" title="View geometry on map">
-                            <i class="material-icons">map</i>
-                        </button>
-                    </div>
-                </div>
-            `;
-            content.insertAdjacentHTML('beforeend', fallbackHtml);
-            
-            // Add event listener to the new button
-            const newBtn = content.querySelector('.view-map-btn');
-            if (newBtn) {
-                newBtn.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent event bubbling
-                    console.log('Fallback map button clicked for item:', item.id);
-                    // Show loading indicator
-                    document.getElementById('loading').style.display = 'flex';
-                    
-                    // Display geometry on map
-                    setTimeout(() => {
-                        this.mapManager.displayItemGeometry(item)
-                            .then(() => {
-                                // Mark the item as active
-                                document.querySelectorAll('.dataset-item').forEach(el => {
-                                    el.classList.remove('active');
-                                });
-                                element.classList.add('active');
-                                
-                                // Dispatch item activated event
-                                document.dispatchEvent(new CustomEvent('itemActivated', {
-                                    detail: { 
-                                        itemId: item.id,
-                                        assetKey: 'geometry'
-                                    }
-                                }));
-                                
-                                // Expand tools panel if collapsed
-                                document.dispatchEvent(new CustomEvent('expandToolsPanel'));
-                                
-                                // Hide loading indicator
-                                document.getElementById('loading').style.display = 'none';
-                            })
-                            .catch(error => {
-                                this.notificationService.showNotification(
-                                    `Error displaying geometry on map: ${error.message}`, 
-                                    'error'
-                                );
-                                document.getElementById('loading').style.display = 'none';
-                            });
-                    }, 100);
-                });
-            }
-        }
-    }
+    // Removed addFallbackGeometryButton method - no longer needed since entire card is clickable
     
     /**
      * Handle when an asset is displayed on the map
@@ -682,20 +614,6 @@ export class ResultsPanel {
     }
     
     
-    /**
-     * Update action buttons based on item capabilities
-     * @param {Object} item - STAC item
-     */
-    updateActionButtons(item) {
-        const showOnMapBtn = this.modal.showOnMapBtn;
-        
-        // Show 'Show on Map' button if item has geometry
-        if (item.geometry && item.geometry.coordinates) {
-            showOnMapBtn.style.display = 'inline-flex';
-        } else {
-            showOnMapBtn.style.display = 'none';
-        }
-    }
     
     /**
      * Copy item information to clipboard
@@ -733,41 +651,4 @@ export class ResultsPanel {
     }
     
     
-    /**
-     * Show item geometry on the main map
-     */
-    showItemOnMap() {
-        try {
-            if (!this.currentItem?.geometry) {
-                this.notificationService.showNotification(
-                    'No geometry available for this item', 
-                    'warning'
-                );
-                return;
-            }
-            
-            // Dispatch event to show on main map
-            document.dispatchEvent(new CustomEvent('showItemOnMap', {
-                detail: {
-                    item: this.currentItem,
-                    geometry: this.currentItem.geometry
-                }
-            }));
-            
-            this.notificationService.showNotification(
-                'Item geometry shown on map', 
-                'success'
-            );
-            
-            // Close modal to show map
-            this.closeModal();
-            
-        } catch (error) {
-            console.error('❌ Error showing item on map:', error);
-            this.notificationService.showNotification(
-                'Failed to show item on map', 
-                'error'
-            );
-        }
-    }
 }

@@ -4,7 +4,7 @@
  * OPTIMIZED VERSION - Fast loading, single dropdown, no fullscreen interference
  */
 
-import { AISmartSearchEnhanced } from '../search/AISmartSearchEnhanced.js';
+import { defaultGeocodingService } from '../../utils/GeocodingService.js';
 
 export class InlineDropdownManager {
     /**
@@ -22,10 +22,40 @@ export class InlineDropdownManager {
         this.mapManager = mapManager;
         this.notificationService = notificationService;
         
-        // Create a helper instance of AISmartSearchEnhanced to reuse its methods
-        this.aiSearchHelper = new AISmartSearchEnhanced(
-            apiClient, searchPanel, collectionManager, mapManager, notificationService
-        );
+        // Create a simple helper object to replace AI search functionality
+        this.aiSearchHelper = {
+            selectedDate: { type: 'anytime', start: null, end: null },
+            selectedLocation: 'everywhere',
+            selectedLocationResult: null,
+            selectedCollection: null,
+            selectedCollectionSource: null,
+            cloudCover: 20,
+            allAvailableCollections: [],
+            geocodingService: defaultGeocodingService,
+            async ensureDataSourceSelected() {
+                // Simple implementation - just return true
+                return true;
+            },
+            createCollectionDropdown() {
+                return this.createSimpleCollectionDropdown();
+            },
+            createLocationDropdown() {
+                return this.createSimpleLocationDropdown();
+            },
+            createDateDropdown() {
+                return this.createSimpleDateDropdown();
+            },
+            showCollectionDetails(collection) {
+                // Simple implementation - just log for now
+                console.log('Collection details:', collection);
+            }
+        };
+        
+        // Bind methods to maintain proper context
+        this.aiSearchHelper.createCollectionDropdown = this.createSimpleCollectionDropdown.bind(this);
+        this.aiSearchHelper.createLocationDropdown = this.createSimpleLocationDropdown.bind(this);
+        this.aiSearchHelper.createDateDropdown = this.createSimpleDateDropdown.bind(this);
+        this.aiSearchHelper.showCollectionDetails = this.showCollectionDetails.bind(this);
         
         this.currentDropdown = null;
         this.currentField = null;
@@ -81,31 +111,42 @@ export class InlineDropdownManager {
         if (this.collectionsCache && 
             this.cacheTimestamp && 
             (now - this.cacheTimestamp) < this.CACHE_DURATION) {
-            console.log('📦 Using cached collections');
+            console.log('📦 Using cached collections from InlineDropdownManager');
+            this.aiSearchHelper.allAvailableCollections = this.collectionsCache;
             return this.collectionsCache;
         }
         
         // Try to get from collection manager first
         if (this.collectionManager && typeof this.collectionManager.getAllCollections === 'function') {
             const managerCollections = this.collectionManager.getAllCollections();
+            console.log(`🔍 Collection manager has ${managerCollections?.length || 0} collections`);
+            
             if (managerCollections && managerCollections.length > 0) {
                 this.collectionsCache = managerCollections;
                 this.cacheTimestamp = now;
                 this.aiSearchHelper.allAvailableCollections = managerCollections;
+                console.log(`✅ Loaded ${managerCollections.length} collections from collection manager`);
                 return managerCollections;
             }
         }
         
-        // Fallback to loading collections
-        console.log('🔄 Loading fresh collections...');
-        await this.aiSearchHelper.ensureDataSourceSelected();
-        
-        if (this.aiSearchHelper.allAvailableCollections) {
-            this.collectionsCache = this.aiSearchHelper.allAvailableCollections;
-            this.cacheTimestamp = now;
-            return this.collectionsCache;
+        // If collection manager is still loading, wait a bit and try again
+        if (this.collectionManager && this.collectionManager.isLoadingCollections && this.collectionManager.isLoadingCollections()) {
+            console.log('⏳ Collection manager is still loading, waiting...');
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Try again after waiting
+            const managerCollections = this.collectionManager.getAllCollections();
+            if (managerCollections && managerCollections.length > 0) {
+                this.collectionsCache = managerCollections;
+                this.cacheTimestamp = now;
+                this.aiSearchHelper.allAvailableCollections = managerCollections;
+                console.log(`✅ Loaded ${managerCollections.length} collections after waiting`);
+                return managerCollections;
+            }
         }
         
+        console.warn('⚠️ No collections available from collection manager');
         return [];
     }
     
@@ -130,8 +171,7 @@ export class InlineDropdownManager {
             // Set drawing active flag
             this.isDrawingActive = true;
             
-            // Temporarily disable AI search fullscreen during drawing
-            this.temporarilyDisableAISearch();
+            // AI search functionality removed
             
             // Call original method with our custom callback
             if (this.originalStartDrawing) {
@@ -144,10 +184,7 @@ export class InlineDropdownManager {
                     // Update location selection inline
                     this.handleDrawingComplete(bbox);
                     
-                    // Re-enable AI search after a delay
-                    setTimeout(() => {
-                        this.restoreAISearch();
-                    }, 1000);
+                    // AI search functionality removed
                     
                     // Call original callback if provided
                     if (callback && typeof callback === 'function') {
@@ -163,62 +200,371 @@ export class InlineDropdownManager {
         console.log('🎯 Map drawing interception set up with fullscreen prevention');
     }
     
+    // Simple dropdown creation methods to replace AI search functionality
+    
     /**
-     * Temporarily disable AI search fullscreen during drawing
+     * Create a simple collection dropdown with search functionality
      */
-    temporarilyDisableAISearch() {
-        try {
-            console.log('🚫 Temporarily disabling fullscreen AI search during drawing');
+    createSimpleCollectionDropdown() {
+        const collections = this.aiSearchHelper.allAvailableCollections || [];
+        
+        // Create the main dropdown container
+        const container = document.createElement('div');
+        container.className = 'ai-dropdown-content';
+        
+        // Add header with close button
+        const header = document.createElement('div');
+        header.className = 'ai-dropdown-header';
+        header.innerHTML = `
+            <div class="ai-dropdown-header-content">
+                <i class="material-icons">folder_open</i>
+                <span>Select Collection</span>
+            </div>
+            <button class="ai-dropdown-close" type="button">
+                <i class="material-icons">close</i>
+            </button>
+        `;
+        container.appendChild(header);
+        
+        // Add search section
+        const searchSection = document.createElement('div');
+        searchSection.className = 'ai-search-section';
+        
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'ai-search-input';
+        searchInput.placeholder = 'Search collections...';
+        searchInput.autocomplete = 'off';
+        
+        searchSection.appendChild(searchInput);
+        container.appendChild(searchSection);
+        
+        // Add options section
+        const optionsSection = document.createElement('div');
+        optionsSection.className = 'ai-options-section';
+        
+        // Add "Everything" option
+        const everythingOption = document.createElement('div');
+        everythingOption.className = 'ai-option ai-everything-option';
+        everythingOption.setAttribute('data-type', 'collection');
+        everythingOption.setAttribute('data-value', '');
+        everythingOption.innerHTML = `
+            <i class="material-icons">all_inclusive</i>
+            <div class="ai-option-content">
+                <div class="ai-option-title">Everything</div>
+                <div class="ai-option-subtitle">Search all collections</div>
+            </div>
+        `;
+        optionsSection.appendChild(everythingOption);
+        
+        // Group collections by source
+        const groupedCollections = this.groupCollectionsBySource(collections);
+        
+        // Add collections grouped by source
+        Object.keys(groupedCollections).forEach(source => {
+            // Add source header
+            const sourceHeader = document.createElement('div');
+            sourceHeader.className = 'ai-source-group-header';
+            sourceHeader.textContent = this.getSourceLabel(source);
+            optionsSection.appendChild(sourceHeader);
             
-            // Store original method and replace with no-op
-            if (this.aiSearchHelper && this.aiSearchHelper.showMinimalistSearch) {
-                this.originalShowMinimalistSearch = this.aiSearchHelper.showMinimalistSearch;
-                this.aiSearchHelper.showMinimalistSearch = () => {
-                    console.log('🚫 Blocked fullscreen AI search during drawing');
-                    return Promise.resolve();
-                };
-            }
-            
-            // Also disable global AI search if available
-            const globalAISearch = window.stacExplorer?.aiSmartSearch;
-            if (globalAISearch && globalAISearch.showMinimalistSearch) {
-                this.originalGlobalShowMinimalistSearch = globalAISearch.showMinimalistSearch;
-                globalAISearch.showMinimalistSearch = () => {
-                    console.log('🚫 Blocked global fullscreen AI search during drawing');
-                    return Promise.resolve();
-                };
-            }
-            
-        } catch (error) {
-            console.warn('⚠️ Error disabling AI search:', error);
-        }
+            // Add collections for this source
+            groupedCollections[source].forEach(collection => {
+                const title = collection.title || collection.id;
+                const sourceLabel = collection.sourceLabel || this.getSourceLabel(collection.source);
+                
+                const option = document.createElement('div');
+                option.className = 'ai-option';
+                option.setAttribute('data-type', 'collection');
+                option.setAttribute('data-value', collection.id);
+                option.setAttribute('data-source', collection.source);
+                option.innerHTML = `
+                    <i class="material-icons">folder</i>
+                    <div class="ai-option-content">
+                        <div class="ai-option-title">${title}</div>
+                        <div class="ai-option-subtitle">${sourceLabel}</div>
+                    </div>
+                `;
+                optionsSection.appendChild(option);
+            });
+        });
+        
+        container.appendChild(optionsSection);
+        
+        // Add search functionality
+        searchInput.addEventListener('input', (e) => {
+            this.filterCollections(e.target.value, container);
+        });
+        
+        return container;
     }
     
     /**
-     * Restore AI search functionality after drawing
+     * Group collections by source
      */
-    restoreAISearch() {
-        try {
-            console.log('✅ Restoring fullscreen AI search after drawing');
-            
-            // Restore original method
-            if (this.originalShowMinimalistSearch) {
-                this.aiSearchHelper.showMinimalistSearch = this.originalShowMinimalistSearch;
-                this.originalShowMinimalistSearch = null;
+    groupCollectionsBySource(collections) {
+        return collections.reduce((groups, collection) => {
+            const source = collection.source || 'unknown';
+            if (!groups[source]) {
+                groups[source] = [];
             }
-            
-            // Restore global AI search
-            if (this.originalGlobalShowMinimalistSearch) {
-                const globalAISearch = window.stacExplorer?.aiSmartSearch;
-                if (globalAISearch) {
-                    globalAISearch.showMinimalistSearch = this.originalGlobalShowMinimalistSearch;
-                }
-                this.originalGlobalShowMinimalistSearch = null;
-            }
-            
-        } catch (error) {
-            console.warn('⚠️ Error restoring AI search:', error);
+            groups[source].push(collection);
+            return groups;
+        }, {});
+    }
+    
+    /**
+     * Get source label for display
+     */
+    getSourceLabel(source) {
+        const labels = {
+            'copernicus': 'Copernicus',
+            'element84': 'Element84',
+            'planetary': 'Microsoft Planetary Computer',
+            'unknown': 'Unknown Source'
+        };
+        return labels[source] || source;
+    }
+    
+    /**
+     * Create a simple location dropdown
+     */
+    createSimpleLocationDropdown() {
+        // Create the main dropdown container
+        const container = document.createElement('div');
+        container.className = 'ai-dropdown-content';
+        
+        // Add header with close button
+        const header = document.createElement('div');
+        header.className = 'ai-dropdown-header';
+        header.innerHTML = `
+            <div class="ai-dropdown-header-content">
+                <i class="material-icons">location_on</i>
+                <span>Select Location</span>
+            </div>
+            <button class="ai-dropdown-close" type="button">
+                <i class="material-icons">close</i>
+            </button>
+        `;
+        container.appendChild(header);
+        
+        // Add search section
+        const searchSection = document.createElement('div');
+        searchSection.className = 'ai-search-section';
+        
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'ai-location-search-input';
+        searchInput.placeholder = 'Search for a place...';
+        searchInput.autocomplete = 'off';
+        
+        // Create results container
+        const resultsContainer = document.createElement('div');
+        resultsContainer.className = 'ai-location-search-results';
+        resultsContainer.style.display = 'none';
+        
+        searchSection.appendChild(searchInput);
+        searchSection.appendChild(resultsContainer);
+        container.appendChild(searchSection);
+        
+        // Add options section
+        const optionsSection = document.createElement('div');
+        optionsSection.className = 'ai-options-section';
+        
+        // Add "Everywhere" option
+        const everywhereOption = document.createElement('div');
+        everywhereOption.className = 'ai-option ai-everything-option';
+        everywhereOption.setAttribute('data-type', 'location');
+        everywhereOption.setAttribute('data-value', 'everywhere');
+        everywhereOption.innerHTML = `
+            <i class="material-icons">public</i>
+            <div class="ai-option-content">
+                <div class="ai-option-title">🌍 Worldwide</div>
+                <div class="ai-option-subtitle">Search globally without location limits</div>
+            </div>
+        `;
+        optionsSection.appendChild(everywhereOption);
+        
+        // Add "Draw on map" option
+        const drawOption = document.createElement('div');
+        drawOption.className = 'ai-option';
+        drawOption.setAttribute('data-type', 'location');
+        drawOption.setAttribute('data-value', 'draw');
+        drawOption.innerHTML = `
+            <i class="material-icons">edit_location</i>
+            <div class="ai-option-content">
+                <div class="ai-option-title">🖊️ Draw on Map</div>
+                <div class="ai-option-subtitle">Draw a bounding box or area on the map</div>
+            </div>
+        `;
+        optionsSection.appendChild(drawOption);
+        
+        container.appendChild(optionsSection);
+        
+        return container;
+    }
+    
+    /**
+     * Get appropriate emoji for location type
+     * @param {string} category - Location category
+     * @param {string} type - Location type
+     * @param {string} className - Location class
+     * @returns {string} Emoji representing the location type
+     */
+    getLocationEmoji(category, type, className) {
+        // Country emojis
+        if (category === 'country' || type === 'country') {
+            return '🌍';
         }
+        
+        // State/Province emojis
+        if (category === 'state' || type === 'state') {
+            return '🗺️';
+        }
+        
+        // City and town emojis
+        if (category === 'city' || type === 'city') {
+            return '🏙️';
+        }
+        if (category === 'town' || type === 'town') {
+            return '🏘️';
+        }
+        if (category === 'village' || type === 'village') {
+            return '🏡';
+        }
+        if (category === 'hamlet' || type === 'hamlet') {
+            return '🏠';
+        }
+        
+        // Administrative areas
+        if (category === 'administrative' || className === 'boundary') {
+            return '📍';
+        }
+        
+        // Natural features
+        if (category === 'natural' || className === 'natural') {
+            if (type === 'water' || type === 'bay' || type === 'lake') {
+                return '🌊';
+            }
+            if (type === 'mountain' || type === 'peak') {
+                return '🏔️';
+            }
+            if (type === 'forest' || type === 'wood') {
+                return '🌲';
+            }
+            return '🌿';
+        }
+        
+        // Neighborhoods and suburbs
+        if (category === 'suburb' || category === 'neighborhood') {
+            return '🏢';
+        }
+        
+        // Islands
+        if (type === 'island') {
+            return '🏝️';
+        }
+        
+        // Airports
+        if (type === 'aerodrome' || className === 'aeroway') {
+            return '✈️';
+        }
+        
+        // Default location pin
+        return '📍';
+    }
+    
+    /**
+     * Create a simple date dropdown
+     */
+    createSimpleDateDropdown() {
+        // Create the main dropdown container
+        const container = document.createElement('div');
+        container.className = 'ai-dropdown-content';
+        
+        // Add header with close button
+        const header = document.createElement('div');
+        header.className = 'ai-dropdown-header';
+        header.innerHTML = `
+            <div class="ai-dropdown-header-content">
+                <i class="material-icons">calendar_today</i>
+                <span>Select Date Range</span>
+            </div>
+            <button class="ai-dropdown-close" type="button">
+                <i class="material-icons">close</i>
+            </button>
+        `;
+        container.appendChild(header);
+        
+        // Add options section
+        const optionsSection = document.createElement('div');
+        optionsSection.className = 'ai-options-section';
+        
+        // Add preset options (removed Today and Last 7 days as requested)
+        const presets = [
+            { value: 'anytime', title: 'Anytime', description: 'No date restriction', icon: 'all_inclusive' },
+            { value: 'last30days', title: 'Last 30 days', description: 'Past month including today', icon: 'calendar_month' },
+            { value: 'thismonth', title: 'This month', description: 'Current month', icon: 'calendar_today' },
+            { value: 'custom', title: 'Custom range', description: 'Select your own dates', icon: 'date_range' }
+        ];
+        
+        presets.forEach(preset => {
+            const option = document.createElement('div');
+            option.className = 'ai-option';
+            option.setAttribute('data-type', 'date');
+            option.setAttribute('data-value', preset.value);
+            
+            // Add ID for custom option
+            if (preset.value === 'custom') {
+                option.id = 'custom-date';
+            }
+            
+            option.innerHTML = `
+                <i class="material-icons">${preset.icon}</i>
+                <div class="ai-option-content">
+                    <div class="ai-option-title">${preset.title}</div>
+                    <div class="ai-option-subtitle">${preset.description}</div>
+                </div>
+            `;
+            optionsSection.appendChild(option);
+        });
+        
+        // Add custom date range inputs (initially hidden)
+        const customSection = document.createElement('div');
+        customSection.className = 'ai-custom-date-section';
+        customSection.id = 'custom-date-section';
+        customSection.style.display = 'none';
+        customSection.innerHTML = `
+            <div class="ai-custom-date-inputs">
+                <div class="ai-date-input-group">
+                    <label for="dropdown-date-start">Start Date:</label>
+                    <input type="date" id="dropdown-date-start" name="date-start">
+                </div>
+                <div class="ai-date-input-group">
+                    <label for="dropdown-date-end">End Date:</label>
+                    <input type="date" id="dropdown-date-end" name="date-end">
+                </div>
+                <div class="ai-date-actions">
+                    <button type="button" id="apply-date-range" class="ai-apply-btn">Apply Range</button>
+                    <button type="button" class="ai-cancel-btn">Cancel</button>
+                </div>
+            </div>
+        `;
+        optionsSection.appendChild(customSection);
+        
+        container.appendChild(optionsSection);
+        
+        return container;
+    }
+    
+    /**
+     * Show collection details (simplified)
+     */
+    showCollectionDetails(collection) {
+        if (!collection) return;
+        
+        console.log('Collection details:', collection);
+        this.notificationService.showNotification(`Collection: ${collection.title || collection.id}`, 'info');
     }
     
     /**
@@ -706,19 +1052,20 @@ export class InlineDropdownManager {
             
             // Handle option selection for dates
             if (fieldType === 'date') {
-                const option = e.target.closest('.ai-option');
-                if (option && option.dataset.value) {
-                    console.log(`📅 Date option clicked: ${option.dataset.value}`);
-                    this.handleDateSelection(option.dataset.value);
-                    this.closeCurrentDropdown();
-                    return;
-                }
-                
-                // Handle custom date button
+                // Handle custom date button first (before generic option handling)
                 const customDateBtn = e.target.closest('#custom-date');
                 if (customDateBtn) {
                     console.log('📅 Custom date button clicked');
                     this.handleCustomDate(dropdown);
+                    return;
+                }
+                
+                // Handle other date options
+                const option = e.target.closest('.ai-option');
+                if (option && option.dataset.value && option.dataset.value !== 'custom') {
+                    console.log(`📅 Date option clicked: ${option.dataset.value}`);
+                    this.handleDateSelection(option.dataset.value);
+                    this.closeCurrentDropdown();
                     return;
                 }
                 
@@ -743,8 +1090,30 @@ export class InlineDropdownManager {
                     const collection = this.aiSearchHelper.allAvailableCollections
                         .find(c => c.id === collectionId && c.source === collectionSource);
                     if (collection) {
-                        this.aiSearchHelper.showCollectionDetails(collection);
+                        console.log('📄 Attempting to show collection details for:', collectionId, collectionSource);
+                        try {
+                            this.aiSearchHelper.showCollectionDetails(collection);
+                        } catch (error) {
+                            console.error('❌ Error showing collection details:', error);
+                            this.notificationService.showNotification(
+                                `Error showing collection details: ${error.message}`, 
+                                'error'
+                            );
+                        }
+                    } else {
+                        console.warn('⚠️ Collection not found:', collectionId, collectionSource);
+                        console.log('Available collections:', this.aiSearchHelper.allAvailableCollections?.length);
+                        this.notificationService.showNotification(
+                            'Collection details not available', 
+                            'warning'
+                        );
                     }
+                } else {
+                    console.warn('⚠️ Missing collection ID or available collections');
+                    this.notificationService.showNotification(
+                        'Collection information not available', 
+                        'warning'
+                    );
                 }
                 return;
             }
@@ -759,12 +1128,6 @@ export class InlineDropdownManager {
             const pasteBtn = e.target.closest('#paste-geometry');
             if (pasteBtn) {
                 this.handlePasteGeometry();
-                return;
-            }
-            
-            const customDateBtn = e.target.closest('#custom-date');
-            if (customDateBtn) {
-                this.handleCustomDate(dropdown);
                 return;
             }
         });
@@ -917,10 +1280,17 @@ export class InlineDropdownManager {
                 dateRange = { start: null, end: null };
                 displayText = '🕐 Anytime';
                 break;
-            case 'thismonth':
-                dateRange = this.calculateCurrentMonthRange();
+            case 'last30days':
+                dateRange = this.calculateLast30DaysRange();
                 displayText = 'LAST 30 DAYS';
                 break;
+            case 'thismonth':
+                dateRange = this.calculateCurrentMonthRange();
+                displayText = 'THIS MONTH';
+                break;
+            case 'custom':
+                // Don't process custom here - it will be handled by handleCustomDate
+                return;
             default:
                 console.warn(`Unknown date preset: ${dateType}`);
                 return;
@@ -962,6 +1332,17 @@ export class InlineDropdownManager {
      * Calculate current month date range
      * @returns {Object} Date range for current month
      */
+    calculateLast30DaysRange() {
+        const today = new Date();
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(today.getDate() - 29); // 30 days including today
+        
+        return {
+            start: this.formatDateForInput(thirtyDaysAgo),
+            end: this.formatDateForInput(today)
+        };
+    }
+
     calculateCurrentMonthRange() {
         const now = new Date();
         const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -1092,7 +1473,7 @@ export class InlineDropdownManager {
             customSection.style.display = 'block';
             
             // Focus on start date input
-            const startInput = dropdown.querySelector('#date-start');
+            const startInput = dropdown.querySelector('#dropdown-date-start');
             if (startInput) {
                 setTimeout(() => {
                     startInput.focus();
@@ -1122,6 +1503,15 @@ export class InlineDropdownManager {
                 
                 console.log('✅ Custom date apply button set up');
             }
+            
+            // Set up cancel button
+            const cancelBtn = dropdown.querySelector('.ai-cancel-btn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => {
+                    customSection.style.display = 'none';
+                    console.log('📅 Custom date section hidden');
+                });
+            }
         }
     }
     
@@ -1130,8 +1520,8 @@ export class InlineDropdownManager {
      * @param {HTMLElement} dropdown - Dropdown container
      */
     setupSmartDateFlow(dropdown) {
-        const startInput = dropdown.querySelector('#date-start');
-        const endInput = dropdown.querySelector('#date-end');
+        const startInput = dropdown.querySelector('#dropdown-date-start');
+        const endInput = dropdown.querySelector('#dropdown-date-end');
         
         if (startInput && endInput) {
             // When start date is selected, automatically focus end date
@@ -1184,8 +1574,8 @@ export class InlineDropdownManager {
     applyCustomDateRange(dropdown) {
         console.log('📅 Applying custom date range');
         
-        const startInput = dropdown.querySelector('#date-start');
-        const endInput = dropdown.querySelector('#date-end');
+        const startInput = dropdown.querySelector('#dropdown-date-start');
+        const endInput = dropdown.querySelector('#dropdown-date-end');
         
         if (startInput && endInput && startInput.value && endInput.value) {
             // Validate date range
@@ -1396,6 +1786,16 @@ export class InlineDropdownManager {
                 const locationName = result.shortName || result.name || result.display_name;
                 const displayName = result.formattedName || result.display_name || locationName;
                 
+                // Extract country from address if available
+                const country = result.address?.country || '';
+                
+                // Get appropriate emoji for location type
+                const emoji = this.getLocationEmoji(result.category, result.type, result.class);
+                
+                // Format display with emoji, name, and country
+                const formattedName = locationName || result.name || 'Unknown Location';
+                const locationDisplay = country ? `${emoji} ${formattedName}, ${country}` : `${emoji} ${formattedName}`;
+                
                 // Set data attributes for enhanced handling
                 if (result.bbox) {
                     resultItem.dataset.bbox = result.bbox.join(',');
@@ -1408,13 +1808,8 @@ export class InlineDropdownManager {
                 }
                 resultItem.dataset.category = result.category || 'location';
                 
-                // Extract country from address if available
-                const country = result.address?.country || result.address?.country_code?.toUpperCase() || '';
-                const locationDisplay = country ? `${locationName}, ${country}` : locationName;
-                
                 resultItem.innerHTML = `
                     <div class="ai-location-result-content">
-                        <i class="material-icons">place</i>
                         <div class="ai-location-info">
                             <div class="ai-location-name">${locationDisplay}</div>
                         </div>

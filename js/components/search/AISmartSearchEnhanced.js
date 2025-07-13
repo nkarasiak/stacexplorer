@@ -1337,7 +1337,7 @@ export class AISmartSearchEnhanced {
         // Add LAST 30 DAYS option
         const thisMonthOption = document.createElement('div');
         thisMonthOption.className = 'ai-option ai-this-month-option';
-        thisMonthOption.dataset.value = 'thismonth';
+        thisMonthOption.dataset.value = 'last30days';
         thisMonthOption.innerHTML = `
             <i class="material-icons">calendar_month</i>
             <div class="ai-option-content">
@@ -1532,12 +1532,17 @@ export class AISmartSearchEnhanced {
      * Search for locations using geocoding service
      * @param {string} query - Search query
      */
-    searchLocations(query) {
+    searchLocations(query, resultsContainer = null) {
         if (!query || query.length < 2) {
-            const resultsContainer = document.querySelector('.ai-location-search-results');
             if (resultsContainer) {
                 resultsContainer.style.display = 'none';
                 resultsContainer.innerHTML = '';
+            } else {
+                const fallbackContainer = document.querySelector('.ai-location-search-results');
+                if (fallbackContainer) {
+                    fallbackContainer.style.display = 'none';
+                    fallbackContainer.innerHTML = '';
+                }
             }
             return;
         }
@@ -1550,18 +1555,21 @@ export class AISmartSearchEnhanced {
         // Set new timeout for search
         this.locationSearchTimeout = setTimeout(() => {
             this.geocodingService.geocodeLocation(query).then(results => {
-                const resultsContainer = document.querySelector('.ai-location-search-results');
-                if (!resultsContainer) return;
+                const targetContainer = resultsContainer || document.querySelector('.ai-location-search-results');
+                if (!targetContainer) {
+                    console.error('❌ Location results container not found in dropdown');
+                    return;
+                }
 
                 if (!results || results.length === 0) {
-                    resultsContainer.innerHTML = '<div class="ai-no-results"><i class="material-icons">search_off</i><p>No locations found</p></div>';
-                    resultsContainer.style.display = 'block';
+                    targetContainer.innerHTML = '<div class="ai-no-results"><i class="material-icons">search_off</i><p>No locations found</p></div>';
+                    targetContainer.style.display = 'block';
                     return;
                 }
 
                 // Clear previous results
-                resultsContainer.innerHTML = '';
-                resultsContainer.style.display = 'block';
+                targetContainer.innerHTML = '';
+                targetContainer.style.display = 'block';
 
                 // Add each result with proper click handling
                 results.slice(0, 8).forEach((result, index) => {
@@ -1576,14 +1584,21 @@ export class AISmartSearchEnhanced {
                     const displayName = result.formattedName || result.display_name || locationName;
                     
                     // Extract country from address if available
-                    const country = result.address?.country || result.address?.country_code?.toUpperCase() || '';
-                    const locationDisplay = country ? `${locationName}, ${country}` : locationName;
+                    const country = result.address?.country || '';
+                    const countryCode = result.address?.country_code?.toUpperCase() || '';
+                    
+                    // Get appropriate emoji for location type
+                    const emoji = this.getLocationEmoji(result.category, result.type, result.class);
+                    
+                    // Format display with emoji, name, and country
+                    const formattedName = locationName || result.name || 'Unknown Location';
+                    const locationDisplay = country ? `${emoji} ${formattedName}, ${country}` : `${emoji} ${formattedName}`;
                     
                     resultItem.innerHTML = `
                         <div class="ai-location-result-content">
-                            <i class="material-icons">place</i>
                             <div class="ai-location-info">
                                 <div class="ai-location-name">${locationDisplay}</div>
+                                ${result.type ? `<div class="ai-location-type">${result.type}</div>` : ''}
                             </div>
                         </div>
                     `;
@@ -1615,17 +1630,86 @@ export class AISmartSearchEnhanced {
                         resultItem.classList.remove('hovered');
                     });
 
-                    resultsContainer.appendChild(resultItem);
+                    targetContainer.appendChild(resultItem);
                 });
             }).catch(error => {
                 console.error('Error searching locations:', error);
-                const resultsContainer = document.querySelector('.ai-location-search-results');
-                if (resultsContainer) {
-                    resultsContainer.innerHTML = '<div class="ai-error"><i class="material-icons">error</i><p>Search error</p></div>';
-                    resultsContainer.style.display = 'block';
+                if (targetContainer) {
+                    targetContainer.innerHTML = '<div class="ai-error"><i class="material-icons">error</i><p>Search error</p></div>';
+                    targetContainer.style.display = 'block';
                 }
             });
         }, 300); // Debounce search for 300ms
+    }
+
+    /**
+     * Get appropriate emoji for location type
+     * @param {string} category - Location category
+     * @param {string} type - Location type
+     * @param {string} className - Location class
+     * @returns {string} Emoji representing the location type
+     */
+    getLocationEmoji(category, type, className) {
+        // Country emojis
+        if (category === 'country' || type === 'country') {
+            return '🌍';
+        }
+        
+        // State/Province emojis
+        if (category === 'state' || type === 'state') {
+            return '🗺️';
+        }
+        
+        // City and town emojis
+        if (category === 'city' || type === 'city') {
+            return '🏙️';
+        }
+        if (category === 'town' || type === 'town') {
+            return '🏘️';
+        }
+        if (category === 'village' || type === 'village') {
+            return '🏡';
+        }
+        if (category === 'hamlet' || type === 'hamlet') {
+            return '🏠';
+        }
+        
+        // Administrative areas
+        if (category === 'administrative' || className === 'boundary') {
+            return '📍';
+        }
+        
+        // Natural features
+        if (category === 'natural' || className === 'natural') {
+            if (type === 'water' || type === 'bay' || type === 'lake') {
+                return '🌊';
+            }
+            if (type === 'mountain' || type === 'peak') {
+                return '🏔️';
+            }
+            if (type === 'forest' || type === 'wood') {
+                return '🌲';
+            }
+            return '🌿';
+        }
+        
+        // Neighborhoods and suburbs
+        if (category === 'suburb' || category === 'neighborhood') {
+            return '🏢';
+        }
+        
+        // Islands
+        if (type === 'island') {
+            return '🏝️';
+        }
+        
+        // Airports
+        if (type === 'aerodrome' || className === 'aeroway') {
+            return '✈️';
+        }
+        
+        // Default location pin
+        return '📍';
     }
 
     /**
@@ -1662,8 +1746,12 @@ export class AISmartSearchEnhanced {
                 this.selectedLocationResult.bbox = bbox;
             }
 
+            // Format display name with emoji for UI
+            const emoji = this.getLocationEmoji(result.category, result.type, result.class);
+            const formattedDisplayName = `${emoji} ${displayName}`;
+            
             // Update the location display
-            this.updateLocationDisplay(displayName);
+            this.updateLocationDisplay(formattedDisplayName);
 
             // Display the location on the map
             if (bbox) {
@@ -2093,7 +2181,7 @@ export class AISmartSearchEnhanced {
             
             // Debounce search
             searchTimeout = setTimeout(() => {
-                this.searchLocations(query);
+                this.searchLocations(query, resultsContainer);
             }, 300);
         });
         
@@ -2548,8 +2636,17 @@ export class AISmartSearchEnhanced {
      * @param {HTMLElement} dropdown - Dropdown container
      */
     setupLocationDropdownEvents(dropdown) {
-        // This method can be implemented if needed for location dropdown events
-        console.log('📍 Location dropdown events setup (placeholder)');
+        console.log('📍 Location dropdown events setup');
+        
+        // Auto-focus the search input when location dropdown opens
+        const searchInput = dropdown.querySelector('.ai-location-search-input');
+        if (searchInput) {
+            // Small delay to ensure dropdown is fully rendered
+            setTimeout(() => {
+                searchInput.focus();
+                console.log('🎯 Auto-focused location search input');
+            }, 100);
+        }
     }
 
     /**

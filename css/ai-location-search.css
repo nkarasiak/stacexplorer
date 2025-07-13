@@ -171,6 +171,17 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.ai-location-type {
+    font-size: 12px;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.7));
+    text-transform: capitalize;
+    opacity: 0.8;
+    margin-top: 2px;
+    font-style: italic;
 }
 
 .ai-location-details {

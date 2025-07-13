@@ -8,7 +8,7 @@ import { UIManager } from './components/common/UIManager.js';
 import { NotificationService } from './components/common/NotificationService.js';
 import { MapManager, getMapManager } from './components/map/MapManager.js';
 import { STACApiClient } from './components/api/StacApiClient.js';
-import { StateManager } from './utils/StateManager.js';
+import { UnifiedStateManager } from './utils/UnifiedStateManager.js';
 // import { ShareManager } from './utils/ShareManager.js'; // REMOVED - no longer needed
 import { initializeGeometrySync } from './utils/GeometrySync.js';
 
@@ -18,13 +18,14 @@ import { CatalogSelector } from './components/search/CatalogSelector.js';
 import { CollectionManagerEnhanced } from './components/search/CollectionManagerEnhanced.js';
 import { SearchForm } from './components/search/SearchForm.js';
 import { ResultsPanel } from './components/results/ResultsPanel.js';
-import { AISmartSearchEnhanced } from './components/search/AISmartSearchEnhanced.js';
+// Removed: AI Search functionality removed
 import { InlineDropdownManager } from './components/ui/InlineDropdownManager.js';
-import { initializeURLStateManagement, enhanceAISearchForURLState } from './url-state-integration.js';
+// Removed: URL state integration is now handled by UnifiedStateManager
 // Removed inline AI search imports - only using the full-screen version now
 
 // Import configuration
 import { CONFIG } from './config.js';
+import { cookieCache } from './utils/CookieCache.js';
 
 /**
  * Initialize the application when the DOM is fully loaded
@@ -70,24 +71,9 @@ document.addEventListener('DOMContentLoaded', function() {
             notificationService
         );
         
-        // Initialize AI Smart Search Enhanced component (full-screen only)
-        const aiSmartSearch = new AISmartSearchEnhanced(
-            apiClient,
-            searchPanel,
-            collectionManager,
-            mapManager,
-            notificationService
-        );
+        // AI Search functionality removed
         
-        // FIX: Set up keyboard shortcut (Ctrl+K / Cmd+K) to open AI Smart Search
-        document.addEventListener('keydown', (event) => {
-            // Check for Ctrl+K (Windows/Linux) or Cmd+K (Mac)
-            if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
-                event.preventDefault(); // Prevent browser's default search
-                console.log('[SHORTCUT] Keyboard shortcut triggered - opening AI Smart Search');
-                aiSmartSearch.showMinimalistSearch({ hideMenuOnOpen: false });
-            }
-        });
+        // AI Search keyboard shortcut removed
         
         // REMOVED: Clickable search title functionality
         // Search title is no longer clickable
@@ -103,31 +89,27 @@ document.addEventListener('DOMContentLoaded', function() {
         
         console.log('[DROPDOWN] Enhanced inline dropdowns initialized for left menu');
         
-        // NEW: Initialize URL State Management for perfect synchronization
-        const urlStateManager = initializeURLStateManagement({
-            inlineDropdownManager,
-            aiSmartSearch,
-            mapManager,
-            notificationService
-        });
-        
-        // Enhance AI Search for URL state events
-        enhanceAISearchForURLState(aiSmartSearch);
+        // URL State Management is now handled by UnifiedStateManager
         
         console.log('[URL] URL state management initialized - search params will sync between interfaces and be stored in URL');
         
-        console.log('[KEYBOARD] AI Smart Search keyboard shortcut (Ctrl+K / Cmd+K) initialized');
+        // AI Search keyboard shortcut removed
         
-        // Initialize geometry sync for seamless integration (simplified for full-screen only)
+        // Initialize geometry sync for seamless integration
         const geometrySync = initializeGeometrySync({
-            aiSmartSearch,
             mapManager,
             notificationService
         });
-        console.log('[SYNC] GeometrySync initialized - map will sync with AI Search');
+        console.log('[SYNC] GeometrySync initialized');
         
-        // Initialize state manager after all components are ready
-        const stateManager = new StateManager(catalogSelector, mapManager, searchPanel);
+        // Initialize unified state manager after all components are ready
+        const stateManager = new UnifiedStateManager({
+            catalogSelector,
+            mapManager, 
+            searchPanel,
+            inlineDropdownManager,
+            notificationService
+        });
         
         // REMOVED: Share manager (no longer needed)
         // const shareManager = new ShareManager(stateManager, notificationService);
@@ -159,18 +141,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
                 
-        // Sidebar is now visible by default - AI Smart Search Enhanced available via button click
+        // Sidebar is now visible by default
         if (!stateManager.hasUrlStateParams()) {
-            console.log('[AI] No URL state detected, sidebar visible with AI Smart Search ready');
-            // Don't auto-show AI Smart Search Enhanced - let users click the button when they want it
-            // The sidebar is now visible by default with the AI Smart Search interface available
+            console.log('[INIT] No URL state detected, sidebar visible');
         } else {
             console.log('[URL] URL state parameters detected, sidebar visible for state restoration');
-            // Sidebar is already visible and state restoration will populate it properly
         }
-        
-        // AI Smart Search Enhanced is ready
-        console.log('[AI] AI Smart Search Enhanced is ready!');
         
         
         console.log('STAC Catalog Explorer - Initialization complete');
@@ -178,18 +154,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // Expose key objects to the global scope for developer console access
         // Preserve existing window.stacExplorer properties if they exist
         window.stacExplorer = {
-            ...window.stacExplorer, // Preserve existing properties (like urlStateManager)
+            ...window.stacExplorer,
             mapManager,
             apiClient,
             searchPanel,
             resultsPanel,
-            stateManager,
-            // shareManager removed - no longer needed
-            aiSmartSearch,
+            stateManager, // Now the unified state manager
+            urlStateManager: stateManager, // Alias for backward compatibility
+            collectionManager,
             inlineDropdownManager,
-            urlStateManager,
             geometrySync,
-            config: CONFIG
+            config: CONFIG,
+            // Cache management utilities
+            cache: {
+                clearCollections: () => collectionManager.clearCache(),
+                refreshCollections: () => collectionManager.forceRefresh(),
+                getStats: () => collectionManager.getCacheStats(),
+                clearAll: () => cookieCache.clearAll()
+            }
         };
     } catch (error) {
         console.error('Error initializing application:', error);

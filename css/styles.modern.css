@@ -415,7 +415,7 @@ body, html {
 }
 
 .md-card-body {
-    padding: 20px;  /* Reduced from 24px */
+    padding: 0 16px 16px 16px;  /* Reduced from 24px */
     transition: var(--transition-all);
     overflow: hidden;
 }
@@ -2094,10 +2094,8 @@ select.form-control {
     display: flex;
     gap: 12px;
     padding: 16px 20px;
-    border-top: 1px solid var(--border-primary);
-    margin-top: 16px;
     background: var(--surface-secondary);
-    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    border-radius: var(--border-radius) var(--border-radius);
 }
 
 .search-actions .md-btn {
@@ -2139,4 +2137,53 @@ select.form-control {
         flex-direction: column;
         gap: 8px;
     }
+}
+
+/* Clickable Dataset Cards - New Design */
+.clickable-card {
+    cursor: pointer;
+    position: relative;
+    transition: var(--transition-all);
+    user-select: none;
+}
+
+.clickable-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+.clickable-card:active {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Click hint removed - cards are now directly clickable without hints */
+
+/* No thumbnail cards need special styling */
+.clickable-card.no-thumbnail {
+    min-height: 100px;
+    display: flex;
+    align-items: center;
+    border: 2px dashed transparent;
+}
+
+.clickable-card.no-thumbnail:hover {
+    border-color: var(--primary-500);
+    background: var(--surface-elevated);
+}
+
+/* Ensure info button stays on top */
+.thumbnail-overlay .info-btn {
+    position: relative;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+/* Improve dataset title styling for clickable cards */
+.clickable-card .dataset-title {
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+    font-size: 13px;
+    line-height: 1.3;
 }

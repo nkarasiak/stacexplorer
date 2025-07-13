@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-07-13
+
+### Added
+- **Beautiful Location Search**: Enhanced location search with emoji icons for different location types (🌍 countries, 🏙️ cities, 🏘️ towns, etc.)
+- **Auto-Focus Location Input**: Location dropdown now automatically focuses the search input for immediate typing
+- **Custom Date Range**: Fixed and enhanced custom date range functionality in TIME menu dropdown
+- **Mobile Menu Visibility**: Reversed mobile menu logic - now shows on landing page, hides when searching
+
+### Enhanced
+- **Location Search Results**: Now display with format: `emoji + location name + country`
+- **Location Dropdown Options**: Updated predefined options with emojis (🌍 Worldwide, 🖊️ Draw on Map)
+- **Date Range Selection**: Improved custom date picker with proper validation and smart flow
+- **InlineDropdownManager**: Added geocoding service integration and emoji formatting
+
+### Fixed
+- **Location Results Container**: Fixed "Location results container not found" error in dropdown
+- **Custom Date Handler**: Resolved duplicate click handlers causing premature dropdown closure
+- **Date Input IDs**: Fixed conflicting input IDs by using unique dropdown-specific identifiers
+- **Missing Apply Button**: Added proper ID and event handlers for custom date range apply button
+
+### Technical Details
+- Added `getLocationEmoji()` method for consistent location type visualization
+- Imported `defaultGeocodingService` into InlineDropdownManager for location search
+- Fixed click handler precedence for custom date options
+- Enhanced date validation and form field synchronization
+- Improved mobile sidebar manager logic for landing page visibility
+
 ## [2.1.7] - 2025-07-13
 
 ### Fixed

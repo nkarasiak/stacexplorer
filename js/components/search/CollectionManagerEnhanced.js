@@ -1,9 +1,10 @@
 /**
  * CollectionManagerEnhanced.js - Enhanced component for managing STAC collections from all sources
- * Automatically loads collections from all configured data sources
+ * Automatically loads collections from all configured data sources with cookie-based caching
  */
 
 import { CollectionDetailsModal } from './CollectionDetailsModal.js';
+import { cookieCache } from '../../utils/CookieCache.js';
 
 export class CollectionManagerEnhanced {
     /**
@@ -58,16 +59,75 @@ export class CollectionManagerEnhanced {
     }
     
     /**
-     * Load collections from all sources on startup
+     * Load collections from all sources on startup with caching
      */
     async loadAllCollectionsOnStartup() {
         try {
             console.log('🚀 Auto-loading collections from all data sources...');
             this.showLoadingState();
             
+            // Debug: Check localStorage contents
+            console.log('[DEBUG] localStorage keys:', Object.keys(localStorage).filter(k => k.includes('collections')));
+            
+            // Generate cache key based on enabled providers
+            const dataSources = this.config?.appSettings?.enabledProviders || ['copernicus', 'element84'];
+            const cacheKey = `collections_cache_${dataSources.sort().join('_')}`;
+            
+            // Try to load from cache first
+            console.log('📦 Checking cache for collections...');
+            const cachedCollections = cookieCache.get(cacheKey);
+            
+            console.log(`[DEBUG] Cache result:`, {
+                exists: !!cachedCollections,
+                isArray: Array.isArray(cachedCollections),
+                length: cachedCollections?.length,
+                firstItem: cachedCollections?.[0],
+                cacheKey: cacheKey
+            });
+            
+            if (cachedCollections && Array.isArray(cachedCollections) && cachedCollections.length > 0) {
+                console.log(`✅ Loaded ${cachedCollections.length} collections from cache!`);
+                console.log(`[DEBUG] Sample cached collection:`, cachedCollections[0]);
+                this.allCollections = cachedCollections;
+                this.collections = cachedCollections; // For backward compatibility
+                this.populateCollectionSelect(cachedCollections);
+                
+                const groupedCollections = this.groupCollectionsBySource(cachedCollections);
+                const sourceInfo = Object.keys(groupedCollections).map(source => {
+                    const count = groupedCollections[source].length;
+                    const label = source === 'copernicus' ? 'Copernicus' : 
+                                 source === 'element84' ? 'Element84' :
+                                 source === 'planetary' ? 'Microsoft Planetary Computer' : source;
+                    return `${label}: ${count}`;
+                }).join(', ');
+                
+                this.notificationService.showNotification(
+                    `📦 Loaded ${cachedCollections.length} collections from cache! (${sourceInfo})`, 
+                    'success'
+                );
+                
+                // Optional: Load fresh data in background to update cache
+                // Temporarily disabled to ensure cache loading works properly
+                // this.refreshCacheInBackground(cacheKey);
+                return;
+            }
+            
+            // Cache miss - load fresh data
+            console.log('🔄 Cache miss, loading fresh collections...');
             const allCollections = await this.loadAllCollections();
             
             if (allCollections.length > 0) {
+                // Cache only essential collection data to avoid size issues
+                console.log('💾 Caching collections (minimal data) for future use...');
+                const minimalCollections = allCollections.map(collection => ({
+                    id: collection.id,
+                    title: collection.title,
+                    source: collection.source,
+                    sourceLabel: collection.sourceLabel,
+                    displayTitle: collection.displayTitle // Include displayTitle for UI compatibility
+                }));
+                cookieCache.set(cacheKey, minimalCollections, 30);
+                
                 this.allCollections = allCollections;
                 this.collections = allCollections; // For backward compatibility
                 this.populateCollectionSelect(allCollections);
@@ -452,6 +512,116 @@ export class CollectionManagerEnhanced {
             this.collectionDetailsModal.showCollection(collection);
         } else {
             this.notificationService.showNotification('Collection details not available', 'error');
+        }
+    }
+
+    /**
+     * Refresh cache in background without blocking UI
+     * @param {string} cacheKey - Cache key to refresh
+     */
+    async refreshCacheInBackground(cacheKey) {
+        try {
+            console.log('🔄 Refreshing collections cache in background...');
+            
+            // Load fresh data with a longer timeout to avoid conflicts
+            setTimeout(async () => {
+                try {
+                    const freshCollections = await this.loadAllCollections();
+                    if (freshCollections.length > 0) {
+                        // Update cache with minimal fresh data
+                        const minimalCollections = freshCollections.map(collection => ({
+                            id: collection.id,
+                            title: collection.title,
+                            source: collection.source,
+                            sourceLabel: collection.sourceLabel,
+                            displayTitle: collection.displayTitle
+                        }));
+                        cookieCache.set(cacheKey, minimalCollections, 30);
+                        console.log('✅ Background cache refresh completed');
+                        
+                        // Optionally update in-memory collections if they differ significantly
+                        if (Math.abs(freshCollections.length - this.allCollections.length) > 5) {
+                            console.log('📝 Significant collection changes detected, updating UI...');
+                            this.allCollections = freshCollections;
+                            this.collections = freshCollections;
+                            this.populateCollectionSelect(freshCollections);
+                        }
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Background refresh failed:', error.message);
+                }
+            }, 5000); // Wait 5 seconds before background refresh
+            
+        } catch (error) {
+            console.warn('⚠️ Error setting up background refresh:', error);
+        }
+    }
+
+    /**
+     * Clear collections cache (useful for debugging or forced refresh)
+     */
+    clearCache() {
+        try {
+            const dataSources = this.config?.appSettings?.enabledProviders || ['copernicus', 'element84'];
+            const cacheKey = `collections_cache_${dataSources.sort().join('_')}`;
+            
+            cookieCache.remove(cacheKey);
+            console.log('🗑️ Collections cache cleared');
+            
+            this.notificationService.showNotification('Collections cache cleared - will reload fresh data on next visit', 'info');
+        } catch (error) {
+            console.error('❌ Error clearing cache:', error);
+        }
+    }
+
+    /**
+     * Get cache statistics for debugging
+     * @returns {Object} Cache statistics
+     */
+    getCacheStats() {
+        return cookieCache.getStats();
+    }
+    
+    /**
+     * Debug cache status - helps understand why cache might not be loading
+     */
+    debugCacheStatus() {
+        const dataSources = this.config?.appSettings?.enabledProviders || ['copernicus', 'element84'];
+        const cacheKey = `collections_cache_${dataSources.sort().join('_')}`;
+        
+        console.log('=== CACHE DEBUG ===');
+        console.log('Cache key:', cacheKey);
+        console.log('localStorage keys:', Object.keys(localStorage).filter(k => k.includes('stac_')));
+        console.log('Attempting cache get...');
+        
+        const cached = cookieCache.get(cacheKey);
+        console.log('Cache result:', {
+            found: !!cached,
+            isArray: Array.isArray(cached),
+            length: cached?.length,
+            sample: cached?.[0]
+        });
+        
+        console.log('Cache stats:', this.getCacheStats());
+        console.log('==================');
+        
+        return cached;
+    }
+
+    /**
+     * Force refresh collections (bypass cache)
+     */
+    async forceRefresh() {
+        try {
+            console.log('🔄 Forcing collections refresh...');
+            this.clearCache();
+            
+            this.showLoadingState();
+            await this.loadAllCollectionsOnStartup();
+            
+        } catch (error) {
+            console.error('❌ Error during force refresh:', error);
+            this.notificationService.showNotification(`Error during refresh: ${error.message}`, 'error');
         }
     }
 }

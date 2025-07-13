@@ -410,8 +410,8 @@ export class AISmartSearchInlineEnhanced extends AISmartSearchInline {
         
         // Add date info
         if (this.selectedDate.type !== 'anytime') {
-            if (this.selectedDate.type === 'thismonth') {
-                text += ' for this month';
+            if (this.selectedDate.type === 'last30days') {
+                text += ' for the last 30 days';
             } else if (this.selectedDate.start && this.selectedDate.end) {
                 text += ` from ${this.selectedDate.start} to ${this.selectedDate.end}`;
             }

@@ -20,6 +20,8 @@
     <link rel="stylesheet" href="css/styles.modern.css">
     <!-- Inline Dropdown Enhanced CSS -->
     <link rel="stylesheet" href="css/inline-dropdown-enhanced.css">
+    <!-- AI Search CSS (needed for dropdown styling) -->
+    <link rel="stylesheet" href="css/ai-smart-search-enhanced.css">
     <!-- AI Button Styling -->
     <link rel="stylesheet" href="css/map-fix.css">
     <style>
@@ -619,6 +621,31 @@
                     }
                 });
                 
+                // Listen for URL changes to update mobile toggle visibility
+                window.addEventListener('popstate', () => {
+                    if (!this.isDesktop) {
+                        this.updateLayout();
+                    }
+                });
+                
+                // Listen for pushstate events (programmatic navigation)
+                const originalPushState = history.pushState;
+                const originalReplaceState = history.replaceState;
+                
+                history.pushState = (...args) => {
+                    originalPushState.apply(history, args);
+                    if (!this.isDesktop) {
+                        setTimeout(() => this.updateLayout(), 100);
+                    }
+                };
+                
+                history.replaceState = (...args) => {
+                    originalReplaceState.apply(history, args);
+                    if (!this.isDesktop) {
+                        setTimeout(() => this.updateLayout(), 100);
+                    }
+                };
+                
                 // Existing desktop toggle
                 if (this.sidebarToggle) {
                     this.sidebarToggle.addEventListener('click', () => {
@@ -812,14 +839,15 @@
                     this.sidebar.classList.remove('collapsed'); // Remove desktop collapsed state
                     this.sidebar.classList.remove('hidden'); // Remove desktop hidden state
                     
-                    // Show hamburger menu only when sidebar is closed
-                    if (!this.isOpen) {
-                        this.mobileMenuBtn.style.display = 'flex';
-                    }
+                    // Check if we should show mobile menu toggle based on current page
+                    const shouldShowMobileToggle = this.shouldShowMobileToggle();
                     
-                    // Show mobile close button when sidebar is open
+                    // Show/hide mobile hamburger menu based on page context
+                    this.mobileMenuBtn.style.display = shouldShowMobileToggle ? 'flex' : 'none';
+                    
+                    // Mobile close button visibility depends on sidebar state
                     if (this.mobileCloseBtn) {
-                        this.mobileCloseBtn.style.display = this.isOpen ? 'flex' : 'none';
+                        this.mobileCloseBtn.style.display = (this.isOpen && shouldShowMobileToggle) ? 'flex' : 'none';
                     }
                     
                     // Hide desktop toggle
@@ -829,9 +857,34 @@
                     
                     // Update ARIA attributes
                     this.sidebar.setAttribute('aria-hidden', this.isOpen ? 'false' : 'true');
+                    if (shouldShowMobileToggle) {
+                        this.mobileMenuBtn.setAttribute('aria-expanded', this.isOpen ? 'true' : 'false');
+                    }
                 }
             }
             
+            /**
+             * Determine if the mobile menu toggle should be shown
+             * Hide the toggle when user is on the root/landing page (no URL parameters)
+             * @returns {boolean} Whether to show the mobile toggle
+             */
+            shouldShowMobileToggle() {
+                // Check if there are any URL parameters that indicate we're not on the landing page
+                const urlParams = new URLSearchParams(window.location.search);
+                const hasSearchParams = urlParams.toString().length > 0;
+                
+                // Check if there's a hash that indicates a specific view/state
+                const hasHash = window.location.hash && window.location.hash.length > 1;
+                
+                // Show mobile toggle when there are URL parameters or hash (indicating user is in a specific view)
+                // Hide mobile toggle on the landing page (no parameters)
+                const shouldShow = hasSearchParams || hasHash;
+                
+                console.log(`Mobile toggle visibility: ${shouldShow ? 'visible' : 'hidden'} (params: ${hasSearchParams}, hash: ${hasHash})`);
+                
+                return shouldShow;
+            }
+
             // Public API methods
             isMobile() {
                 return !this.isDesktop;
@@ -962,13 +1015,8 @@
     <!-- Leaflet JavaScript for mini maps -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Core JavaScript -->
-    <script src="js/MapManager.js"></script>
+    <script src="js/components/map/MapManager.js"></script>
     <script src="js/map-auto-init.js"></script>
-    <script src="js/components/search/GeometryInput.js"></script>
-    <script src="js/components/search/CardBasedSearch.js"></script>
-    <script src="js/components/search/EnhancedResultsButtons.js"></script>
-    <script src="js/components/search/InlineDropdown.js"></script>
-    <script src="js/components/search/SettingsPanel.js"></script>
     
     <!-- Initialize shared URL handling for collection details -->
     <script>

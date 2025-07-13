@@ -28,10 +28,10 @@ export class StateManager {
      * @returns {boolean} True if URL has significant state
      */
     hasSignificantUrlState(params) {
-        return params.has('activeItem') || 
+        return params.has('item_id') || 
                params.has('mapCenter') || 
                params.has('search') ||
-               params.has('collection') ||
+               params.has('cn') ||
                params.has('bbox');
     }
     
@@ -82,7 +82,7 @@ export class StateManager {
         await this.restoreMapState(params);
         
         // Handle active item restoration
-        if (params.has('activeItem')) {
+        if (params.has('item_id')) {
             await this.restoreActiveItem(params);
         }
         
@@ -226,8 +226,8 @@ export class StateManager {
         console.log('🔗 Restoring search state from URL parameters...');
         
         // Restore collection selection
-        if (params.has('collection')) {
-            const collection = params.get('collection');
+        if (params.has('cn')) {
+            const collection = params.get('cn');
             console.log(`🔗 Restoring collection: ${collection}`);
             
             const collectionSelect = document.getElementById('collection-select');
@@ -274,19 +274,19 @@ export class StateManager {
             if (searchInput) searchInput.value = params.get('search');
         }
         
-        if (params.has('dateStart')) {
+        if (params.has('ds')) {
             const dateStartInput = document.getElementById('date-start');
             if (dateStartInput) {
-                dateStartInput.value = params.get('dateStart');
-                console.log(`🔗 Restored date start: ${params.get('dateStart')}`);
+                dateStartInput.value = params.get('ds');
+                console.log(`🔗 Restored date start: ${params.get('ds')}`);
             }
         }
         
-        if (params.has('dateEnd')) {
+        if (params.has('de')) {
             const dateEndInput = document.getElementById('date-end');
             if (dateEndInput) {
-                dateEndInput.value = params.get('dateEnd');
-                console.log(`🔗 Restored date end: ${params.get('dateEnd')}`);
+                dateEndInput.value = params.get('de');
+                console.log(`🔗 Restored date end: ${params.get('de')}`);
             }
         }
         
@@ -358,10 +358,10 @@ export class StateManager {
      * @param {URLSearchParams} params - URL parameters
      */
     async restoreActiveItem(params) {
-        this.activeItemId = params.get('activeItem');
+        this.activeItemId = params.get('item_id');
         
-        if (params.has('activeAsset')) {
-            this.activeAssetKey = params.get('activeAsset');
+        if (params.has('asset_key')) {
+            this.activeAssetKey = params.get('asset_key');
         }
         
         console.log(`🎯 Attempting to restore active item: ${this.activeItemId} (asset: ${this.activeAssetKey || 'default'})`);
@@ -740,13 +740,14 @@ export class StateManager {
             return; // Don't update URL while restoring
         }
         
-        const params = new URLSearchParams();
+        // Start with existing URL parameters to preserve state that might not be in form elements
+        const params = new URLSearchParams(window.location.search);
         
-        // Add catalog selection
+        // Add catalog/collection source selection
         const catalogSelect = document.getElementById('catalog-select');
         if (catalogSelect && catalogSelect.value) {
             const catalog = catalogSelect.value;
-            params.set('catalog', catalog);
+            params.set('cs', catalog); // Use 'cs' for collection source
             if (catalog === 'custom') {
                 const customUrlInput = document.getElementById('custom-catalog-url');
                 if (customUrlInput && customUrlInput.value) {
@@ -755,28 +756,30 @@ export class StateManager {
             }
         }
         
-        // Add collection selection
+        // Add collection selection (overwrite if form has value)
         const collectionSelect = document.getElementById('collection-select');
         if (collectionSelect && collectionSelect.value) {
-            params.set('collection', collectionSelect.value);
+            params.set('cn', collectionSelect.value);
         }
         
-        // Add search parameters
+        // Add search parameters (overwrite if form has value)
         const searchInput = document.getElementById('search-input');
         if (searchInput && searchInput.value) {
             params.set('search', searchInput.value);
         }
         
+        // Add date parameters (overwrite if form has value)
         const dateStart = document.getElementById('date-start');
         if (dateStart && dateStart.value) {
-            params.set('dateStart', dateStart.value);
+            params.set('ds', dateStart.value);
         }
         
         const dateEnd = document.getElementById('date-end');
         if (dateEnd && dateEnd.value) {
-            params.set('dateEnd', dateEnd.value);
+            params.set('de', dateEnd.value);
         }
         
+        // Add bbox (overwrite if form has value)
         const bboxInput = document.getElementById('bbox-input');
         if (bboxInput && bboxInput.value) {
             params.set('bbox', bboxInput.value);
@@ -792,11 +795,11 @@ export class StateManager {
         
         // Add active item if specified
         if (this.activeItemId) {
-            params.set('activeItem', this.activeItemId);
+            params.set('item_id', this.activeItemId);
             
             // If we have an active asset, add it too
             if (this.activeAssetKey) {
-                params.set('activeAsset', this.activeAssetKey);
+                params.set('asset_key', this.activeAssetKey);
             }
         }
         
@@ -882,10 +885,10 @@ export class StateManager {
      */
     hasSearchParams(params) {
         return params.has('search') || 
-               params.has('dateStart') || 
-               params.has('dateEnd') || 
+               params.has('ds') || 
+               params.has('de') || 
                params.has('bbox') ||
-               params.has('collection');
+               params.has('cn');
     }
     
     /**

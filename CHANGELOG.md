@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.3] - 2025-07-13
+
+### Added
+- **Visible Search Buttons**: Added prominent search and reset buttons to the main search interface
+- **Search Button Styling**: Modern styled search action buttons with proper hover effects and responsive design
+
+### Fixed
+- **Search Button Visibility**: Created visible search buttons (main-search-btn, main-reset-btn) in the search interface
+- **Button Functionality**: Connected all search buttons (visible and hidden) to CardSearchPanel event handlers
+
 ## [2.1.2] - 2025-07-13
 
 ### Fixed

@@ -2088,3 +2088,55 @@ select.form-control {
         gap: 12px;
     }
 }
+
+/* Search Action Buttons */
+.search-actions {
+    display: flex;
+    gap: 12px;
+    padding: 16px 20px;
+    border-top: 1px solid var(--border-primary);
+    margin-top: 16px;
+    background: var(--surface-secondary);
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+.search-actions .md-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    font-weight: 600;
+    transition: var(--transition-fast);
+}
+
+.search-actions .md-btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    box-shadow: var(--shadow-md);
+}
+
+.search-actions .md-btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lg);
+}
+
+.search-actions .md-btn-secondary {
+    background: var(--surface-primary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-primary);
+}
+
+.search-actions .md-btn-secondary:hover {
+    background: var(--hover-overlay);
+    color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+    .search-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+}

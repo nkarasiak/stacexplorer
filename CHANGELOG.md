@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2025-07-13
+
+### Fixed
+- **GitHub CI/CD**: Simplified deployment workflow, removed failing test and Lighthouse jobs
+- **Search Button**: Fixed broken search functionality by removing deleted script references
+- **Settings Button**: Removed unused settings button and associated functionality
+- **Development Cleanup**: Removed unused test files, debug scripts, and development artifacts
+- **Package Dependencies**: Cleaned up package.json by removing unused Jest and ESLint dependencies
+
+### Removed  
+- Settings panel functionality and UI button
+- GitHub Actions testing and Lighthouse auditing jobs
+- Jest testing configuration and setup files
+- ESLint configuration and linting scripts
+- 69+ development artifact files (test HTML, debug JS, documentation files)
+- Unused enhanced-app-init.js file
+
+### Technical Details
+- Simplified GitHub Actions to deploy-only workflow
+- Reduced package.json complexity by removing test/lint scripts
+- Fixed broken script references in index.html
+- Maintained core functionality while removing development overhead
+
 ## [2.1.0] - 2025-07-13
 
 ### Added

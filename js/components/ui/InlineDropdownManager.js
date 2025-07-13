@@ -269,6 +269,13 @@ export class InlineDropdownManager {
             // Update the sidebar summary
             this.updateSearchSummary('location', 'MAP SELECTION');
             
+            // Update the bbox-input field for SearchForm compatibility
+            const bboxInput = document.getElementById('bbox-input');
+            if (bboxInput) {
+                bboxInput.value = bbox.join(',');
+                console.log(`[LOCATION] Updated bbox-input from drawing: ${bboxInput.value}`);
+            }
+            
             // Show success notification
             this.notificationService.showNotification('📍 Location drawn and applied!', 'success');
             
@@ -1004,6 +1011,13 @@ export class InlineDropdownManager {
                     
                     // Update the sidebar summary
                     this.updateSearchSummary('location', 'MAP SELECTION');
+                    
+                    // Update the bbox-input field for SearchForm compatibility
+                    const bboxInput = document.getElementById('bbox-input');
+                    if (bboxInput) {
+                        bboxInput.value = bbox.join(',');
+                        console.log(`[LOCATION] Updated bbox-input from map drawing: ${bboxInput.value}`);
+                    }
                     
                     // Display on map if not already displayed
                     if (typeof this.aiSearchHelper.displayLocationOnMap === 'function') {
@@ -1922,6 +1936,13 @@ export class InlineDropdownManager {
             
             // Update the display
             this.updateSearchSummary('location', (shortName || name).toUpperCase());
+            
+            // Update the bbox-input field for SearchForm compatibility
+            const bboxInput = document.getElementById('bbox-input');
+            if (bboxInput) {
+                bboxInput.value = locationBbox.join(',');
+                console.log(`[LOCATION] Updated bbox-input: ${bboxInput.value}`);
+            }
             
             // Display location on map and zoom to it
             this.displayLocationOnMap(locationBbox, name, category, locationGeometry);

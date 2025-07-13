@@ -525,13 +525,6 @@ export class CardSearchPanel {
             });
         }
         
-        // Main reset button (fixed controls)
-        const mainResetBtn = document.getElementById('main-reset-btn');
-        if (mainResetBtn) {
-            mainResetBtn.addEventListener('click', () => {
-                this.resetSearch();
-            });
-        }
     }
     
     /**

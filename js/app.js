@@ -21,7 +21,6 @@ import { ResultsPanel } from './components/results/ResultsPanel.js';
 import { AISmartSearchEnhanced } from './components/search/AISmartSearchEnhanced.js';
 import { InlineDropdownManager } from './components/ui/InlineDropdownManager.js';
 import { initializeURLStateManagement, enhanceAISearchForURLState } from './url-state-integration.js';
-import { SettingsPanel } from './components/settings/SettingsPanel.js';
 // Removed inline AI search imports - only using the full-screen version now
 
 // Import configuration
@@ -178,18 +177,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // AI Smart Search Enhanced is ready
         console.log('[AI] AI Smart Search Enhanced is ready!');
         
-        // Initialize Settings Panel
-        const settingsPanel = new SettingsPanel(CONFIG, notificationService);
-        settingsPanel.loadSettings();
-        setTimeout(() => {
-            const settingsBtn = document.getElementById('settings-button');
-            if (settingsBtn) {
-                settingsBtn.style.zIndex = 2000;
-                settingsBtn.addEventListener('click', () => {
-                    settingsPanel.open();
-                });
-            }
-        }, 0);
         
         console.log('STAC Catalog Explorer - Initialization complete');
         

@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.6] - 2025-07-13
+
+### Added
+- **Smart Mobile Toggle**: Hamburger menu now hides on mobile when URL contains parameters (non-root URLs)
+- **URL-Based UI Control**: Toggle visibility adapts based on whether user is on root URL or has search parameters
+
+### Enhanced
+- **Mobile UX**: Cleaner mobile interface that hides navigation when not needed
+- **URL State Awareness**: UI responds intelligently to URL changes and navigation
+
+### Technical Details
+- Added URL parameter detection in MobileSidebarManager
+- Implemented popstate and hashchange event listeners for dynamic toggle control
+- Enhanced mobile layout management with URL-aware visibility logic
+
 ## [2.1.5] - 2025-07-13
 
 ### Added

@@ -30,7 +30,7 @@ import { cookieCache } from './utils/CookieCache.js';
 /**
  * Initialize the application when the DOM is fully loaded
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     console.log('STAC Catalog Explorer - Initializing application...');
     
     try {
@@ -110,6 +110,28 @@ document.addEventListener('DOMContentLoaded', function() {
             inlineDropdownManager,
             notificationService
         });
+
+        // Initialize Visualization System
+        const { RasterVisualizationManager } = await import('./components/visualization/RasterVisualizationManager.js');
+        const { VisualizationPanel } = await import('./components/visualization/VisualizationPanel.js');
+        
+        // Create visualization manager
+        const rasterVisualizationManager = new RasterVisualizationManager(mapManager);
+        
+        // Create visualization panel container
+        const vizPanelContainer = document.createElement('div');
+        vizPanelContainer.id = 'visualization-panel-container';
+        document.body.appendChild(vizPanelContainer);
+        
+        // Create visualization panel
+        const visualizationPanel = new VisualizationPanel(
+            vizPanelContainer, 
+            rasterVisualizationManager, 
+            undefined, // Use default band engine
+            notificationService
+        );
+        
+        console.log('🎨 Visualization system initialized');
         
         // REMOVED: Share manager (no longer needed)
         // const shareManager = new ShareManager(stateManager, notificationService);
@@ -158,6 +180,8 @@ document.addEventListener('DOMContentLoaded', function() {
             mapManager,
             apiClient,
             searchPanel,
+            rasterVisualizationManager,
+            visualizationPanel,
             resultsPanel,
             stateManager, // Now the unified state manager
             urlStateManager: stateManager, // Alias for backward compatibility
@@ -165,6 +189,9 @@ document.addEventListener('DOMContentLoaded', function() {
             inlineDropdownManager,
             geometrySync,
             config: CONFIG,
+            // Visualization system
+            visualizationPanel,
+            rasterVisualizationManager,
             // Cache management utilities
             cache: {
                 clearCollections: () => collectionManager.clearCache(),

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel-2 Visualization Test</title>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" />
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background: #f0f0f0; }
+        .container { display: grid; grid-template-columns: 400px 1fr; height: 100vh; }
+        .sidebar { background: white; padding: 20px; overflow-y: auto; border-right: 2px solid #ddd; }
+        #map { height: 100%; }
+        .test-section { margin: 15px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background: #e8f5e9; border-color: #4caf50; }
+        .error { background: #ffebee; border-color: #f44336; }
+        .warning { background: #fff3e0; border-color: #ff9800; }
+        .loading { background: #e3f2fd; border-color: #2196f3; }
+        button { padding: 10px 15px; margin: 5px; cursor: pointer; border: none; border-radius: 3px; background: #2196f3; color: white; }
+        button:hover { background: #1976d2; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .log { background: #f8f8f8; padding: 10px; max-height: 300px; overflow-y: auto; font-family: monospace; font-size: 11px; border: 1px solid #ddd; margin: 10px 0; }
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+        .layer-controls { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        h3 { margin: 0 0 10px 0; color: #333; }
+        select, input[type="range"] { width: 100%; margin: 5px 0; }
+        .layer-item { background: #fff; border: 1px solid #ddd; padding: 10px; margin: 5px 0; border-radius: 3px; display: flex; justify-content: space-between; align-items: center; }
+        .layer-name { font-weight: bold; color: #333; }
+        .layer-info { font-size: 12px; color: #666; }
+        .remove-btn { background: #f44336; padding: 5px 10px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <h1>🛰️ Sentinel-2 Visualization Test</h1>
+            
+            <div class="test-section">
+                <h3>🎨 Visualization Types</h3>
+                <button onclick="testSingleBands()">🔴 Single Bands</button>
+                <button onclick="testRGBComposites()">🌍 RGB Composites</button>
+                <button onclick="testSpectralIndices()">📊 Spectral Indices</button>
+                <button onclick="testInfraredComposites()">🌿 Infrared Composites</button>
+                <button onclick="clearAllLayers()">🗑️ Clear All Layers</button>
+            </div>
+
+            <div class="layer-controls">
+                <h3>🎛️ Layer Controls</h3>
+                <label>Opacity: <input type="range" id="globalOpacity" min="0" max="100" value="80" oninput="updateGlobalOpacity()"></label>
+                <span id="opacityValue">80%</span>
+            </div>
+
+            <div id="status" class="test-section">Ready to test Sentinel-2 visualization...</div>
+            
+            <div class="test-section">
+                <h3>📋 Active Layers</h3>
+                <div id="layerList">No layers added yet</div>
+            </div>
+
+            <div class="test-section">
+                <h3>🔍 Debug Log</h3>
+                <button onclick="clearLog()">Clear Log</button>
+                <div id="log" class="log">Debug information will appear here...</div>
+            </div>
+        </div>
+        
+        <div id="map"></div>
+    </div>
+
+    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <script>
+        // Sentinel-2 test item
+        const testItem = {
+            "id": "S2C_T31TCJ_20250713T105859_L2A",
+            "collection": "sentinel-2-c1-l2a",
+            "bbox": [0.49594148295105356, 43.23827181436057, 1.8886705321228305, 44.225955434120586],
+            "properties": {
+                "datetime": "2025-07-13T10:59:22.002000Z",
+                "eo:cloud_cover": 36.596411,
+                "platform": "sentinel-2c"
+            },
+            "assets": {
+                "red": {
+                    "href": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/31/T/CJ/2025/7/S2C_T31TCJ_20250713T105859_L2A/B04.tif",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+                },
+                "green": {
+                    "href": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/31/T/CJ/2025/7/S2C_T31TCJ_20250713T105859_L2A/B03.tif",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+                },
+                "blue": {
+                    "href": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/31/T/CJ/2025/7/S2C_T31TCJ_20250713T105859_L2A/B02.tif",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+                },
+                "visual": {
+                    "href": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/31/T/CJ/2025/7/S2C_T31TCJ_20250713T105859_L2A/TCI.tif",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+                },
+                "nir": {
+                    "href": "https://e84-earth-search-sentinel-data.s3.us-west-2.amazonaws.com/sentinel-2-c1-l2a/31/T/CJ/2025/7/S2C_T31TCJ_20250713T105859_L2A/B08.tif",
+                    "type": "image/tiff; application=geotiff; profile=cloud-optimized"
+                }
+            }
+        };
+
+        let map;
+        let activeLayers = new Map();
+
+        // Initialize map
+        function initMap() {
+            map = new maplibregl.Map({
+                container: 'map',
+                style: {
+                    version: 8,
+                    sources: {
+                        'osm': {
+                            type: 'raster',
+                            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+                            tileSize: 256,
+                            attribution: '© OpenStreetMap contributors'
+                        }
+                    },
+                    layers: [
+                        {
+                            id: 'osm-layer',
+                            type: 'raster',
+                            source: 'osm'
+                        }
+                    ]
+                },
+                center: [1.20, 43.74],
+                zoom: 10,
+                attributionControl: true
+            });
+
+            map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+            map.on('load', () => {
+                // Add bounds rectangle
+                const bounds = [
+                    [testItem.bbox[0], testItem.bbox[1]],
+                    [testItem.bbox[2], testItem.bbox[3]]
+                ];
+
+                map.addSource('sentinel-bounds', {
+                    type: 'geojson',
+                    data: {
+                        type: 'Feature',
+                        geometry: {
+                            type: 'Polygon',
+                            coordinates: [[
+                                [testItem.bbox[0], testItem.bbox[1]],
+                                [testItem.bbox[2], testItem.bbox[1]],
+                                [testItem.bbox[2], testItem.bbox[3]],
+                                [testItem.bbox[0], testItem.bbox[3]],
+                                [testItem.bbox[0], testItem.bbox[1]]
+                            ]]
+                        }
+                    }
+                });
+
+                map.addLayer({
+                    id: 'sentinel-bounds-fill',
+                    type: 'fill',
+                    source: 'sentinel-bounds',
+                    paint: {
+                        'fill-color': '#ff7800',
+                        'fill-opacity': 0.1
+                    }
+                });
+
+                map.addLayer({
+                    id: 'sentinel-bounds-line',
+                    type: 'line',
+                    source: 'sentinel-bounds',
+                    paint: {
+                        'line-color': '#ff7800',
+                        'line-width': 2
+                    }
+                });
+
+                map.fitBounds([
+                    [testItem.bbox[0], testItem.bbox[1]],
+                    [testItem.bbox[2], testItem.bbox[3]]
+                ], { padding: 20 });
+
+                log('🗺️ MapLibre GL map initialized with Sentinel-2 bounds');
+            });
+        }
+
+        // S3 URL conversion
+        function convertS3UrlToHttps(url) {
+            const bucketRegionMatch = url.match(/^https:\/\/([^.]+)\.s3\.([^.]+)\.amazonaws\.com\/(.+)$/);
+            if (bucketRegionMatch) {
+                const [, bucket, region, key] = bucketRegionMatch;
+                const convertedUrl = `https://s3.${region}.amazonaws.com/${bucket}/${key}`;
+                return convertedUrl;
+            }
+            return url;
+        }
+
+        // Add visualization layer
+        async function addVisualizationLayer(config) {
+            const layerId = `${config.name.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}`;
+            const sourceId = `${layerId}-source`;
+
+            try {
+                log(`🎨 Adding ${config.name}: ${config.description}`);
+
+                let tileUrl;
+                if (config.type === 'single') {
+                    // Single band visualization
+                    const originalUrl = testItem.assets[config.asset].href;
+                    const convertedUrl = convertS3UrlToHttps(originalUrl);
+                    const params = new URLSearchParams();
+                    params.set('url', convertedUrl);
+                    params.set('rescale', config.rescale);
+                    if (config.colormap) params.set('colormap_name', config.colormap);
+                    
+                    tileUrl = `https://titiler.xyz/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${params.toString()}`;
+                    
+                } else if (config.type === 'composite') {
+                    // RGB composite
+                    const redUrl = convertS3UrlToHttps(testItem.assets[config.bands.red].href);
+                    const greenUrl = convertS3UrlToHttps(testItem.assets[config.bands.green].href);
+                    const blueUrl = convertS3UrlToHttps(testItem.assets[config.bands.blue].href);
+                    
+                    // For now, use red band as example - would need multi-band endpoint
+                    const params = new URLSearchParams();
+                    params.set('url', redUrl);
+                    params.set('rescale', config.rescale);
+                    
+                    tileUrl = `https://titiler.xyz/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${params.toString()}`;
+                    
+                } else if (config.type === 'index') {
+                    // Spectral index - would need expression endpoint
+                    // For now, show NIR as example
+                    const nirUrl = convertS3UrlToHttps(testItem.assets.nir.href);
+                    const params = new URLSearchParams();
+                    params.set('url', nirUrl);
+                    params.set('rescale', config.rescale);
+                    params.set('colormap_name', config.colormap);
+                    
+                    tileUrl = `https://titiler.xyz/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${params.toString()}`;
+                }
+
+                log(`🌐 Tile URL: ${tileUrl}`);
+
+                // Add source
+                map.addSource(sourceId, {
+                    type: 'raster',
+                    tiles: [tileUrl],
+                    tileSize: 256,
+                    minzoom: 0,
+                    maxzoom: 18,
+                    attribution: 'TiTiler'
+                });
+
+                // Add layer
+                map.addLayer({
+                    id: layerId,
+                    type: 'raster',
+                    source: sourceId,
+                    paint: {
+                        'raster-opacity': config.opacity || 0.8,
+                        'raster-fade-duration': 0
+                    },
+                    layout: {
+                        'visibility': 'visible'
+                    }
+                });
+
+                // Store layer info
+                activeLayers.set(layerId, {
+                    id: layerId,
+                    sourceId: sourceId,
+                    name: config.name,
+                    description: config.description,
+                    opacity: config.opacity || 0.8
+                });
+
+                log(`✅ Added layer: ${config.name}`);
+                updateLayerList();
+                return layerId;
+
+            } catch (error) {
+                log(`❌ Failed to add ${config.name}: ${error.message}`);
+                throw error;
+            }
+        }
+
+        // Test functions
+        async function testSingleBands() {
+            log('🔴 Testing single band visualizations...');
+            setStatus('Testing single bands...', 'loading');
+
+            const singleBands = [
+                {
+                    type: 'single',
+                    name: 'Red Band',
+                    asset: 'red',
+                    colormap: 'Reds',
+                    rescale: '0,3000',
+                    description: 'Red wavelength (665nm) - vegetation absorption',
+                    opacity: 0.8
+                },
+                {
+                    type: 'single',
+                    name: 'Green Band',
+                    asset: 'green',
+                    colormap: 'Greens',
+                    rescale: '0,3000',
+                    description: 'Green wavelength (560nm) - vegetation reflection',
+                    opacity: 0.8
+                },
+                {
+                    type: 'single',
+                    name: 'Blue Band',
+                    asset: 'blue',
+                    colormap: 'Blues',
+                    rescale: '0,3000',
+                    description: 'Blue wavelength (490nm) - atmospheric scattering',
+                    opacity: 0.8
+                },
+                {
+                    type: 'single',
+                    name: 'NIR Band',
+                    asset: 'nir',
+                    colormap: 'viridis',
+                    rescale: '0,4000',
+                    description: 'Near-infrared (842nm) - vegetation health',
+                    opacity: 0.8
+                }
+            ];
+
+            for (const config of singleBands) {
+                try {
+                    await addVisualizationLayer(config);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (error) {
+                    log(`❌ Failed ${config.name}: ${error.message}`);
+                }
+            }
+
+            setStatus('Single band tests completed', 'success');
+        }
+
+        async function testRGBComposites() {
+            log('🌍 Testing RGB composites...');
+            setStatus('Testing RGB composites...', 'loading');
+
+            const composites = [
+                {
+                    type: 'composite',
+                    name: 'True Color',
+                    bands: { red: 'red', green: 'green', blue: 'blue' },
+                    rescale: '0,3000',
+                    description: 'Natural color RGB composite',
+                    opacity: 0.8
+                },
+                {
+                    type: 'composite',
+                    name: 'False Color',
+                    bands: { red: 'nir', green: 'red', blue: 'green' },
+                    rescale: '0,3000',
+                    description: 'Vegetation enhanced composite',
+                    opacity: 0.8
+                }
+            ];
+
+            for (const config of composites) {
+                try {
+                    await addVisualizationLayer(config);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (error) {
+                    log(`❌ Failed ${config.name}: ${error.message}`);
+                }
+            }
+
+            setStatus('RGB composite tests completed', 'success');
+        }
+
+        async function testSpectralIndices() {
+            log('📊 Testing spectral indices...');
+            setStatus('Testing spectral indices...', 'loading');
+
+            const indices = [
+                {
+                    type: 'index',
+                    name: 'NDVI (Vegetation)',
+                    rescale: '-1,1',
+                    colormap: 'RdYlGn',
+                    description: 'Normalized Difference Vegetation Index',
+                    opacity: 0.8
+                },
+                {
+                    type: 'index',
+                    name: 'NDWI (Water)',
+                    rescale: '-1,1',
+                    colormap: 'Blues',
+                    description: 'Normalized Difference Water Index',
+                    opacity: 0.8
+                }
+            ];
+
+            for (const config of indices) {
+                try {
+                    await addVisualizationLayer(config);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (error) {
+                    log(`❌ Failed ${config.name}: ${error.message}`);
+                }
+            }
+
+            setStatus('Spectral indices tests completed', 'success');
+        }
+
+        async function testInfraredComposites() {
+            log('🌿 Testing infrared composites...');
+            setStatus('Testing infrared composites...', 'loading');
+
+            const infrared = [
+                {
+                    type: 'single',
+                    name: 'NIR Enhanced',
+                    asset: 'nir',
+                    colormap: 'plasma',
+                    rescale: '0,4000',
+                    description: 'Near-infrared with plasma colormap',
+                    opacity: 0.8
+                }
+            ];
+
+            for (const config of infrared) {
+                try {
+                    await addVisualizationLayer(config);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (error) {
+                    log(`❌ Failed ${config.name}: ${error.message}`);
+                }
+            }
+
+            setStatus('Infrared tests completed', 'success');
+        }
+
+        function clearAllLayers() {
+            log('🗑️ Clearing all layers...');
+            
+            for (const [layerId, layerInfo] of activeLayers) {
+                if (map.getLayer(layerId)) {
+                    map.removeLayer(layerId);
+                }
+                if (map.getSource(layerInfo.sourceId)) {
+                    map.removeSource(layerInfo.sourceId);
+                }
+            }
+            
+            activeLayers.clear();
+            updateLayerList();
+            setStatus('All layers cleared', 'success');
+            log('✅ All layers cleared');
+        }
+
+        function removeLayer(layerId) {
+            const layerInfo = activeLayers.get(layerId);
+            if (layerInfo) {
+                if (map.getLayer(layerId)) {
+                    map.removeLayer(layerId);
+                }
+                if (map.getSource(layerInfo.sourceId)) {
+                    map.removeSource(layerInfo.sourceId);
+                }
+                activeLayers.delete(layerId);
+                updateLayerList();
+                log(`🗑️ Removed layer: ${layerInfo.name}`);
+            }
+        }
+
+        function updateLayerList() {
+            const layerList = document.getElementById('layerList');
+            if (activeLayers.size === 0) {
+                layerList.innerHTML = 'No layers added yet';
+                return;
+            }
+
+            layerList.innerHTML = '';
+            for (const [layerId, layerInfo] of activeLayers) {
+                const layerDiv = document.createElement('div');
+                layerDiv.className = 'layer-item';
+                layerDiv.innerHTML = `
+                    <div>
+                        <div class="layer-name">${layerInfo.name}</div>
+                        <div class="layer-info">${layerInfo.description}</div>
+                    </div>
+                    <button class="remove-btn" onclick="removeLayer('${layerId}')">Remove</button>
+                `;
+                layerList.appendChild(layerDiv);
+            }
+        }
+
+        function updateGlobalOpacity() {
+            const opacity = document.getElementById('globalOpacity').value / 100;
+            document.getElementById('opacityValue').textContent = `${Math.round(opacity * 100)}%`;
+            
+            for (const [layerId, layerInfo] of activeLayers) {
+                if (map.getLayer(layerId)) {
+                    map.setPaintProperty(layerId, 'raster-opacity', opacity);
+                    layerInfo.opacity = opacity;
+                }
+            }
+        }
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = 'Log cleared...';
+        }
+
+        function setStatus(message, className = '') {
+            const status = document.getElementById('status');
+            status.innerHTML = message;
+            status.className = `test-section ${className}`;
+        }
+
+        // Initialize on load
+        window.onload = function() {
+            initMap();
+            log('🚀 Sentinel-2 visualization test tool initialized');
+            log('💡 Try the visualization buttons to test different band combinations');
+        };
+    </script>
+</body>
+</html>

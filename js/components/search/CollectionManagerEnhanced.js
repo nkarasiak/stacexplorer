@@ -283,8 +283,13 @@ export class CollectionManagerEnhanced {
         this.selectedCollection = collectionId;
         
         if (collectionId) {
-            // Find the collection to get its source
-            const collection = this.getCollectionById(collectionId);
+            // Get the source from the selected option
+            const collectionSelect = document.getElementById('collection-select');
+            const selectedOption = collectionSelect?.selectedOptions[0];
+            const source = selectedOption?.dataset.source;
+            
+            // Find the collection by ID and source
+            const collection = this.getCollectionById(collectionId, source);
             if (collection && collection.source) {
                 // Automatically set the catalog selector to match the collection's source
                 const catalogSelect = document.getElementById('catalog-select');
@@ -301,7 +306,7 @@ export class CollectionManagerEnhanced {
             }
         }
         
-        console.log(`📋 Collection selected: ${collectionId}`);
+        console.log(`📋 Collection selected: ${collectionId}${source ? ` from ${source}` : ''}`);
     }
     
     /**
@@ -446,12 +451,21 @@ export class CollectionManagerEnhanced {
     }
     
     /**
-     * Get collection by ID
+     * Get collection by ID and optionally by source
      * @param {string} collectionId - Collection ID
+     * @param {string} source - Optional source to filter by
      * @returns {Object|null} Collection object or null if not found
      */
-    getCollectionById(collectionId) {
-        return this.allCollections.find(collection => collection.id === collectionId) || null;
+    getCollectionById(collectionId, source = null) {
+        if (source) {
+            // Find collection by both ID and source
+            return this.allCollections.find(collection => 
+                collection.id === collectionId && collection.source === source
+            ) || null;
+        } else {
+            // Fallback to first match by ID only (for backward compatibility)
+            return this.allCollections.find(collection => collection.id === collectionId) || null;
+        }
     }
     
     /**
@@ -507,7 +521,12 @@ export class CollectionManagerEnhanced {
             return;
         }
         
-        const collection = this.getCollectionById(selectedCollectionId);
+        // Get the source from the selected option to ensure correct collection
+        const collectionSelect = document.getElementById('collection-select');
+        const selectedOption = collectionSelect?.selectedOptions[0];
+        const source = selectedOption?.dataset.source;
+        
+        const collection = this.getCollectionById(selectedCollectionId, source);
         if (collection) {
             this.collectionDetailsModal.showCollection(collection);
         } else {

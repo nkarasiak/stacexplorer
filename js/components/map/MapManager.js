@@ -644,42 +644,58 @@ class MapManager {
             const loadingIndicator = document.getElementById('loading');
             if (loadingIndicator) loadingIndicator.style.display = 'block';
             
-            // Try to find visual assets
-            const visualAssets = this.findVisualAssets(item);
+            // Strongly prioritize preview/thumbnail assets (JPG, PNG, etc.) to avoid CORS issues
+            const previewAssets = ['rendered_preview', 'thumbnail', 'preview', 'overview'];
             
-            // If we have a preferred asset key and it exists, use it
-            if (preferredAssetKey && item.assets && item.assets[preferredAssetKey]) {
-                await this.addAssetOverlay(item.assets[preferredAssetKey], item, preferredAssetKey);
-                return;
-            }
-            
-            // If we have visual assets, use the first one
-            if (visualAssets.length > 0) {
-                await this.addAssetOverlay(visualAssets[0].asset, item, visualAssets[0].key);
-                return;
-            }
-            
-            // For Planetary Computer items, check rendered_preview first
+            // For Planetary Computer items, check rendered_preview first (usually works)
             if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
                 await this.addAssetOverlay(item.assets.rendered_preview, item, 'rendered_preview');
                 return;
             }
             
-            // If we have a thumbnail, use it
-            if (item.assets && item.assets.thumbnail) {
-                await this.addAssetOverlay(item.assets.thumbnail, item, 'thumbnail');
+            // Try all preview assets first (these are usually JPG/PNG and work better)
+            for (const assetKey of previewAssets) {
+                if (item.assets && item.assets[assetKey]) {
+                    const asset = item.assets[assetKey];
+                    // Prefer preview images (JPG/PNG) over anything else
+                    if (this.isPreviewAsset(asset)) {
+                        console.log(`Using preview asset: ${assetKey} (${asset.type || 'unknown type'})`);
+                        await this.addAssetOverlay(asset, item, assetKey);
+                        return;
+                    }
+                }
+            }
+            
+            // If we have a preferred asset key and it's a preview, use it
+            if (preferredAssetKey && item.assets && item.assets[preferredAssetKey]) {
+                const asset = item.assets[preferredAssetKey];
+                if (this.isPreviewAsset(asset)) {
+                    console.log(`Using preferred preview asset: ${preferredAssetKey}`);
+                    await this.addAssetOverlay(asset, item, preferredAssetKey);
+                    return;
+                }
+            }
+            
+            // Try any remaining preview assets, even if they might have CORS issues
+            for (const assetKey of previewAssets) {
+                if (item.assets && item.assets[assetKey]) {
+                    console.log(`Trying preview asset (may have CORS): ${assetKey}`);
+                    await this.addAssetOverlay(item.assets[assetKey], item, assetKey);
+                    return;
+                }
+            }
+            
+            // If no preview assets, try the preferred asset anyway
+            if (preferredAssetKey && item.assets && item.assets[preferredAssetKey]) {
+                await this.addAssetOverlay(item.assets[preferredAssetKey], item, preferredAssetKey);
                 return;
             }
             
-            // If we have a preview, use it
-            if (item.assets && item.assets.preview) {
-                await this.addAssetOverlay(item.assets.preview, item, 'preview');
-                return;
-            }
-            
-            // If we have an overview, use it
-            if (item.assets && item.assets.overview) {
-                await this.addAssetOverlay(item.assets.overview, item, 'overview');
+            // Last resort: try any visual assets but expect them to fail with CORS
+            const visualAssets = this.findVisualAssets(item);
+            if (visualAssets.length > 0) {
+                console.log('No preview assets found, trying visual assets (may fail with CORS)');
+                await this.addAssetOverlay(visualAssets[0].asset, item, visualAssets[0].key);
                 return;
             }
             
@@ -1023,21 +1039,34 @@ let geojson;
     removeCurrentLayer() {
         try {
             // If we have a current layer, remove it
-            if (this.currentLayer && this.currentLayer.sourceId) {
-                // Get all layers that use this source
-                const layers = this.map.getStyle().layers.filter(layer => 
-                    layer.source === this.currentLayer.sourceId
-                );
-                
-                // Remove each layer
-                layers.forEach(layer => {
-                    if (this.map.getLayer(layer.id)) {
-                        this.map.removeLayer(layer.id);
-                    }
-                });
+            if (this.currentLayer) {
+                // Handle new structure with layerIds array
+                if (this.currentLayer.layerIds && Array.isArray(this.currentLayer.layerIds)) {
+                    this.currentLayer.layerIds.forEach(layerId => {
+                        if (this.map.getLayer(layerId)) {
+                            this.map.removeLayer(layerId);
+                        }
+                    });
+                }
+                // Handle old structure or remaining layers by source
+                else if (this.currentLayer.sourceId) {
+                    const layers = this.map.getStyle().layers.filter(layer => 
+                        layer.source === this.currentLayer.sourceId
+                    );
+                    
+                    layers.forEach(layer => {
+                        if (this.map.getLayer(layer.id)) {
+                            this.map.removeLayer(layer.id);
+                        }
+                    });
+                }
+                // Handle Leaflet-style layers (legacy)
+                else if (this.currentLayer.remove) {
+                    this.currentLayer.remove();
+                }
                 
                 // Remove the source
-                if (this.map.getSource(this.currentLayer.sourceId)) {
+                if (this.currentLayer.sourceId && this.map.getSource(this.currentLayer.sourceId)) {
                     this.map.removeSource(this.currentLayer.sourceId);
                 }
                 
@@ -1175,6 +1204,22 @@ let geojson;
             // Get image URL
             const imageUrl = asset.href;
             
+            // Check for CORS-problematic domains - for raster data, show geometry only
+            if (this.hasCORSIssues(imageUrl) && this.isRasterAsset(asset)) {
+                console.log('CORS-problematic raster asset, showing geometry only:', imageUrl);
+                this.addGeometryOverlay(item);
+                return true;
+            }
+            
+            // For preview/thumbnail images, try to load them even from CORS domains
+            // as they're usually smaller and may work
+            const isPreviewAsset = this.isPreviewAsset(asset);
+            if (this.hasCORSIssues(imageUrl) && !isPreviewAsset) {
+                console.log('CORS-problematic non-preview asset, showing geometry only:', imageUrl);
+                this.addGeometryOverlay(item);
+                return true;
+            }
+            
             // Use provided geometry/bounds or get from item
             let bbox;
             if (geometryOrBounds) {
@@ -1199,13 +1244,234 @@ let geojson;
                 return false;
             }
             
-            // Add image to map
-            await this.addImageOverlay(imageUrl, bbox, item);
+            // Try to add image to map, fallback to geometry if it fails
+            try {
+                await this.addImageOverlay(imageUrl, bbox, item);
+                return true;
+            } catch (imageError) {
+                console.warn('Failed to load image overlay, showing geometry instead:', imageError);
+                this.addGeometryOverlay(item);
+                return true;
+            }
             
-            return true;
         } catch (error) {
             console.error('Error adding visual overlay:', error);
+            // Always fallback to geometry
+            this.addGeometryOverlay(item);
             return false;
+        }
+    }
+    
+    /**
+     * Check if a URL might have CORS issues
+     * @param {string} url - URL to check
+     * @returns {boolean} True if URL might have CORS issues
+     */
+    hasCORSIssues(url) {
+        const corsProblematicDomains = [
+            'datahub.creodias.eu',
+            'catalogue.dataspace.copernicus.eu',
+            'scihub.copernicus.eu'
+        ];
+        
+        return corsProblematicDomains.some(domain => url.includes(domain));
+    }
+    
+    /**
+     * Check if an asset is raster data (COG, GeoTIFF, etc.)
+     * @param {Object} asset - STAC asset
+     * @returns {boolean} True if asset is raster data
+     */
+    isRasterAsset(asset) {
+        const rasterTypes = [
+            'image/tiff',
+            'image/geotiff',
+            'application/geotiff',
+            'image/tiff; application=geotiff',
+            'image/tiff; application=geotiff; profile=cloud-optimized'
+        ];
+        
+        // Check by media type
+        if (asset.type && rasterTypes.includes(asset.type)) {
+            return true;
+        }
+        
+        // Check by file extension
+        if (asset.href && (asset.href.includes('.tif') || asset.href.includes('.tiff'))) {
+            return true;
+        }
+        
+        // Check by asset roles
+        if (asset.roles && asset.roles.includes('data')) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Check if an asset is a preview/thumbnail image (PNG, JPG, etc.)
+     * @param {Object} asset - STAC asset
+     * @returns {boolean} True if asset is a preview image
+     */
+    isPreviewAsset(asset) {
+        const previewTypes = [
+            'image/png',
+            'image/jpeg',
+            'image/jpg',
+            'image/gif',
+            'image/webp'
+        ];
+        
+        // Check by media type
+        if (asset.type && previewTypes.includes(asset.type)) {
+            return true;
+        }
+        
+        // Check by file extension
+        if (asset.href) {
+            const lowerHref = asset.href.toLowerCase();
+            if (lowerHref.includes('.png') || lowerHref.includes('.jpg') || 
+                lowerHref.includes('.jpeg') || lowerHref.includes('.gif') || 
+                lowerHref.includes('.webp')) {
+                return true;
+            }
+        }
+        
+        // Check by asset roles
+        if (asset.roles && (asset.roles.includes('thumbnail') || 
+                            asset.roles.includes('preview') || 
+                            asset.roles.includes('overview'))) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Add geometry overlay (outline) for an item
+     * @param {Object} item - STAC item
+     */
+    addGeometryOverlay(item) {
+        console.log('Adding geometry overlay for item:', item.id);
+        
+        // Remove existing layers
+        this.removeCurrentLayer();
+        
+        if (item.geometry) {
+            // Add geometry as a GeoJSON source and layer
+            const sourceId = 'item-geometry';
+            const layerId = 'item-geometry-layer';
+            
+            // Remove existing geometry source if it exists
+            if (this.map.getSource(sourceId)) {
+                this.map.removeLayer(layerId);
+                this.map.removeSource(sourceId);
+            }
+            
+            // Add the geometry source
+            this.map.addSource(sourceId, {
+                type: 'geojson',
+                data: item.geometry
+            });
+            
+            // Add fill layer
+            this.map.addLayer({
+                id: layerId,
+                type: 'fill',
+                source: sourceId,
+                paint: {
+                    'fill-color': '#4f46e5',
+                    'fill-opacity': 0.1
+                }
+            });
+            
+            // Add stroke layer
+            this.map.addLayer({
+                id: layerId + '-stroke',
+                type: 'line',
+                source: sourceId,
+                paint: {
+                    'line-color': '#4f46e5',
+                    'line-width': 2,
+                    'line-opacity': 0.8
+                }
+            });
+            
+            // Store current layer info for cleanup
+            this.currentLayer = {
+                sourceId: sourceId,
+                layerIds: [layerId, layerId + '-stroke']
+            };
+            
+            // Fit map to geometry bounds
+            const bounds = this.getGeometryBounds(item.geometry);
+            if (bounds) {
+                this.fitMapToBbox(bounds);
+            }
+            
+        } else if (item.bbox) {
+            // If no geometry, use bbox
+            const bbox = item.bbox;
+            
+            // Create a rectangle geometry from bbox
+            const rectangleGeometry = {
+                type: 'Polygon',
+                coordinates: [[
+                    [bbox[0], bbox[1]], // sw
+                    [bbox[2], bbox[1]], // se
+                    [bbox[2], bbox[3]], // ne
+                    [bbox[0], bbox[3]], // nw
+                    [bbox[0], bbox[1]]  // close
+                ]]
+            };
+            
+            const sourceId = 'item-bbox';
+            const layerId = 'item-bbox-layer';
+            
+            // Remove existing bbox source if it exists
+            if (this.map.getSource(sourceId)) {
+                this.map.removeLayer(layerId);
+                this.map.removeSource(sourceId);
+            }
+            
+            // Add the bbox source
+            this.map.addSource(sourceId, {
+                type: 'geojson',
+                data: rectangleGeometry
+            });
+            
+            // Add fill layer
+            this.map.addLayer({
+                id: layerId,
+                type: 'fill',
+                source: sourceId,
+                paint: {
+                    'fill-color': '#4f46e5',
+                    'fill-opacity': 0.1
+                }
+            });
+            
+            // Add stroke layer
+            this.map.addLayer({
+                id: layerId + '-stroke',
+                type: 'line',
+                source: sourceId,
+                paint: {
+                    'line-color': '#4f46e5',
+                    'line-width': 2,
+                    'line-opacity': 0.8
+                }
+            });
+            
+            // Store current layer info for cleanup
+            this.currentLayer = {
+                sourceId: sourceId,
+                layerIds: [layerId, layerId + '-stroke']
+            };
+            
+            // Fit map to bbox
+            this.fitMapToBbox(bbox);
         }
     }
     
@@ -2027,21 +2293,34 @@ let geojson;
     removeCurrentLayer() {
         try {
             // If we have a current layer, remove it
-            if (this.currentLayer && this.currentLayer.sourceId) {
-                // Get all layers that use this source
-                const layers = this.map.getStyle().layers.filter(layer => 
-                    layer.source === this.currentLayer.sourceId
-                );
-                
-                // Remove each layer
-                layers.forEach(layer => {
-                    if (this.map.getLayer(layer.id)) {
-                        this.map.removeLayer(layer.id);
-                    }
-                });
+            if (this.currentLayer) {
+                // Handle new structure with layerIds array
+                if (this.currentLayer.layerIds && Array.isArray(this.currentLayer.layerIds)) {
+                    this.currentLayer.layerIds.forEach(layerId => {
+                        if (this.map.getLayer(layerId)) {
+                            this.map.removeLayer(layerId);
+                        }
+                    });
+                }
+                // Handle old structure or remaining layers by source
+                else if (this.currentLayer.sourceId) {
+                    const layers = this.map.getStyle().layers.filter(layer => 
+                        layer.source === this.currentLayer.sourceId
+                    );
+                    
+                    layers.forEach(layer => {
+                        if (this.map.getLayer(layer.id)) {
+                            this.map.removeLayer(layer.id);
+                        }
+                    });
+                }
+                // Handle Leaflet-style layers (legacy)
+                else if (this.currentLayer.remove) {
+                    this.currentLayer.remove();
+                }
                 
                 // Remove the source
-                if (this.map.getSource(this.currentLayer.sourceId)) {
+                if (this.currentLayer.sourceId && this.map.getSource(this.currentLayer.sourceId)) {
                     this.map.removeSource(this.currentLayer.sourceId);
                 }
                 

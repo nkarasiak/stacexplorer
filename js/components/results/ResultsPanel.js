@@ -467,6 +467,9 @@ export class ResultsPanel {
                         </div>
                         <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" onerror="this.handleThumbnailError(this)">
                         <div class="thumbnail-overlay">
+                            <button class="info-btn viz-btn" title="Visualize with different band combinations">
+                                <i class="material-icons">palette</i>
+                            </button>
                             <button class="info-btn details-btn" title="Show details">
                                 <i class="material-icons">info</i>
                             </button>
@@ -483,6 +486,9 @@ export class ResultsPanel {
                             <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                         </div>
                         <div class="thumbnail-overlay">
+                            <button class="info-btn viz-btn" title="Visualize with different band combinations">
+                                <i class="material-icons">palette</i>
+                            </button>
                             <button class="info-btn details-btn" title="Show details">
                                 <i class="material-icons">info</i>
                             </button>
@@ -507,6 +513,7 @@ export class ResultsPanel {
     attachItemEventListeners(element, item) {
         const clickableCard = element.querySelector('.clickable-card');
         const detailsBtn = element.querySelector('.details-btn');
+        const vizBtn = element.querySelector('.viz-btn');
         const thumbnail = element.querySelector('.dataset-thumbnail');
         
         // Function to handle map display with loading indicator
@@ -598,6 +605,40 @@ export class ResultsPanel {
                 console.log('Details button clicked for item:', item.id);
                 this.showModal(item);
             });
+        }
+
+        // Add event listener to visualization button
+        if (vizBtn) {
+            vizBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent card click
+                console.log('Visualization button clicked for item:', item.id);
+                this.showVisualizationPanel(item);
+            });
+        }
+    }
+
+    /**
+     * Show visualization panel for STAC item
+     * @param {Object} item - STAC item to visualize
+     */
+    showVisualizationPanel(item) {
+        try {
+            // Check if visualization panel is available
+            if (window.stacExplorer?.visualizationPanel) {
+                window.stacExplorer.visualizationPanel.show(item);
+            } else {
+                console.warn('⚠️ Visualization panel not available');
+                this.notificationService?.showNotification(
+                    'Visualization feature not available', 
+                    'warning'
+                );
+            }
+        } catch (error) {
+            console.error('❌ Error showing visualization panel:', error);
+            this.notificationService?.showNotification(
+                'Error opening visualization panel', 
+                'error'
+            );
         }
     }
     

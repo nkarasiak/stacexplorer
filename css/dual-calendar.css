@@ -1,0 +1,251 @@
+/* Flatpickr Calendar Integration Styles */
+
+.ai-flatpickr-calendar-section {
+    padding: 20px;
+    background: var(--surface-secondary, #ffffff);
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    margin: 16px;
+}
+
+.ai-calendar-container {
+    width: 100%;
+}
+
+.ai-calendar-header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.ai-calendar-header h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary, #1a1a1a);
+}
+
+.ai-calendar-subtitle {
+    margin: 0;
+    font-size: 14px;
+    color: var(--text-secondary, #666);
+}
+
+.ai-flatpickr-wrapper {
+    margin-bottom: 20px;
+}
+
+.ai-date-input-group {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--surface-tertiary, #f8fafc);
+    border: 2px solid var(--border-light, #e2e8f0);
+    border-radius: 8px;
+    padding: 12px 16px;
+    transition: border-color 0.3s ease;
+}
+
+.ai-date-input-group:focus-within {
+    border-color: var(--primary-color, #3b82f6);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.ai-date-input-group .material-icons {
+    color: var(--text-secondary, #666);
+    margin-right: 12px;
+    font-size: 20px;
+}
+
+.ai-flatpickr-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 16px;
+    color: var(--text-primary, #1a1a1a);
+    outline: none;
+    cursor: pointer;
+}
+
+.ai-flatpickr-input::placeholder {
+    color: var(--text-placeholder, #9ca3af);
+}
+
+/* Preset buttons */
+.ai-preset-buttons {
+    margin-bottom: 20px;
+}
+
+.ai-preset-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.ai-preset-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: var(--surface-tertiary, #f8fafc);
+    border: 2px solid var(--border-light, #e2e8f0);
+    border-radius: 8px;
+    color: var(--text-primary, #1a1a1a);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ai-preset-btn:hover {
+    background: var(--surface-hover, #f1f5f9);
+    border-color: var(--primary-color, #3b82f6);
+    transform: translateY(-1px);
+}
+
+.ai-preset-btn.active {
+    background: var(--primary-color, #3b82f6);
+    border-color: var(--primary-color, #3b82f6);
+    color: white;
+}
+
+.ai-preset-btn .material-icons {
+    font-size: 18px;
+}
+
+/* Action buttons */
+.ai-calendar-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.ai-apply-btn,
+.ai-clear-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.ai-apply-btn {
+    background: var(--primary-color, #3b82f6);
+    color: white;
+}
+
+.ai-apply-btn:hover:not(:disabled) {
+    background: var(--primary-hover, #2563eb);
+    transform: translateY(-1px);
+}
+
+.ai-apply-btn:disabled {
+    background: var(--surface-disabled, #d1d5db);
+    color: var(--text-disabled, #9ca3af);
+    cursor: not-allowed;
+}
+
+.ai-clear-btn {
+    background: var(--surface-tertiary, #f8fafc);
+    color: var(--text-secondary, #666);
+    border: 2px solid var(--border-light, #e2e8f0);
+}
+
+.ai-clear-btn:hover {
+    background: var(--surface-hover, #f1f5f9);
+    border-color: var(--danger-color, #ef4444);
+    color: var(--danger-color, #ef4444);
+}
+
+/* Dark theme support */
+.dark-theme .ai-flatpickr-calendar-section {
+    background: var(--surface-secondary, #1a1a1a);
+}
+
+.dark-theme .ai-calendar-header h3 {
+    color: var(--text-primary, #ffffff);
+}
+
+.dark-theme .ai-calendar-subtitle {
+    color: var(--text-secondary, #aaa);
+}
+
+.dark-theme .ai-date-input-group {
+    background: var(--surface-tertiary, #2a2a2a);
+    border-color: var(--border-dark, #444);
+}
+
+.dark-theme .ai-date-input-group .material-icons {
+    color: var(--text-secondary, #aaa);
+}
+
+.dark-theme .ai-flatpickr-input {
+    color: var(--text-primary, #ffffff);
+}
+
+.dark-theme .ai-preset-btn {
+    background: var(--surface-tertiary, #2a2a2a);
+    border-color: var(--border-dark, #444);
+    color: var(--text-primary, #ffffff);
+}
+
+.dark-theme .ai-preset-btn:hover {
+    background: var(--surface-hover, #333);
+}
+
+.dark-theme .ai-clear-btn {
+    background: var(--surface-tertiary, #2a2a2a);
+    border-color: var(--border-dark, #444);
+    color: var(--text-secondary, #aaa);
+}
+
+/* Flatpickr theme customization */
+.flatpickr-calendar {
+    background: var(--surface-secondary, #ffffff) !important;
+    border: 2px solid var(--border-light, #e2e8f0) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+}
+
+.dark-theme .flatpickr-calendar {
+    background: var(--surface-secondary, #1a1a1a) !important;
+    border-color: var(--border-dark, #444) !important;
+}
+
+.flatpickr-months {
+    background: var(--surface-tertiary, #f8fafc) !important;
+    border-radius: 12px 12px 0 0 !important;
+}
+
+.dark-theme .flatpickr-months {
+    background: var(--surface-tertiary, #2a2a2a) !important;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .ai-flatpickr-calendar-section {
+        margin: 8px;
+        padding: 16px;
+    }
+    
+    .ai-preset-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+    
+    .ai-calendar-actions {
+        flex-direction: column;
+    }
+    
+    .ai-apply-btn,
+    .ai-clear-btn {
+        padding: 14px 20px;
+    }
+}

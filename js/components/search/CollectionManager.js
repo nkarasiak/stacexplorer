@@ -73,12 +73,21 @@ export class CollectionManager {
     }
     
     /**
-     * Get collection by ID
+     * Get collection by ID and optionally by source
      * @param {string} collectionId - Collection ID
+     * @param {string} source - Optional source to filter by
      * @returns {Object|null} Collection object or null if not found
      */
-    getCollectionById(collectionId) {
-        return this.collections.find(collection => collection.id === collectionId) || null;
+    getCollectionById(collectionId, source = null) {
+        if (source) {
+            // Find collection by both ID and source
+            return this.collections.find(collection => 
+                collection.id === collectionId && collection.source === source
+            ) || null;
+        } else {
+            // Fallback to first match by ID only (for backward compatibility)
+            return this.collections.find(collection => collection.id === collectionId) || null;
+        }
     }
     
     /**

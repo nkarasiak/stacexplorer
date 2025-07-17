@@ -51,7 +51,7 @@ export class UnifiedStateManager {
             cloudCover: 'cc',           // cloud cover threshold
             
             // Item parameters
-            itemId: 'item_id',          // active item ID
+            itemId: 'item',             // collection item ID
             assetKey: 'asset_key',      // active asset key
             
             // Geometry parameters
@@ -131,9 +131,13 @@ export class UnifiedStateManager {
      */
     async initFromUrl() {
         const params = new URLSearchParams(window.location.search);
+        const pathname = window.location.pathname;
         
         console.log('[UNIFIED] Restoring application state from URL parameters');
+        console.log('[UNIFIED] Current pathname:', pathname);
         this.isRestoringFromUrl = true;
+        
+        // Note: RESTful URLs removed for GitHub Pages compatibility
         
         try {
             // Ensure regular search interface is visible
@@ -363,12 +367,17 @@ export class UnifiedStateManager {
     parseURLParamsToState(params) {
         const state = {};
         
+        console.log('[URL] Parsing URL params to state');
+        console.log('[URL] Available params:', Array.from(params.entries()));
+        
         // Collection parameters
         if (params.has(this.urlKeys.collection)) {
             state.collection = params.get(this.urlKeys.collection);
+            console.log(`[URL] Found collection: ${state.collection}`);
         }
         if (params.has(this.urlKeys.collectionSource)) {
             state.collectionSource = params.get(this.urlKeys.collectionSource);
+            console.log(`[URL] Found collection source: ${state.collectionSource}`);
         }
         
         // Location parameters
@@ -412,7 +421,7 @@ export class UnifiedStateManager {
                 aiHelper.selectedCollectionSource = state.collectionSource;
                 
                 const displayName = state.collection ? 
-                    this.getCollectionDisplayName(state.collection) : 'EVERYTHING';
+                    this.getCollectionDisplayName(state.collection, state.collectionSource) : 'EVERYTHING';
                 this.inlineDropdownManager.updateSearchSummary('collection', displayName);
             }
             
@@ -441,11 +450,33 @@ export class UnifiedStateManager {
                     preset: state.dateType !== 'custom' ? state.dateType : null
                 };
                 
+                // Also update the form inputs for custom dates
+                if (state.dateType === 'custom' && state.dateStart && state.dateEnd) {
+                    const dateStartInput = document.getElementById('date-start');
+                    const dateEndInput = document.getElementById('date-end');
+                    
+                    if (dateStartInput && state.dateStart) {
+                        // Extract just the date part for form inputs (YYYY-MM-DD)
+                        const startDateOnly = state.dateStart.split('T')[0];
+                        dateStartInput.value = startDateOnly;
+                        console.log(`[URL] Set date-start input: ${startDateOnly}`);
+                    }
+                    
+                    if (dateEndInput && state.dateEnd) {
+                        // Extract just the date part for form inputs (YYYY-MM-DD)
+                        const endDateOnly = state.dateEnd.split('T')[0];
+                        dateEndInput.value = endDateOnly;
+                        console.log(`[URL] Set date-end input: ${endDateOnly}`);
+                    }
+                }
+                
                 let displayText = 'ANYTIME';
                 if (state.dateType === 'last30days') {
                     displayText = 'LAST 30 DAYS';
                 } else if (state.dateType === 'custom' && state.dateStart && state.dateEnd) {
-                    displayText = `${state.dateStart} to ${state.dateEnd}`.toUpperCase();
+                    const startDisplay = state.dateStart.split('T')[0];
+                    const endDisplay = state.dateEnd.split('T')[0];
+                    displayText = `${startDisplay} to ${endDisplay}`.toUpperCase();
                 }
                 
                 this.inlineDropdownManager.updateSearchSummary('date', displayText);
@@ -793,10 +824,23 @@ export class UnifiedStateManager {
         
         // Update from form elements if they have values
         const catalogSelect = document.getElementById('catalog-select');
-        if (catalogSelect && catalogSelect.value) {
-            params.set(this.urlKeys.collectionSource, catalogSelect.value);
+        
+        // For collection source, prioritize the actual source of the selected collection
+        let collectionSource = null;
+        const collectionSelect = document.getElementById('collection-select');
+        
+        // Try to get the actual source from AI search helper if available
+        if (this.inlineDropdownManager?.aiSearchHelper?.selectedCollectionSource) {
+            collectionSource = this.inlineDropdownManager.aiSearchHelper.selectedCollectionSource;
+        } else if (catalogSelect && catalogSelect.value) {
+            // Fallback to catalog selector value
+            collectionSource = catalogSelect.value;
+        }
+        
+        if (collectionSource) {
+            params.set(this.urlKeys.collectionSource, collectionSource);
             
-            if (catalogSelect.value === 'custom') {
+            if (collectionSource === 'custom') {
                 const customUrlInput = document.getElementById('custom-catalog-url');
                 if (customUrlInput && customUrlInput.value) {
                     params.set(this.urlKeys.catalogUrl, customUrlInput.value);
@@ -804,7 +848,6 @@ export class UnifiedStateManager {
             }
         }
         
-        const collectionSelect = document.getElementById('collection-select');
         if (collectionSelect && collectionSelect.value) {
             params.set(this.urlKeys.collection, collectionSelect.value);
         }
@@ -845,13 +888,16 @@ export class UnifiedStateManager {
             }
         }
         
-        // Update URL without reloading the page
-        const newUrl = `${window.location.pathname}?${params.toString()}`;
+        // Build simple query string URL for GitHub Pages compatibility
+        const queryString = params.toString();
+        const newUrl = queryString ? `/?${queryString}` : '/';
+        
+        console.log('[UNIFIED] Updated URL with query parameters:', newUrl);
         window.history.pushState({}, '', newUrl);
     }
     
     /**
-     * Restore state from URL parameters (for browser navigation)
+     * Restore state from URL parameters (browser navigation)
      */
     restoreStateFromURL() {
         try {
@@ -920,15 +966,110 @@ export class UnifiedStateManager {
     /**
      * Utility method to get collection display name
      */
-    getCollectionDisplayName(collectionId) {
+    getCollectionDisplayName(collectionId, source = null) {
         const collections = this.inlineDropdownManager?.aiSearchHelper?.allAvailableCollections;
-        if (collections) {
-            const collection = collections.find(c => c.id === collectionId);
+        console.log(`[COLLECTION] Getting display name for: ${collectionId} from source: ${source}`);
+        console.log(`[COLLECTION] Available collections:`, collections?.length || 0);
+        
+        if (collections && collections.length > 0) {
+            // Use provided source or fall back to current state source
+            const targetSource = source || this.currentState.collectionSource;
+            console.log(`[COLLECTION] Target source: ${targetSource}`);
+            
+            // First try to find by ID and source
+            let collection = null;
+            if (targetSource) {
+                collection = collections.find(c => c.id === collectionId && c.source === targetSource);
+                console.log(`[COLLECTION] Found with source:`, collection?.title || 'not found');
+            }
+            
+            // If not found with source, fall back to ID only
+            if (!collection) {
+                collection = collections.find(c => c.id === collectionId);
+                console.log(`[COLLECTION] Found without source:`, collection?.title || 'not found');
+            }
+            
             if (collection) {
-                return collection.displayTitle || collection.title || collectionId;
+                const displayName = collection.displayTitle || collection.title || collectionId;
+                console.log(`[COLLECTION] Returning display name: ${displayName}`);
+                return displayName;
             }
         }
+        console.log(`[COLLECTION] No collection found, returning ID: ${collectionId}`);
         return collectionId;
+    }
+    
+    /**
+     * Extract provider name from source URL
+     * @param {string} sourceUrl - The collection source URL
+     * @returns {string} Provider name suitable for URL
+     */
+    extractProviderFromSource(sourceUrl) {
+        if (!sourceUrl) return null;
+        
+        try {
+            const url = new URL(sourceUrl);
+            const hostname = url.hostname;
+            
+            // Map common STAC providers to friendly names
+            const providerMappings = {
+                'earth-search.aws.element84.com': 'element84',
+                'planetarycomputer.microsoft.com': 'planetary-computer',
+                'stac.dataspace.copernicus.eu': 'copernicus',
+                'stac.ceos.org': 'ceos',
+                'stacindex.org': 'stac-index',
+                'catalog.digitalearth.africa': 'digital-earth-africa',
+                'stac.eosdis.nasa.gov': 'nasa-eosdis',
+                'api.radiant.earth': 'radiant-earth',
+                'stac-browser.s3.us-west-2.amazonaws.com': 'aws-s3',
+                'localhost': 'local'
+            };
+            
+            // Check for exact matches first
+            if (providerMappings[hostname]) {
+                return providerMappings[hostname];
+            }
+            
+            // Extract domain name without TLD for generic providers
+            const domainParts = hostname.split('.');
+            if (domainParts.length >= 2) {
+                // Get the main domain name (e.g., 'google' from 'api.google.com')
+                const mainDomain = domainParts[domainParts.length - 2];
+                return mainDomain.toLowerCase().replace(/[^a-z0-9]/g, '-');
+            }
+            
+            return hostname.replace(/[^a-z0-9]/g, '-').toLowerCase();
+            
+        } catch (error) {
+            console.warn('[URL] Error extracting provider from URL:', sourceUrl, error);
+            // Fallback: use a cleaned version of the URL
+            return sourceUrl.replace(/[^a-z0-9]/gi, '-').toLowerCase().substring(0, 20);
+        }
+    }
+    
+    /**
+     * Get provider source URL from provider name
+     * @param {string} providerName - The provider name from URL
+     * @returns {string|null} Source URL or null if not found
+     */
+    getProviderSourceFromName(providerName) {
+        if (!providerName) return null;
+        
+        // Reverse mapping for known providers
+        const reverseProviderMappings = {
+            'element84': 'https://earth-search.aws.element84.com/v1',
+            'planetary-computer': 'https://planetarycomputer.microsoft.com/api/stac/v1',
+            'copernicus': 'https://stac.dataspace.copernicus.eu/v1',
+            'ceos': 'https://stac.ceos.org',
+            'stac-index': 'https://stacindex.org',
+            'digital-earth-africa': 'https://catalog.digitalearth.africa/stac',
+            'nasa-eosdis': 'https://stac.eosdis.nasa.gov',
+            'radiant-earth': 'https://api.radiant.earth/stac',
+            'aws-s3': 'https://stac-browser.s3.us-west-2.amazonaws.com',
+            'local': 'http://localhost:3000'
+        };
+        
+        return reverseProviderMappings[providerName] || null;
     }
 }
 

@@ -562,17 +562,30 @@ export class AISmartSearchEnhanced {
     /**
      * Get display name for a collection from all available collections
      * @param {string} collectionId - Collection ID
+     * @param {string} source - Collection source (optional, uses selectedCollectionSource if not provided)
      * @returns {string} Display name
      */
-    getCollectionDisplayName(collectionId) {
+    getCollectionDisplayName(collectionId, source = null) {
         if (this.allAvailableCollections) {
-            const collection = this.allAvailableCollections.find(c => c.id === collectionId);
+            // Use provided source or fall back to selected source
+            const targetSource = source || this.selectedCollectionSource;
+            
+            // First try to find by ID and source
+            let collection = this.allAvailableCollections.find(c => 
+                c.id === collectionId && c.source === targetSource
+            );
+            
+            // If not found and we have a target source, fall back to ID only
+            if (!collection) {
+                collection = this.allAvailableCollections.find(c => c.id === collectionId);
+            }
+            
             if (collection) {
                 return collection.displayTitle || collection.title || collectionId;
             }
         }
         
-        const collection = this.collectionManager.getCollectionById(collectionId);
+        const collection = this.collectionManager.getCollectionById(collectionId, source);
         return collection ? (collection.title || collectionId) : collectionId;
     }
 
@@ -896,7 +909,20 @@ export class AISmartSearchEnhanced {
                 collectionId = params.collections[0];
                 // Look up the collection in allAvailableCollections
                 if (this.allAvailableCollections && collectionId) {
-                    const found = this.allAvailableCollections.find(c => c.id === collectionId);
+                    // First try to find with the current selected source
+                    let found = null;
+                    if (this.selectedCollectionSource) {
+                        found = this.allAvailableCollections.find(c => 
+                            c.id === collectionId && c.source === this.selectedCollectionSource
+                        );
+                    }
+                    
+                    // If not found with selected source, fall back to any source
+                    if (!found) {
+                        found = this.allAvailableCollections.find(c => c.id === collectionId);
+                        console.warn(`⚠️ Collection ${collectionId} not found with selected source ${this.selectedCollectionSource}, using first match from ${found?.source}`);
+                    }
+                    
                     if (found && found.source) {
                         collectionSource = found.source;
                         this.selectedCollectionSource = collectionSource;

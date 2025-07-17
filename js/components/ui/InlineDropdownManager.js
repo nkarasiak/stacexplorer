@@ -529,32 +529,342 @@ export class InlineDropdownManager {
             optionsSection.appendChild(option);
         });
         
-        // Add custom date range inputs (initially hidden)
-        const customSection = document.createElement('div');
-        customSection.className = 'ai-custom-date-section';
-        customSection.id = 'custom-date-section';
-        customSection.style.display = 'none';
-        customSection.innerHTML = `
-            <div class="ai-custom-date-inputs">
-                <div class="ai-date-input-group">
-                    <label for="dropdown-date-start">Start Date:</label>
-                    <input type="date" id="dropdown-date-start" name="date-start">
-                </div>
-                <div class="ai-date-input-group">
-                    <label for="dropdown-date-end">End Date:</label>
-                    <input type="date" id="dropdown-date-end" name="date-end">
-                </div>
-                <div class="ai-date-actions">
-                    <button type="button" id="apply-date-range" class="ai-apply-btn">Apply Range</button>
-                    <button type="button" class="ai-cancel-btn">Cancel</button>
-                </div>
-            </div>
-        `;
-        optionsSection.appendChild(customSection);
+        // Note: Embedded calendar removed - we now use standalone popup calendar when clicking custom range
         
         container.appendChild(optionsSection);
         
         return container;
+    }
+    
+    /**
+     * Create HTML for Flatpickr calendar interface
+     */
+    createFlatpickrCalendarHTML() {
+        return `
+            <div class="ai-calendar-container">
+                <div class="ai-calendar-header">
+                    <h3>📅 Select Date Range</h3>
+                    <p class="ai-calendar-subtitle">Choose dates for your search</p>
+                </div>
+                
+                <div class="ai-flatpickr-wrapper">
+                    <div class="ai-date-input-group">
+                        <i class="material-icons">event</i>
+                        <input type="text" 
+                               id="flatpickr-date-range" 
+                               class="ai-flatpickr-input" 
+                               placeholder="Select date range..."
+                               readonly>
+                    </div>
+                </div>
+                
+                <div class="ai-preset-buttons">
+                    <div class="ai-preset-grid">
+                        <button type="button" class="ai-preset-btn" data-days="1">
+                            <i class="material-icons">today</i>
+                            <span>1 Day</span>
+                        </button>
+                        <button type="button" class="ai-preset-btn" data-days="7">
+                            <i class="material-icons">date_range</i>
+                            <span>1 Week</span>
+                        </button>
+                        <button type="button" class="ai-preset-btn" data-days="30">
+                            <i class="material-icons">calendar_month</i>
+                            <span>1 Month</span>
+                        </button>
+                        <button type="button" class="ai-preset-btn" data-days="183">
+                            <i class="material-icons">event_note</i>
+                            <span>6 Months</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="ai-calendar-actions">
+                    <button type="button" id="calendar-apply-btn" class="ai-apply-btn">
+                        <i class="material-icons">check</i>
+                        Apply Date Range
+                    </button>
+                    <button type="button" id="calendar-clear-btn" class="ai-clear-btn">
+                        <i class="material-icons">clear</i>
+                        Clear Dates
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+    
+    /**
+     * Format date for display
+     */
+    formatDateDisplay(date) {
+        const options = { 
+            weekday: 'short', 
+            year: 'numeric', 
+            month: 'short', 
+            day: 'numeric' 
+        };
+        return date.toLocaleDateString('en-US', options);
+    }
+    
+    /**
+     * Initialize Flatpickr calendar functionality
+     */
+    initializeFlatpickrCalendar(calendarSection) {
+        const dateRangeInput = calendarSection.querySelector('#flatpickr-date-range');
+        const applyBtn = calendarSection.querySelector('#calendar-apply-btn');
+        const clearBtn = calendarSection.querySelector('#calendar-clear-btn');
+        const presetButtons = calendarSection.querySelectorAll('.ai-preset-btn');
+        
+        // Initialize Flatpickr
+        const fp = flatpickr(dateRangeInput, {
+            mode: 'range',
+            dateFormat: 'Y-m-d',
+            defaultDate: [new Date(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)], // Today + 30 days
+            showMonths: 2,
+            static: true,
+            position: 'below',
+            theme: 'dark',
+            monthSelectorType: 'dropdown',
+            yearSelectorType: 'dropdown',
+            onChange: (selectedDates) => {
+                if (selectedDates.length === 2) {
+                    applyBtn.disabled = false;
+                } else {
+                    applyBtn.disabled = true;
+                }
+            }
+        });
+        
+        // Store flatpickr instance for later use
+        this.flatpickrInstance = fp;
+        
+        // Preset button functionality
+        presetButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const days = parseInt(btn.dataset.days);
+                const startDate = new Date();
+                const endDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+                
+                fp.setDate([startDate, endDate]);
+                
+                // Update button states
+                presetButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+        
+        // Apply button functionality
+        applyBtn.addEventListener('click', () => {
+            const selectedDates = fp.selectedDates;
+            
+            if (selectedDates.length === 2) {
+                const startDate = selectedDates[0].toISOString().split('T')[0];
+                const endDate = selectedDates[1].toISOString().split('T')[0];
+                
+                // Update the AI search helper state
+                this.aiSearchHelper.selectedDate = {
+                    type: 'custom',
+                    start: startDate,
+                    end: endDate,
+                    preset: null
+                };
+                
+                // Update the regular form inputs
+                const regularStartInput = document.getElementById('date-start');
+                const regularEndInput = document.getElementById('date-end');
+                if (regularStartInput) regularStartInput.value = startDate;
+                if (regularEndInput) regularEndInput.value = endDate;
+                
+                // Update search summary
+                const dateRange = `${this.formatDateDisplay(selectedDates[0])} to ${this.formatDateDisplay(selectedDates[1])}`;
+                this.updateSearchSummary('date', dateRange.toUpperCase());
+                
+                // Trigger search parameter change event
+                document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                    detail: {
+                        type: 'date',
+                        dateType: 'custom',
+                        dateStart: startDate,
+                        dateEnd: endDate
+                    }
+                }));
+                
+                // Close the dropdown
+                this.closeCurrentDropdown();
+                
+                console.log('📅 Date range applied:', { startDate, endDate });
+            }
+        });
+        
+        // Clear button functionality
+        clearBtn.addEventListener('click', () => {
+            fp.clear();
+            presetButtons.forEach(b => b.classList.remove('active'));
+            applyBtn.disabled = true;
+        });
+        
+        console.log('📅 Flatpickr calendar initialized');
+    }
+    
+    /**
+     * Open a standalone Flatpickr calendar for custom date selection
+     */
+    openFlatpickrCalendar() {
+        // Close current dropdown first
+        this.closeCurrentDropdown();
+        
+        // Create a temporary input for Flatpickr
+        const tempInput = document.createElement('input');
+        tempInput.type = 'text';
+        tempInput.style.position = 'absolute';
+        tempInput.style.left = '-9999px';
+        tempInput.style.opacity = '0';
+        document.body.appendChild(tempInput);
+        
+        // Create backdrop first
+        const backdrop = document.createElement('div');
+        backdrop.className = 'flatpickr-backdrop';
+        backdrop.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 9999;
+        `;
+        document.body.appendChild(backdrop);
+        
+        // Cleanup function
+        const cleanup = () => {
+            try {
+                if (fp) fp.destroy();
+                if (tempInput && tempInput.parentNode) document.body.removeChild(tempInput);
+                if (backdrop && backdrop.parentNode) document.body.removeChild(backdrop);
+                console.log('📅 Calendar cleanup completed');
+            } catch (error) {
+                console.warn('Calendar cleanup error:', error);
+            }
+        };
+        
+        // Initialize Flatpickr with inline mode for better visibility
+        const fp = flatpickr(tempInput, {
+            mode: 'range',
+            dateFormat: 'Y-m-d',
+            inline: true,
+            showMonths: 2,
+            theme: 'dark',
+            monthSelectorType: 'dropdown',
+            yearSelectorType: 'dropdown',
+            position: 'center',
+            onReady: (selectedDates, dateStr, instance) => {
+                // Style the calendar container
+                const calendarEl = instance.calendarContainer;
+                calendarEl.style.position = 'fixed';
+                calendarEl.style.top = '50%';
+                calendarEl.style.left = '50%';
+                calendarEl.style.transform = 'translate(-50%, -50%)';
+                calendarEl.style.zIndex = '10000';
+                calendarEl.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)';
+                calendarEl.style.borderRadius = '12px';
+                
+                // Add close button
+                const closeBtn = document.createElement('button');
+                closeBtn.innerHTML = '<i class="material-icons">close</i>';
+                closeBtn.style.cssText = `
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    background: var(--danger-color, #ef4444);
+                    color: white;
+                    border: none;
+                    border-radius: 50%;
+                    width: 32px;
+                    height: 32px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: pointer;
+                    z-index: 10001;
+                `;
+                closeBtn.addEventListener('click', cleanup);
+                calendarEl.appendChild(closeBtn);
+            },
+            onChange: (selectedDates, dateStr, instance) => {
+                if (selectedDates.length === 2) {
+                    // Get the date strings using local date components to avoid timezone conversion
+                    const startDateStr = [
+                        selectedDates[0].getFullYear(),
+                        String(selectedDates[0].getMonth() + 1).padStart(2, '0'),
+                        String(selectedDates[0].getDate()).padStart(2, '0')
+                    ].join('-');
+                    
+                    const endDateStr = [
+                        selectedDates[1].getFullYear(),
+                        String(selectedDates[1].getMonth() + 1).padStart(2, '0'),
+                        String(selectedDates[1].getDate()).padStart(2, '0')
+                    ].join('-');
+                    
+                    // Create datetime strings in UTC to avoid timezone issues
+                    const startDate = `${startDateStr}T00:00:00Z`;
+                    const endDate = `${endDateStr}T23:59:59Z`;
+                    
+                    // Apply the date range immediately with full datetime
+                    this.aiSearchHelper.selectedDate = {
+                        type: 'custom',
+                        start: startDate,
+                        end: endDate,
+                        preset: null
+                    };
+                    
+                    // Update regular form inputs with date strings only
+                    const regularStartInput = document.getElementById('date-start');
+                    const regularEndInput = document.getElementById('date-end');
+                    if (regularStartInput) regularStartInput.value = startDateStr;
+                    if (regularEndInput) regularEndInput.value = endDateStr;
+                    
+                    // Update search summary
+                    const dateRange = `${this.formatDateDisplay(selectedDates[0])} to ${this.formatDateDisplay(selectedDates[1])}`;
+                    this.updateSearchSummary('date', dateRange.toUpperCase());
+                    
+                    // Trigger search parameter change event
+                    document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                        detail: {
+                            type: 'date',
+                            dateType: 'custom',
+                            dateStart: startDate,
+                            dateEnd: endDate
+                        }
+                    }));
+                    
+                    console.log('📅 Date range applied from standalone calendar:', { 
+                        selectedDates: selectedDates.map(d => d.toISOString()),
+                        startDateStr: startDateStr,
+                        endDateStr: endDateStr,
+                        startDate: startDate, 
+                        endDate: endDate,
+                        display: `${startDateStr} 00:00:00 to ${endDateStr} 23:59:59`
+                    });
+                    
+                    // Auto-close after selection with cleanup
+                    setTimeout(cleanup, 300);
+                }
+            },
+            onDestroy: () => {
+                // Ensure cleanup happens when Flatpickr is destroyed
+                setTimeout(() => {
+                    if (backdrop && backdrop.parentNode) {
+                        document.body.removeChild(backdrop);
+                    }
+                }, 0);
+            }
+        });
+        
+        // Add backdrop click to close
+        backdrop.addEventListener('click', cleanup);
+        
+        // Open the calendar immediately
+        fp.open();
     }
     
     /**
@@ -845,10 +1155,27 @@ export class InlineDropdownManager {
         // Set up close button handler
         this.setupCloseButtonHandler(this.currentDropdown);
         
-        // Focus first interactive element
-        const firstInput = this.currentDropdown.querySelector('input, button, [tabindex]');
-        if (firstInput) {
-            setTimeout(() => firstInput.focus(), 100);
+        // Auto-focus search input field when dropdown opens
+        let searchInput = null;
+        
+        // Try to find the specific search input based on field type
+        if (fieldType === 'location') {
+            searchInput = this.currentDropdown.querySelector('.ai-location-search-input');
+        } else if (fieldType === 'collection') {
+            searchInput = this.currentDropdown.querySelector('.ai-search-input');
+        }
+        
+        // Fallback to any input field if specific search input not found
+        if (!searchInput) {
+            searchInput = this.currentDropdown.querySelector('input, button, [tabindex]');
+        }
+        
+        // Focus the search input with a small delay to ensure DOM is ready
+        if (searchInput) {
+            setTimeout(() => {
+                searchInput.focus();
+                console.log(`🎯 Auto-focused search input for ${fieldType} dropdown`);
+            }, 150);
         }
         
         console.log(`🔄 Loading dropdown replaced with content for: ${fieldType}`);
@@ -1055,13 +1382,20 @@ export class InlineDropdownManager {
                 // Handle custom date button first (before generic option handling)
                 const customDateBtn = e.target.closest('#custom-date');
                 if (customDateBtn) {
-                    console.log('📅 Custom date button clicked');
-                    this.handleCustomDate(dropdown);
+                    console.log('📅 Custom date button clicked - opening standalone calendar');
+                    this.openFlatpickrCalendar();
+                    return;
+                }
+                
+                // Handle custom date range option - open Flatpickr immediately
+                const option = e.target.closest('.ai-option');
+                if (option && option.dataset.value === 'custom') {
+                    console.log('📅 Custom date range clicked - opening Flatpickr calendar');
+                    this.openFlatpickrCalendar();
                     return;
                 }
                 
                 // Handle other date options
-                const option = e.target.closest('.ai-option');
                 if (option && option.dataset.value && option.dataset.value !== 'custom') {
                     console.log(`📅 Date option clicked: ${option.dataset.value}`);
                     this.handleDateSelection(option.dataset.value);

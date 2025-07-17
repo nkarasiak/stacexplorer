@@ -21,7 +21,11 @@
       "Bash(rg:*)",
       "Bash(tail:*)",
       "Bash(wc:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(npm install:*)",
+      "Bash(mkdir:*)",
+      "Bash(git pull:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }

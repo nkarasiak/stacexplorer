@@ -1,15 +1,16 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const port = 8000;
 
 // Enable CORS for all routes
 app.use(cors());
-
-// Serve static files from the root directory
-app.use(express.static(__dirname));
 
 // Sample collections data
 const collections = [
@@ -46,7 +47,18 @@ app.get('/api/search', (req, res) => {
     });
 });
 
-// Serve index.html for all other routes
+// Serve static files AFTER API routes but BEFORE catch-all
+app.use(express.static(__dirname, {
+    setHeaders: (res, filePath) => {
+        if (filePath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+        } else if (filePath.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css; charset=utf-8');
+        }
+    }
+}));
+
+// Serve index.html for all other routes (SPA routing)
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });

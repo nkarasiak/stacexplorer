@@ -835,6 +835,12 @@ export class CardSearchPanel {
             document.dispatchEvent(new CustomEvent('clearMapDrawings'));
             console.log('🧹 Cleared map drawings');
             
+            // Clear current item layer (geometry/bbox) - this fixes the overlay issue!
+            if (this.mapManager && typeof this.mapManager.removeCurrentLayer === 'function') {
+                this.mapManager.removeCurrentLayer();
+                console.log('🧹 Cleared current item layer (geometry/bbox)');
+            }
+            
             // Clear thumbnails if mapManager is available
             if (this.mapManager && typeof this.mapManager.clearAllThumbnails === 'function') {
                 this.mapManager.clearAllThumbnails();

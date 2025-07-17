@@ -53,6 +53,7 @@ export class CardSearchPanel {
         this.initSearchButtons();
         this.initCloudCoverControls();
         this.initStacUrlLoader();
+        this.initGlobalPasteListener();
         
         // Always show search summary
         this.showSearchSummary();
@@ -1325,6 +1326,109 @@ export class CardSearchPanel {
             // Clear pending selection
             this.pendingCollectionSelection = null;
         }
+    }
+    
+    /**
+     * Initialize global paste listener for STAC items
+     */
+    initGlobalPasteListener() {
+        document.addEventListener('paste', (e) => {
+            // Don't interfere if user is pasting into an input field
+            const activeElement = document.activeElement;
+            if (activeElement && (
+                activeElement.tagName === 'INPUT' || 
+                activeElement.tagName === 'TEXTAREA' ||
+                activeElement.contentEditable === 'true'
+            )) {
+                return;
+            }
+            
+            // Get pasted text
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            if (!pastedText.trim()) return;
+            
+            // Try to detect and parse STAC item JSON
+            this.handleGlobalPaste(pastedText.trim());
+        });
+        
+        console.log('🎯 Global paste listener initialized for STAC items');
+    }
+    
+    /**
+     * Handle global paste and detect STAC items
+     * @param {string} pastedText - The pasted text content
+     */
+    async handleGlobalPaste(pastedText) {
+        try {
+            // Try to parse as JSON
+            let jsonData;
+            try {
+                jsonData = JSON.parse(pastedText);
+            } catch (parseError) {
+                // Not valid JSON, ignore silently
+                return;
+            }
+            
+            // Check if it looks like a STAC item
+            if (this.isValidStacItem(jsonData)) {
+                console.log('🎯 Detected STAC item from paste:', jsonData.id);
+                
+                // Show notification
+                this.notificationService.showNotification(
+                    `🎯 STAC item detected! Loading: ${jsonData.id}`,
+                    'info'
+                );
+                
+                // Process and load the item
+                await this.processStacItem(jsonData);
+                
+            } else if (this.isStacCollection(jsonData)) {
+                console.log('📂 Detected STAC collection from paste:', jsonData.id);
+                
+                this.notificationService.showNotification(
+                    `📂 STAC collection detected, but only items are supported for direct loading`,
+                    'warning'
+                );
+                
+            } else {
+                // Valid JSON but not a STAC item/collection - ignore silently
+                return;
+            }
+            
+        } catch (error) {
+            // Error processing - ignore silently to avoid annoying users
+            console.debug('Paste processing error (ignored):', error);
+        }
+    }
+    
+    /**
+     * Check if JSON object is a valid STAC item
+     * @param {Object} obj - JSON object to check
+     * @returns {boolean} True if valid STAC item
+     */
+    isValidStacItem(obj) {
+        return obj && 
+               typeof obj === 'object' &&
+               obj.type === 'Feature' &&
+               typeof obj.id === 'string' &&
+               obj.assets &&
+               typeof obj.assets === 'object' &&
+               obj.properties &&
+               typeof obj.properties === 'object' &&
+               (obj.stac_version || obj.geometry !== undefined); // STAC version or geometry indicates STAC item
+    }
+    
+    /**
+     * Check if JSON object is a STAC collection
+     * @param {Object} obj - JSON object to check  
+     * @returns {boolean} True if STAC collection
+     */
+    isStacCollection(obj) {
+        return obj &&
+               typeof obj === 'object' &&
+               obj.type === 'Collection' &&
+               typeof obj.id === 'string' &&
+               (obj.stac_version || obj.extent !== undefined);
     }
 }
 

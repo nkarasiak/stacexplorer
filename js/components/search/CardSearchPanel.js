@@ -813,6 +813,9 @@ export class CardSearchPanel {
         
         console.log(`✅ Successfully loaded STAC item: ${stacItem.id}`);
         
+        // Clear previous map state (geometry, bbox, thumbnails)
+        this.clearMapState();
+        
         // Display the item in results
         this.resultsPanel.setItems([stacItem]);
         
@@ -821,6 +824,35 @@ export class CardSearchPanel {
             `🎯 Loaded STAC item: ${stacItem.id}`, 
             'success'
         );
+    }
+    
+    /**
+     * Clear all previous map state (drawings, thumbnails, geometry)
+     */
+    clearMapState() {
+        try {
+            // Clear map drawings and previous geometry
+            document.dispatchEvent(new CustomEvent('clearMapDrawings'));
+            console.log('🧹 Cleared map drawings');
+            
+            // Clear thumbnails if mapManager is available
+            if (this.mapManager && typeof this.mapManager.clearAllThumbnails === 'function') {
+                this.mapManager.clearAllThumbnails();
+                console.log('🧹 Cleared all thumbnails from map');
+            }
+            
+            // Clear any visualization layers if available
+            if (window.stacExplorer?.rasterManager) {
+                const layers = window.stacExplorer.rasterManager.getLayerInfo();
+                layers.forEach(layer => {
+                    window.stacExplorer.rasterManager.removeLayer(layer.layerId);
+                });
+                console.log('🧹 Cleared visualization layers');
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ Error clearing map state:', error);
+        }
     }
     
     /**

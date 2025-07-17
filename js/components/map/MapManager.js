@@ -1038,35 +1038,78 @@ let geojson;
      */
     removeCurrentLayer() {
         try {
+            console.log('🧹 [CLEAR-DEBUG] Starting layer removal...');
+            console.log('🧹 [CLEAR-DEBUG] Current layer state:', this.currentLayer);
+            
+            // Additional aggressive cleanup - remove common layer IDs directly
+            const commonLayerIds = [
+                'item-geometry-layer',
+                'item-geometry-layer-stroke',
+                'thumbnail-layer',
+                'image-overlay-layer'
+            ];
+            
+            commonLayerIds.forEach(layerId => {
+                if (this.map.getLayer(layerId)) {
+                    console.log(`🧹 [CLEAR-DEBUG] Removing common layer: ${layerId}`);
+                    this.map.removeLayer(layerId);
+                }
+            });
+            
+            // Additional aggressive source cleanup
+            const commonSourceIds = [
+                'item-geometry',
+                'thumbnail-source',
+                'image-overlay-source'
+            ];
+            
+            commonSourceIds.forEach(sourceId => {
+                if (this.map.getSource(sourceId)) {
+                    console.log(`🧹 [CLEAR-DEBUG] Removing common source: ${sourceId}`);
+                    this.map.removeSource(sourceId);
+                }
+            });
+            
             // If we have a current layer, remove it
             if (this.currentLayer) {
+                console.log('🧹 [CLEAR-DEBUG] Removing tracked current layer...');
+                
                 // Handle new structure with layerIds array
                 if (this.currentLayer.layerIds && Array.isArray(this.currentLayer.layerIds)) {
+                    console.log('🧹 [CLEAR-DEBUG] Removing layers by ID array:', this.currentLayer.layerIds);
                     this.currentLayer.layerIds.forEach(layerId => {
                         if (this.map.getLayer(layerId)) {
+                            console.log(`🧹 [CLEAR-DEBUG] Removed layer: ${layerId}`);
                             this.map.removeLayer(layerId);
+                        } else {
+                            console.log(`🧹 [CLEAR-DEBUG] Layer not found: ${layerId}`);
                         }
                     });
                 }
                 // Handle old structure or remaining layers by source
                 else if (this.currentLayer.sourceId) {
+                    console.log('🧹 [CLEAR-DEBUG] Removing layers by source:', this.currentLayer.sourceId);
                     const layers = this.map.getStyle().layers.filter(layer => 
                         layer.source === this.currentLayer.sourceId
                     );
                     
+                    console.log('🧹 [CLEAR-DEBUG] Found layers to remove:', layers.map(l => l.id));
                     layers.forEach(layer => {
                         if (this.map.getLayer(layer.id)) {
+                            console.log(`🧹 [CLEAR-DEBUG] Removed layer by source: ${layer.id}`);
                             this.map.removeLayer(layer.id);
                         }
                     });
                 }
                 // Handle Leaflet-style layers (legacy)
                 else if (this.currentLayer.remove) {
+                    console.log('🧹 [CLEAR-DEBUG] Removing legacy layer');
                     this.currentLayer.remove();
                 }
                 
                 // Remove the source
                 if (this.currentLayer.sourceId && this.map.getSource(this.currentLayer.sourceId)) {
+                    console.log(`🧹 [CLEAR-DEBUG] Removing source: ${this.currentLayer.sourceId}`);
                     this.map.removeSource(this.currentLayer.sourceId);
                 }
                 
@@ -1074,9 +1117,17 @@ let geojson;
                 this.currentLayer = null;
                 this.currentLayerOverlay = null;
                 this.currentAssetKey = null;
+                console.log('🧹 [CLEAR-DEBUG] Cleared current layer tracking');
+            } else {
+                console.log('🧹 [CLEAR-DEBUG] No tracked current layer to remove');
             }
+            
+            // Final verification - list all remaining layers
+            const remainingLayers = this.map.getStyle().layers.map(l => l.id);
+            console.log('🧹 [CLEAR-DEBUG] Remaining layers after cleanup:', remainingLayers);
+            
         } catch (error) {
-            console.error('Error removing current layer:', error);
+            console.error('❌ [CLEAR-DEBUG] Error removing current layer:', error);
         }
     }
 
@@ -2292,35 +2343,78 @@ let geojson;
      */
     removeCurrentLayer() {
         try {
+            console.log('🧹 [CLEAR-DEBUG] Starting layer removal...');
+            console.log('🧹 [CLEAR-DEBUG] Current layer state:', this.currentLayer);
+            
+            // Additional aggressive cleanup - remove common layer IDs directly
+            const commonLayerIds = [
+                'item-geometry-layer',
+                'item-geometry-layer-stroke',
+                'thumbnail-layer',
+                'image-overlay-layer'
+            ];
+            
+            commonLayerIds.forEach(layerId => {
+                if (this.map.getLayer(layerId)) {
+                    console.log(`🧹 [CLEAR-DEBUG] Removing common layer: ${layerId}`);
+                    this.map.removeLayer(layerId);
+                }
+            });
+            
+            // Additional aggressive source cleanup
+            const commonSourceIds = [
+                'item-geometry',
+                'thumbnail-source',
+                'image-overlay-source'
+            ];
+            
+            commonSourceIds.forEach(sourceId => {
+                if (this.map.getSource(sourceId)) {
+                    console.log(`🧹 [CLEAR-DEBUG] Removing common source: ${sourceId}`);
+                    this.map.removeSource(sourceId);
+                }
+            });
+            
             // If we have a current layer, remove it
             if (this.currentLayer) {
+                console.log('🧹 [CLEAR-DEBUG] Removing tracked current layer...');
+                
                 // Handle new structure with layerIds array
                 if (this.currentLayer.layerIds && Array.isArray(this.currentLayer.layerIds)) {
+                    console.log('🧹 [CLEAR-DEBUG] Removing layers by ID array:', this.currentLayer.layerIds);
                     this.currentLayer.layerIds.forEach(layerId => {
                         if (this.map.getLayer(layerId)) {
+                            console.log(`🧹 [CLEAR-DEBUG] Removed layer: ${layerId}`);
                             this.map.removeLayer(layerId);
+                        } else {
+                            console.log(`🧹 [CLEAR-DEBUG] Layer not found: ${layerId}`);
                         }
                     });
                 }
                 // Handle old structure or remaining layers by source
                 else if (this.currentLayer.sourceId) {
+                    console.log('🧹 [CLEAR-DEBUG] Removing layers by source:', this.currentLayer.sourceId);
                     const layers = this.map.getStyle().layers.filter(layer => 
                         layer.source === this.currentLayer.sourceId
                     );
                     
+                    console.log('🧹 [CLEAR-DEBUG] Found layers to remove:', layers.map(l => l.id));
                     layers.forEach(layer => {
                         if (this.map.getLayer(layer.id)) {
+                            console.log(`🧹 [CLEAR-DEBUG] Removed layer by source: ${layer.id}`);
                             this.map.removeLayer(layer.id);
                         }
                     });
                 }
                 // Handle Leaflet-style layers (legacy)
                 else if (this.currentLayer.remove) {
+                    console.log('🧹 [CLEAR-DEBUG] Removing legacy layer');
                     this.currentLayer.remove();
                 }
                 
                 // Remove the source
                 if (this.currentLayer.sourceId && this.map.getSource(this.currentLayer.sourceId)) {
+                    console.log(`🧹 [CLEAR-DEBUG] Removing source: ${this.currentLayer.sourceId}`);
                     this.map.removeSource(this.currentLayer.sourceId);
                 }
                 
@@ -2328,9 +2422,17 @@ let geojson;
                 this.currentLayer = null;
                 this.currentLayerOverlay = null;
                 this.currentAssetKey = null;
+                console.log('🧹 [CLEAR-DEBUG] Cleared current layer tracking');
+            } else {
+                console.log('🧹 [CLEAR-DEBUG] No tracked current layer to remove');
             }
+            
+            // Final verification - list all remaining layers
+            const remainingLayers = this.map.getStyle().layers.map(l => l.id);
+            console.log('🧹 [CLEAR-DEBUG] Remaining layers after cleanup:', remainingLayers);
+            
         } catch (error) {
-            console.error('Error removing current layer:', error);
+            console.error('❌ [CLEAR-DEBUG] Error removing current layer:', error);
         }
     }
     

@@ -798,26 +798,64 @@ export class CardSearchPanel {
      * Process and validate a STAC item, then display it
      */
     async processStacItem(stacItem) {
+        console.log('🔍 [PASTE-DEBUG] Processing STAC object:', {
+            type: stacItem.type,
+            id: stacItem.id,
+            hasAssets: !!stacItem.assets,
+            hasGeometry: !!stacItem.geometry
+        });
+        
         // Validate basic STAC item structure
         if (!stacItem.type || stacItem.type !== 'Feature') {
-            throw new Error('Invalid STAC item: missing type=Feature');
+            console.error('❌ [PASTE-DEBUG] Invalid type. Expected "Feature", got:', stacItem.type);
+            console.error('❌ [PASTE-DEBUG] Full object keys:', Object.keys(stacItem));
+            
+            // If it looks like a STAC item but just missing the type, try to fix it
+            if (!stacItem.type && stacItem.id && stacItem.assets && stacItem.properties) {
+                console.warn('⚠️ [PASTE-DEBUG] Object looks like STAC item but missing type field. Auto-adding type="Feature"');
+                stacItem.type = 'Feature';
+            } else {
+                throw new Error(`Invalid STAC item: expected type="Feature", got type="${stacItem.type || 'undefined'}". Make sure your STAC item has a "type": "Feature" field at the root level.`);
+            }
         }
         
         if (!stacItem.id) {
+            console.error('❌ [PASTE-DEBUG] Missing id field');
             throw new Error('Invalid STAC item: missing id');
         }
         
         if (!stacItem.assets || typeof stacItem.assets !== 'object') {
+            console.error('❌ [PASTE-DEBUG] Missing or invalid assets:', stacItem.assets);
             throw new Error('Invalid STAC item: missing or invalid assets');
         }
         
         console.log(`✅ Successfully loaded STAC item: ${stacItem.id}`);
         
         // Clear previous map state (geometry, bbox, thumbnails)
+        console.log('🧹 [DEBUG] About to clear map state...');
         this.clearMapState();
+        console.log('🧹 [DEBUG] Map state cleared, now setting items...');
         
         // Display the item in results
         this.resultsPanel.setItems([stacItem]);
+        console.log('🧹 [DEBUG] Items set in results panel');
+        
+        // Automatically display the pasted item on the map (like clicking on it)
+        if (this.mapManager) {
+            console.log('🗺️ [DEBUG] Auto-displaying pasted item on map...');
+            try {
+                await this.mapManager.displayItemOnMap(stacItem, 'thumbnail');
+                console.log('🗺️ [DEBUG] Successfully displayed pasted item on map');
+            } catch (error) {
+                console.warn('⚠️ [DEBUG] Failed to auto-display on map:', error);
+                // Fallback: just fit to bounds without displaying assets
+                const bbox = this.mapManager.getBoundingBox(stacItem);
+                if (bbox) {
+                    this.mapManager.fitMapToBbox(bbox);
+                    console.log('🗺️ [DEBUG] Fitted map to item bounds as fallback');
+                }
+            }
+        }
         
         // Show success notification
         this.notificationService.showNotification(
@@ -831,33 +869,41 @@ export class CardSearchPanel {
      */
     clearMapState() {
         try {
+            console.log('🧹 [PASTE-DEBUG] ====== STARTING CLEAR MAP STATE ======');
+            
             // Clear map drawings and previous geometry
             document.dispatchEvent(new CustomEvent('clearMapDrawings'));
-            console.log('🧹 Cleared map drawings');
+            console.log('🧹 [PASTE-DEBUG] Dispatched clearMapDrawings event');
             
             // Clear current item layer (geometry/bbox) - this fixes the overlay issue!
             if (this.mapManager && typeof this.mapManager.removeCurrentLayer === 'function') {
+                console.log('🧹 [PASTE-DEBUG] Calling mapManager.removeCurrentLayer()...');
                 this.mapManager.removeCurrentLayer();
-                console.log('🧹 Cleared current item layer (geometry/bbox)');
+                console.log('🧹 [PASTE-DEBUG] Completed mapManager.removeCurrentLayer()');
+            } else {
+                console.warn('⚠️ [PASTE-DEBUG] MapManager or removeCurrentLayer not available');
             }
             
             // Clear thumbnails if mapManager is available
             if (this.mapManager && typeof this.mapManager.clearAllThumbnails === 'function') {
+                console.log('🧹 [PASTE-DEBUG] Calling mapManager.clearAllThumbnails()...');
                 this.mapManager.clearAllThumbnails();
-                console.log('🧹 Cleared all thumbnails from map');
+                console.log('🧹 [PASTE-DEBUG] Completed mapManager.clearAllThumbnails()');
             }
             
             // Clear any visualization layers if available
             if (window.stacExplorer?.rasterManager) {
                 const layers = window.stacExplorer.rasterManager.getLayerInfo();
+                console.log(`🧹 [PASTE-DEBUG] Clearing ${layers.length} visualization layers`);
                 layers.forEach(layer => {
                     window.stacExplorer.rasterManager.removeLayer(layer.layerId);
                 });
-                console.log('🧹 Cleared visualization layers');
+                console.log('🧹 [PASTE-DEBUG] Completed clearing visualization layers');
             }
             
+            console.log('🧹 [PASTE-DEBUG] ====== COMPLETED CLEAR MAP STATE ======');
         } catch (error) {
-            console.warn('⚠️ Error clearing map state:', error);
+            console.error('❌ [PASTE-DEBUG] Error clearing map state:', error);
         }
     }
     
@@ -1398,11 +1444,16 @@ export class CardSearchPanel {
      */
     async handleGlobalPaste(pastedText) {
         try {
+            console.log('🎯 [PASTE-DEBUG] Handling global paste, text length:', pastedText.length);
+            
             // Try to parse as JSON
             let jsonData;
             try {
+                console.log('🎯 [PASTE-DEBUG] Attempting JSON parse...');
                 jsonData = JSON.parse(pastedText);
+                console.log('🎯 [PASTE-DEBUG] JSON parse successful, object keys:', Object.keys(jsonData));
             } catch (parseError) {
+                console.log('🎯 [PASTE-DEBUG] JSON parse failed:', parseError.message);
                 // Not valid JSON, ignore silently
                 return;
             }
@@ -1445,15 +1496,28 @@ export class CardSearchPanel {
      * @returns {boolean} True if valid STAC item
      */
     isValidStacItem(obj) {
-        return obj && 
+        console.log('🔍 [PASTE-DEBUG] Validating STAC item:', {
+            hasObj: !!obj,
+            isObject: typeof obj === 'object',
+            type: obj?.type,
+            hasId: typeof obj?.id === 'string',
+            hasAssets: !!obj?.assets && typeof obj?.assets === 'object',
+            hasProperties: !!obj?.properties && typeof obj?.properties === 'object',
+            hasStacVersionOrGeometry: !!(obj?.stac_version || obj?.geometry !== undefined)
+        });
+        
+        const isValid = obj && 
                typeof obj === 'object' &&
-               obj.type === 'Feature' &&
+               (obj.type === 'Feature' || (!obj.type && obj.id && obj.assets && obj.properties)) && // Accept missing type if other fields present
                typeof obj.id === 'string' &&
                obj.assets &&
                typeof obj.assets === 'object' &&
                obj.properties &&
                typeof obj.properties === 'object' &&
                (obj.stac_version || obj.geometry !== undefined); // STAC version or geometry indicates STAC item
+               
+        console.log('🔍 [PASTE-DEBUG] STAC item validation result:', isValid);
+        return isValid;
     }
     
     /**

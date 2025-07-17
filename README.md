@@ -3,7 +3,7 @@
 > A modern, interactive web application for exploring SpatioTemporal Asset Catalog (STAC) datasets with advanced search capabilities and beautiful visualizations.
 
 ![STAC Explorer](https://img.shields.io/badge/STAC-Explorer-blue?style=for-the-badge&logo=satellite)
-![Version](https://img.shields.io/badge/version-1.3.0-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.3.0-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 
 ## ✨ Features
@@ -191,7 +191,7 @@ export const CONFIG = {
 - **Lazy Loading**: On-demand component loading
 - **Responsive Images**: Optimized thumbnail loading
 
-## 🌟 Recent Updates (v1.3.0)
+## 🌟 Recent Updates (v2.3.0)
 
 ### 🆕 Added - Modern Calendar System
 - **📅 Flatpickr Integration**: Replaced clunky dual calendar with professional Flatpickr library
@@ -208,7 +208,7 @@ export const CONFIG = {
 - **🌙 Dark Theme**: Native dark theme support
 - **🚀 GitHub Pages Ready**: Static deployment workflow for easy hosting
 
-### 🔧 Previous Updates (v1.2.x) 🧪 *EXPERIMENTAL*
+### 🔧 Previous Updates (v2.2.x) 🧪 *EXPERIMENTAL*
 - **🎨 Raster Visualization Panel**: Interactive visualization with band combinations
 - **📡 Sentinel-2 Support**: Specialized band combinations (True Color, False Color, NDVI, etc.)
 - **🔧 Band Combination Engine**: Flexible RGB band mapping for raster data

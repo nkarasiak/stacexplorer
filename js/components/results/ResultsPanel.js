@@ -137,6 +137,7 @@ export class ResultsPanel {
      * @param {Object} item - STAC item to display
      */
     showModal(item) {
+        console.log('📋 showModal called with item:', item.id);
         this.currentItem = item;
         
         // Update header
@@ -154,6 +155,7 @@ export class ResultsPanel {
         this.modal.content.innerHTML = '';
         this.modal.content.appendChild(content);
         
+        console.log('📋 Modal content created, setting up tab switching...');
         // Setup tab switching
         this.setupTabSwitching(content);
         
@@ -161,6 +163,7 @@ export class ResultsPanel {
         
         // Show modal
         this.modal.overlay.classList.add('active');
+        console.log('📋 Modal should now be visible');
         
         // Add keyboard listener for Escape key
         document.addEventListener('keydown', this.handleEscapeKey);
@@ -537,8 +540,17 @@ export class ResultsPanel {
         const tabButtons = content.querySelectorAll('.tab-btn');
         const tabPanes = content.querySelectorAll('.tab-pane');
         
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
+        // Add debugging
+        console.log('🔍 Setting up tab switching');
+        console.log('🔍 Found', tabButtons.length, 'tab buttons');
+        console.log('🔍 Found', tabPanes.length, 'tab panes');
+        
+        tabButtons.forEach((button, index) => {
+            console.log(`🔍 Button ${index}:`, button.dataset.tab, button.textContent.trim());
+            
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                console.log('🔥 Tab clicked:', button.dataset.tab);
                 const tabId = button.dataset.tab;
                 
                 // Update button states
@@ -550,6 +562,9 @@ export class ResultsPanel {
                 const targetPane = content.querySelector(`#${tabId}-tab`);
                 if (targetPane) {
                     targetPane.classList.add('active');
+                    console.log('✅ Switched to tab:', tabId);
+                } else {
+                    console.error('❌ Target pane not found:', `#${tabId}-tab`);
                 }
             });
         });
@@ -969,7 +984,7 @@ export class ResultsPanel {
                 collection: item.collection,
                 properties: item.properties,
                 geometry: item.geometry,
-                assets: Object.keys(item.assets || {}).slice(0, 5).reduce((acc, key) => {
+                assets: Object.keys(item.assets || {}).reduce((acc, key) => {
                     acc[key] = item.assets[key];
                     return acc;
                 }, {})

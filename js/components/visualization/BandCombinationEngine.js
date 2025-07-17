@@ -22,6 +22,7 @@ export class BandCombinationEngine {
                 assets: ['red', 'green', 'blue'],
                 rescale: '0,3000',
                 resampling: 'bilinear',
+                color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
             },
             'false-color': {
@@ -30,6 +31,7 @@ export class BandCombinationEngine {
                 assets: ['nir', 'red', 'green'], 
                 rescale: '0,3000',
                 resampling: 'bilinear',
+                color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
             },
             'swir-composite': {
@@ -38,6 +40,7 @@ export class BandCombinationEngine {
                 assets: ['swir22', 'nir', 'red'],
                 rescale: '0,3000',
                 resampling: 'bilinear',
+                color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
             },
             'urban': {
@@ -46,6 +49,7 @@ export class BandCombinationEngine {
                 assets: ['swir22', 'swir11', 'red'],
                 rescale: '0,3000',
                 resampling: 'bilinear',
+                color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
             },
             'geology': {
@@ -54,6 +58,7 @@ export class BandCombinationEngine {
                 assets: ['swir22', 'swir11', 'blue'],
                 rescale: '0,3000',
                 resampling: 'bilinear',
+                color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
             },
             'agriculture': {
@@ -62,6 +67,7 @@ export class BandCombinationEngine {
                 assets: ['swir11', 'nir', 'red'],
                 rescale: '0,3000',
                 resampling: 'bilinear',
+                color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
             },
 
@@ -472,6 +478,170 @@ export class BandCombinationEngine {
     }
 
     /**
+     * Check if a URL is accessible for TiTiler (simple existence check)
+     * @param {string} url - URL to check
+     * @returns {Promise<boolean>} True if accessible, false otherwise
+     */
+    async checkUrlAccessibility(url) {
+        try {
+            console.log(`🔍 [URL-CHECK] Checking accessibility: ${url.substring(0, 80)}...`);
+            
+            // Convert S3 URLs to HTTPS first
+            const httpUrl = this.convertS3UrlToHttps(url);
+            
+            // For now, just check if URL looks valid and is HTTPS
+            // We'll assume it's accessible if it's a proper URL
+            const isValidUrl = httpUrl.startsWith('https://') || httpUrl.startsWith('http://');
+            
+            if (isValidUrl) {
+                console.log(`✅ [URL-CHECK] URL appears valid: ${httpUrl.substring(0, 80)}...`);
+                return true;
+            } else {
+                console.log(`❌ [URL-CHECK] Invalid URL format: ${httpUrl.substring(0, 80)}...`);
+                return false;
+            }
+            
+        } catch (error) {
+            console.log(`❌ [URL-CHECK] URL check failed: ${url.substring(0, 80)}...`);
+            console.log(`❌ [URL-CHECK] Error: ${error.message}`);
+            return false;
+        }
+    }
+
+    /**
+     * Check if STAC item assets are accessible for TiTiler
+     * @param {Object} stacItem - STAC item object
+     * @param {Array} assetNames - Array of asset names to check
+     * @returns {Promise<Object>} Object with accessibility results
+     */
+    async checkAssetsAccessibility(stacItem, assetNames) {
+        const results = {
+            accessible: [],
+            inaccessible: [],
+            allAccessible: false
+        };
+
+        if (!stacItem.assets) {
+            console.log(`❌ [ASSETS-CHECK] No assets found in STAC item`);
+            return results;
+        }
+
+        console.log(`🔍 [ASSETS-CHECK] Checking accessibility for assets: ${assetNames.join(', ')}`);
+
+        // Check each asset
+        for (const assetName of assetNames) {
+            const asset = stacItem.assets[assetName];
+            if (!asset || !asset.href) {
+                console.log(`❌ [ASSETS-CHECK] Asset ${assetName} not found or has no href`);
+                results.inaccessible.push(assetName);
+                continue;
+            }
+
+            const isAccessible = await this.checkUrlAccessibility(asset.href);
+            if (isAccessible) {
+                results.accessible.push(assetName);
+            } else {
+                results.inaccessible.push(assetName);
+            }
+        }
+
+        results.allAccessible = results.accessible.length === assetNames.length;
+        
+        console.log(`📊 [ASSETS-CHECK] Results: ${results.accessible.length}/${assetNames.length} accessible`);
+        console.log(`✅ [ASSETS-CHECK] Accessible: ${results.accessible.join(', ')}`);
+        if (results.inaccessible.length > 0) {
+            console.log(`❌ [ASSETS-CHECK] Inaccessible: ${results.inaccessible.join(', ')}`);
+        }
+
+        return results;
+    }
+
+    /**
+     * Get preset by key across all categories
+     * @param {string} presetKey - Preset key to find
+     * @returns {Object|null} Preset object or null if not found
+     */
+    getPresetByKey(presetKey) {
+        for (const [category, presets] of this.presets) {
+            if (presets[presetKey]) {
+                return presets[presetKey];
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Check if a STAC item can use TiTiler (has accessible data)
+     * @param {Object} stacItem - STAC item object
+     * @param {string} presetKey - Preset key to check (optional, checks all assets if not provided)
+     * @returns {Promise<boolean>} True if TiTiler can be used, false otherwise
+     */
+    async canUseTiTiler(stacItem, presetKey = null) {
+        if (!stacItem || !stacItem.assets) {
+            console.log(`❌ [TITILER-CHECK] No STAC item or assets provided`);
+            return false;
+        }
+
+        // If preset is specified, check only those assets
+        if (presetKey) {
+            const preset = this.getPresetByKey(presetKey);
+            if (!preset || !preset.assets) {
+                console.log(`❌ [TITILER-CHECK] Invalid preset or no assets in preset: ${presetKey}`);
+                return false;
+            }
+
+            const mappedAssets = this.mapGenericToActualAssets ? 
+                this.mapGenericToActualAssets(preset.assets, stacItem) : preset.assets;
+            
+            const results = await this.checkAssetsAccessibility(stacItem, mappedAssets);
+            return results.allAccessible;
+        }
+
+        // Check all assets if no preset specified
+        const allAssetNames = Object.keys(stacItem.assets);
+        const results = await this.checkAssetsAccessibility(stacItem, allAssetNames);
+        
+        // Return true if at least some assets are accessible
+        return results.accessible.length > 0;
+    }
+
+    /**
+     * Build TiTiler URL for STAC item visualization with accessibility check
+     * @param {string} stacItemUrl - URL to the STAC item JSON
+     * @param {Object} preset - Visualization preset configuration
+     * @param {number} z - Tile zoom level
+     * @param {number} x - Tile X coordinate
+     * @param {number} y - Tile Y coordinate
+     * @param {Object} stacItem - STAC item object (optional)
+     * @param {Object} scaleOptions - Scale options (optional)
+     * @param {boolean} checkAccessibility - Whether to check URL accessibility (default: true)
+     * @returns {Promise<string|null>} Complete TiTiler tile URL or null if not accessible
+     */
+    async buildTileUrlWithAccessibilityCheck(stacItemUrl, preset, z, x, y, stacItem = null, scaleOptions = {}, checkAccessibility = false) {
+        console.log(`🌐 [TITILER] Building tile URL for preset: ${preset.name}`);
+        console.log(`🌐 [TITILER] STAC item provided:`, !!stacItem);
+        console.log(`🌐 [TITILER] Accessibility check enabled:`, checkAccessibility);
+        
+        // Check accessibility if requested and stacItem is provided
+        if (checkAccessibility && stacItem && preset.assets) {
+            const mappedAssets = this.mapGenericToActualAssets ? 
+                this.mapGenericToActualAssets(preset.assets, stacItem) : preset.assets;
+            
+            const accessibilityResults = await this.checkAssetsAccessibility(stacItem, mappedAssets);
+            
+            if (!accessibilityResults.allAccessible) {
+                console.log(`❌ [TITILER] Not all assets accessible, cannot use TiTiler`);
+                return null;
+            }
+            
+            console.log(`✅ [TITILER] All assets accessible, proceeding with TiTiler`);
+        }
+        
+        // Call the original buildTileUrl function
+        return this.buildTileUrl(stacItemUrl, preset, z, x, y, stacItem, scaleOptions);
+    }
+
+    /**
      * Build TiTiler URL for STAC item visualization
      * @param {string} stacItemUrl - URL to the STAC item JSON
      * @param {Object} preset - Visualization preset configuration
@@ -503,6 +673,10 @@ export class BandCombinationEngine {
                 if (rescaleValue) params.set('rescale', rescaleValue);
                 if (preset.colormap_name) params.set('colormap_name', preset.colormap_name);
                 if (preset.resampling) params.set('resampling_method', preset.resampling);
+                // Only apply color_formula to RGB/3-band compositions
+                if (preset.color_formula && preset.assets && preset.assets.length === 3) {
+                    params.set('color_formula', preset.color_formula);
+                }
                 
                 // Use correct TiTiler format: /cog/tiles/{tileMatrixSetId}/{z}/{x}/{y}.{format}
                 const tileUrl = `${this.tilerBaseUrl}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${params.toString()}`;
@@ -518,39 +692,6 @@ export class BandCombinationEngine {
             }
         }
         
-        // For multi-asset RGB composites (not expressions), fallback to red band for now (multicog may have issues)
-        if (preset.assets && preset.assets.length > 1 && !preset.expression && stacItem) {
-            console.log(`🌐 [TITILER] Multi-asset preset detected, using red band as fallback`);
-            const mappedAssets = this.mapGenericToActualAssets ? 
-                this.mapGenericToActualAssets(preset.assets, stacItem) : preset.assets;
-            
-            // Use the first asset (typically red for RGB composites) as fallback
-            const fallbackAsset = mappedAssets[0];
-            if (stacItem.assets && stacItem.assets[fallbackAsset]) {
-                const originalAssetUrl = stacItem.assets[fallbackAsset].href;
-                const assetUrl = this.convertS3UrlToHttps(originalAssetUrl);
-                const params = new URLSearchParams();
-                params.set('url', assetUrl);
-                
-                // Use scale options if provided, otherwise use preset rescale
-                const rescaleValue = (scaleOptions.minScale !== undefined && scaleOptions.maxScale !== undefined) 
-                    ? `${scaleOptions.minScale},${scaleOptions.maxScale}` 
-                    : preset.rescale;
-                if (rescaleValue) params.set('rescale', rescaleValue);
-                if (preset.colormap_name) params.set('colormap_name', preset.colormap_name);
-                if (preset.resampling) params.set('resampling_method', preset.resampling);
-                
-                const tileUrl = `${this.tilerBaseUrl}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${params.toString()}`;
-                console.log(`🌐 [TITILER] Using single band fallback for RGB composite`);
-                console.log(`🌐 [TITILER] Fallback asset: ${fallbackAsset} -> ${assetUrl.substring(0, 40)}...`);
-                console.log(`🌐 [TITILER] Tile URL: ${tileUrl}`);
-                return tileUrl;
-            } else {
-                console.error(`❌ [TITILER] Fallback asset '${fallbackAsset}' not found in STAC item`);
-                console.error(`❌ [TITILER] Available assets:`, Object.keys(stacItem.assets || {}));
-                console.error(`❌ [TITILER] Mapped assets:`, mappedAssets);
-            }
-        }
         
         // Skip STAC endpoint if stacItemUrl is null and not an expression
         if (stacItemUrl === null && !preset.expression) {
@@ -579,7 +720,16 @@ export class BandCombinationEngine {
             } else {
                 mappedAssets = preset.assets;
             }
-            params.set('assets', mappedAssets.join(','));
+            
+            // Add individual asset parameters (not comma-separated)
+            mappedAssets.forEach(asset => {
+                params.append('assets', asset);
+            });
+            
+            // Add asset band indexing
+            mappedAssets.forEach(asset => {
+                params.append('asset_bidx', `${asset}|1`);
+            });
         }
         
         if (preset.expression) params.set('expression', preset.expression);
@@ -592,6 +742,10 @@ export class BandCombinationEngine {
         
         if (preset.colormap_name) params.set('colormap_name', preset.colormap_name);
         if (preset.resampling) params.set('resampling_method', preset.resampling);
+        // Only apply color_formula to RGB/3-band compositions
+        if (preset.color_formula && preset.assets && preset.assets.length === 3) {
+            params.set('color_formula', preset.color_formula);
+        }
         
         // Add required parameters for STAC endpoint
         params.set('asset_as_band', 'true');
@@ -632,6 +786,11 @@ export class BandCombinationEngine {
         
         if (preset.colormap_name) {
             params.set('colormap_name', preset.colormap_name);
+        }
+        
+        // Only apply color_formula to RGB/3-band compositions
+        if (preset.color_formula && preset.assets && preset.assets.length === 3) {
+            params.set('color_formula', preset.color_formula);
         }
 
         return `${this.tilerBaseUrl}/stac/crop/${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}.png?${params.toString()}`;

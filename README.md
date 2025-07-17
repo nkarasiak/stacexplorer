@@ -3,7 +3,7 @@
 > A modern, interactive web application for exploring SpatioTemporal Asset Catalog (STAC) datasets with advanced search capabilities and beautiful visualizations.
 
 ![STAC Explorer](https://img.shields.io/badge/STAC-Explorer-blue?style=for-the-badge&logo=satellite)
-![Version](https://img.shields.io/badge/version-2.1.4-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.2.0-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 
 ## ✨ Features
@@ -32,11 +32,13 @@
 - **Custom STAC Catalogs**: Connect to any STAC-compliant API
 - **Cross-Catalog Search**: Search across multiple data sources
 
-### 📊 **Dataset Management**
+### 📊 **Dataset Management & Visualization** 🧪 *EXPERIMENTAL*
 - **Enhanced Dataset Modals**: Detailed item information with copy functionality
 - **Thumbnail Previews**: Visual dataset previews when available
 - **Metadata Display**: Comprehensive dataset properties and JSON viewer
 - **Export Capabilities**: Copy dataset information to clipboard
+- **🆕 Raster Visualization**: Interactive band combination and color mapping
+- **🆕 Sentinel Data Support**: Specialized visualization for Sentinel-2 imagery
 
 ## 🚀 Quick Start
 
@@ -156,6 +158,13 @@ export const CONFIG = {
 - Enable "Everything" mode to search across all configured catalogs
 - Results are aggregated and deduplicated automatically
 
+#### 🧪 Experimental Visualization Features
+- **Raster Visualization**: Click "Visualize" on supported datasets to open the visualization panel
+- **Band Combinations**: Choose from predefined combinations (True Color, False Color, NDVI) or create custom RGB mappings
+- **Color Controls**: Adjust contrast, brightness, and color scaling for optimal display
+- **Layer Management**: Control visualization layer opacity and blending with base maps
+- **Note**: Visualization features are experimental and may have limitations with certain datasets
+
 ## 🔧 Technical Details
 
 ### Architecture
@@ -181,24 +190,27 @@ export const CONFIG = {
 - **Lazy Loading**: On-demand component loading
 - **Responsive Images**: Optimized thumbnail loading
 
-## 🌟 Recent Updates (v2.1.4)
+## 🌟 Recent Updates (v2.2.0) 🧪 *EXPERIMENTAL*
 
-### ✅ Fixed
-- **Location Search Integration**: Search now properly respects selected locations
+### 🆕 Added - Visualization Features
+- **🎨 Raster Visualization Panel**: Interactive visualization with band combinations
+- **📡 Sentinel-2 Support**: Specialized band combinations (True Color, False Color, NDVI, etc.)
+- **🔧 Band Combination Engine**: Flexible RGB band mapping for raster data
+- **🎛️ Color Management**: Dynamic color scaling and enhancement controls
+- **📊 Visualization Controls**: Layer opacity, contrast, and brightness adjustments
+
+### ⚠️ Known Issues & Limitations
+- **🧪 Experimental Status**: Visualization features are in active development
+- **📡 Limited Data Support**: Currently optimized for Sentinel-2 and similar datasets
+- **🌐 CORS Limitations**: Some raster sources may require proxy configuration
+- **📱 Mobile Performance**: Visualization panel may have reduced functionality on mobile
+- **🔄 Browser Compatibility**: Advanced features require modern browsers with WebGL support
+
+### 🔧 Previous Updates (v2.1.x)
+- **Location Search Integration**: Enhanced search with proper location handling
 - **Enhanced Dataset Modals**: Beautiful modal redesign with copy functionality
-- **UI Improvements**: Removed clutter, added visible search button
+- **UI Improvements**: Cleaned interface with prominent search controls
 - **GitHub CI**: Simplified deployment workflow
-
-### 🆕 Added  
-- **Visible Search Button**: Prominent search interface
-- **Copy Dataset Info**: One-click metadata copying
-- **Show on Map**: Direct dataset-to-map integration
-- **Modern Styling**: Glassmorphism design improvements
-
-### 🗑️ Removed
-- **Development Artifacts**: Cleaned up 69+ test and debug files
-- **Unused Dependencies**: Simplified package.json
-- **Settings Panel**: Streamlined interface
 
 ## 📋 Browser Support
 

@@ -146,94 +146,16 @@ export class ResultsPanel {
         // Format the JSON for display
         const formattedJson = JSON.stringify(item, null, 2);
         
-        // Create enhanced content
+        // Create enhanced content with better organization
         const content = document.createElement('div');
-        content.innerHTML = `
-            <div class="item-details">
-                <div class="item-section">
-                    <h4 class="item-section-title">
-                        <i class="material-icons">info</i>
-                        Basic Information
-                    </h4>
-                    <div class="item-info-grid">
-                        <div class="item-info-item">
-                            <div class="info-label">
-                                <i class="material-icons">fingerprint</i>
-                                ID
-                            </div>
-                            <div class="info-value">${item.id}</div>
-                        </div>
-                        <div class="item-info-item">
-                            <div class="info-label">
-                                <i class="material-icons">title</i>
-                                Title
-                            </div>
-                            <div class="info-value">${item.properties?.title || 'N/A'}</div>
-                        </div>
-                        <div class="item-info-item">
-                            <div class="info-label">
-                                <i class="material-icons">folder</i>
-                                Collection
-                            </div>
-                            <div class="info-value">${item.collection || 'N/A'}</div>
-                        </div>
-                        <div class="item-info-item">
-                            <div class="info-label">
-                                <i class="material-icons">schedule</i>
-                                Date
-                            </div>
-                            <div class="info-value">${item.properties?.datetime ? new Date(item.properties.datetime).toLocaleString() : 'N/A'}</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="item-section">
-                    <h4 class="item-section-title">
-                        <i class="material-icons">tune</i>
-                        Properties
-                    </h4>
-                    <div class="item-properties-grid">
-                        ${Object.entries(item.properties || {}).slice(0, 10).map(([key, value]) => `
-                            <div class="property-item">
-                                <div class="property-key">${key}</div>
-                                <div class="property-value">${String(value).substring(0, 100)}${String(value).length > 100 ? '...' : ''}</div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-                
-                <div class="item-section">
-                    <h4 class="item-section-title">
-                        <i class="material-icons">code</i>
-                        Full JSON Data
-                        <button class="item-toggle-json" id="toggle-item-json">
-                            <i class="material-icons">expand_more</i>
-                            Show JSON
-                        </button>
-                    </h4>
-                    <div class="item-json-container" id="item-json-container" style="display: none;">
-                        <pre class="json-content">${formattedJson}</pre>
-                    </div>
-                </div>
-            </div>
-        `;
+        content.innerHTML = this.createEnhancedItemContent(item, formattedJson);
         
         // Update modal content
         this.modal.content.innerHTML = '';
         this.modal.content.appendChild(content);
         
-        // Setup JSON toggle
-        const toggleBtn = content.querySelector('#toggle-item-json');
-        const jsonContainer = content.querySelector('#item-json-container');
-        toggleBtn.addEventListener('click', () => {
-            if (jsonContainer.style.display === 'none') {
-                jsonContainer.style.display = 'block';
-                toggleBtn.innerHTML = '<i class="material-icons">expand_less</i> Hide JSON';
-            } else {
-                jsonContainer.style.display = 'none';
-                toggleBtn.innerHTML = '<i class="material-icons">expand_more</i> Show JSON';
-            }
-        });
+        // Setup tab switching
+        this.setupTabSwitching(content);
         
         // Action buttons are now static (just copy button)
         
@@ -253,6 +175,384 @@ export class ResultsPanel {
         
         // Reset current item
         this.currentItem = null;
+    }
+    
+    /**
+     * Create enhanced item content with better organization
+     */
+    createEnhancedItemContent(item, formattedJson) {
+        // Extract key information sections
+        const basicInfo = this.extractBasicInfo(item);
+        const spatialInfo = this.extractSpatialInfo(item);
+        const temporalInfo = this.extractTemporalInfo(item);
+        const sensorInfo = this.extractSensorInfo(item);
+        const qualityInfo = this.extractQualityInfo(item);
+        const assetInfo = this.extractAssetInfo(item);
+        
+        return `
+            <div class="item-details-enhanced">
+                <!-- Overview Cards -->
+                <div class="details-overview">
+                    <div class="overview-card main-info">
+                        <div class="overview-header">
+                            <i class="material-icons">info</i>
+                            <span>Overview</span>
+                        </div>
+                        <div class="overview-content">
+                            ${basicInfo}
+                        </div>
+                    </div>
+                    <div class="overview-card spatial-info">
+                        <div class="overview-header">
+                            <i class="material-icons">place</i>
+                            <span>Location</span>
+                        </div>
+                        <div class="overview-content">
+                            ${spatialInfo}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Tabbed Details -->
+                <div class="details-tabs">
+                    <div class="tab-buttons">
+                        <button class="tab-btn active" data-tab="temporal">
+                            <i class="material-icons">schedule</i>
+                            Temporal
+                        </button>
+                        <button class="tab-btn" data-tab="sensor">
+                            <i class="material-icons">camera_alt</i>
+                            Sensor
+                        </button>
+                        <button class="tab-btn" data-tab="quality">
+                            <i class="material-icons">assessment</i>
+                            Quality
+                        </button>
+                        <button class="tab-btn" data-tab="assets">
+                            <i class="material-icons">storage</i>
+                            Assets (${Object.keys(item.assets || {}).length})
+                        </button>
+                        <button class="tab-btn" data-tab="properties">
+                            <i class="material-icons">tune</i>
+                            Properties
+                        </button>
+                        <button class="tab-btn" data-tab="json">
+                            <i class="material-icons">code</i>
+                            Raw JSON
+                        </button>
+                    </div>
+                    
+                    <div class="tab-content">
+                        <div class="tab-pane active" id="temporal-tab">
+                            ${temporalInfo}
+                        </div>
+                        <div class="tab-pane" id="sensor-tab">
+                            ${sensorInfo}
+                        </div>
+                        <div class="tab-pane" id="quality-tab">
+                            ${qualityInfo}
+                        </div>
+                        <div class="tab-pane" id="assets-tab">
+                            ${assetInfo}
+                        </div>
+                        <div class="tab-pane" id="properties-tab">
+                            ${this.createPropertiesTab(item.properties || {})}
+                        </div>
+                        <div class="tab-pane" id="json-tab">
+                            <div class="json-container">
+                                <div class="json-header">
+                                    <span>Complete STAC Item JSON</span>
+                                    <button class="copy-json-btn" onclick="navigator.clipboard.writeText(\`${formattedJson.replace(/`/g, '\\`')}\`)">
+                                        <i class="material-icons">content_copy</i>
+                                        Copy
+                                    </button>
+                                </div>
+                                <pre class="json-content">${formattedJson}</pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    extractBasicInfo(item) {
+        const props = item.properties || {};
+        return `
+            <div class="info-row">
+                <span class="info-label">ID:</span>
+                <span class="info-value">${item.id}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Collection:</span>
+                <span class="info-value">${item.collection || 'N/A'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Title:</span>
+                <span class="info-value">${props.title || 'N/A'}</span>
+            </div>
+            ${props.description ? `
+            <div class="info-row">
+                <span class="info-label">Description:</span>
+                <span class="info-value">${props.description}</span>
+            </div>
+            ` : ''}
+        `;
+    }
+    
+    extractSpatialInfo(item) {
+        const bbox = item.bbox;
+        const geometry = item.geometry;
+        const props = item.properties || {};
+        
+        let bboxInfo = 'N/A';
+        if (bbox && bbox.length >= 4) {
+            const [west, south, east, north] = bbox;
+            bboxInfo = `${west.toFixed(4)}, ${south.toFixed(4)}, ${east.toFixed(4)}, ${north.toFixed(4)}`;
+        }
+        
+        return `
+            <div class="info-row">
+                <span class="info-label">Geometry:</span>
+                <span class="info-value">${geometry?.type || 'N/A'}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Bounding Box:</span>
+                <span class="info-value" style="font-family: monospace; font-size: 11px;">${bboxInfo}</span>
+            </div>
+            ${props['proj:epsg'] ? `
+            <div class="info-row">
+                <span class="info-label">EPSG:</span>
+                <span class="info-value">${props['proj:epsg']}</span>
+            </div>
+            ` : ''}
+        `;
+    }
+    
+    extractTemporalInfo(item) {
+        const props = item.properties || {};
+        const datetime = props.datetime || props.start_datetime;
+        const endTime = props.end_datetime;
+        
+        return `
+            <div class="tab-section">
+                <h4>Acquisition Time</h4>
+                <div class="info-grid">
+                    ${datetime ? `
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="material-icons">event</i>
+                            Date & Time
+                        </div>
+                        <div class="info-value">${new Date(datetime).toLocaleString()}</div>
+                    </div>
+                    ` : ''}
+                    ${endTime ? `
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="material-icons">event_available</i>
+                            End Time
+                        </div>
+                        <div class="info-value">${new Date(endTime).toLocaleString()}</div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    extractSensorInfo(item) {
+        const props = item.properties || {};
+        
+        return `
+            <div class="tab-section">
+                <h4>Sensor & Platform</h4>
+                <div class="info-grid">
+                    ${props.platform ? `
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="material-icons">satellite</i>
+                            Platform
+                        </div>
+                        <div class="info-value">${props.platform}</div>
+                    </div>
+                    ` : ''}
+                    ${props.instruments ? `
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="material-icons">camera</i>
+                            Instruments
+                        </div>
+                        <div class="info-value">${Array.isArray(props.instruments) ? props.instruments.join(', ') : props.instruments}</div>
+                    </div>
+                    ` : ''}
+                    ${props.constellation ? `
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="material-icons">group_work</i>
+                            Constellation
+                        </div>
+                        <div class="info-value">${props.constellation}</div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    extractQualityInfo(item) {
+        const props = item.properties || {};
+        
+        return `
+            <div class="tab-section">
+                <h4>Quality Metrics</h4>
+                <div class="info-grid">
+                    ${props['eo:cloud_cover'] !== undefined ? `
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="material-icons">cloud</i>
+                            Cloud Cover
+                        </div>
+                        <div class="info-value">${props['eo:cloud_cover'].toFixed(1)}%</div>
+                    </div>
+                    ` : ''}
+                    ${props['view:sun_azimuth'] !== undefined ? `
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="material-icons">wb_sunny</i>
+                            Sun Azimuth
+                        </div>
+                        <div class="info-value">${props['view:sun_azimuth'].toFixed(1)}°</div>
+                    </div>
+                    ` : ''}
+                    ${props['view:sun_elevation'] !== undefined ? `
+                    <div class="info-item">
+                        <div class="info-label">
+                            <i class="material-icons">height</i>
+                            Sun Elevation
+                        </div>
+                        <div class="info-value">${props['view:sun_elevation'].toFixed(1)}°</div>
+                    </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+    }
+    
+    extractAssetInfo(item) {
+        const assets = item.assets || {};
+        
+        if (Object.keys(assets).length === 0) {
+            return '<div class="no-data">No assets available</div>';
+        }
+        
+        return `
+            <div class="tab-section">
+                <h4>Available Assets</h4>
+                <div class="assets-grid">
+                    ${Object.entries(assets).map(([key, asset]) => `
+                        <div class="asset-card">
+                            <div class="asset-header">
+                                <div class="asset-name">
+                                    <i class="material-icons">${this.getAssetIcon(key, asset)}</i>
+                                    ${key}
+                                </div>
+                                <div class="asset-type">${asset.type || 'N/A'}</div>
+                            </div>
+                            <div class="asset-details">
+                                ${asset.title ? `<div class="asset-title">${asset.title}</div>` : ''}
+                                <div class="asset-url">
+                                    <a href="${asset.href}" target="_blank" title="Open asset">
+                                        <i class="material-icons">open_in_new</i>
+                                        View Asset
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    getAssetIcon(key, asset) {
+        const type = asset.type || '';
+        const keyLower = key.toLowerCase();
+        
+        if (type.startsWith('image/')) return 'image';
+        if (keyLower.includes('thumbnail')) return 'photo';
+        if (keyLower.includes('metadata')) return 'description';
+        if (type === 'application/json') return 'code';
+        return 'insert_drive_file';
+    }
+    
+    createPropertiesTab(props) {
+        if (Object.keys(props).length === 0) {
+            return '<div class="no-data">No properties available</div>';
+        }
+        
+        return `
+            <div class="tab-section">
+                <h4>All Properties</h4>
+                <div class="properties-list">
+                    ${Object.entries(props).map(([key, value]) => `
+                        <div class="property-row">
+                            <div class="property-key">${key}</div>
+                            <div class="property-value">${this.formatPropertyValue(value)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
+    
+    formatPropertyValue(value) {
+        if (value === null || value === undefined) {
+            return '<span class="null-value">null</span>';
+        }
+        if (typeof value === 'boolean') {
+            return `<span class="boolean-value">${value}</span>`;
+        }
+        if (typeof value === 'number') {
+            return `<span class="number-value">${value}</span>`;
+        }
+        if (Array.isArray(value)) {
+            return `<span class="array-value">[${value.length} items]</span>`;
+        }
+        if (typeof value === 'object') {
+            return `<span class="object-value">{object}</span>`;
+        }
+        
+        const stringValue = String(value);
+        if (stringValue.length > 100) {
+            return `<span class="long-text" title="${stringValue}">${stringValue.substring(0, 100)}...</span>`;
+        }
+        return stringValue;
+    }
+    
+    /**
+     * Setup tab switching functionality
+     */
+    setupTabSwitching(content) {
+        const tabButtons = content.querySelectorAll('.tab-btn');
+        const tabPanes = content.querySelectorAll('.tab-pane');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.dataset.tab;
+                
+                // Update button states
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                
+                // Update pane visibility
+                tabPanes.forEach(pane => pane.classList.remove('active'));
+                const targetPane = content.querySelector(`#${tabId}-tab`);
+                if (targetPane) {
+                    targetPane.classList.add('active');
+                }
+            });
+        });
     }
     
     /**
@@ -467,11 +767,11 @@ export class ResultsPanel {
                         </div>
                         <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" onerror="this.handleThumbnailError(this)">
                         <div class="thumbnail-overlay">
-                            <button class="info-btn viz-btn" title="Visualize with different band combinations">
-                                <i class="material-icons">palette</i>
-                            </button>
                             <button class="info-btn details-btn" title="Show details">
                                 <i class="material-icons">info</i>
+                            </button>
+                            <button class="info-btn viz-btn" title="High Resolution Preview">
+                                <i class="material-icons">visibility</i>
                             </button>
                         </div>
                     </div>
@@ -486,11 +786,11 @@ export class ResultsPanel {
                             <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                         </div>
                         <div class="thumbnail-overlay">
-                            <button class="info-btn viz-btn" title="Visualize with different band combinations">
-                                <i class="material-icons">palette</i>
-                            </button>
                             <button class="info-btn details-btn" title="Show details">
                                 <i class="material-icons">info</i>
+                            </button>
+                            <button class="info-btn viz-btn" title="High Resolution Preview">
+                                <i class="material-icons">visibility</i>
                             </button>
                         </div>
                         <div class="dataset-title">${title}</div>

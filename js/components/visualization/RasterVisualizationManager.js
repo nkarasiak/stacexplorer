@@ -17,7 +17,7 @@ export class RasterVisualizationManager {
         
         // Layer management
         this.maxLayers = 3; // Prevent too many layers from slowing down the map
-        this.defaultOpacity = 0.8;
+        this.defaultOpacity = 1.0;
         
         console.log('🎨 RasterVisualizationManager initialized with TiTiler.xyz');
     }
@@ -50,10 +50,7 @@ export class RasterVisualizationManager {
             // Create MapLibre layer and source (use direct asset URLs, not STAC item URL)
             const { layerId: actualLayerId, sourceId } = this.createTiTilerLayer(null, selectedPreset, layerId, options, stacItem);
 
-            console.log(`🗺️ [LAYER] MapLibre layer created successfully`);
-            
-            // Fade in the layer
-            this.fadeInMapLibreLayer(layerId, options.opacity || this.defaultOpacity);
+            console.log(`🗺️ [LAYER] MapLibre layer created successfully with opacity: ${options.opacity || this.defaultOpacity}`);
 
             // Store layer information
             this.currentLayers.set(layerId, {
@@ -94,23 +91,42 @@ export class RasterVisualizationManager {
      * @param {string} layerId - Layer identifier
      * @param {Object} options - Additional options
      * @param {Object} stacItem - STAC item for direct asset access
-     * @returns {string} Layer ID for MapLibre
+     * @returns {Promise<string>} Layer ID for MapLibre
      */
-    createTiTilerLayer(stacItemUrl, presetConfig, layerId, options = {}, stacItem = null) {
+    async createTiTilerLayer(stacItemUrl, presetConfig, layerId, options = {}, stacItem = null) {
         console.log(`🗺️ [LAYER] Creating TiTiler MapLibre layer with ID: ${layerId}`);
         console.log(`🗺️ [LAYER] STAC item:`, stacItem?.id || 'No item provided');
         console.log(`🗺️ [LAYER] Preset config:`, presetConfig);
-        console.log(`🗺️ [LAYER] Using direct asset URLs (not STAC item URL)`);
+        // Build STAC item URL for multi-band composites or expressions
+        let effectiveStacItemUrl = null;
+        if ((presetConfig.assets && presetConfig.assets.length > 1) || presetConfig.expression) {
+            // For multi-band composites or expressions, we need the STAC item URL
+            // Construct it from the item's self link
+            const selfLink = stacItem.links?.find(link => link.rel === 'self');
+            if (selfLink) {
+                effectiveStacItemUrl = selfLink.href;
+                console.log(`🗺️ [LAYER] Using STAC item URL from self link: ${effectiveStacItemUrl}`);
+            } else {
+                console.log(`🗺️ [LAYER] No self link found - will use direct asset access for single band fallback`);
+            }
+        } else {
+            console.log(`🗺️ [LAYER] Single asset preset - using direct asset URLs`);
+        }
         
-        // Build the tile URL template using direct asset URLs
-        const urlTemplate = this.bandEngine.buildTileUrl(
-            null, // No STAC item URL needed
+        // Build the tile URL template
+        const urlTemplate = await this.bandEngine.buildTileUrl(
+            effectiveStacItemUrl, // Provide STAC item URL for RGB composites
             presetConfig, 
             '{z}', '{x}', '{y}',
-            stacItem  // Pass STAC item for direct asset access
+            stacItem,  // Pass STAC item for direct asset access
+            { minScale: options.minScale, maxScale: options.maxScale }
         );
 
         console.log(`🗺️ [LAYER] Tile URL template: ${urlTemplate}`);
+        
+        // Test a specific tile URL to see if it's valid
+        const testTileUrl = urlTemplate.replace('{z}', '10').replace('{x}', '500').replace('{y}', '300');
+        console.log(`🧪 [TEST] Example tile URL: ${testTileUrl}`);
 
         const sourceId = `${layerId}-source`;
 
@@ -130,7 +146,7 @@ export class RasterVisualizationManager {
             type: 'raster',
             source: sourceId,
             paint: {
-                'raster-opacity': 0, // Start invisible for fade-in
+                'raster-opacity': options.opacity || this.defaultOpacity, // Start with target opacity
                 'raster-fade-duration': 0 // No fade animation initially
             },
             layout: {
@@ -139,9 +155,31 @@ export class RasterVisualizationManager {
         });
 
         console.log(`✅ [LAYER] Added MapLibre source: ${sourceId} and layer: ${layerId}`);
+        
+        // Debug: Check if layer was actually added
+        setTimeout(() => {
+            const layerExists = this.mapManager.map.getLayer(layerId);
+            const sourceExists = this.mapManager.map.getSource(sourceId);
+            console.log(`🔍 [DEBUG] Layer exists: ${!!layerExists}, Source exists: ${!!sourceExists}`);
+            if (layerExists) {
+                const opacity = this.mapManager.map.getPaintProperty(layerId, 'raster-opacity');
+                const visibility = this.mapManager.map.getLayoutProperty(layerId, 'visibility');
+                console.log(`🔍 [DEBUG] Layer opacity: ${opacity}, visibility: ${visibility}`);
+            }
+            if (sourceExists) {
+                const source = this.mapManager.map.getSource(sourceId);
+                console.log(`🔍 [DEBUG] Source tiles:`, source.tiles);
+            }
+        }, 100);
 
         // Set up event monitoring for this layer
         this.setupMapLibreLayerEvents(layerId, sourceId);
+
+        // Fallback: dispatch layerLoaded event after 3 seconds if not already dispatched
+        setTimeout(() => {
+            console.log(`🔄 [FALLBACK] Dispatching layerLoaded event for ${layerId}`);
+            this.dispatchLayerEvent('layerLoaded', { layerId });
+        }, 3000);
 
         return { layerId, sourceId };
     }
@@ -185,6 +223,7 @@ export class RasterVisualizationManager {
         // Listen for errors
         this.mapManager.map.on('error', (e) => {
             console.warn(`🔴 [MAPLIBRE] Error for source ${sourceId}:`, e.error);
+            // Don't automatically remove layer on error, let user decide
         });
     }
 
@@ -296,15 +335,15 @@ export class RasterVisualizationManager {
                 if (this.mapManager.map.getSource(layerInfo.sourceId)) {
                     this.mapManager.map.removeSource(layerInfo.sourceId);
                 }
+                
+                // Clean up references after MapLibre cleanup
+                this.currentLayers.delete(layerId);
+                this.layerOpacities.delete(layerId);
+                this.layerBlendModes.delete(layerId);
+                
+                console.log(`🗑️ Removed MapLibre layer: ${layerId} and source: ${layerInfo.sourceId}`);
+                this.dispatchLayerEvent('layerRemoved', { layerId });
             });
-            
-            // Clean up references
-            this.currentLayers.delete(layerId);
-            this.layerOpacities.delete(layerId);
-            this.layerBlendModes.delete(layerId);
-            
-            console.log(`🗑️ Removed MapLibre layer: ${layerId} and source: ${layerInfo.sourceId}`);
-            this.dispatchLayerEvent('layerRemoved', { layerId });
         }
     }
 
@@ -346,15 +385,15 @@ export class RasterVisualizationManager {
     zoomToItem(stacItem, padding = 0.1) {
         if (stacItem.bbox && stacItem.bbox.length >= 4) {
             const [west, south, east, north] = stacItem.bbox;
-            const bounds = [[south, west], [north, east]];
+            const bounds = [[west, south], [east, north]];
             
             // Add padding
             const latPadding = (north - south) * padding;
             const lngPadding = (east - west) * padding;
             
             const paddedBounds = [
-                [south - latPadding, west - lngPadding],
-                [north + latPadding, east + lngPadding]
+                [west - lngPadding, south - latPadding],
+                [east + lngPadding, north + latPadding]
             ];
             
             this.mapManager.map.fitBounds(paddedBounds, {
@@ -369,7 +408,7 @@ export class RasterVisualizationManager {
      * @param {string} layerId - Layer identifier
      * @param {number} targetOpacity - Target opacity
      */
-    fadeInMapLibreLayer(layerId, targetOpacity = 0.8) {
+    fadeInMapLibreLayer(layerId, targetOpacity = 1.0) {
         if (!this.mapManager.map.getLayer(layerId)) return;
         
         const steps = 20;
@@ -402,8 +441,12 @@ export class RasterVisualizationManager {
             return;
         }
         
+        // Skip fade-out animation for now to avoid timing issues
+        if (callback) callback();
+        return;
+        
         const steps = 10;
-        const currentOpacity = this.layerOpacities.get(layerId) || 0.8;
+        const currentOpacity = this.layerOpacities.get(layerId) || 1.0;
         const stepSize = currentOpacity / steps;
         let opacity = currentOpacity;
         

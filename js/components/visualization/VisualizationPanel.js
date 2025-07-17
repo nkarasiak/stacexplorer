@@ -29,6 +29,9 @@ export class VisualizationPanel {
         // Loading states
         this.isLoading = false;
         
+        // Debounce timer for scale inputs
+        this.scaleDebounceTimer = null;
+        
         this.init();
     }
 
@@ -78,6 +81,9 @@ export class VisualizationPanel {
             this.currentLayerId = null;
         }
         
+        // Clear any pending scale updates
+        this.clearScaleDebounce();
+        
         console.log('🎨 Visualization panel hidden');
     }
 
@@ -87,16 +93,16 @@ export class VisualizationPanel {
     render() {
         if (!this.currentItem) return;
 
-        const presets = this.bandEngine.getPresetsForCollection(this.currentItem.collection);
+        const allPresets = this.bandEngine.getPresetsForCollection(this.currentItem.collection);
+        const presets = this.filterAvailablePresets(allPresets);
         const assetAnalysis = this.bandEngine.analyzeAssets(this.currentItem);
         
         this.container.innerHTML = `
             <div class="viz-panel-content">
                 ${this.renderHeader()}
                 ${this.renderItemInfo()}
-                ${this.renderPresetSelector(presets)}
-                ${this.renderControls()}
-                ${this.renderActions()}
+                ${this.renderTabs()}
+                ${this.renderTabContent(presets)}
                 ${this.renderLoadingOverlay()}
             </div>
         `;
@@ -141,7 +147,49 @@ export class VisualizationPanel {
         `;
     }
 
+    renderTabs() {
+        return `
+            <div class="viz-tabs">
+                <button class="viz-tab active" data-tab="data">
+                    <i class="material-icons">layers</i>
+                    Data
+                </button>
+                <button class="viz-tab" data-tab="settings">
+                    <i class="material-icons">settings</i>
+                    Settings
+                </button>
+            </div>
+        `;
+    }
+
+    renderTabContent(presets) {
+        return `
+            <div class="viz-tab-content">
+                <div class="viz-tab-panel active" data-panel="data">
+                    ${this.renderPresetSelector(presets)}
+                </div>
+                <div class="viz-tab-panel" data-panel="settings">
+                    ${this.renderControls()}
+                    ${this.renderActions()}
+                </div>
+            </div>
+        `;
+    }
+
     renderPresetSelector(presets) {
+        // Check if any presets are available
+        if (Object.keys(presets).length === 0) {
+            return `
+                <div class="viz-presets">
+                    <div class="no-presets-message">
+                        <i class="material-icons">info</i>
+                        <p>No visualization presets available for this item.</p>
+                        <p>Required assets may not be present.</p>
+                    </div>
+                </div>
+            `;
+        }
+
         // Group presets by category
         const grouped = this.groupPresetsByCategory(presets);
         
@@ -183,15 +231,110 @@ export class VisualizationPanel {
         `;
     }
 
+    getScaleRange() {
+        if (!this.currentItem || !this.currentItem.assets) {
+            return { min: 0, max: 0.3, step: 0.01 };
+        }
+
+        // Check if current preset is an index (always -1 to 1)
+        if (this.currentPreset) {
+            const presets = this.bandEngine.getPresetsForCollection(this.currentItem.collection);
+            const currentPresetConfig = presets[this.currentPreset];
+            
+            if (currentPresetConfig && currentPresetConfig.category === 'index') {
+                return { min: -1, max: 1, step: 0.1 };
+            }
+        }
+
+        // Check raster:bands metadata for scale information
+        for (const assetKey in this.currentItem.assets) {
+            const asset = this.currentItem.assets[assetKey];
+            if (asset['raster:bands']) {
+                for (const band of asset['raster:bands']) {
+                    if (band.scale) {
+                        if (band.scale === 0.0001) {
+                            return { min: 0, max: 1000, step: 10 }; // More reasonable range for reflectance data
+                        } else if (band.scale === 1 || band.scale === null || band.scale === undefined) {
+                            return { min: 0, max: 0.3, step: 0.01 };
+                        }
+                    }
+                }
+            }
+        }
+
+        // Default scale range
+        return { min: 0, max: 0.3, step: 0.01 };
+    }
+
+    filterAvailablePresets(allPresets) {
+        if (!this.currentItem || !this.currentItem.assets) {
+            return {};
+        }
+
+        const availablePresets = {};
+        
+        for (const [presetKey, preset] of Object.entries(allPresets)) {
+            if (this.isPresetAvailable(preset)) {
+                availablePresets[presetKey] = preset;
+            } else {
+                console.log(`🚫 [PRESET] Skipping ${preset.name} - required assets not available`);
+            }
+        }
+
+        return availablePresets;
+    }
+
+    isPresetAvailable(preset) {
+        if (!preset.assets || preset.assets.length === 0) {
+            return true; // No specific assets required
+        }
+
+        // Check if all required assets are available (after mapping)
+        const mappedAssets = this.bandEngine.mapGenericToActualAssets 
+            ? this.bandEngine.mapGenericToActualAssets(preset.assets, this.currentItem)
+            : preset.assets;
+
+        const availableAssets = Object.keys(this.currentItem.assets || {});
+        
+        console.log(`🔍 [PRESET] Checking ${preset.name}:`);
+        console.log(`  Required assets: ${preset.assets.join(', ')}`);
+        console.log(`  Mapped assets: ${mappedAssets.join(', ')}`);
+        console.log(`  Available assets: ${availableAssets.join(', ')}`);
+
+        for (const assetName of mappedAssets) {
+            if (!this.currentItem.assets[assetName]) {
+                console.log(`🚫 [PRESET] Missing asset: ${assetName} for preset ${preset.name}`);
+                return false;
+            }
+        }
+
+        console.log(`✅ [PRESET] ${preset.name} is available`);
+        return true;
+    }
+
     renderControls() {
+        const scaleRange = this.getScaleRange();
         return `
             <div class="viz-controls">
                 <div class="control-group">
                     <label class="control-label">
-                        <i class="material-icons">opacity</i>
-                        Opacity: <span class="opacity-value">80%</span>
+                        <i class="material-icons">tune</i>
+                        Scale Range:
                     </label>
-                    <input type="range" class="opacity-slider" min="0" max="100" value="80" step="5">
+                    <div class="scale-inputs">
+                        <input type="number" class="scale-input scale-min" 
+                               value="${scaleRange.min}" 
+                               step="${scaleRange.step}" 
+                               placeholder="Min">
+                        <span class="scale-separator">to</span>
+                        <input type="number" class="scale-input scale-max" 
+                               value="${scaleRange.max}" 
+                               step="${scaleRange.step}" 
+                               placeholder="Max">
+                    </div>
+                    <div class="scale-hint">
+                        <small>Press Enter to apply or wait 3 seconds</small>
+                    </div>
                 </div>
                 
                 <div class="control-group">
@@ -263,11 +406,13 @@ export class VisualizationPanel {
     cacheElements() {
         this.elements = {
             closeBtn: this.container.querySelector('.viz-close-btn'),
+            mainTabs: this.container.querySelectorAll('.viz-tab'),
+            tabPanels: this.container.querySelectorAll('.viz-tab-panel'),
             presetCards: this.container.querySelectorAll('.preset-card'),
             categoryTabs: this.container.querySelectorAll('.category-tab'),
             presetGroups: this.container.querySelectorAll('.preset-group'),
-            opacitySlider: this.container.querySelector('.opacity-slider'),
-            opacityValue: this.container.querySelector('.opacity-value'),
+            scaleMinInput: this.container.querySelector('.scale-min'),
+            scaleMaxInput: this.container.querySelector('.scale-max'),
             blendModeSelect: this.container.querySelector('.blend-mode-select'),
             layerVisibilityBtn: this.container.querySelector('.layer-visibility-btn'),
             downloadBtn: this.container.querySelector('#download-view-btn'),
@@ -286,6 +431,14 @@ export class VisualizationPanel {
         // Close button
         this.elements.closeBtn?.addEventListener('click', () => this.hide());
 
+        // Main tabs (Data/Settings)
+        this.elements.mainTabs?.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabName = tab.dataset.tab;
+                this.switchTab(tabName);
+            });
+        });
+
         // Category tabs
         this.elements.categoryTabs.forEach(tab => {
             tab.addEventListener('click', () => {
@@ -303,11 +456,28 @@ export class VisualizationPanel {
             });
         });
 
-        // Opacity control
-        this.elements.opacitySlider?.addEventListener('input', (e) => {
-            const opacity = e.target.value / 100;
-            this.elements.opacityValue.textContent = `${e.target.value}%`;
-            this.updateLayerOpacity(opacity);
+        // Opacity removed - always use 100%
+
+        // Scale controls with debounce
+        this.elements.scaleMinInput?.addEventListener('input', () => {
+            this.debouncedUpdateLayerScale();
+        });
+        this.elements.scaleMaxInput?.addEventListener('input', () => {
+            this.debouncedUpdateLayerScale();
+        });
+        
+        // Allow immediate update on Enter key
+        this.elements.scaleMinInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.clearScaleDebounce();
+                this.updateLayerScale();
+            }
+        });
+        this.elements.scaleMaxInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                this.clearScaleDebounce();
+                this.updateLayerScale();
+            }
         });
 
         // Blend mode control
@@ -362,32 +532,43 @@ export class VisualizationPanel {
     /**
      * Load a visualization preset
      * @param {string} presetKey - Preset identifier
+     * @param {Object} options - Additional options like scale range
      */
-    async loadPreset(presetKey) {
+    async loadPreset(presetKey, options = {}) {
         try {
             console.log(`🔄 [LOADING] Starting to load preset: ${presetKey}`);
             this.showLoading();
             this.showPresetLoading(presetKey);
 
-            // Remove existing layer if any
-            if (this.currentLayerId) {
-                console.log(`🗑️ [LOADING] Removing existing layer: ${this.currentLayerId}`);
-                this.rasterManager.removeLayer(this.currentLayerId);
-            }
-
             console.log(`📡 [LOADING] Adding STAC item layer for item: ${this.currentItem.id}`);
             console.log(`📡 [LOADING] Collection: ${this.currentItem.collection}`);
             console.log(`📡 [LOADING] Preset: ${presetKey}`);
 
-            // Add new layer with selected preset
-            this.currentLayerId = await this.rasterManager.addSTACItemLayer(
+            // Add new layer with selected preset first
+            const newLayerId = await this.rasterManager.addSTACItemLayer(
                 this.currentItem, 
                 presetKey,
                 {
-                    opacity: this.elements.opacitySlider?.value / 100 || 0.8,
-                    blendMode: this.elements.blendModeSelect?.value || 'normal'
+                    opacity: 1.0,
+                    blendMode: this.elements.blendModeSelect?.value || 'normal',
+                    minScale: options.minScale,
+                    maxScale: options.maxScale
                 }
             );
+
+            // Remove existing visualization layer after new layer is successfully created
+            if (this.currentLayerId && newLayerId) {
+                console.log(`🗑️ [LOADING] Removing existing layer: ${this.currentLayerId}`);
+                this.rasterManager.removeLayer(this.currentLayerId);
+            }
+            
+            // Also remove any preview layer created by mapManager.displayItemOnMap
+            if (newLayerId && this.rasterManager.mapManager && typeof this.rasterManager.mapManager.removeCurrentLayer === 'function') {
+                console.log(`🗑️ [LOADING] Removing preview layer`);
+                this.rasterManager.mapManager.removeCurrentLayer();
+            }
+
+            this.currentLayerId = newLayerId;
 
             console.log(`✅ [LOADING] Layer created with ID: ${this.currentLayerId}`);
 
@@ -406,9 +587,19 @@ export class VisualizationPanel {
                 );
             }
 
+            // Add timeout fallback to hide loading if event doesn't fire
+            setTimeout(() => {
+                if (this.isLoading) {
+                    console.log(`⏰ [TIMEOUT] Layer loading timeout, hiding loading indicator`);
+                    this.hideLoading();
+                }
+            }, 10000); // 10 second timeout
+
         } catch (error) {
             console.error('❌ [LOADING] Error loading preset:', error);
-            this.showError(`Failed to load ${presetKey} visualization`);
+            console.error('❌ [LOADING] Error details:', error.message);
+            console.error('❌ [LOADING] Error stack:', error.stack);
+            this.showError(`Failed to load ${presetKey} visualization: ${error.message}`);
             this.hideLoading();
         } finally {
             console.log(`🏁 [LOADING] Finished loading preset: ${presetKey}`);
@@ -433,6 +624,39 @@ export class VisualizationPanel {
     updateLayerBlendMode(blendMode) {
         if (this.currentLayerId) {
             this.rasterManager.setLayerBlendMode(this.currentLayerId, blendMode);
+        }
+    }
+
+    /**
+     * Update layer scale range
+     */
+    updateLayerScale() {
+        if (this.currentLayerId && this.currentItem && this.currentPreset) {
+            const minScale = parseFloat(this.elements.scaleMinInput.value) || 0;
+            const maxScale = parseFloat(this.elements.scaleMaxInput.value) || 0.3;
+            
+            // Reload the current preset with new scale values
+            this.loadPreset(this.currentPreset, { minScale, maxScale });
+        }
+    }
+
+    /**
+     * Debounced version of updateLayerScale
+     */
+    debouncedUpdateLayerScale() {
+        this.clearScaleDebounce();
+        this.scaleDebounceTimer = setTimeout(() => {
+            this.updateLayerScale();
+        }, 3000); // Wait 3 seconds
+    }
+
+    /**
+     * Clear the scale debounce timer
+     */
+    clearScaleDebounce() {
+        if (this.scaleDebounceTimer) {
+            clearTimeout(this.scaleDebounceTimer);
+            this.scaleDebounceTimer = null;
         }
     }
 
@@ -480,6 +704,22 @@ export class VisualizationPanel {
     }
 
     /**
+     * Switch between main tabs (Data/Settings)
+     * @param {string} tabName - Tab name to switch to
+     */
+    switchTab(tabName) {
+        // Update tab states
+        this.elements.mainTabs.forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === tabName);
+        });
+
+        // Show/hide tab panels
+        this.elements.tabPanels.forEach(panel => {
+            panel.classList.toggle('active', panel.dataset.panel === tabName);
+        });
+    }
+
+    /**
      * Update active preset in UI
      * @param {string} presetKey - Active preset key
      */
@@ -487,6 +727,24 @@ export class VisualizationPanel {
         this.elements.presetCards.forEach(card => {
             card.classList.toggle('active', card.dataset.preset === presetKey);
         });
+        
+        // Update scale inputs when preset changes
+        this.updateScaleInputs();
+    }
+    
+    /**
+     * Update scale inputs with current preset's appropriate range
+     */
+    updateScaleInputs() {
+        const scaleRange = this.getScaleRange();
+        if (this.elements.scaleMinInput) {
+            this.elements.scaleMinInput.value = scaleRange.min;
+            this.elements.scaleMinInput.step = scaleRange.step;
+        }
+        if (this.elements.scaleMaxInput) {
+            this.elements.scaleMaxInput.value = scaleRange.max;
+            this.elements.scaleMaxInput.step = scaleRange.step;
+        }
     }
 
     /**

@@ -480,12 +480,12 @@ export class BandCombinationEngine {
      * @param {number} y - Tile Y coordinate
      * @returns {string} Complete TiTiler tile URL
      */
-    buildTileUrl(stacItemUrl, preset, z, x, y, stacItem = null) {
+    buildTileUrl(stacItemUrl, preset, z, x, y, stacItem = null, scaleOptions = {}) {
         console.log(`🌐 [TITILER] Building tile URL for preset: ${preset.name}`);
         console.log(`🌐 [TITILER] STAC item provided:`, !!stacItem);
         
-        // For single asset presets OR when stacItemUrl is null, use direct COG endpoint
-        if ((preset.assets && preset.assets.length === 1 && stacItem) || (stacItemUrl === null && stacItem)) {
+        // For single asset presets (not expressions) OR when stacItemUrl is null, use direct COG endpoint
+        if ((preset.assets && preset.assets.length === 1 && !preset.expression && stacItem) || (stacItemUrl === null && stacItem && !preset.expression)) {
             const assetName = preset.assets[0];
             const actualAssetName = this.mapGenericToActualAssets ? 
                 this.mapGenericToActualAssets([assetName], stacItem)[0] : assetName;
@@ -496,24 +496,74 @@ export class BandCombinationEngine {
                 const params = new URLSearchParams();
                 params.set('url', assetUrl);
                 
-                if (preset.rescale) params.set('rescale', preset.rescale);
+                // Use scale options if provided, otherwise use preset rescale
+                const rescaleValue = (scaleOptions.minScale !== undefined && scaleOptions.maxScale !== undefined) 
+                    ? `${scaleOptions.minScale},${scaleOptions.maxScale}` 
+                    : preset.rescale;
+                if (rescaleValue) params.set('rescale', rescaleValue);
                 if (preset.colormap_name) params.set('colormap_name', preset.colormap_name);
                 if (preset.resampling) params.set('resampling_method', preset.resampling);
                 
                 // Use correct TiTiler format: /cog/tiles/{tileMatrixSetId}/{z}/{x}/{y}.{format}
                 const tileUrl = `${this.tilerBaseUrl}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${params.toString()}`;
-                console.log(`🌐 [TITILER] Using direct COG endpoint (forced by null stacItemUrl or single asset)`);
+                console.log(`🌐 [TITILER] Using direct COG endpoint (single asset)`);
                 console.log(`🌐 [TITILER] Original asset: ${originalAssetUrl.substring(0, 80)}...`);
                 console.log(`🌐 [TITILER] Converted asset: ${assetUrl.substring(0, 80)}...`);
                 console.log(`🌐 [TITILER] Tile URL: ${tileUrl}`);
                 return tileUrl;
+            } else {
+                console.error(`❌ [TITILER] Asset '${actualAssetName}' not found in STAC item`);
+                console.error(`❌ [TITILER] Available assets:`, Object.keys(stacItem.assets || {}));
+                console.error(`❌ [TITILER] Looking for asset name: ${assetName} -> ${actualAssetName}`);
             }
         }
         
-        // Skip STAC endpoint if stacItemUrl is null
-        if (stacItemUrl === null) {
+        // For multi-asset RGB composites (not expressions), fallback to red band for now (multicog may have issues)
+        if (preset.assets && preset.assets.length > 1 && !preset.expression && stacItem) {
+            console.log(`🌐 [TITILER] Multi-asset preset detected, using red band as fallback`);
+            const mappedAssets = this.mapGenericToActualAssets ? 
+                this.mapGenericToActualAssets(preset.assets, stacItem) : preset.assets;
+            
+            // Use the first asset (typically red for RGB composites) as fallback
+            const fallbackAsset = mappedAssets[0];
+            if (stacItem.assets && stacItem.assets[fallbackAsset]) {
+                const originalAssetUrl = stacItem.assets[fallbackAsset].href;
+                const assetUrl = this.convertS3UrlToHttps(originalAssetUrl);
+                const params = new URLSearchParams();
+                params.set('url', assetUrl);
+                
+                // Use scale options if provided, otherwise use preset rescale
+                const rescaleValue = (scaleOptions.minScale !== undefined && scaleOptions.maxScale !== undefined) 
+                    ? `${scaleOptions.minScale},${scaleOptions.maxScale}` 
+                    : preset.rescale;
+                if (rescaleValue) params.set('rescale', rescaleValue);
+                if (preset.colormap_name) params.set('colormap_name', preset.colormap_name);
+                if (preset.resampling) params.set('resampling_method', preset.resampling);
+                
+                const tileUrl = `${this.tilerBaseUrl}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${params.toString()}`;
+                console.log(`🌐 [TITILER] Using single band fallback for RGB composite`);
+                console.log(`🌐 [TITILER] Fallback asset: ${fallbackAsset} -> ${assetUrl.substring(0, 40)}...`);
+                console.log(`🌐 [TITILER] Tile URL: ${tileUrl}`);
+                return tileUrl;
+            } else {
+                console.error(`❌ [TITILER] Fallback asset '${fallbackAsset}' not found in STAC item`);
+                console.error(`❌ [TITILER] Available assets:`, Object.keys(stacItem.assets || {}));
+                console.error(`❌ [TITILER] Mapped assets:`, mappedAssets);
+            }
+        }
+        
+        // Skip STAC endpoint if stacItemUrl is null and not an expression
+        if (stacItemUrl === null && !preset.expression) {
             console.error(`❌ [TITILER] Cannot use STAC endpoint with null stacItemUrl and no valid single asset found`);
-            throw new Error('No valid asset found for direct COG access');
+            console.error(`❌ [TITILER] Preset:`, preset);
+            console.error(`❌ [TITILER] STAC item assets:`, Object.keys(stacItem?.assets || {}));
+            throw new Error(`No valid asset found for visualization preset '${preset.name}'. Available assets: ${Object.keys(stacItem?.assets || {}).join(', ')}`);
+        }
+        
+        // For expressions without stacItemUrl, we need the STAC item URL
+        if (stacItemUrl === null && preset.expression) {
+            console.error(`❌ [TITILER] Expression preset requires STAC item URL but none provided`);
+            throw new Error(`Expression preset '${preset.name}' requires STAC item URL`);
         }
         
         // For multi-asset or STAC item approach
@@ -533,12 +583,21 @@ export class BandCombinationEngine {
         }
         
         if (preset.expression) params.set('expression', preset.expression);
-        if (preset.rescale) params.set('rescale', preset.rescale);
+        
+        // Use scale options if provided, otherwise use preset rescale
+        const rescaleValue = (scaleOptions.minScale !== undefined && scaleOptions.maxScale !== undefined) 
+            ? `${scaleOptions.minScale},${scaleOptions.maxScale}` 
+            : preset.rescale;
+        if (rescaleValue) params.set('rescale', rescaleValue);
+        
         if (preset.colormap_name) params.set('colormap_name', preset.colormap_name);
         if (preset.resampling) params.set('resampling_method', preset.resampling);
+        
+        // Add required parameters for STAC endpoint
+        params.set('asset_as_band', 'true');
 
         // Use STAC endpoint
-        const tileUrl = `${this.tilerBaseUrl}/stac/WebMercatorQuad/tiles/${z}/${x}/${y}.png?${params.toString()}`;
+        const tileUrl = `${this.tilerBaseUrl}/stac/tiles/WebMercatorQuad/${z}/${x}/${y}.png?${params.toString()}`;
         console.log(`🌐 [TITILER] Using STAC endpoint: ${tileUrl}`);
         return tileUrl;
     }

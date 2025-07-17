@@ -52,6 +52,7 @@ export class CardSearchPanel {
         this.initQuickPresets();
         this.initSearchButtons();
         this.initCloudCoverControls();
+        this.initStacUrlLoader();
         
         // Always show search summary
         this.showSearchSummary();
@@ -553,6 +554,272 @@ export class CardSearchPanel {
         cloudCoverSlider.addEventListener('input', () => {
             cloudCoverValue.textContent = cloudCoverSlider.value + '%';
         });
+    }
+    
+    /**
+     * Initialize STAC URL loader functionality with modal
+     */
+    initStacUrlLoader() {
+        const loadButton = document.getElementById('load-stac-btn');
+        const modal = document.getElementById('stac-load-modal');
+        const closeButton = document.getElementById('stac-modal-close');
+        
+        if (!loadButton || !modal) {
+            console.warn('⚠️ STAC loader elements not found');
+            return;
+        }
+        
+        // Handle load button click to show modal
+        loadButton.addEventListener('click', () => {
+            this.showStacLoadModal();
+        });
+        
+        // Handle modal close
+        closeButton.addEventListener('click', () => {
+            this.hideStacLoadModal();
+        });
+        
+        // Close modal when clicking outside
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                this.hideStacLoadModal();
+            }
+        });
+        
+        // Initialize tab switching
+        this.initModalTabs();
+        
+        // Initialize load buttons in modal
+        this.initModalLoadButtons();
+        
+        console.log('🔗 STAC loader modal initialized');
+    }
+    
+    /**
+     * Show the STAC load modal
+     */
+    showStacLoadModal() {
+        const modal = document.getElementById('stac-load-modal');
+        modal.style.display = 'flex';
+        
+        // Focus on the URL input by default
+        setTimeout(() => {
+            const urlInput = document.getElementById('stac-item-url-modal');
+            if (urlInput) urlInput.focus();
+        }, 100);
+    }
+    
+    /**
+     * Hide the STAC load modal
+     */
+    hideStacLoadModal() {
+        const modal = document.getElementById('stac-load-modal');
+        modal.style.display = 'none';
+        
+        // Clear inputs
+        const urlInput = document.getElementById('stac-item-url-modal');
+        const jsonInput = document.getElementById('stac-item-json-modal');
+        if (urlInput) urlInput.value = '';
+        if (jsonInput) jsonInput.value = '';
+    }
+    
+    /**
+     * Initialize modal tab switching
+     */
+    initModalTabs() {
+        const urlTab = document.getElementById('load-url-tab');
+        const jsonTab = document.getElementById('load-json-tab');
+        const urlContent = document.getElementById('url-load-content');
+        const jsonContent = document.getElementById('json-load-content');
+        
+        urlTab.addEventListener('click', () => {
+            urlTab.classList.add('active');
+            jsonTab.classList.remove('active');
+            urlContent.classList.add('active');
+            jsonContent.classList.remove('active');
+        });
+        
+        jsonTab.addEventListener('click', () => {
+            jsonTab.classList.add('active');
+            urlTab.classList.remove('active');
+            jsonContent.classList.add('active');
+            urlContent.classList.remove('active');
+        });
+    }
+    
+    /**
+     * Initialize load buttons in modal
+     */
+    initModalLoadButtons() {
+        const urlLoadBtn = document.getElementById('load-url-btn-modal');
+        const jsonLoadBtn = document.getElementById('load-json-btn-modal');
+        const urlInput = document.getElementById('stac-item-url-modal');
+        const jsonInput = document.getElementById('stac-item-json-modal');
+        
+        // URL load button
+        urlLoadBtn.addEventListener('click', () => {
+            this.loadStacItemFromUrl();
+        });
+        
+        // JSON load button
+        jsonLoadBtn.addEventListener('click', () => {
+            this.loadStacItemFromJson();
+        });
+        
+        // Enter key support
+        urlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.loadStacItemFromUrl();
+            }
+        });
+        
+        jsonInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.ctrlKey) {
+                e.preventDefault();
+                this.loadStacItemFromJson();
+            }
+        });
+    }
+    
+    /**
+     * Load a STAC item from a pasted URL
+     */
+    async loadStacItemFromUrl() {
+        const urlInput = document.getElementById('stac-item-url-modal');
+        const loadButton = document.getElementById('load-url-btn-modal');
+        const url = urlInput.value.trim();
+        
+        if (!url) {
+            this.notificationService.showNotification('Please enter a STAC item URL', 'warning');
+            return;
+        }
+        
+        // Validate URL format
+        try {
+            new URL(url);
+        } catch (error) {
+            this.notificationService.showNotification('Please enter a valid URL', 'error');
+            return;
+        }
+        
+        // Show loading state
+        const originalText = loadButton.innerHTML;
+        loadButton.innerHTML = '<i class="material-icons">hourglass_empty</i> Loading...';
+        loadButton.disabled = true;
+        
+        try {
+            console.log(`🔗 Loading STAC item from URL: ${url}`);
+            
+            // Fetch the STAC item JSON
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                throw new Error('URL does not return JSON content');
+            }
+            
+            const stacItem = await response.json();
+            
+            // Validate and load the item
+            await this.processStacItem(stacItem);
+            
+            // Close modal on success
+            this.hideStacLoadModal();
+            
+        } catch (error) {
+            console.error('❌ Error loading STAC item from URL:', error);
+            this.notificationService.showNotification(
+                `Failed to load STAC item: ${error.message}`, 
+                'error'
+            );
+        } finally {
+            // Restore button state
+            loadButton.innerHTML = originalText;
+            loadButton.disabled = false;
+        }
+    }
+    
+    /**
+     * Load a STAC item from pasted JSON
+     */
+    async loadStacItemFromJson() {
+        const jsonInput = document.getElementById('stac-item-json-modal');
+        const loadButton = document.getElementById('load-json-btn-modal');
+        const jsonText = jsonInput.value.trim();
+        
+        if (!jsonText) {
+            this.notificationService.showNotification('Please enter STAC item JSON', 'warning');
+            return;
+        }
+        
+        // Show loading state
+        const originalText = loadButton.innerHTML;
+        loadButton.innerHTML = '<i class="material-icons">hourglass_empty</i> Loading...';
+        loadButton.disabled = true;
+        
+        try {
+            console.log('🔗 Loading STAC item from JSON');
+            
+            // Parse the JSON
+            const stacItem = JSON.parse(jsonText);
+            
+            // Validate and load the item
+            await this.processStacItem(stacItem);
+            
+            // Close modal on success
+            this.hideStacLoadModal();
+            
+        } catch (error) {
+            console.error('❌ Error loading STAC item from JSON:', error);
+            if (error instanceof SyntaxError) {
+                this.notificationService.showNotification(
+                    'Invalid JSON format', 
+                    'error'
+                );
+            } else {
+                this.notificationService.showNotification(
+                    `Failed to load STAC item: ${error.message}`, 
+                    'error'
+                );
+            }
+        } finally {
+            // Restore button state
+            loadButton.innerHTML = originalText;
+            loadButton.disabled = false;
+        }
+    }
+    
+    /**
+     * Process and validate a STAC item, then display it
+     */
+    async processStacItem(stacItem) {
+        // Validate basic STAC item structure
+        if (!stacItem.type || stacItem.type !== 'Feature') {
+            throw new Error('Invalid STAC item: missing type=Feature');
+        }
+        
+        if (!stacItem.id) {
+            throw new Error('Invalid STAC item: missing id');
+        }
+        
+        if (!stacItem.assets || typeof stacItem.assets !== 'object') {
+            throw new Error('Invalid STAC item: missing or invalid assets');
+        }
+        
+        console.log(`✅ Successfully loaded STAC item: ${stacItem.id}`);
+        
+        // Display the item in results
+        this.resultsPanel.setItems([stacItem]);
+        
+        // Show success notification
+        this.notificationService.showNotification(
+            `🎯 Loaded STAC item: ${stacItem.id}`, 
+            'success'
+        );
     }
     
     /**

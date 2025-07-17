@@ -8,7 +8,7 @@
  * @param {HTMLElement} dropdown - Dropdown container
  * @param {HTMLElement} trigger - Trigger element
  */
-positionInlineDropdownEnhanced(dropdown, trigger) {
+function positionInlineDropdownEnhanced(dropdown, trigger) {
     console.log('🎯 [ENHANCED] Starting dropdown positioning...');
     
     try {
@@ -38,7 +38,7 @@ positionInlineDropdownEnhanced(dropdown, trigger) {
 /**
  * Gather all measurements needed for positioning calculations
  */
-gatherPositioningMeasurements(dropdown, trigger) {
+function gatherPositioningMeasurements(dropdown, trigger) {
     const triggerRect = trigger.getBoundingClientRect();
     const sidebar = document.getElementById('sidebar') || document.querySelector('.sidebar');
     const sidebarRect = sidebar ? sidebar.getBoundingClientRect() : { left: 0, width: 360, right: 360 };
@@ -91,7 +91,7 @@ gatherPositioningMeasurements(dropdown, trigger) {
 /**
  * Calculate optimal position using enhanced algorithm
  */
-calculateOptimalPosition(measurements) {
+function calculateOptimalPosition(measurements) {
     const { trigger, sidebar, viewport, dropdown, gaps } = measurements;
     
     // Strategy 1: Position to the right of the trigger (preferred for sidebar)
@@ -120,7 +120,7 @@ calculateOptimalPosition(measurements) {
 /**
  * Calculate position to the right of trigger (preferred for sidebar items)
  */
-calculateRightPosition(measurements) {
+function calculateRightPosition(measurements) {
     const { trigger, sidebar, viewport, dropdown, gaps } = measurements;
     
     return {
@@ -141,7 +141,7 @@ calculateRightPosition(measurements) {
 /**
  * Calculate position below the trigger
  */
-calculateBelowPosition(measurements) {
+function calculateBelowPosition(measurements) {
     const { trigger, sidebar, viewport, dropdown, gaps } = measurements;
     
     // Use sidebar width with some margin
@@ -165,7 +165,7 @@ calculateBelowPosition(measurements) {
 /**
  * Calculate position above the trigger
  */
-calculateAbovePosition(measurements) {
+function calculateAbovePosition(measurements) {
     const { trigger, sidebar, viewport, dropdown, gaps } = measurements;
     
     const availableWidth = Math.min(
@@ -187,7 +187,7 @@ calculateAbovePosition(measurements) {
 /**
  * Constrain position to viewport bounds
  */
-constrainToViewport(position, measurements) {
+function constrainToViewport(position, measurements) {
     const { viewport, gaps } = measurements;
     
     // Horizontal constraints
@@ -220,7 +220,7 @@ constrainToViewport(position, measurements) {
 /**
  * Apply enhanced positioning with safety checks
  */
-applyEnhancedPositioning(dropdown, position, measurements) {
+function applyEnhancedPositioning(dropdown, position, measurements) {
     console.log(`🎨 [ENHANCED] Applying ${position.strategy} positioning:`, position);
     
     // Reset dropdown visibility and positioning
@@ -263,7 +263,7 @@ applyEnhancedPositioning(dropdown, position, measurements) {
 /**
  * Get appropriate entry transform based on positioning strategy
  */
-getEntryTransform(strategy) {
+function getEntryTransform(strategy) {
     switch (strategy) {
         case 'right':
             return 'translateX(-20px) scale(0.95)';
@@ -278,7 +278,7 @@ getEntryTransform(strategy) {
 /**
  * Verify positioning and apply corrections if needed
  */
-verifyAndCorrectPositioning(dropdown, trigger, measurements) {
+function verifyAndCorrectPositioning(dropdown, trigger, measurements) {
     // Wait for animation to complete
     setTimeout(() => {
         try {
@@ -314,7 +314,7 @@ verifyAndCorrectPositioning(dropdown, trigger, measurements) {
 /**
  * Verify dropdown visibility
  */
-verifyDropdownVisibility(dropdown, rect, computedStyle) {
+function verifyDropdownVisibility(dropdown, rect, computedStyle) {
     return (
         rect.width > 0 &&
         rect.height > 0 &&
@@ -331,7 +331,7 @@ verifyDropdownVisibility(dropdown, rect, computedStyle) {
 /**
  * Verify dropdown accessibility (not hidden behind other elements)
  */
-verifyDropdownAccessibility(dropdown, trigger, rect) {
+function verifyDropdownAccessibility(dropdown, trigger, rect) {
     try {
         // Check center point
         const centerX = rect.left + rect.width / 2;
@@ -349,7 +349,7 @@ verifyDropdownAccessibility(dropdown, trigger, rect) {
 /**
  * Apply position corrections when verification fails
  */
-applyPositionCorrections(dropdown, trigger, currentRect, measurements) {
+function applyPositionCorrections(dropdown, trigger, currentRect, measurements) {
     console.log('🔧 [ENHANCED] Applying position corrections...');
     
     // Clear existing positioning
@@ -371,7 +371,7 @@ applyPositionCorrections(dropdown, trigger, currentRect, measurements) {
 /**
  * Emergency positioning when all else fails
  */
-applyEmergencyPositioning(dropdown, trigger) {
+function applyEmergencyPositioning(dropdown, trigger) {
     console.warn('🚨 [ENHANCED] Applying emergency positioning...');
     
     const viewport = {
@@ -411,7 +411,7 @@ applyEmergencyPositioning(dropdown, trigger) {
 /**
  * Add emergency positioning indicator
  */
-addEmergencyIndicator(dropdown) {
+function addEmergencyIndicator(dropdown) {
     const existingIndicator = dropdown.querySelector('.fallback-indicator');
     if (!existingIndicator) {
         const indicator = document.createElement('div');
@@ -435,7 +435,7 @@ addEmergencyIndicator(dropdown) {
 }
 
 // Method to replace the existing positionInlineDropdown method
-replacePositioningMethod() {
+function replacePositioningMethod() {
     // Store original method as backup
     this.originalPositionInlineDropdown = this.positionInlineDropdown;
     
@@ -446,7 +446,7 @@ replacePositioningMethod() {
 }
 
 // Method to restore original positioning if needed
-restoreOriginalPositioning() {
+function restoreOriginalPositioning() {
     if (this.originalPositionInlineDropdown) {
         this.positionInlineDropdown = this.originalPositionInlineDropdown;
         console.log('🔄 [ENHANCED] Restored original dropdown positioning');

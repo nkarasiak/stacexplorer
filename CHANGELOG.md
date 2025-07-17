@@ -5,32 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2.2.0] - 2025-07-13
+## [2.2.0] - 2025-07-17 🧪 *EXPERIMENTAL*
 
-### Added
-- **Beautiful Location Search**: Enhanced location search with emoji icons for different location types (🌍 countries, 🏙️ cities, 🏘️ towns, etc.)
+### Added - Visualization Features
+- **🎨 Raster Visualization Panel**: Interactive visualization component for STAC raster datasets
+- **📡 Sentinel-2 Support**: Specialized visualization support for Sentinel-2 imagery with predefined band combinations
+- **🔧 Band Combination Engine**: Flexible RGB band mapping system for creating custom visualizations
+- **🎛️ Color Management**: Dynamic color scaling, contrast, and brightness controls
+- **📊 Visualization Controls**: Layer opacity management and blending controls
+- **🖱️ Interactive UI**: Collapsible visualization panel with modern glassmorphism design
+
+### Added - Enhanced Location Search
+- **🌍 Beautiful Location Search**: Enhanced location search with emoji icons for different location types
 - **Auto-Focus Location Input**: Location dropdown now automatically focuses the search input for immediate typing
 - **Custom Date Range**: Fixed and enhanced custom date range functionality in TIME menu dropdown
-- **Mobile Menu Visibility**: Reversed mobile menu logic - now shows on landing page, hides when searching
+- **Mobile Menu Visibility**: Improved mobile menu logic for better UX
 
 ### Enhanced
-- **Location Search Results**: Now display with format: `emoji + location name + country`
-- **Location Dropdown Options**: Updated predefined options with emojis (🌍 Worldwide, 🖊️ Draw on Map)
-- **Date Range Selection**: Improved custom date picker with proper validation and smart flow
-- **InlineDropdownManager**: Added geocoding service integration and emoji formatting
+- **Predefined Band Combinations**: True Color, False Color, NDVI, SWIR, and Agriculture visualizations
+- **Custom Band Mapping**: Manual RGB band selection for advanced users
+- **Color Scale Controls**: Min/max value controls for optimal contrast
+- **Visualization Layer Integration**: Seamless integration with existing map layers
 
-### Fixed
-- **Location Results Container**: Fixed "Location results container not found" error in dropdown
-- **Custom Date Handler**: Resolved duplicate click handlers causing premature dropdown closure
-- **Date Input IDs**: Fixed conflicting input IDs by using unique dropdown-specific identifiers
-- **Missing Apply Button**: Added proper ID and event handlers for custom date range apply button
+### ⚠️ Known Issues & Limitations
+- **🧪 Experimental Status**: Visualization features are in active development
+- **📡 Limited Data Support**: Currently optimized for Sentinel-2 and similar multispectral datasets
+- **🌐 CORS Limitations**: Some raster sources may require proxy configuration
+- **📱 Mobile Performance**: Visualization panel may have reduced functionality on mobile devices
+- **🔄 Browser Compatibility**: Advanced features require modern browsers with WebGL support
+- **⚡ Performance**: Large raster datasets may experience slower loading times
 
 ### Technical Details
-- Added `getLocationEmoji()` method for consistent location type visualization
-- Imported `defaultGeocodingService` into InlineDropdownManager for location search
-- Fixed click handler precedence for custom date options
-- Enhanced date validation and form field synchronization
-- Improved mobile sidebar manager logic for landing page visibility
+- **VisualizationPanel.js**: Main visualization interface with collapsible panel design
+- **RasterVisualizationManager.js**: Core visualization logic and layer management
+- **BandCombinationEngine.js**: Band mapping algorithms and predefined combinations
+- **Leaflet Integration**: Custom Leaflet layers for raster visualization
+- **CSS Enhancements**: Modern styling for visualization controls and panels
 
 ## [2.1.7] - 2025-07-13
 

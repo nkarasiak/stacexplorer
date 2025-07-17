@@ -16,7 +16,12 @@
       "Bash(node:*)",
       "Bash(grep:*)",
       "WebFetch(domain:titiler.xyz)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(tail:*)",
+      "Bash(wc:*)",
+      "Bash(git reset:*)"
     ],
     "deny": []
   }

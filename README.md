@@ -3,7 +3,7 @@
 > A modern, interactive web application for exploring SpatioTemporal Asset Catalog (STAC) datasets with advanced search capabilities and beautiful visualizations.
 
 ![STAC Explorer](https://img.shields.io/badge/STAC-Explorer-blue?style=for-the-badge&logo=satellite)
-![Version](https://img.shields.io/badge/version-2.2.0-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-1.3.0-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 
 ## ✨ Features
@@ -11,6 +11,7 @@
 ### 🔍 **Smart Search Interface**
 - **AI-Enhanced Search**: Intelligent location and dataset discovery
 - **Advanced Filters**: Date ranges, cloud cover, collections, and spatial filters
+- **🆕 Modern Calendar**: Professional Flatpickr date range picker with presets
 - **Multiple Search Methods**: Text search, map drawing, WKT geometry input
 - **Real-time Results**: Instant feedback with modern UI components
 
@@ -138,7 +139,7 @@ export const CONFIG = {
 3. **Set Time Range**: 
    - Anytime (default)
    - Last 30 days
-   - Custom date range
+   - **🆕 Custom date range**: Modern calendar with 1 day, 1 week, 1 month, 6 month presets
 4. **Apply Filters**: Cloud cover, collections, etc.
 5. **Search**: Click the search button to find datasets
 
@@ -190,14 +191,31 @@ export const CONFIG = {
 - **Lazy Loading**: On-demand component loading
 - **Responsive Images**: Optimized thumbnail loading
 
-## 🌟 Recent Updates (v2.2.0) 🧪 *EXPERIMENTAL*
+## 🌟 Recent Updates (v1.3.0)
 
-### 🆕 Added - Visualization Features
+### 🆕 Added - Modern Calendar System
+- **📅 Flatpickr Integration**: Replaced clunky dual calendar with professional Flatpickr library
+- **🎯 Standalone Date Picker**: Full-screen modal calendar for better user experience
+- **⏰ Quick Presets**: 1 day, 1 week, 1 month, 6 months preset buttons
+- **🛠️ Fixed Date Handling**: Resolved timezone conversion issues and -1 day offset
+- **📅 Inclusive Date Ranges**: Proper start 00:00:00 to end 23:59:59 handling
+- **🔗 URL State Restoration**: Fixed custom date loading from URLs
+- **🧹 Improved UX**: Clean backdrop handling, no more stuck overlays
+
+### 🔧 Technical Improvements
+- **📦 Lightweight**: Flatpickr adds only ~20KB vs previous bulky implementation
+- **📱 Mobile-Friendly**: Responsive calendar design for all devices
+- **🌙 Dark Theme**: Native dark theme support
+- **🚀 GitHub Pages Ready**: Static deployment workflow for easy hosting
+
+### 🔧 Previous Updates (v1.2.x) 🧪 *EXPERIMENTAL*
 - **🎨 Raster Visualization Panel**: Interactive visualization with band combinations
 - **📡 Sentinel-2 Support**: Specialized band combinations (True Color, False Color, NDVI, etc.)
 - **🔧 Band Combination Engine**: Flexible RGB band mapping for raster data
 - **🎛️ Color Management**: Dynamic color scaling and enhancement controls
 - **📊 Visualization Controls**: Layer opacity, contrast, and brightness adjustments
+- **Location Search Integration**: Enhanced search with proper location handling
+- **Enhanced Dataset Modals**: Beautiful modal redesign with copy functionality
 
 ### ⚠️ Known Issues & Limitations
 - **🧪 Experimental Status**: Visualization features are in active development
@@ -205,12 +223,6 @@ export const CONFIG = {
 - **🌐 CORS Limitations**: Some raster sources may require proxy configuration
 - **📱 Mobile Performance**: Visualization panel may have reduced functionality on mobile
 - **🔄 Browser Compatibility**: Advanced features require modern browsers with WebGL support
-
-### 🔧 Previous Updates (v2.1.x)
-- **Location Search Integration**: Enhanced search with proper location handling
-- **Enhanced Dataset Modals**: Beautiful modal redesign with copy functionality
-- **UI Improvements**: Cleaned interface with prominent search controls
-- **GitHub CI**: Simplified deployment workflow
 
 ## 📋 Browser Support
 

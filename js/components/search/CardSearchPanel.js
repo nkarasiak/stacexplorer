@@ -718,12 +718,14 @@ export class CardSearchPanel {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                throw new Error('URL does not return JSON content');
+            // Try to parse as JSON regardless of content-type (many servers don't set correct headers)
+            let stacItem;
+            try {
+                stacItem = await response.json();
+            } catch (parseError) {
+                const contentType = response.headers.get('content-type') || 'unknown';
+                throw new Error(`Failed to parse JSON response. Content-Type: ${contentType}. Parse error: ${parseError.message}`);
             }
-            
-            const stacItem = await response.json();
             
             // Validate and load the item
             await this.processStacItem(stacItem);
@@ -1048,16 +1050,6 @@ export class CardSearchPanel {
             }
             console.log('📊 Search completed, received items:', items.length);
 
-            // Presign Planetary Computer rendered_preview URLs
-            items.forEach(item => {
-                if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
-                    // Convert to presigned URL
-                    item.assets.rendered_preview.href = item.assets.rendered_preview.href.replace(
-                        'https://planetarycomputer.microsoft.com/api/stac/v1',
-                        'https://planetarycomputer.microsoft.com/api/data/v1'
-                    );
-                }
-            });
             
             // Update results panel
             this.resultsPanel.setItems(items);
@@ -1192,16 +1184,6 @@ export class CardSearchPanel {
                 console.log(`📡 Making search request to ${source}:`, sourceSearchParams);
                 const results = await this.apiClient.searchItems(sourceSearchParams);
                 
-                // Presign Planetary Computer rendered_preview URLs
-                results.forEach(item => {
-                    if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
-                        // Convert to presigned URL
-                        item.assets.rendered_preview.href = item.assets.rendered_preview.href.replace(
-                            'https://planetarycomputer.microsoft.com/api/stac/v1',
-                            'https://planetarycomputer.microsoft.com/api/data/v1'
-                        );
-                    }
-                });
                 
                 // Add source information to each result
                 const resultsWithSource = results.map(item => ({

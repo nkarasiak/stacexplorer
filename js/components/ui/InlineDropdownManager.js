@@ -257,10 +257,74 @@ export class InlineDropdownManager {
         `;
         optionsSection.appendChild(everythingOption);
         
-        // Group collections by source
-        const groupedCollections = this.groupCollectionsBySource(collections);
+        // Define priority collections with their preferred sources
+        const priorityCollections = [
+            { id: 'sentinel-1-rtc', source: 'planetary', label: '📡 Sentinel-1 RTC (Planetary Computer)' },
+            { id: 'sentinel-2-c1-l2a', source: 'element84', label: '🌍 Sentinel-2 C1 L2A (Element84)' },
+			{ id: 'sentinel-3-olci-1-efr-nrt', source: 'copernicus', label: '🌍 Sentinel-3 OCLI NRT (Element84)' },
+            { id: 'cop-dem-glo-30', source: 'element84', label: '🏔️ Copernicus DEM 30m (Element84)' },
+            
+        ];
         
-        // Add collections grouped by source
+        // Separate priority and regular collections
+        const priorityFound = [];
+        const regularCollections = [];
+        
+        // First, add priority collections in the specified order
+        priorityCollections.forEach(priorityItem => {
+            const collection = collections.find(c => c.id === priorityItem.id);
+            if (collection) {
+                priorityFound.push({
+                    ...collection,
+                    displayLabel: priorityItem.label,
+                    isPriority: true
+                });
+            }
+        });
+        
+        // Then add remaining collections to regular collections
+        collections.forEach(collection => {
+            const isPriority = priorityCollections.some(p => p.id === collection.id);
+            if (!isPriority) {
+                regularCollections.push(collection);
+            }
+        });
+        
+        // Add priority collections first with special styling
+        if (priorityFound.length > 0) {
+            
+            // Add priority header
+            const priorityHeader = document.createElement('div');
+            priorityHeader.className = 'ai-source-group-header ai-priority-header';
+            priorityHeader.innerHTML = '⭐ Recommended Collections';
+            priorityHeader.style.color = '#4ade80';
+            priorityHeader.style.fontWeight = 'bold';
+            optionsSection.appendChild(priorityHeader);
+            
+            // Add priority collections
+            priorityFound.forEach(collection => {
+                const option = document.createElement('div');
+                option.className = 'ai-option ai-priority-option';
+                option.setAttribute('data-type', 'collection');
+                option.setAttribute('data-value', collection.id);
+                option.setAttribute('data-source', collection.source);
+                option.style.backgroundColor = 'rgba(74, 222, 128, 0.1)';
+                option.style.border = '1px solid rgba(74, 222, 128, 0.3)';
+                option.innerHTML = `
+                    <i class="material-icons" style="color: #4ade80;">star</i>
+                    <div class="ai-option-content">
+                        <div class="ai-option-title" style="color: #4ade80; font-weight: bold;">${collection.displayLabel}</div>
+                        <div class="ai-option-subtitle">Best choice for satellite data analysis</div>
+                    </div>
+                `;
+                optionsSection.appendChild(option);
+            });
+        }
+        
+        // Group regular collections by source
+        const groupedCollections = this.groupCollectionsBySource(regularCollections);
+        
+        // Add regular collections grouped by source
         Object.keys(groupedCollections).forEach(source => {
             // Add source header
             const sourceHeader = document.createElement('div');

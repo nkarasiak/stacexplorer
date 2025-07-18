@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.2] - 2025-07-18
+
+### Fixed - Priority Collections Order
+- **🌟 Collection Priority Order**: Fixed priority collections dropdown to display collections in the specified order instead of API order
+- **📋 Dropdown Ordering**: Updated InlineDropdownManager to respect custom priorityCollections array sequence
+- **🔄 Collection Matching**: Simplified collection matching logic to prioritize based on ID only, regardless of source
+
+### Technical Details
+- Modified InlineDropdownManager.js to iterate through priorityCollections array in specified order
+- Removed source-dependent matching to allow collections from any provider to appear as priority items
+- Enhanced collection ordering logic to preserve user-defined priority sequence
+
 ## [2.2.1] - 2025-07-18
 
 ### Fixed - Planetary Computer & SAR Data

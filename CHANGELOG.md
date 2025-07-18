@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2025-07-18
+
+### Fixed - Planetary Computer & SAR Data
+- **🔗 Planetary Computer Presigning**: Fixed presigning API to use correct `/api/sas/v1/token/{collection}` endpoint instead of deprecated `/api/data/v1/sign`
+- **📡 Dynamic Collection Mapping**: Added automatic collection extraction from blob storage URLs (e.g., `sentinel1euwestrtc` → `sentinel-1-rtc`)
+- **📊 SAR Scale Normalization**: Fixed Sentinel-1 SAR data scale ranges from dB values (-25,0, -30,-5) to normalized (0,1) for proper visualization
+- **🎨 Visualization Cleanup**: Removed unsupported blend mode functionality from raster visualization manager
+
+### Enhanced - API Reliability
+- **🔄 Consolidated Presigning**: Moved all presigning logic to `StacApiClient` for better reliability and consistency
+- **⚡ Improved Error Handling**: Enhanced error reporting for presigning failures with detailed logging
+- **🗺️ Better Asset Access**: Fixed asset URL presigning for improved map visualization performance
+
+### Technical Details
+- Updated `BandCombinationEngine.js` SAR presets to use 0-1 scale range instead of dB values
+- Implemented proper collection-to-container mapping for Planetary Computer SAS token requests
+- Removed MapLibre GL unsupported blend mode properties and related UI controls
+- Enhanced presigning workflow with fallback mechanisms and proper error handling
+
 ## [2.2.0] - 2025-07-17 🧪 *EXPERIMENTAL*
 
 ### Added - Visualization Features

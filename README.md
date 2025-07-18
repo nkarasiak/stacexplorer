@@ -3,7 +3,7 @@
 > A modern, interactive web application for exploring SpatioTemporal Asset Catalog (STAC) datasets with advanced search capabilities and beautiful visualizations.
 
 ![STAC Explorer](https://img.shields.io/badge/STAC-Explorer-blue?style=for-the-badge&logo=satellite)
-![Version](https://img.shields.io/badge/version-2.3.0-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.2.1-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 
 ## ✨ Features
@@ -30,6 +30,7 @@
 ### 🌐 **Multi-Source Support**
 - **Copernicus Data Space**: European Space Agency satellite data
 - **Element84 Earth Search**: Comprehensive Earth observation datasets
+- **🆕 Microsoft Planetary Computer**: Enhanced support with fixed presigning API
 - **Custom STAC Catalogs**: Connect to any STAC-compliant API
 - **Cross-Catalog Search**: Search across multiple data sources
 
@@ -39,6 +40,7 @@
 - **Metadata Display**: Comprehensive dataset properties and JSON viewer
 - **Export Capabilities**: Copy dataset information to clipboard
 - **🆕 Raster Visualization**: Interactive band combination and color mapping
+- **🆕 SAR Data Support**: Optimized Sentinel-1 SAR visualization with proper scale ranges (0-1)
 - **🆕 Sentinel Data Support**: Specialized visualization for Sentinel-2 imagery
 
 ## 🚀 Quick Start

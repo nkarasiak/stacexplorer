@@ -890,7 +890,8 @@ export class UnifiedStateManager {
         
         // Build simple query string URL for GitHub Pages compatibility
         const queryString = params.toString();
-        const newUrl = queryString ? `/?${queryString}` : '/';
+        const basePath = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
+        const newUrl = queryString ? `${basePath}?${queryString}` : basePath;
         
         console.log('[UNIFIED] Updated URL with query parameters:', newUrl);
         window.history.pushState({}, '', newUrl);

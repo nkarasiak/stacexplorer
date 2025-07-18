@@ -13,7 +13,6 @@ export class RasterVisualizationManager {
         this.bandEngine = bandEngine;
         this.currentLayers = new Map();
         this.layerOpacities = new Map();
-        this.layerBlendModes = new Map();
         
         // Layer management
         this.maxLayers = 3; // Prevent too many layers from slowing down the map
@@ -64,7 +63,6 @@ export class RasterVisualizationManager {
             });
 
             this.layerOpacities.set(layerId, options.opacity || this.defaultOpacity);
-            this.layerBlendModes.set(layerId, options.blendMode || 'normal');
 
             // Zoom to item bounds if requested
             if (options.zoomTo !== false && stacItem.bbox) {
@@ -262,9 +260,8 @@ export class RasterVisualizationManager {
             throw new Error(`Layer ${layerId} not found`);
         }
 
-        // Get current opacity and blend mode
+        // Get current opacity
         const opacity = this.layerOpacities.get(layerId);
-        const blendMode = this.layerBlendModes.get(layerId);
 
         // Remove old layer
         this.removeLayer(layerId);
@@ -272,7 +269,6 @@ export class RasterVisualizationManager {
         // Add new layer with same item but different preset
         return this.addSTACItemLayer(layerInfo.item, newPreset, {
             opacity,
-            blendMode,
             zoomTo: false // Don't zoom again
         });
     }
@@ -292,16 +288,6 @@ export class RasterVisualizationManager {
         }
     }
 
-    /**
-     * Set layer blend mode (not supported in MapLibre - placeholder for future)
-     * @param {string} layerId - Layer identifier  
-     * @param {string} blendMode - CSS blend mode
-     */
-    setLayerBlendMode(layerId, blendMode) {
-        console.log(`⚠️ [MAPLIBRE] Blend modes not yet supported in MapLibre GL: ${blendMode}`);
-        this.layerBlendModes.set(layerId, blendMode);
-        this.dispatchLayerEvent('layerBlendModeChanged', { layerId, blendMode });
-    }
 
     /**
      * Toggle layer visibility
@@ -339,7 +325,6 @@ export class RasterVisualizationManager {
                 // Clean up references after MapLibre cleanup
                 this.currentLayers.delete(layerId);
                 this.layerOpacities.delete(layerId);
-                this.layerBlendModes.delete(layerId);
                 
                 console.log(`🗑️ Removed MapLibre layer: ${layerId} and source: ${layerInfo.sourceId}`);
                 this.dispatchLayerEvent('layerRemoved', { layerId });
@@ -517,7 +502,6 @@ export class RasterVisualizationManager {
             preset: info.preset,
             presetName: info.presetConfig.name,
             opacity: this.layerOpacities.get(layerId),
-            blendMode: this.layerBlendModes.get(layerId),
             visible: info.visible,
             createdAt: info.createdAt
         }));

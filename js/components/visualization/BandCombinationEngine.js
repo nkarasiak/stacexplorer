@@ -173,7 +173,7 @@ export class BandCombinationEngine {
                 name: '📡 VV Polarization (Gray)',
                 description: 'VV polarization in grayscale - general backscatter',
                 assets: ['vv'],
-                rescale: '-25,0',
+                rescale: '0,1',
                 colormap_name: 'gray',
                 resampling: 'bilinear',
                 category: 'monochrome'
@@ -182,7 +182,7 @@ export class BandCombinationEngine {
                 name: '📡 VH Polarization (Gray)', 
                 description: 'VH cross-polarization in grayscale - vegetation & roughness',
                 assets: ['vh'],
-                rescale: '-30,-5',
+                rescale: '0,1',
                 colormap_name: 'gray',
                 resampling: 'bilinear',
                 category: 'monochrome'
@@ -191,7 +191,7 @@ export class BandCombinationEngine {
                 name: '🌈 VV Polarization (Colored)',
                 description: 'VV polarization with color enhancement',
                 assets: ['vv'],
-                rescale: '-25,0',
+                rescale: '0,1',
                 colormap_name: 'viridis',
                 resampling: 'bilinear',
                 category: 'monochrome'
@@ -200,7 +200,7 @@ export class BandCombinationEngine {
                 name: '🌈 VH Polarization (Colored)',
                 description: 'VH polarization with color enhancement',
                 assets: ['vh'],
-                rescale: '-30,-5',
+                rescale: '0,1',
                 colormap_name: 'plasma',
                 resampling: 'bilinear',
                 category: 'monochrome'
@@ -211,7 +211,7 @@ export class BandCombinationEngine {
                 name: '📡 Dual Pol RGB',
                 description: 'VV (red), VH (green), VV/VH ratio (blue)',
                 assets: ['vv', 'vh', 'vv'],
-                rescale: '-25,0',
+                rescale: '0,1',
                 resampling: 'bilinear',
                 category: 'composite'
             },
@@ -219,7 +219,7 @@ export class BandCombinationEngine {
                 name: '🔄 VV-VH Composite',
                 description: 'False color: VV (red), VH (green), VV (blue)',
                 assets: ['vv', 'vh', 'vv'],
-                rescale: '-25,0',
+                rescale: '0,1',
                 resampling: 'bilinear',
                 category: 'composite'
             },

@@ -202,10 +202,10 @@ export class STACApiClient {
             const data = await response.json();
             // Check if the response has a features property (GeoJSON/STAC API spec)
             if (data.features) {
-                return data.features;
+                return await this.presignPlanetaryComputerUrls(data.features);
             } else if (Array.isArray(data)) {
                 // Some implementations might return an array directly
-                return data;
+                return await this.presignPlanetaryComputerUrls(data);
             } else {
                 // If it's not an array or doesn't have features, return empty array
                 return [];
@@ -235,10 +235,184 @@ export class STACApiClient {
                 throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
             }
             
-            return await response.json();
+            const item = await response.json();
+            const presignedItems = await this.presignPlanetaryComputerUrls([item]);
+            return presignedItems[0];
         } catch (error) {
             console.error(`Error fetching item ${itemId}:`, error);
             throw new Error(`Failed to fetch item: ${error.message}`);
+        }
+    }
+    
+    /**
+     * Convert Planetary Computer URLs to presigned URLs for all assets in STAC items
+     * @param {Array} items - Array of STAC items
+     * @returns {Array} - Items with presigned URLs
+     */
+    async presignPlanetaryComputerUrls(items) {
+        console.log('🔍 [PRESIGN] Starting presigning process for', items.length, 'items');
+        
+        if (!Array.isArray(items)) {
+            console.log('🔍 [PRESIGN] Input is not an array, returning as-is');
+            return items;
+        }
+        
+        return Promise.all(items.map(async (item, itemIndex) => {
+            console.log(`🔍 [PRESIGN] Processing item ${itemIndex}:`, item.id);
+            
+            if (!item.assets) {
+                console.log(`🔍 [PRESIGN] Item ${itemIndex} has no assets`);
+                return item;
+            }
+            
+            console.log(`🔍 [PRESIGN] Item ${itemIndex} has ${Object.keys(item.assets).length} assets:`, Object.keys(item.assets));
+            
+            // Process each asset in the item
+            await Promise.all(Object.keys(item.assets).map(async assetKey => {
+                const asset = item.assets[assetKey];
+                console.log(`🔍 [PRESIGN] Checking asset ${assetKey}:`, asset.href);
+                
+                const needsPresigning = asset.href && (asset.href.includes('planetarycomputer') || this.needsPlanetaryComputerPresigning(asset.href));
+                console.log(`🔍 [PRESIGN] Asset ${assetKey} needs presigning:`, needsPresigning);
+                
+                if (needsPresigning) {
+                    // Convert to presigned URL
+                    const originalUrl = asset.href;
+                    if (asset.href.includes('planetarycomputer')) {
+                        asset.href = asset.href.replace(
+                            'https://planetarycomputer.microsoft.com/api/stac/v1',
+                            'https://planetarycomputer.microsoft.com/api/data/v1'
+                        );
+                        console.log(`🔗 [PRESIGN] STAC API conversion for ${assetKey}:`, originalUrl, '→', asset.href);
+                    } else {
+                        // Handle direct blob storage URLs that need presigning
+                        console.log(`🔗 [PRESIGN] Getting presigned URL for blob storage ${assetKey}:`, originalUrl);
+                        asset.href = await this.getPresignedUrl(asset.href);
+                        console.log(`🔗 [PRESIGN] Blob storage conversion for ${assetKey}:`, originalUrl, '→', asset.href);
+                    }
+                }
+            }));
+            
+            return item;
+        }));
+    }
+    
+    /**
+     * Check if a URL needs Planetary Computer presigning
+     * @param {string} url - URL to check
+     * @returns {boolean} - Whether the URL needs presigning
+     */
+    needsPlanetaryComputerPresigning(url) {
+        // List of Azure blob storage domains used by Planetary Computer
+        const pcBlobDomains = [
+            'sentinel1euwestrtc.blob.core.windows.net',
+            'sentinel2l2a01.blob.core.windows.net',
+            'modiseuwest.blob.core.windows.net',
+            'landsateuwest.blob.core.windows.net',
+            'naipeuwest.blob.core.windows.net',
+            'ecmwfeuwest.blob.core.windows.net',
+            'copernicusdem.blob.core.windows.net',
+            // Add other PC blob domains as needed
+        ];
+        
+        const needsPresigning = pcBlobDomains.some(domain => url.includes(domain));
+        console.log(`🔍 [DOMAIN-CHECK] URL: ${url} | Needs presigning: ${needsPresigning}`);
+        return needsPresigning;
+    }
+    
+    /**
+     * Get a presigned URL for Planetary Computer blob storage
+     * @param {string} url - Original blob storage URL
+     * @returns {Promise<string>} - Presigned URL
+     */
+    async getPresignedUrl(url) {
+        try {
+            console.log(`🔗 [PRESIGN-API] Attempting to presign: ${url}`);
+            
+            // Extract collection from URL to determine the correct SAS token endpoint
+            const collection = this.extractCollectionFromUrl(url);
+            if (!collection) {
+                console.warn(`🔗 [PRESIGN-API] Could not extract collection from URL: ${url}`);
+                return url;
+            }
+            
+            console.log(`🔗 [PRESIGN-API] Extracted collection: ${collection}`);
+            
+            // Use the correct SAS token endpoint for the specific collection
+            const tokenEndpoint = `https://planetarycomputer.microsoft.com/api/sas/v1/token/${collection}`;
+            console.log(`🔗 [PRESIGN-API] Requesting SAS token from: ${tokenEndpoint}`);
+            
+            const tokenResponse = await fetch(tokenEndpoint);
+            
+            console.log(`🔗 [PRESIGN-API] Response status: ${tokenResponse.status}`);
+            
+            if (tokenResponse.ok) {
+                const tokenData = await tokenResponse.json();
+                console.log(`🔗 [PRESIGN-API] Got SAS token:`, tokenData);
+                
+                if (tokenData.token) {
+                    const presignedUrl = `${url}?${tokenData.token}`;
+                    console.log(`🔗 [PRESIGN-API] Created presigned URL:`, presignedUrl);
+                    return presignedUrl;
+                }
+            } else {
+                const errorText = await tokenResponse.text();
+                console.warn(`🔗 [PRESIGN-API] Token request failed:`, {
+                    status: tokenResponse.status,
+                    statusText: tokenResponse.statusText,
+                    responseText: errorText
+                });
+            }
+            
+        } catch (error) {
+            console.warn('🔗 [PRESIGN-API] Error during presigning:', error);
+        }
+        
+        // Fallback to original URL if presigning fails
+        console.log(`🔗 [PRESIGN-API] Using fallback URL: ${url}`);
+        return url;
+    }
+    
+    /**
+     * Extract collection name from Planetary Computer blob storage URL
+     * @param {string} url - Blob storage URL
+     * @returns {string|null} - Collection name or null if not found
+     */
+    extractCollectionFromUrl(url) {
+        try {
+            // Map blob storage containers to their corresponding collection names
+            const containerToCollection = {
+                'sentinel1euwestrtc': 'sentinel-1-rtc',
+                'sentinel2l2a01': 'sentinel-2-l2a', 
+                'modiseuwest': 'modis',
+                'landsateuwest': 'landsat-c2-l2',
+                'naipeuwest': 'naip',
+                'ecmwfeuwest': 'era5-pds',
+                'copernicusdem': 'cop-dem-glo-30'
+            };
+            
+            // Extract container name from URL
+            for (const [container, collection] of Object.entries(containerToCollection)) {
+                if (url.includes(`${container}.blob.core.windows.net`)) {
+                    return collection;
+                }
+            }
+            
+            // Fallback: try to extract from URL path patterns
+            const urlObj = new URL(url);
+            const hostname = urlObj.hostname;
+            
+            // Extract container name from hostname (e.g., sentinel1euwestrtc.blob.core.windows.net)
+            const containerMatch = hostname.match(/^([^.]+)\.blob\.core\.windows\.net$/);
+            if (containerMatch) {
+                const container = containerMatch[1];
+                return containerToCollection[container] || container;
+            }
+            
+            return null;
+        } catch (error) {
+            console.warn('🔗 [PRESIGN-API] Error extracting collection from URL:', error);
+            return null;
         }
     }
 }

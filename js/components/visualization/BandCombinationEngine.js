@@ -5,10 +5,13 @@
  * Compatible with TiTiler.xyz for dynamic raster visualization
  */
 
+import { STACApiClient } from '../api/StacApiClient.js';
+
 export class BandCombinationEngine {
     constructor() {
         this.presets = new Map();
         this.tilerBaseUrl = 'https://titiler.xyz';
+        this.stacClient = new STACApiClient();
         this.initializePresets();
     }
 
@@ -276,13 +279,41 @@ export class BandCombinationEngine {
         });
 
         this.presets.set('elevation', {
-            'elevation': {
-                name: '🏔️ Elevation',
-                description: 'Digital elevation model',
+            'elevation-terrain': {
+                name: '🏔️ Elevation (Terrain)',
+                description: 'Digital elevation model with terrain colors',
                 assets: ['data'],
                 rescale: '0,4000',
                 colormap_name: 'terrain',
-                resampling: 'bilinear'
+                resampling: 'bilinear',
+                category: 'terrain'
+            },
+            'elevation-viridis': {
+                name: '🌈 Elevation (Viridis)',
+                description: 'Digital elevation model with viridis colormap',
+                assets: ['data'],
+                rescale: '0,4000',
+                colormap_name: 'viridis',
+                resampling: 'bilinear',
+                category: 'terrain'
+            },
+            'elevation-plasma': {
+                name: '🔥 Elevation (Plasma)',
+                description: 'Digital elevation model with plasma colormap',
+                assets: ['data'],
+                rescale: '0,4000',
+                colormap_name: 'plasma',
+                resampling: 'bilinear',
+                category: 'terrain'
+            },
+            'elevation-gray': {
+                name: '⚫ Elevation (Grayscale)',
+                description: 'Digital elevation model in grayscale',
+                assets: ['data'],
+                rescale: '0,4000',
+                colormap_name: 'gray',
+                resampling: 'bilinear',
+                category: 'terrain'
             },
             'hillshade': {
                 name: '⛰️ Hillshade',
@@ -290,7 +321,8 @@ export class BandCombinationEngine {
                 assets: ['data'],
                 rescale: '0,4000',
                 colormap_name: 'gray',
-                resampling: 'bilinear'
+                resampling: 'bilinear',
+                category: 'terrain'
             }
         });
     }
@@ -323,8 +355,8 @@ export class BandCombinationEngine {
             return this.presets.get('planet');
         }
         
-        // Elevation data
-        if (id.includes('dem') || id.includes('elevation') || id.includes('srtm')) {
+        // Elevation data (DEM, SRTM, elevation models)
+        if (id.includes('dem') || id.includes('elevation') || id.includes('srtm') || id.includes('cop-dem')) {
             return this.presets.get('elevation');
         }
         
@@ -335,6 +367,125 @@ export class BandCombinationEngine {
         
         // Default to optical presets
         return this.presets.get('optical');
+    }
+
+    /**
+     * Get a presigned URL for Planetary Computer blob storage
+     * @param {string} url - Original blob storage URL
+     * @returns {Promise<string>} - Presigned URL
+     */
+    async getPresignedUrl(url) {
+        try {
+            console.log(`🔗 [PRESIGN-ENGINE] Attempting to presign: ${url.substring(0, 80)}...`);
+            
+            // Extract collection from URL to determine the correct SAS token endpoint
+            const collection = this.extractCollectionFromUrl(url);
+            if (!collection) {
+                console.warn(`🔗 [PRESIGN-ENGINE] Could not extract collection from URL: ${url}`);
+                return url;
+            }
+            
+            console.log(`🔗 [PRESIGN-ENGINE] Extracted collection: ${collection}`);
+            
+            // Use the correct SAS token endpoint for the specific collection
+            const tokenEndpoint = `https://planetarycomputer.microsoft.com/api/sas/v1/token/${collection}`;
+            console.log(`🔗 [PRESIGN-ENGINE] Requesting SAS token from: ${tokenEndpoint}`);
+            
+            const tokenResponse = await fetch(tokenEndpoint);
+            
+            console.log(`🔗 [PRESIGN-ENGINE] Response status: ${tokenResponse.status}`);
+            
+            if (tokenResponse.ok) {
+                const tokenData = await tokenResponse.json();
+                console.log(`🔗 [PRESIGN-ENGINE] Got SAS token:`, tokenData);
+                
+                if (tokenData.token) {
+                    const presignedUrl = `${url}?${tokenData.token}`;
+                    console.log(`🔗 [PRESIGN-ENGINE] Created presigned URL:`, presignedUrl);
+                    return presignedUrl;
+                }
+            } else {
+                const errorText = await tokenResponse.text();
+                console.warn(`🔗 [PRESIGN-ENGINE] Token request failed:`, {
+                    status: tokenResponse.status,
+                    statusText: tokenResponse.statusText,
+                    responseText: errorText
+                });
+            }
+            
+        } catch (error) {
+            console.warn('🔗 [PRESIGN-ENGINE] Error during presigning:', error);
+        }
+        
+        // Fallback to original URL if presigning fails
+        console.log(`🔗 [PRESIGN-ENGINE] Using fallback URL: ${url}`);
+        return url;
+    }
+
+    /**
+     * Check if a URL needs Planetary Computer presigning
+     * @param {string} url - URL to check
+     * @returns {boolean} - Whether the URL needs presigning
+     */
+    needsPlanetaryComputerPresigning(url) {
+        // List of Azure blob storage domains used by Planetary Computer
+        const pcBlobDomains = [
+            'sentinel1euwestrtc.blob.core.windows.net',
+            'sentinel2l2a01.blob.core.windows.net',
+            'modiseuwest.blob.core.windows.net',
+            'landsateuwest.blob.core.windows.net',
+            'naipeuwest.blob.core.windows.net',
+            'ecmwfeuwest.blob.core.windows.net',
+            'copernicusdem.blob.core.windows.net',
+            // Add other PC blob domains as needed
+        ];
+        
+        const needsPresigning = pcBlobDomains.some(domain => url.includes(domain));
+        console.log(`🔍 [DOMAIN-CHECK] URL: ${url} | Needs presigning: ${needsPresigning}`);
+        return needsPresigning;
+    }
+
+    /**
+     * Extract collection name from Planetary Computer blob storage URL
+     * @param {string} url - Blob storage URL
+     * @returns {string|null} - Collection name or null if not found
+     */
+    extractCollectionFromUrl(url) {
+        try {
+            // Map blob storage containers to their corresponding collection names
+            const containerToCollection = {
+                'sentinel1euwestrtc': 'sentinel-1-rtc',
+                'sentinel2l2a01': 'sentinel-2-l2a', 
+                'modiseuwest': 'modis',
+                'landsateuwest': 'landsat-c2-l2',
+                'naipeuwest': 'naip',
+                'ecmwfeuwest': 'era5-pds',
+                'copernicusdem': 'cop-dem-glo-30'
+            };
+            
+            // Extract container name from URL
+            for (const [container, collection] of Object.entries(containerToCollection)) {
+                if (url.includes(`${container}.blob.core.windows.net`)) {
+                    return collection;
+                }
+            }
+            
+            // Fallback: try to extract from URL path patterns
+            const urlObj = new URL(url);
+            const hostname = urlObj.hostname;
+            
+            // Extract container name from hostname (e.g., sentinel1euwestrtc.blob.core.windows.net)
+            const containerMatch = hostname.match(/^([^.]+)\.blob\.core\.windows\.net$/);
+            if (containerMatch) {
+                const container = containerMatch[1];
+                return containerToCollection[container] || container;
+            }
+            
+            return null;
+        } catch (error) {
+            console.warn('🔗 [PRESIGN-ENGINE] Error extracting collection from URL:', error);
+            return null;
+        }
     }
 
     /**
@@ -434,48 +585,6 @@ export class BandCombinationEngine {
         return null;
     }
 
-    /**
-     * Convert S3 URLs to proper HTTPS format for titiler compatibility
-     * @param {string} url - Original S3 URL
-     * @returns {string} Converted HTTPS URL
-     */
-    convertS3UrlToHttps(url) {
-        // Handle s3:// protocol URLs
-        if (url.startsWith('s3://')) {
-            const match = url.match(/^s3:\/\/([^\/]+)\/(.+)$/);
-            if (match) {
-                const [, bucket, key] = match;
-                console.log(`🔄 [S3-CONVERT] Converting s3:// URL: ${bucket}/${key.substring(0, 50)}...`);
-                return `https://s3.amazonaws.com/${bucket}/${key}`;
-            }
-        }
-        
-        // Handle bucket.s3.region.amazonaws.com format
-        const bucketRegionMatch = url.match(/^https:\/\/([^.]+)\.s3\.([^.]+)\.amazonaws\.com\/(.+)$/);
-        if (bucketRegionMatch) {
-            const [, bucket, region, key] = bucketRegionMatch;
-            const convertedUrl = `https://s3.${region}.amazonaws.com/${bucket}/${key}`;
-            console.log(`🔄 [S3-CONVERT] Converting bucket.s3.region format:`);
-            console.log(`🔄 [S3-CONVERT] From: ${url.substring(0, 80)}...`);
-            console.log(`🔄 [S3-CONVERT] To: ${convertedUrl.substring(0, 80)}...`);
-            return convertedUrl;
-        }
-        
-        // Handle bucket.s3.amazonaws.com format (no region)
-        const bucketMatch = url.match(/^https:\/\/([^.]+)\.s3\.amazonaws\.com\/(.+)$/);
-        if (bucketMatch) {
-            const [, bucket, key] = bucketMatch;
-            const convertedUrl = `https://s3.amazonaws.com/${bucket}/${key}`;
-            console.log(`🔄 [S3-CONVERT] Converting bucket.s3 format:`);
-            console.log(`🔄 [S3-CONVERT] From: ${url.substring(0, 80)}...`);
-            console.log(`🔄 [S3-CONVERT] To: ${convertedUrl.substring(0, 80)}...`);
-            return convertedUrl;
-        }
-        
-        // Return URL unchanged if not an S3 URL
-        console.log(`ℹ️ [S3-CONVERT] URL not S3 format, keeping unchanged: ${url.substring(0, 80)}...`);
-        return url;
-    }
 
     /**
      * Check if a URL is accessible for TiTiler (simple existence check)
@@ -486,18 +595,14 @@ export class BandCombinationEngine {
         try {
             console.log(`🔍 [URL-CHECK] Checking accessibility: ${url.substring(0, 80)}...`);
             
-            // Convert S3 URLs to HTTPS first
-            const httpUrl = this.convertS3UrlToHttps(url);
-            
-            // For now, just check if URL looks valid and is HTTPS
-            // We'll assume it's accessible if it's a proper URL
-            const isValidUrl = httpUrl.startsWith('https://') || httpUrl.startsWith('http://');
+            // Check if URL looks valid (supports both HTTP/HTTPS and S3 URLs)
+            const isValidUrl = url.startsWith('https://') || url.startsWith('http://') || url.startsWith('s3://');
             
             if (isValidUrl) {
-                console.log(`✅ [URL-CHECK] URL appears valid: ${httpUrl.substring(0, 80)}...`);
+                console.log(`✅ [URL-CHECK] URL appears valid: ${url.substring(0, 80)}...`);
                 return true;
             } else {
-                console.log(`❌ [URL-CHECK] Invalid URL format: ${httpUrl.substring(0, 80)}...`);
+                console.log(`❌ [URL-CHECK] Invalid URL format: ${url.substring(0, 80)}...`);
                 return false;
             }
             
@@ -605,6 +710,7 @@ export class BandCombinationEngine {
         return results.accessible.length > 0;
     }
 
+
     /**
      * Build TiTiler URL for STAC item visualization with accessibility check
      * @param {string} stacItemUrl - URL to the STAC item JSON
@@ -638,7 +744,7 @@ export class BandCombinationEngine {
         }
         
         // Call the original buildTileUrl function
-        return this.buildTileUrl(stacItemUrl, preset, z, x, y, stacItem, scaleOptions);
+        return await this.buildTileUrl(stacItemUrl, preset, z, x, y, stacItem, scaleOptions);
     }
 
     /**
@@ -650,7 +756,7 @@ export class BandCombinationEngine {
      * @param {number} y - Tile Y coordinate
      * @returns {string} Complete TiTiler tile URL
      */
-    buildTileUrl(stacItemUrl, preset, z, x, y, stacItem = null, scaleOptions = {}) {
+    async buildTileUrl(stacItemUrl, preset, z, x, y, stacItem = null, scaleOptions = {}) {
         console.log(`🌐 [TITILER] Building tile URL for preset: ${preset.name}`);
         console.log(`🌐 [TITILER] STAC item provided:`, !!stacItem);
         
@@ -661,8 +767,8 @@ export class BandCombinationEngine {
                 this.mapGenericToActualAssets([assetName], stacItem)[0] : assetName;
             
             if (stacItem.assets && stacItem.assets[actualAssetName]) {
-                const originalAssetUrl = stacItem.assets[actualAssetName].href;
-                const assetUrl = this.convertS3UrlToHttps(originalAssetUrl);
+                const assetUrl = stacItem.assets[actualAssetName].href;
+                console.log(`🔗 [TITILER] Using direct URL: ${assetUrl}`);
                 const params = new URLSearchParams();
                 params.set('url', assetUrl);
                 
@@ -681,14 +787,63 @@ export class BandCombinationEngine {
                 // Use correct TiTiler format: /cog/tiles/{tileMatrixSetId}/{z}/{x}/{y}.{format}
                 const tileUrl = `${this.tilerBaseUrl}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${params.toString()}`;
                 console.log(`🌐 [TITILER] Using direct COG endpoint (single asset)`);
-                console.log(`🌐 [TITILER] Original asset: ${originalAssetUrl.substring(0, 80)}...`);
-                console.log(`🌐 [TITILER] Converted asset: ${assetUrl.substring(0, 80)}...`);
+                console.log(`🌐 [TITILER] Asset URL: ${assetUrl.substring(0, 80)}...`);
                 console.log(`🌐 [TITILER] Tile URL: ${tileUrl}`);
                 return tileUrl;
             } else {
                 console.error(`❌ [TITILER] Asset '${actualAssetName}' not found in STAC item`);
                 console.error(`❌ [TITILER] Available assets:`, Object.keys(stacItem.assets || {}));
                 console.error(`❌ [TITILER] Looking for asset name: ${assetName} -> ${actualAssetName}`);
+            }
+        }
+        
+        // For RGB composites with Planetary Computer assets, use PC's own TiTiler API
+        if (preset.assets && preset.assets.length > 1 && !preset.expression && stacItem) {
+            // Check if this is a Planetary Computer item that needs presigning
+            let needsPresigning = false;
+            if (stacItem.assets) {
+                for (const [assetKey, asset] of Object.entries(stacItem.assets)) {
+                    if (asset.href && this.needsPlanetaryComputerPresigning(asset.href)) {
+                        needsPresigning = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (needsPresigning) {
+                console.log(`🔗 [TITILER] Using Planetary Computer's TiTiler API for RGB composite`);
+                
+                // Get mapped assets
+                const mappedAssets = this.mapGenericToActualAssets ? 
+                    this.mapGenericToActualAssets(preset.assets, stacItem) : preset.assets;
+                
+                // Use Planetary Computer's TiTiler API with item/tiles endpoint
+                const params = new URLSearchParams();
+                params.set('collection', stacItem.collection);
+                params.set('item', stacItem.id);
+                
+                // Add each asset
+                mappedAssets.forEach(asset => {
+                    params.append('assets', asset);
+                });
+                
+                // Use scale options if provided, otherwise use preset rescale
+                const rescaleValue = (scaleOptions.minScale !== undefined && scaleOptions.maxScale !== undefined) 
+                    ? `${scaleOptions.minScale},${scaleOptions.maxScale}` 
+                    : preset.rescale;
+                if (rescaleValue) params.set('rescale', rescaleValue);
+                if (preset.resampling) params.set('resampling_method', preset.resampling);
+                // Only apply color_formula to RGB/3-band compositions
+                if (preset.color_formula && preset.assets && preset.assets.length === 3) {
+                    params.set('color_formula', preset.color_formula);
+                }
+                
+                // Use Planetary Computer's TiTiler API
+                const pcTilerUrl = `https://planetarycomputer.microsoft.com/api/data/v1/item/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${params.toString()}`;
+                console.log(`🌐 [TITILER] Using Planetary Computer TiTiler API for RGB composite`);
+                console.log(`🌐 [TITILER] Assets: ${mappedAssets.join(', ')}`);
+                console.log(`🌐 [TITILER] Tile URL: ${pcTilerUrl}`);
+                return pcTilerUrl;
             }
         }
         
@@ -707,7 +862,7 @@ export class BandCombinationEngine {
             throw new Error(`Expression preset '${preset.name}' requires STAC item URL`);
         }
         
-        // For multi-asset or STAC item approach
+        // For non-Planetary Computer data, use standard STAC endpoint
         const params = new URLSearchParams();
         params.set('url', stacItemUrl);
         
@@ -763,11 +918,64 @@ export class BandCombinationEngine {
      * @param {Array} bbox - Bounding box [west, south, east, north]
      * @param {number} width - Preview width in pixels
      * @param {number} height - Preview height in pixels
-     * @returns {string} TiTiler preview URL
+     * @param {Object} stacItem - STAC item object (optional, for presigning)
+     * @returns {Promise<string>} TiTiler preview URL
      */
-    buildPreviewUrl(stacItemUrl, preset, bbox, width = 256, height = 256) {
-        const params = new URLSearchParams();
+    async buildPreviewUrl(stacItemUrl, preset, bbox, width = 256, height = 256, stacItem = null) {
+        // For PC data, use PC TiTiler API for preview
+        if (stacItem && this.stacClient) {
+            let needsPresigning = false;
+            if (stacItem.assets) {
+                for (const [assetKey, asset] of Object.entries(stacItem.assets)) {
+                    if (asset.href && this.stacClient.needsPlanetaryComputerPresigning(asset.href)) {
+                        needsPresigning = true;
+                        break;
+                    }
+                }
+            }
+            
+            if (needsPresigning) {
+                console.log(`🔗 [PREVIEW] Using PC TiTiler API for preview`);
+                
+                const params = new URLSearchParams();
+                params.set('collection', stacItem.collection);
+                params.set('item', stacItem.id);
+                params.set('width', width.toString());
+                params.set('height', height.toString());
+                
+                // Get mapped assets
+                if (preset.assets && !preset.expression) {
+                    const mappedAssets = this.mapGenericToActualAssets ? 
+                        this.mapGenericToActualAssets(preset.assets, stacItem) : preset.assets;
+                    
+                    mappedAssets.forEach(asset => {
+                        params.append('assets', asset);
+                    });
+                }
+                
+                if (preset.expression) {
+                    params.set('expression', preset.expression);
+                }
+                
+                if (preset.rescale) {
+                    params.set('rescale', preset.rescale);
+                }
+                
+                if (preset.colormap_name) {
+                    params.set('colormap_name', preset.colormap_name);
+                }
+                
+                // Only apply color_formula to RGB/3-band compositions
+                if (preset.color_formula && preset.assets && preset.assets.length === 3) {
+                    params.set('color_formula', preset.color_formula);
+                }
+
+                return `https://planetarycomputer.microsoft.com/api/data/v1/item/crop/${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}.png?${params.toString()}`;
+            }
+        }
         
+        // Fallback to standard TiTiler for non-PC data
+        const params = new URLSearchParams();
         params.set('url', stacItemUrl);
         params.set('width', width.toString());
         params.set('height', height.toString());

@@ -677,26 +677,11 @@ export class ResultsPanel {
         // Check various potential thumbnail locations in the STAC item
         if (item.assets) {
             // For Planetary Computer items, check rendered_preview first
-            if (item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
-                // Convert to presigned URL
-                const presignedUrl = item.assets.rendered_preview.href.replace(
-                    'https://planetarycomputer.microsoft.com/api/stac/v1',
-                    'https://planetarycomputer.microsoft.com/api/data/v1'
-                );
-                thumbnailUrl = presignedUrl;
+            if (item.assets.rendered_preview) {
+                thumbnailUrl = item.assets.rendered_preview.href;
                 hasThumbnail = true;
             } else if (item.assets.thumbnail) {
-                // For Planetary Computer items, use the presigned URL
-                if (item.assets.thumbnail.href.includes('planetarycomputer')) {
-                    // Convert to presigned URL
-                    const presignedUrl = item.assets.thumbnail.href.replace(
-                        'https://planetarycomputer.microsoft.com/api/stac/v1',
-                        'https://planetarycomputer.microsoft.com/api/data/v1'
-                    );
-                    thumbnailUrl = presignedUrl;
-                } else {
-                    thumbnailUrl = item.assets.thumbnail.href;
-                }
+                thumbnailUrl = item.assets.thumbnail.href;
                 hasThumbnail = true;
             } else if (item.assets.preview) {
                 thumbnailUrl = item.assets.preview.href;
@@ -705,6 +690,12 @@ export class ResultsPanel {
                 thumbnailUrl = item.assets.overview.href;
                 hasThumbnail = true;
             }
+        }
+        
+        // Generate TiTiler preview for DEM collections that don't have thumbnails
+        if (!hasThumbnail && (item.collection === 'cop-dem-glo-30' || item.collection === 'cop-dem-glo-90')) {
+            thumbnailUrl = this.generateDEMThumbnailUrl(item);
+            hasThumbnail = !!thumbnailUrl;
         }
         
         // Get the date from the item
@@ -780,7 +771,7 @@ export class ResultsPanel {
                         <div class="dataset-metadata">
                             <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                         </div>
-                        <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail" onerror="this.handleThumbnailError(this)">
+                        <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail">
                         <div class="thumbnail-overlay">
                             <button class="info-btn details-btn" title="Show details">
                                 <i class="material-icons">info</i>
@@ -1005,6 +996,90 @@ export class ResultsPanel {
             );
         }
     }
-    
+
+    /**
+     * Generate TiTiler COG preview URL for DEM items
+     * @param {Object} item - STAC item for DEM data
+     * @returns {string|null} TiTiler preview URL or null if not possible
+     */
+    generateDEMThumbnailUrl(item) {
+        try {
+            // Check if item has a data asset
+            if (!item.assets || !item.assets.data || !item.assets.data.href) {
+                console.log('🚫 [DEM-THUMB] No data asset found for DEM thumbnail');
+                return null;
+            }
+
+            const assetUrl = item.assets.data.href;
+            console.log(`🏔️ [DEM-THUMB] Generating thumbnail for: ${item.id}`);
+
+            // Only generate thumbnails for Planetary Computer DEM data
+            if (this.apiClient && assetUrl.includes('blob.core.windows.net')) {
+                // Use PC TiTiler API for presigned PC data
+                const params = new URLSearchParams();
+                params.set('collection', item.collection);
+                params.set('item', item.id);
+                params.set('assets', 'data');
+                params.set('rescale', '0,4000');
+                params.set('colormap_name', 'terrain');
+                params.set('width', '256');
+                params.set('height', '256');
+
+                const bbox = item.bbox || this.extractBboxFromGeometry(item.geometry);
+                if (bbox) {
+                    const pcUrl = `https://planetarycomputer.microsoft.com/api/data/v1/item/crop/${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}.png?${params.toString()}`;
+                    console.log(`🏔️ [DEM-THUMB] Generated PC TiTiler preview: ${pcUrl}`);
+                    return pcUrl;
+                }
+            } else {
+                // For non-PC DEM data (like Element84), we can't generate thumbnails
+                // because public TiTiler instances don't have access to private S3 buckets
+                console.log(`🚫 [DEM-THUMB] Cannot generate thumbnail for non-PC DEM data: ${assetUrl.substring(0, 50)}...`);
+                return null;
+            }
+
+            console.log('🚫 [DEM-THUMB] Could not extract bbox for thumbnail generation');
+            return null;
+
+        } catch (error) {
+            console.error('❌ [DEM-THUMB] Error generating DEM thumbnail:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Extract bbox from STAC item geometry
+     * @param {Object} geometry - GeoJSON geometry
+     * @returns {Array|null} [west, south, east, north] bbox or null
+     */
+    extractBboxFromGeometry(geometry) {
+        if (!geometry || !geometry.coordinates) {
+            return null;
+        }
+
+        try {
+            // Handle Polygon geometry (most common for STAC items)
+            if (geometry.type === 'Polygon') {
+                const coords = geometry.coordinates[0]; // Outer ring
+                const lons = coords.map(coord => coord[0]);
+                const lats = coords.map(coord => coord[1]);
+                
+                return [
+                    Math.min(...lons), // west
+                    Math.min(...lats), // south
+                    Math.max(...lons), // east
+                    Math.max(...lats)  // north
+                ];
+            }
+            
+            // Handle other geometry types if needed
+            console.warn('🔍 [BBOX] Unsupported geometry type for bbox extraction:', geometry.type);
+            return null;
+            
+        } catch (error) {
+            console.error('❌ [BBOX] Error extracting bbox from geometry:', error);
+            return null;
+        }
+    }
     
 }

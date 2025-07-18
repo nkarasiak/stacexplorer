@@ -75,12 +75,15 @@ class MapManager {
             // Get the appropriate map style based on theme
             const styleUrl = this.getMapStyle(this.currentTheme);
 
-            // Initialize MapLibre GL map
+            // Initialize MapLibre GL map with proper config defaults
+            const defaultCenter = [52.5, 28.5]; // Middle East / Central Asia region
+            const defaultZoom = 2.5;
+            
             this.map = new maplibregl.Map({
                 container: container,
                 style: styleUrl,
-                center: this.config.mapSettings?.defaultCenter || [0, 0],
-                zoom: this.config.mapSettings?.defaultZoom || 2,
+                center: this.config.mapSettings?.defaultCenter || defaultCenter,
+                zoom: this.config.mapSettings?.defaultZoom || defaultZoom,
                 attributionControl: false
             });
 

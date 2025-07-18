@@ -374,6 +374,67 @@ export class STACApiClient {
     }
     
     /**
+     * Create a presigned version of a STAC item for multiband operations
+     * @param {Object} stacItem - Original STAC item
+     * @returns {Promise<Object>} - STAC item with presigned asset URLs
+     */
+    async createPresignedSTACItem(stacItem) {
+        console.log('🔗 [PRESIGN-STAC] Creating presigned STAC item for multiband operations');
+        
+        if (!stacItem || !stacItem.assets) {
+            console.log('🔗 [PRESIGN-STAC] No assets to presign, returning original item');
+            return stacItem;
+        }
+
+        // Deep clone the STAC item to avoid modifying the original
+        const presignedItem = JSON.parse(JSON.stringify(stacItem));
+        
+        // Check if any assets need presigning
+        let needsPresigning = false;
+        for (const [assetKey, asset] of Object.entries(presignedItem.assets)) {
+            if (asset.href && this.needsPlanetaryComputerPresigning(asset.href)) {
+                needsPresigning = true;
+                break;
+            }
+        }
+        
+        if (!needsPresigning) {
+            console.log('🔗 [PRESIGN-STAC] No assets need presigning, returning original item');
+            return presignedItem;
+        }
+        
+        console.log(`🔗 [PRESIGN-STAC] Presigning ${Object.keys(presignedItem.assets).length} assets`);
+        
+        // Presign each asset that needs it
+        await Promise.all(Object.keys(presignedItem.assets).map(async assetKey => {
+            const asset = presignedItem.assets[assetKey];
+            
+            if (asset.href && this.needsPlanetaryComputerPresigning(asset.href)) {
+                console.log(`🔗 [PRESIGN-STAC] Presigning asset: ${assetKey}`);
+                const originalUrl = asset.href;
+                
+                if (asset.href.includes('planetarycomputer')) {
+                    // Convert STAC API URLs to data API URLs
+                    asset.href = asset.href.replace(
+                        'https://planetarycomputer.microsoft.com/api/stac/v1',
+                        'https://planetarycomputer.microsoft.com/api/data/v1'
+                    );
+                } else {
+                    // Get presigned URL for direct blob storage URLs
+                    asset.href = await this.getPresignedUrl(asset.href);
+                }
+                
+                console.log(`🔗 [PRESIGN-STAC] Asset ${assetKey}: ${originalUrl.substring(0, 50)}... → ${asset.href.substring(0, 50)}...`);
+            } else {
+                console.log(`🔗 [PRESIGN-STAC] Asset ${assetKey} doesn't need presigning`);
+            }
+        }));
+        
+        console.log('🔗 [PRESIGN-STAC] Presigned STAC item created successfully');
+        return presignedItem;
+    }
+
+    /**
      * Extract collection name from Planetary Computer blob storage URL
      * @param {string} url - Blob storage URL
      * @returns {string|null} - Collection name or null if not found

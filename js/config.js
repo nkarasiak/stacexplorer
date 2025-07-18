@@ -34,8 +34,8 @@ export const CONFIG = {
     
     // Map settings
     mapSettings: {
-        defaultCenter: [51.505, -0.09], // London
-        defaultZoom: 5,
+        defaultCenter: [52.5, 28.5], // Middle East / Central Asia region
+        defaultZoom: 2.5,
         defaultBasemap: 'Dark',
         basemapOptions: {
             Dark: {

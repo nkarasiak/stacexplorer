@@ -28,7 +28,11 @@
       "Bash(git rm:*)",
       "Bash(git tag:*)",
       "WebFetch(domain:planetarycomputer.microsoft.com)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:developmentseed.org)",
+      "WebFetch(domain:earth-search.aws.element84.com)",
+      "Bash(dir:*)"
     ],
     "deny": []
   }

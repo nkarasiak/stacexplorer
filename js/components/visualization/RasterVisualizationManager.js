@@ -111,7 +111,7 @@ export class RasterVisualizationManager {
             console.log(`🗺️ [LAYER] Single asset preset - using direct asset URLs`);
         }
         
-        // Build the tile URL template
+        // Build the tile URL template (now async due to presigning support)
         const urlTemplate = await this.bandEngine.buildTileUrl(
             effectiveStacItemUrl, // Provide STAC item URL for RGB composites
             presetConfig, 

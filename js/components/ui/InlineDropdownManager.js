@@ -310,6 +310,8 @@ export class InlineDropdownManager {
                 option.setAttribute('data-source', collection.source);
                 option.style.backgroundColor = 'rgba(74, 222, 128, 0.1)';
                 option.style.border = '1px solid rgba(74, 222, 128, 0.3)';
+                
+                // Create content structure
                 option.innerHTML = `
                     <i class="material-icons" style="color: #4ade80;">star</i>
                     <div class="ai-option-content">
@@ -317,6 +319,12 @@ export class InlineDropdownManager {
                         <div class="ai-option-subtitle">Best choice for satellite data analysis</div>
                     </div>
                 `;
+                
+                // Re-ensure data attributes are set after innerHTML (safety check)
+                option.setAttribute('data-source', collection.source);
+                option.setAttribute('data-collection-id', collection.id);
+                
+                console.log(`🌟 Created priority option: ${collection.id} with source: ${collection.source}`);
                 optionsSection.appendChild(option);
             });
         }
@@ -342,6 +350,7 @@ export class InlineDropdownManager {
                 option.setAttribute('data-type', 'collection');
                 option.setAttribute('data-value', collection.id);
                 option.setAttribute('data-source', collection.source);
+                
                 option.innerHTML = `
                     <i class="material-icons">folder</i>
                     <div class="ai-option-content">
@@ -349,6 +358,11 @@ export class InlineDropdownManager {
                         <div class="ai-option-subtitle">${sourceLabel}</div>
                     </div>
                 `;
+                
+                // Re-ensure data attributes are set after innerHTML (safety check)
+                option.setAttribute('data-source', collection.source);
+                option.setAttribute('data-collection-id', collection.id);
+                
                 optionsSection.appendChild(option);
             });
         });
@@ -1611,23 +1625,50 @@ export class InlineDropdownManager {
             this.aiSearchHelper.selectedCollection = '';
             this.aiSearchHelper.selectedCollectionSource = null;
         } else {
-            // Specific collection
-            const collectionTitle = option.querySelector('.ai-option-title').textContent;
+            // Specific collection - add error handling and validation
+            const titleElement = option.querySelector('.ai-option-title');
             const collectionSource = option.dataset.source;
             
-            this.updateSearchSummary('collection', collectionTitle.toUpperCase());
-            this.aiSearchHelper.selectedCollection = collectionId;
+            // Fallback to data-collection-id if collectionId is missing
+            const actualCollectionId = collectionId || option.dataset.collectionId || option.dataset.value;
+            
+            if (!titleElement) {
+                console.error('❌ Collection title element not found, retrying...');
+                // Retry after a brief delay to handle race conditions
+                setTimeout(() => {
+                    this.handleCollectionSelection(actualCollectionId, option);
+                }, 100);
+                return;
+            }
+            
+            if (!collectionSource) {
+                console.error('❌ Collection source not found in dataset:', option.dataset);
+                console.error('❌ Option element:', option);
+                return;
+            }
+            
+            if (!actualCollectionId) {
+                console.error('❌ Collection ID not found:', { collectionId, option: option.dataset });
+                return;
+            }
+            
+            const collectionTitle = titleElement.textContent;
+            
+            // Update state immediately to prevent race conditions
+            this.aiSearchHelper.selectedCollection = actualCollectionId;
             this.aiSearchHelper.selectedCollectionSource = collectionSource;
+            
+            this.updateSearchSummary('collection', collectionTitle.toUpperCase());
 
             // Update the collection select element
             const collectionSelect = document.getElementById('collection-select');
             if (collectionSelect) {
-                collectionSelect.value = collectionId;
+                collectionSelect.value = actualCollectionId;
                 collectionSelect.dispatchEvent(new Event('change'));
             }
+            
+            console.log(`🎯 Collection selected: ${actualCollectionId} from source: ${collectionSource}`);
         }
-        
-        console.log(`🎯 Collection selected: ${collectionId || '📂 Everything'}`);
     }
     
     /**

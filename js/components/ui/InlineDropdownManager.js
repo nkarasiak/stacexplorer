@@ -477,6 +477,20 @@ export class InlineDropdownManager {
         `;
         optionsSection.appendChild(drawOption);
         
+        // Add "Paste geometry" option
+        const pasteOption = document.createElement('div');
+        pasteOption.className = 'ai-option';
+        pasteOption.setAttribute('data-type', 'location');
+        pasteOption.setAttribute('data-value', 'paste');
+        pasteOption.innerHTML = `
+            <i class="material-icons">content_paste</i>
+            <div class="ai-option-content">
+                <div class="ai-option-title">📋 Paste Geometry</div>
+                <div class="ai-option-subtitle">Paste WKT or GeoJSON geometry from clipboard</div>
+            </div>
+        `;
+        optionsSection.appendChild(pasteOption);
+        
         container.appendChild(optionsSection);
         
         return container;

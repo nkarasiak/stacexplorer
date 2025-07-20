@@ -5,11 +5,6 @@
 export const CONFIG = {
     // STAC API Endpoints
     stacEndpoints: {
-        local: {
-            root: 'http://localhost:8080/stac',
-            collections: 'http://localhost:8080/stac/collections',
-            search: 'http://localhost:8080/stac/search'
-        },
         copernicus: {
             root: 'https://stac.dataspace.copernicus.eu/v1',
             collections: 'https://stac.dataspace.copernicus.eu/v1/collections',

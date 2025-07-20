@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2025-07-20
+
+### 🆕 Added
+- **Enhanced Search and Visualization Features**: Continued improvements to search history and collection UI
+- **Improved STAC Data Handling**: Better support for various STAC item formats and content-type handling
+- **UI Enhancements**: Further refinements to collection selection and user interface
+
+### 🔧 Improved
+- **Search Experience**: Additional optimizations to search history and collection management
+- **Visualization Pipeline**: Enhanced STAC item processing and visualization capabilities
+- **Code Quality**: Ongoing codebase cleanup and optimization
+
+### 🐛 Fixed
+- **Collection Source Selection**: Resolved issues with double-click requirements for collection source selection
+- **URL Handling**: Improved STAC item loading from URLs with incorrect content-type headers
+- **Base Path Preservation**: Fixed URL handling for GitHub Pages deployment
+
+### 🛠️ Technical
+- **Codebase Maintenance**: Continued cleanup and optimization of core components
+- **Performance Improvements**: Enhanced loading and processing of STAC data
+- **UI Component Updates**: Refined search and visualization components
+
 ## [2.4.0] - 2025-07-20
 
 ### 🆕 Added

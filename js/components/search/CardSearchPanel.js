@@ -185,11 +185,15 @@ export class CardSearchPanel {
         const catalogValue = document.getElementById('catalog-select').value;
         const bboxValue = document.getElementById('bbox-input').value.trim();
         const collectionValue = document.getElementById('collection-select').value;
+        const dateStart = document.getElementById('date-start').value;
+        const dateEnd = document.getElementById('date-end').value;
         
         console.log('🔍 Checking requirements:', { 
             catalogValue, 
             bboxValue, 
-            collectionValue 
+            collectionValue,
+            dateStart,
+            dateEnd
         });
         
         // Check if we're in AI Smart Search EVERYTHING mode
@@ -201,17 +205,42 @@ export class CardSearchPanel {
         
         // Data source is required UNLESS we're in EVERYTHING mode
         const sourceCompleted = catalogValue !== '' || isEverythingMode;
-        const locationCompleted = true; // Location is now optional
+        
+        // When no specific collection is selected, require location AND time constraints
+        const hasSpecificCollection = collectionValue !== '';
+        const hasLocation = bboxValue !== '';
+        const hasTimeRange = dateStart !== '' && dateEnd !== '';
+        
+        let locationCompleted = true;
+        let timeCompleted = true;
+        
+        if (!hasSpecificCollection) {
+            // No specific collection selected - require both location and time
+            locationCompleted = hasLocation;
+            timeCompleted = hasTimeRange;
+            console.log('⚠️ No specific collection selected - requiring location and time constraints');
+            console.log('⚠️ Validation details:', { 
+                hasLocation, 
+                hasTimeRange, 
+                locationCompleted, 
+                timeCompleted 
+            });
+        }
         
         console.log('📊 Requirements status:', { 
             sourceCompleted, 
             isEverythingMode,
-            locationOptional: true,
-            locationProvided: bboxValue !== '',
-            collectionSelected: collectionValue !== ''
+            hasSpecificCollection,
+            locationCompleted,
+            timeCompleted,
+            hasLocation,
+            hasTimeRange
         });
         
-        return sourceCompleted;
+        const allCompleted = sourceCompleted && locationCompleted && timeCompleted;
+        console.log('🎯 Final validation result:', allCompleted);
+        
+        return allCompleted;
     }
     
     /**
@@ -984,18 +1013,37 @@ export class CardSearchPanel {
             
             // Validate required fields
             if (!this.areRequiredCardsCompleted()) {
-                // Check if we're in EVERYTHING mode for better error messaging
+                // Get current field values for detailed error messaging
                 const catalogValue = document.getElementById('catalog-select').value;
+                const collectionValue = document.getElementById('collection-select').value;
+                const bboxValue = document.getElementById('bbox-input').value.trim();
+                const dateStart = document.getElementById('date-start').value;
+                const dateEnd = document.getElementById('date-end').value;
+                
                 const isEverythingMode = catalogValue === '' && 
                                         this.collectionManager && 
                                         typeof this.collectionManager.getAllCollections === 'function' &&
                                         this.collectionManager.getAllCollections().length > 0;
                 
-                if (isEverythingMode) {
-                    this.notificationService.showNotification('EVERYTHING mode active - continuing with search across all data sources', 'info');
-                } else {
+                const hasSpecificCollection = collectionValue !== '';
+                const hasLocation = bboxValue !== '';
+                const hasTimeRange = dateStart !== '' && dateEnd !== '';
+                
+                // Provide specific error messages based on what's missing
+                if (!isEverythingMode && catalogValue === '') {
                     this.notificationService.showNotification('Please select a Data Source to continue', 'warning');
                     return;
+                } else if (!hasSpecificCollection) {
+                    // No specific collection selected - need location AND time
+                    const missingItems = [];
+                    if (!hasLocation) missingItems.push('Location');
+                    if (!hasTimeRange) missingItems.push('Time Range');
+                    
+                    if (missingItems.length > 0) {
+                        const message = `When searching all collections, please specify: ${missingItems.join(' and ')}`;
+                        this.notificationService.showNotification(message, 'warning');
+                        return;
+                    }
                 }
             }
             
@@ -1036,6 +1084,34 @@ export class CardSearchPanel {
                 this.notificationService.showNotification(errorMsg, 'error');
                 document.getElementById('loading').style.display = 'none';
                 return;
+            }
+            
+            // CRITICAL: Additional validation for "all collections" searches without constraints
+            if (!searchParams.collections || searchParams.collections.length === 0) {
+                console.log('🚨 No specific collection selected - validating constraints...');
+                
+                const hasLocationConstraint = searchParams.bbox || searchParams.intersects;
+                const hasTimeConstraint = searchParams.datetime;
+                
+                console.log('🔍 Constraint check:', {
+                    hasLocationConstraint,
+                    hasTimeConstraint,
+                    bbox: searchParams.bbox,
+                    intersects: searchParams.intersects,
+                    datetime: searchParams.datetime
+                });
+                
+                if (!hasLocationConstraint || !hasTimeConstraint) {
+                    const missingConstraints = [];
+                    if (!hasLocationConstraint) missingConstraints.push('Location');
+                    if (!hasTimeConstraint) missingConstraints.push('Time Range');
+                    
+                    const errorMsg = `Searching all collections requires: ${missingConstraints.join(' and ')}`;
+                    console.error('❌', errorMsg);
+                    this.notificationService.showNotification(errorMsg, 'error');
+                    document.getElementById('loading').style.display = 'none';
+                    return;
+                }
             }
             
             let items = [];

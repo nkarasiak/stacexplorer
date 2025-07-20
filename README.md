@@ -3,7 +3,7 @@
 > A modern, interactive web application for exploring SpatioTemporal Asset Catalog (STAC) datasets with advanced search capabilities and beautiful visualizations.
 
 ![STAC Explorer](https://img.shields.io/badge/STAC-Explorer-blue?style=for-the-badge&logo=satellite)
-![Version](https://img.shields.io/badge/version-2.4.0-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.5.0-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 
 ## ✨ Features
@@ -86,7 +86,7 @@ npm run serve
 4. **Apply Filters**: Cloud cover, collections, etc.
 5. **Search**: Click the search button to find datasets
 
-### New Features (v2.4.0)
+### New Features (v2.5.0)
 
 #### 🕒 Search History
 - **Recent Searches**: Access your recent searches from the header dropdown
@@ -123,7 +123,7 @@ npm run serve  # Serve static files
 npm run proxy  # Development proxy only
 ```
 
-## 🌟 What's New in v2.4.0
+## 🌟 What's New in v2.5.0
 
 ### 🆕 Search History System
 - **Persistent Search History**: Automatically saves successful searches to localStorage

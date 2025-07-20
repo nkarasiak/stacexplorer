@@ -155,7 +155,10 @@ export class ResultsPanel {
         this.modal.content.innerHTML = '';
         this.modal.content.appendChild(content);
         
-        console.log('📋 Modal content created');
+        console.log('📋 Modal content created with simple tabs');
+        
+        // Setup simple tab switching
+        this.setupSimpleTabSwitching(content);
         
         // Action buttons are now static (just copy button)
         
@@ -214,49 +217,42 @@ export class ResultsPanel {
                     </div>
                 </div>
                 
-                <!-- Simple Sections -->
-                <div class="details-sections">
-                    <div class="detail-section">
-                        <h3 class="section-title">
-                            <i class="material-icons">schedule</i>
-                            Temporal Information
-                        </h3>
-                        ${temporalInfo}
+                <!-- Simple Reliable Tabs -->
+                <div class="simple-tabs">
+                    <div class="tab-headers">
+                        <button class="tab-header active" data-target="temporal-content">
+                            <i class="material-icons">schedule</i> Temporal
+                        </button>
+                        <button class="tab-header" data-target="sensor-content">
+                            <i class="material-icons">camera_alt</i> Sensor
+                        </button>
+                        ${qualityInfo ? `<button class="tab-header" data-target="quality-content">
+                            <i class="material-icons">assessment</i> Quality
+                        </button>` : ''}
+                        <button class="tab-header" data-target="assets-content">
+                            <i class="material-icons">storage</i> Assets (${Object.keys(item.assets || {}).length})
+                        </button>
+                        <button class="tab-header" data-target="properties-content">
+                            <i class="material-icons">tune</i> Properties
+                        </button>
                     </div>
-                    
-                    <div class="detail-section">
-                        <h3 class="section-title">
-                            <i class="material-icons">camera_alt</i>
-                            Sensor Information
-                        </h3>
-                        ${sensorInfo}
+                    <div class="tab-contents">
+                        <div class="tab-content-pane active" id="temporal-content">
+                            ${temporalInfo}
+                        </div>
+                        <div class="tab-content-pane" id="sensor-content">
+                            ${sensorInfo}
+                        </div>
+                        ${qualityInfo ? `<div class="tab-content-pane" id="quality-content">
+                            ${qualityInfo}
+                        </div>` : ''}
+                        <div class="tab-content-pane" id="assets-content">
+                            ${assetInfo}
+                        </div>
+                        <div class="tab-content-pane" id="properties-content">
+                            ${this.createPropertiesTab(item.properties || {})}
+                        </div>
                     </div>
-                    
-${qualityInfo ? `
-                    <div class="detail-section">
-                        <h3 class="section-title">
-                            <i class="material-icons">assessment</i>
-                            Quality & Viewing
-                        </h3>
-                        ${qualityInfo}
-                    </div>` : ''}
-                    
-                    <div class="detail-section">
-                        <h3 class="section-title">
-                            <i class="material-icons">storage</i>
-                            Assets (${Object.keys(item.assets || {}).length})
-                        </h3>
-                        ${assetInfo}
-                    </div>
-                    
-                    <div class="detail-section">
-                        <h3 class="section-title">
-                            <i class="material-icons">tune</i>
-                            Properties
-                        </h3>
-                        ${this.createPropertiesTab(item.properties || {})}
-                    </div>
-                    
                 </div>
             </div>
         `;
@@ -644,7 +640,42 @@ ${qualityInfo ? `
     }
     
     /**
-     * Setup tab switching functionality
+     * Setup simple tab switching functionality
+     */
+    setupSimpleTabSwitching(content) {
+        const tabHeaders = content.querySelectorAll('.tab-header');
+        const tabPanes = content.querySelectorAll('.tab-content-pane');
+        
+        console.log('🔍 Setting up simple tab switching');
+        console.log('🔍 Found', tabHeaders.length, 'tab headers');
+        console.log('🔍 Found', tabPanes.length, 'tab panes');
+        
+        tabHeaders.forEach(header => {
+            header.addEventListener('click', () => {
+                const targetId = header.getAttribute('data-target');
+                console.log('🔥 Tab clicked:', targetId);
+                
+                // Remove active class from all headers and panes
+                tabHeaders.forEach(h => h.classList.remove('active'));
+                tabPanes.forEach(p => p.classList.remove('active'));
+                
+                // Add active class to clicked header
+                header.classList.add('active');
+                
+                // Add active class to target pane
+                const targetPane = content.querySelector(`#${targetId}`);
+                if (targetPane) {
+                    targetPane.classList.add('active');
+                    console.log('✅ Switched to tab:', targetId);
+                } else {
+                    console.error('❌ Target pane not found:', targetId);
+                }
+            });
+        });
+    }
+    
+    /**
+     * Legacy tab switching functionality (kept for compatibility)
      */
     setupTabSwitching(content) {
         const tabButtons = content.querySelectorAll('.tab-btn');

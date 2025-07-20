@@ -2291,40 +2291,71 @@ select.form-control {
     max-width: 150px;
 }
 
-/* Simple Sections */
-.details-sections {
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
-
-.detail-section {
+/* Simple Reliable Tabs */
+.simple-tabs {
     background: var(--surface-secondary);
     border: 1px solid var(--border-primary);
     border-radius: var(--border-radius);
-    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-height: 600px; /* Reasonable max height */
 }
 
-.section-title {
+.tab-headers {
+    display: flex;
+    background: var(--surface-elevated);
+    border-bottom: 1px solid var(--border-primary);
+    overflow-x: auto;
+    flex-shrink: 0; /* Don't shrink the headers */
+}
+
+.tab-header {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: var(--text-primary);
-    margin: 0;
+    color: var(--text-secondary);
+    background: transparent;
+    border: none;
     padding: 16px 20px;
-    background: var(--surface-elevated);
-    border-bottom: 1px solid var(--border-primary);
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: var(--transition-fast);
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
 }
 
-.section-title i {
+.tab-header:hover {
+    color: var(--text-primary);
+    background: var(--hover-overlay);
+}
+
+.tab-header.active {
     color: var(--primary-500);
-    font-size: 1.2rem;
+    background: var(--surface-secondary);
+    border-bottom-color: var(--primary-500);
 }
 
-.detail-section > div:not(.section-title) {
-    padding: 20px;
+.tab-header i {
+    font-size: 18px;
+}
+
+.tab-contents {
+    background: var(--surface-secondary);
+    flex: 1; /* Take remaining space */
+    overflow-y: auto; /* Allow scrolling */
+    min-height: 0; /* Important for flex overflow */
+}
+
+.tab-content-pane {
+    display: none;
+    padding: 24px;
+    min-height: 200px;
+}
+
+.tab-content-pane.active {
+    display: block;
 }
 
 .tab-buttons {
@@ -2379,12 +2410,7 @@ select.form-control {
 }
 
 .tab-pane.active {
-    display: block !important;
-    background: rgba(255, 0, 0, 0.1) !important;
-    border: 2px solid var(--primary-500) !important;
-    min-height: 200px !important;
-    color: #ffffff !important;
-    padding: 20px !important;
+    display: block;
 }
 
 .tab-section h4 {
@@ -2645,7 +2671,7 @@ select.form-control {
 /* No Data Message */
 .no-data {
     text-align: center;
-    color: #ffffff !important;
+    color: var(--text-secondary);
     padding: 40px 20px;
     font-size: 14px;
     background: var(--surface-secondary);
@@ -2656,10 +2682,10 @@ select.form-control {
 
 .no-data i {
     font-size: 48px;
-    color: #ffffff !important;
+    color: var(--text-tertiary);
     margin-bottom: 16px;
     display: block;
-    opacity: 1 !important;
+    opacity: 0.6;
 }
 
 .no-data p {
@@ -2706,13 +2732,14 @@ select.form-control {
 /* Search History UI Styles */
 .history-item {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     padding: 12px 16px;
     border-bottom: 1px solid var(--border-secondary);
     transition: var(--transition-fast);
     cursor: pointer;
     gap: 12px;
+    min-height: 60px; /* Ensure enough space for multi-line titles */
 }
 
 .history-item:hover {
@@ -2733,9 +2760,9 @@ select.form-control {
     font-weight: 500;
     color: var(--text-primary);
     margin-bottom: 4px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    line-height: 1.4;
+    word-wrap: break-word;
+    /* Remove truncation - allow full text to display */
 }
 
 .history-meta {

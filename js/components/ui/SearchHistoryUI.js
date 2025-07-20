@@ -139,11 +139,16 @@ export class SearchHistoryUI {
             const timeAgo = this.getTimeAgo(search.timestamp);
             return `
                 <div class="history-item" data-search-id="${search.id}">
-                    <div class="history-title">${search.title}</div>
-                    <div class="history-meta">
-                        <span><i class="material-icons" style="font-size: 10px;">access_time</i> ${timeAgo}</span>
-                        <span><i class="material-icons" style="font-size: 10px;">data_usage</i> ${search.resultCount} results</span>
+                    <div class="history-content">
+                        <div class="history-title">${search.title}</div>
+                        <div class="history-meta">
+                            <span><i class="material-icons" style="font-size: 10px;">access_time</i> ${timeAgo}</span>
+                            <span><i class="material-icons" style="font-size: 10px;">data_usage</i> ${search.resultCount} results</span>
+                        </div>
                     </div>
+                    <button class="history-remove-btn" data-search-id="${search.id}" title="Remove this search">
+                        <i class="material-icons">delete</i>
+                    </button>
                 </div>
             `;
         }).join('');
@@ -155,10 +160,24 @@ export class SearchHistoryUI {
         // Add click handlers to history items (header)
         if (this.headerHistoryList) {
             this.headerHistoryList.querySelectorAll('.history-item').forEach(item => {
-                item.addEventListener('click', () => {
-                    const searchId = item.dataset.searchId;
-                    this.reExecuteSearch(searchId);
-                });
+                // Add click handler for the history content (re-execute search)
+                const historyContent = item.querySelector('.history-content');
+                if (historyContent) {
+                    historyContent.addEventListener('click', () => {
+                        const searchId = item.dataset.searchId;
+                        this.reExecuteSearch(searchId);
+                    });
+                }
+                
+                // Add click handler for the remove button
+                const removeBtn = item.querySelector('.history-remove-btn');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', (e) => {
+                        e.stopPropagation(); // Prevent triggering the parent click
+                        const searchId = removeBtn.dataset.searchId;
+                        this.removeSearch(searchId);
+                    });
+                }
             });
         }
     }
@@ -174,6 +193,19 @@ export class SearchHistoryUI {
             this.closeMenu();
         } catch (error) {
             console.error('❌ Failed to re-execute search:', error);
+        }
+    }
+    
+    /**
+     * Remove a specific search from history
+     * @param {string} searchId - ID of the search to remove
+     */
+    removeSearch(searchId) {
+        try {
+            console.log('🗑️ Removing search from history:', searchId);
+            searchHistoryManager.removeFromHistory(searchId);
+        } catch (error) {
+            console.error('❌ Failed to remove search:', error);
         }
     }
     

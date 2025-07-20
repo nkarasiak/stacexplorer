@@ -42,6 +42,16 @@ export class STACApiClient {
     }
     
     /**
+     * Get proxy URL for external requests to handle CORS
+     * @param {string} url - Original URL
+     * @returns {string} Proxied URL
+     */
+    getProxyUrl(url) {
+        // Don't use proxy with simple HTTP server - try direct requests
+        return url;
+    }
+
+    /**
      * Connect to a custom STAC catalog
      * @param {string} url - URL of the STAC catalog
      */
@@ -51,7 +61,8 @@ export class STACApiClient {
             const normalizedUrl = url.endsWith('/') ? url.slice(0, -1) : url;
             
             // Check if URL is valid by fetching the root catalog
-            const response = await fetch(normalizedUrl);
+            const proxyUrl = this.getProxyUrl(normalizedUrl);
+            const response = await fetch(proxyUrl);
             
             if (!response.ok) {
                 throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
@@ -64,30 +75,41 @@ export class STACApiClient {
                 throw new Error('Invalid STAC catalog: missing required fields');
             }
             
-            // Find collections and search endpoints
-            let collectionsUrl = `${normalizedUrl}/collections`;
-            let searchUrl = `${normalizedUrl}/search`;
-            
-            // Try to find links in the root catalog
-            const collectionsLink = rootCatalog.links.find(link => 
-                link.rel === 'data' || link.rel === 'collections');
-            const searchLink = rootCatalog.links.find(link => 
-                link.rel === 'search');
-            
-            if (collectionsLink && collectionsLink.href) {
-                collectionsUrl = new URL(collectionsLink.href, normalizedUrl).href;
+            // For Planet Labs catalog, store the root catalog data directly
+            if (normalizedUrl.includes('planet.com')) {
+                this.planetLabsCatalogData = rootCatalog;
+                // Set empty endpoints since Planet doesn't have API endpoints
+                this.setEndpoints({
+                    root: normalizedUrl,
+                    collections: '', // Will be handled specially
+                    search: ''
+                });
+            } else {
+                // Find collections and search endpoints for regular STAC APIs
+                let collectionsUrl = `${normalizedUrl}/collections`;
+                let searchUrl = `${normalizedUrl}/search`;
+                
+                // Try to find links in the root catalog
+                const collectionsLink = rootCatalog.links.find(link => 
+                    link.rel === 'data' || link.rel === 'collections');
+                const searchLink = rootCatalog.links.find(link => 
+                    link.rel === 'search');
+                
+                if (collectionsLink && collectionsLink.href) {
+                    collectionsUrl = new URL(collectionsLink.href, normalizedUrl).href;
+                }
+                
+                if (searchLink && searchLink.href) {
+                    searchUrl = new URL(searchLink.href, normalizedUrl).href;
+                }
+                
+                // Set endpoints
+                this.setEndpoints({
+                    root: normalizedUrl,
+                    collections: collectionsUrl,
+                    search: searchUrl
+                });
             }
-            
-            if (searchLink && searchLink.href) {
-                searchUrl = new URL(searchLink.href, normalizedUrl).href;
-            }
-            
-            // Set endpoints
-            this.setEndpoints({
-                root: normalizedUrl,
-                collections: collectionsUrl,
-                search: searchUrl
-            });
             
             return rootCatalog;
         } catch (error) {
@@ -103,6 +125,11 @@ export class STACApiClient {
      */
     async fetchCollections(limit = 1000) {
         try {
+            // Handle Planet Labs catalog specially
+            if (this.planetLabsCatalogData) {
+                return await this.fetchPlanetLabsCollections();
+            }
+            
             if (!this.endpoints.collections) {
                 return [];
             }
@@ -113,7 +140,9 @@ export class STACApiClient {
             
             console.log(`📡 Fetching collections from: ${url.toString()}`);
             
-            const response = await fetch(url.toString());
+            // Use proxy for external URLs
+            const proxyUrl = this.getProxyUrl(url.toString());
+            const response = await fetch(proxyUrl);
             
             if (!response.ok) {
                 throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
@@ -139,6 +168,67 @@ export class STACApiClient {
         } catch (error) {
             console.error('❌ Error fetching collections:', error);
             throw new Error(`Failed to fetch collections: ${error.message}`);
+        }
+    }
+    
+    /**
+     * Fetch collections from Planet Labs catalog structure
+     * @returns {Promise<Array>} - Promise resolving to an array of collections
+     */
+    async fetchPlanetLabsCollections() {
+        try {
+            console.log('📡 Fetching Planet Labs collections from catalog structure...');
+            
+            const collections = [];
+            
+            // Find child links that point to collections or sub-catalogs
+            const childLinks = this.planetLabsCatalogData.links.filter(link => 
+                link.rel === 'child' || link.rel === 'catalog'
+            );
+            
+            console.log(`Found ${childLinks.length} child catalogs/collections`);
+            
+            // Fetch each child to see if it's a collection or contains collections
+            for (const link of childLinks) {
+                try {
+                    const childUrl = new URL(link.href, this.endpoints.root).href;
+                    const response = await fetch(childUrl);
+                    
+                    if (response.ok) {
+                        const childData = await response.json();
+                        
+                        // If it's a collection, add it directly
+                        if (childData.type === 'Collection') {
+                            collections.push({
+                                ...childData,
+                                sourceLabel: 'Planet Labs',
+                                source: 'planet'
+                            });
+                        } else if (childData.type === 'Catalog') {
+                            // Create a simplified collection entry for sub-catalogs
+                            collections.push({
+                                id: childData.id || link.title || 'unknown',
+                                title: childData.title || link.title || childData.id,
+                                description: childData.description || 'Planet Labs catalog',
+                                type: 'Collection',
+                                sourceLabel: 'Planet Labs',
+                                source: 'planet',
+                                stac_version: childData.stac_version,
+                                links: childData.links
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Failed to fetch child catalog: ${link.href}`, error);
+                }
+            }
+            
+            console.log(`📋 Fetched ${collections.length} Planet Labs collections`);
+            return collections;
+            
+        } catch (error) {
+            console.error('❌ Error fetching Planet Labs collections:', error);
+            throw new Error(`Failed to fetch Planet Labs collections: ${error.message}`);
         }
     }
     
@@ -174,6 +264,11 @@ export class STACApiClient {
      */
     async searchItems(params = {}) {
         try {
+            // Handle Planet Labs catalog specially
+            if (this.planetLabsCatalogData) {
+                return await this.searchPlanetLabsItems(params);
+            }
+            
             if (!this.endpoints.search) {
                 return [];
             }
@@ -475,5 +570,143 @@ export class STACApiClient {
             console.warn('🔗 [PRESIGN-API] Error extracting collection from URL:', error);
             return null;
         }
+    }
+    
+    /**
+     * Search Planet Labs catalog items
+     * @param {Object} params - Search parameters
+     * @returns {Promise<Array>} - Promise resolving to an array of items
+     */
+    async searchPlanetLabsItems(params = {}) {
+        try {
+            console.log('🪐 Searching Planet Labs catalog items...', params);
+            
+            const items = [];
+            const selectedCollection = params.collections?.[0];
+            
+            if (selectedCollection) {
+                // Find the specific collection/catalog
+                const childLinks = this.planetLabsCatalogData.links.filter(link => 
+                    link.rel === 'child' || link.rel === 'catalog'
+                );
+                
+                for (const link of childLinks) {
+                    try {
+                        const childUrl = new URL(link.href, this.endpoints.root).href;
+                        const response = await fetch(childUrl);
+                        
+                        if (response.ok) {
+                            const childData = await response.json();
+                            
+                            // Check if this is the collection we're looking for
+                            if (childData.id === selectedCollection || link.title?.includes(selectedCollection)) {
+                                console.log(`📂 Found matching collection: ${childData.id || link.title}`);
+                                
+                                // Get items from this collection/catalog
+                                const collectionItems = await this.fetchItemsFromCatalog(childData, childUrl);
+                                items.push(...collectionItems);
+                                break;
+                            }
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to search in catalog: ${link.href}`, error);
+                    }
+                }
+            } else {
+                // No specific collection - search all catalogs (limited results)
+                console.log('🔍 Searching all Planet Labs catalogs...');
+                const childLinks = this.planetLabsCatalogData.links.filter(link => 
+                    link.rel === 'child' || link.rel === 'catalog'
+                ).slice(0, 3); // Limit to first 3 catalogs to avoid too many requests
+                
+                for (const link of childLinks) {
+                    try {
+                        const childUrl = new URL(link.href, this.endpoints.root).href;
+                        const response = await fetch(childUrl);
+                        
+                        if (response.ok) {
+                            const childData = await response.json();
+                            const collectionItems = await this.fetchItemsFromCatalog(childData, childUrl, 5); // Limit items per catalog
+                            items.push(...collectionItems);
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to search in catalog: ${link.href}`, error);
+                    }
+                }
+            }
+            
+            console.log(`📋 Found ${items.length} Planet Labs items`);
+            return items;
+            
+        } catch (error) {
+            console.error('❌ Error searching Planet Labs items:', error);
+            return [];
+        }
+    }
+    
+    /**
+     * Fetch items from a Planet Labs catalog
+     * @param {Object} catalogData - Catalog data
+     * @param {string} catalogUrl - Catalog URL
+     * @param {number} limit - Maximum items to fetch
+     * @returns {Promise<Array>} - Promise resolving to an array of items
+     */
+    async fetchItemsFromCatalog(catalogData, catalogUrl, limit = 10) {
+        const items = [];
+        
+        try {
+            // Look for item links
+            const itemLinks = catalogData.links?.filter(link => 
+                link.rel === 'item'
+            ).slice(0, limit) || [];
+            
+            console.log(`📄 Found ${itemLinks.length} item links in catalog`);
+            
+            for (const itemLink of itemLinks) {
+                try {
+                    const itemUrl = new URL(itemLink.href, catalogUrl).href;
+                    const response = await fetch(itemUrl);
+                    
+                    if (response.ok) {
+                        const itemData = await response.json();
+                        
+                        // Add source information
+                        itemData.sourceLabel = 'Planet Labs';
+                        itemData.source = 'planetlabs';
+                        
+                        items.push(itemData);
+                    }
+                } catch (error) {
+                    console.warn(`Failed to fetch item: ${itemLink.href}`, error);
+                }
+            }
+            
+            // If no direct items, look for child catalogs
+            if (items.length === 0) {
+                const childLinks = catalogData.links?.filter(link => 
+                    link.rel === 'child' || link.rel === 'catalog'
+                ).slice(0, 2) || []; // Limit depth
+                
+                for (const childLink of childLinks) {
+                    try {
+                        const childUrl = new URL(childLink.href, catalogUrl).href;
+                        const response = await fetch(childUrl);
+                        
+                        if (response.ok) {
+                            const childData = await response.json();
+                            const childItems = await this.fetchItemsFromCatalog(childData, childUrl, Math.max(1, Math.floor(limit / childLinks.length)));
+                            items.push(...childItems);
+                        }
+                    } catch (error) {
+                        console.warn(`Failed to fetch child catalog: ${childLink.href}`, error);
+                    }
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error fetching items from catalog:', error);
+        }
+        
+        return items;
     }
 }

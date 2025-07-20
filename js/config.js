@@ -20,6 +20,12 @@ export const CONFIG = {
             collections: 'https://planetarycomputer.microsoft.com/api/stac/v1/collections',
             search: 'https://planetarycomputer.microsoft.com/api/stac/v1/search'
         },
+        planetlabs: {
+            root: 'https://www.planet.com/data/stac/catalog.json',
+            collections: '',
+            search: '',
+            type: 'catalog'
+        },
         custom: {
             root: '',
             collections: '',
@@ -53,6 +59,6 @@ export const CONFIG = {
     appSettings: {
         defaultDateRange: 0, // Default date range in days (0 means no default)
         itemsPerPage: 10, // Number of items per page in results
-        enabledProviders: ['copernicus', 'element84', 'planetary'] // Default enabled providers
+        enabledProviders: ['copernicus', 'element84', 'planetary', 'planetlabs'] // Default enabled providers
     }
 };

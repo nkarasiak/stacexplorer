@@ -197,18 +197,26 @@ export class CollectionManagerEnhanced {
                 
                 console.log(`🔗 ${source} endpoints:`, endpoints);
                 
-                // Test if endpoints are valid URLs
-                try {
-                    new URL(endpoints.collections);
-                } catch (urlError) {
-                    const error = `Invalid collections URL for ${source}: ${endpoints.collections}`;
-                    console.error(`❌ ${error}`);
-                    errors.push(error);
-                    continue;
+                // Test if endpoints are valid URLs (skip for Planet Labs which uses special handling)
+                if (source !== 'planetlabs') {
+                    try {
+                        new URL(endpoints.collections);
+                    } catch (urlError) {
+                        const error = `Invalid collections URL for ${source}: ${endpoints.collections}`;
+                        console.error(`❌ ${error}`);
+                        errors.push(error);
+                        continue;
+                    }
                 }
                 
                 // Set API client to use this source
                 this.apiClient.setEndpoints(endpoints);
+                
+                // For Planet Labs, connect to catalog first
+                if (source === 'planetlabs') {
+                    console.log(`🪐 Connecting to Planet Labs catalog...`);
+                    await this.apiClient.connectToCustomCatalog(endpoints.root);
+                }
                 
                 // Fetch collections from this source with increased limit
                 console.log(`📡 Fetching collections from ${source} with limit 500...`);
@@ -282,11 +290,13 @@ export class CollectionManagerEnhanced {
     handleCollectionSelection(collectionId) {
         this.selectedCollection = collectionId;
         
+        let source = null;
+        
         if (collectionId) {
             // Get the source from the selected option
             const collectionSelect = document.getElementById('collection-select');
             const selectedOption = collectionSelect?.selectedOptions[0];
-            const source = selectedOption?.dataset.source;
+            source = selectedOption?.dataset.source;
             
             // Find the collection by ID and source
             const collection = this.getCollectionById(collectionId, source);

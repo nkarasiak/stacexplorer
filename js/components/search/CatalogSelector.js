@@ -61,11 +61,17 @@ export class CatalogSelector {
                 throw new Error(`Unknown catalog type: ${catalogType}`);
             }
             
-            // Update API client endpoints
-            this.apiClient.setEndpoints(endpoints);
-            
-            // Fetch collections
-            const collections = await this.apiClient.fetchCollections();
+            // Check if this is a catalog type (like Planet) vs API type
+            let collections;
+            if (endpoints.type === 'catalog') {
+                // For catalog types, use the root URL directly as a custom catalog
+                await this.apiClient.connectToCustomCatalog(endpoints.root);
+                collections = await this.apiClient.fetchCollections();
+            } else {
+                // For API types, use the traditional endpoints approach
+                this.apiClient.setEndpoints(endpoints);
+                collections = await this.apiClient.fetchCollections();
+            }
             
             // Trigger collection updated event
             document.dispatchEvent(new CustomEvent('collectionsUpdated', { 

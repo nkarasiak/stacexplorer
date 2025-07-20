@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2025-07-20
+
+### 🆕 Added
+- **Planet Labs Open Data Integration**: Added support for Planet Labs STAC catalog as a new data source
+- **Static Catalog Support**: Implemented catalog-type data sources (vs API-type) for hierarchical STAC catalogs
+- **Planet Labs Collections**: Added automatic collection discovery from Planet Labs catalog structure
+- **Planet Labs Item Search**: Implemented custom search functionality for navigating static catalog hierarchies
+
+### 🔧 Improved
+- **Catalog Architecture**: Enhanced STAC API client to handle both API and catalog-type data sources
+- **Data Source Management**: Clear separation between "planetary" (Microsoft Planetary Computer) and "planetlabs" (Planet Labs)
+- **Search Functionality**: Extended search capabilities to work with static catalogs in addition to API endpoints
+- **Error Handling**: Improved error handling and validation for different catalog types
+
+### 🐛 Fixed
+- **Scope Issues**: Fixed JavaScript variable scope errors in collection selection handlers
+- **CORS Handling**: Improved proxy configuration for external data source access
+- **Collection Loading**: Resolved issues with loading collections from non-API catalog sources
+
+### 🛠️ Technical
+- **API Client Enhancement**: Added specialized methods for Planet Labs catalog traversal and item discovery
+- **Collection Manager**: Updated to handle catalog-type sources with special connection requirements
+- **Configuration Updates**: Added Planet Labs endpoints and type definitions to configuration
+
 ## [2.5.0] - 2025-07-20
 
 ### 🆕 Added

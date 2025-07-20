@@ -697,19 +697,28 @@ export class InlineDropdownManager {
         const fp = flatpickr(dateRangeInput, {
             mode: 'range',
             dateFormat: 'Y-m-d',
-            defaultDate: [new Date(), new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)], // Today + 30 days
+            // Fix: Start with current month, show previous month on left
+            defaultDate: null, // Don't set default dates to avoid initial month jumping
             showMonths: 2,
             static: true,
             position: 'below',
             theme: 'dark',
             monthSelectorType: 'dropdown',
             yearSelectorType: 'dropdown',
+            disableMobile: true, // Fix: Prevent mobile layout issues
+            // Don't pre-select any dates
+            defaultDate: null,
             onChange: (selectedDates) => {
                 if (selectedDates.length === 2) {
                     applyBtn.disabled = false;
                 } else {
                     applyBtn.disabled = true;
                 }
+            },
+            onReady: function() {
+                // Set the view to 30 days ago without selecting dates
+                const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+                this.jumpToDate(thirtyDaysAgo, false); // Position view without triggering events
             }
         });
         
@@ -835,12 +844,25 @@ export class InlineDropdownManager {
             monthSelectorType: 'dropdown',
             yearSelectorType: 'dropdown',
             position: 'center',
+            // Don't pre-select dates but position view to show previous month on left
+            defaultDate: null,
+            // Fix: Set fixed height to prevent resizing issues
+            disableMobile: true,
+            static: true,
             onReady: (selectedDates, dateStr, instance) => {
+                // Position view to show previous month on left, current on right
+                const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+                instance.jumpToDate(thirtyDaysAgo, false);
+                
                 // Style the calendar container
                 const calendarEl = instance.calendarContainer;
                 calendarEl.style.position = 'fixed';
                 calendarEl.style.top = '50%';
                 calendarEl.style.left = '50%';
+                // Fix: Set consistent height to prevent layout shifts
+                calendarEl.style.height = 'auto';
+                calendarEl.style.minHeight = '400px';
+                calendarEl.style.maxHeight = '500px';
                 calendarEl.style.transform = 'translate(-50%, -50%)';
                 calendarEl.style.zIndex = '10000';
                 calendarEl.style.boxShadow = '0 20px 40px rgba(0,0,0,0.3)';
@@ -1667,8 +1689,75 @@ export class InlineDropdownManager {
                 collectionSelect.dispatchEvent(new Event('change'));
             }
             
+            // Check if this is a DEM collection and auto-set time to "Anytime"
+            this.checkAndSetDEMTimeSettings(actualCollectionId, collectionTitle);
+            
             console.log(`🎯 Collection selected: ${actualCollectionId} from source: ${collectionSource}`);
         }
+    }
+    
+    /**
+     * Check if the selected collection is a DEM and automatically set time to "Anytime"
+     * @param {string} collectionId - The collection ID
+     * @param {string} collectionTitle - The collection title
+     */
+    checkAndSetDEMTimeSettings(collectionId, collectionTitle) {
+        if (!collectionId || !collectionTitle) return;
+        
+        // Check if this is a DEM collection based on ID and title
+        const isDEM = this.isDEMCollection(collectionId, collectionTitle);
+        
+        if (isDEM) {
+            console.log(`🏔️ DEM collection detected: ${collectionId}. Setting time to "Anytime"`);
+            
+            // Update the AI search helper state
+            this.aiSearchHelper.selectedDate = {
+                type: 'anytime',
+                start: null,
+                end: null
+            };
+            
+            // Clear date inputs
+            const startInput = document.getElementById('date-start');
+            const endInput = document.getElementById('date-end');
+            
+            if (startInput) startInput.value = '';
+            if (endInput) endInput.value = '';
+            
+            // Update the search summary interface to show "Anytime"
+            this.updateSearchSummary('date', '🕐 Anytime');
+            
+            // Trigger change events to update any dependent UI components
+            if (startInput) startInput.dispatchEvent(new Event('change'));
+            if (endInput) endInput.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    /**
+     * Determine if a collection is a DEM (Digital Elevation Model) based on its metadata
+     * @param {string} collectionId - The collection ID
+     * @param {string} collectionTitle - The collection title
+     * @returns {boolean} True if this is a DEM collection
+     */
+    isDEMCollection(collectionId, collectionTitle) {
+        if (!collectionId && !collectionTitle) return false;
+        
+        const id = collectionId?.toLowerCase() || '';
+        const title = collectionTitle?.toLowerCase() || '';
+        
+        // Common DEM identifiers
+        const demKeywords = [
+            'dem', 'elevation', 'altitude', 'height', 'topography', 'terrain',
+            'digital elevation model', 'dtm', 'dsm', 'digital terrain model',
+            'digital surface model', 'srtm', 'aster gdem', 'copernicus dem',
+            'alos palsar', 'tandem-x'
+        ];
+        
+        // Check if any DEM keywords match the collection ID or title
+        return demKeywords.some(keyword => 
+            id.includes(keyword) || 
+            title.includes(keyword)
+        );
     }
     
     /**

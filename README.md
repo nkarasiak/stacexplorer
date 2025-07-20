@@ -3,16 +3,17 @@
 > A modern, interactive web application for exploring SpatioTemporal Asset Catalog (STAC) datasets with advanced search capabilities and beautiful visualizations.
 
 ![STAC Explorer](https://img.shields.io/badge/STAC-Explorer-blue?style=for-the-badge&logo=satellite)
-![Version](https://img.shields.io/badge/version-2.2.2-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.4.0-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 
 ## ✨ Features
 
 ### 🔍 **Smart Search Interface**
 - **AI-Enhanced Search**: Intelligent location and dataset discovery
-- **Advanced Filters**: Date ranges, cloud cover, collections, and spatial filters
-- **🆕 Modern Calendar**: Professional Flatpickr date range picker with presets
-- **Multiple Search Methods**: Text search, map drawing, WKT geometry input
+- **🆕 Search History**: Recent searches dropdown for quick re-execution
+- **Advanced Filters**: Date ranges, cloud cover, collections, and spatial filters  
+- **Modern Calendar**: Professional Flatpickr date range picker with presets
+- **Enhanced Collection Selection**: Taller dropdown for easier browsing
 - **Real-time Results**: Instant feedback with modern UI components
 
 ### 🗺️ **Interactive Mapping**
@@ -30,7 +31,7 @@
 ### 🌐 **Multi-Source Support**
 - **Copernicus Data Space**: European Space Agency satellite data
 - **Element84 Earth Search**: Comprehensive Earth observation datasets
-- **🆕 Microsoft Planetary Computer**: Enhanced support with fixed presigning API
+- **Microsoft Planetary Computer**: Enhanced support with fixed presigning API
 - **Custom STAC Catalogs**: Connect to any STAC-compliant API
 - **Cross-Catalog Search**: Search across multiple data sources
 
@@ -39,9 +40,9 @@
 - **Thumbnail Previews**: Visual dataset previews when available
 - **Metadata Display**: Comprehensive dataset properties and JSON viewer
 - **Export Capabilities**: Copy dataset information to clipboard
-- **🆕 Raster Visualization**: Interactive band combination and color mapping
-- **🆕 SAR Data Support**: Optimized Sentinel-1 SAR visualization with proper scale ranges (0-1)
-- **🆕 Sentinel Data Support**: Specialized visualization for Sentinel-2 imagery
+- **Raster Visualization**: Interactive band combination and color mapping
+- **SAR Data Support**: Optimized Sentinel-1 SAR visualization
+- **Sentinel Data Support**: Specialized visualization for Sentinel-2 imagery
 
 ## 🚀 Quick Start
 
@@ -75,6 +76,27 @@ npm start
 npm run serve
 ```
 
+## 🎯 Usage Guide
+
+### Basic Search
+
+1. **Select Data Source**: Choose from Copernicus, Element84, or custom catalogs
+2. **Choose Location**: Search by place name, draw area on map, or enter WKT geometry
+3. **Set Time Range**: Use the modern calendar with quick presets (1 day, 1 week, 1 month, 6 months)
+4. **Apply Filters**: Cloud cover, collections, etc.
+5. **Search**: Click the search button to find datasets
+
+### New Features (v2.4.0)
+
+#### 🕒 Search History
+- **Recent Searches**: Access your recent searches from the header dropdown
+- **Smart Restoration**: Automatically restores exact collection selections
+- **One-Click Re-execution**: Quickly repeat previous searches
+
+#### 📋 Enhanced Collection Selection
+- **Taller Dropdown**: Easier browsing with larger collection dropdown menu
+- **Better Visibility**: See more options at once without scrolling
+
 ## 🛠️ Development
 
 ### Project Structure
@@ -82,154 +104,48 @@ npm run serve
 ```
 stacexplorer/
 ├── 📁 js/
-│   ├── 📁 components/
-│   │   ├── 📁 api/          # STAC API client
-│   │   ├── 📁 map/          # Map management
-│   │   ├── 📁 results/      # Results display
-│   │   ├── 📁 search/       # Search components
-│   │   ├── 📁 ui/           # UI components
-│   │   └── 📁 utils/        # Utility functions
-│   ├── 📄 app.js            # Main application
-│   └── 📄 config.js         # Configuration
-├── 📁 css/
-│   └── 📄 styles.modern.css # Modern styling
-├── 📄 index.html            # Main HTML
-├── 📄 proxy.js              # CORS proxy server
-└── 📄 package.json          # Dependencies
+│   ├── 📁 components/     # React-like components
+│   ├── 📁 utils/          # Utility functions
+│   ├── 📄 app.js          # Main application
+│   └── 📄 config.js       # Configuration
+├── 📁 css/               # Styling
+├── 📄 index.html         # Main HTML
+├── 📄 proxy.js           # CORS proxy server
+└── 📄 package.json       # Dependencies
 ```
 
 ### Available Scripts
 
 ```bash
-# Development with hot reload
-npm run dev
-
-# Production server
-npm start
-
-# Serve static files
-npm run serve
-
-# Development proxy only
-npm run proxy
+npm run dev    # Development with hot reload
+npm start      # Production server
+npm run serve  # Serve static files
+npm run proxy  # Development proxy only
 ```
 
-### Configuration
+## 🌟 What's New in v2.4.0
 
-The application supports multiple STAC catalogs configured in `js/config.js`:
+### 🆕 Search History System
+- **Persistent Search History**: Automatically saves successful searches to localStorage
+- **Header Integration**: Recent searches button appears next to load STAC button after first search
+- **Smart Collection Restoration**: Properly restores specific collection selections (e.g., "sentinel-1-rtc")
+- **One-Click Re-execution**: Click any search from history to instantly repeat it
+- **Fixed Positioning**: Dropdown appears above all elements without clipping
 
-```javascript
-export const CONFIG = {
-    // Default STAC endpoints
-    STAC_ENDPOINTS: {
-        'copernicus': 'https://catalogue.dataspace.copernicus.eu/stac',
-        'element84': 'https://earth-search.aws.element84.com/v1',
-        // Add custom endpoints here
-    }
-};
-```
+### 🔧 UI Improvements  
+- **Enhanced Collection Dropdown**: Increased height (200px) with size="10" for better browsing
+- **Better Search UX**: Search history only appears when relevant (after user has searched)
+- **Improved Reliability**: Fixed parameter saving/restoring issues
 
-## 🎯 Usage Guide
-
-### Basic Search
-
-1. **Select Data Source**: Choose from Copernicus, Element84, or custom catalogs
-2. **Choose Location**: 
-   - Search by place name (e.g., "Paris, France")
-   - Draw area on map
-   - Enter WKT geometry
-3. **Set Time Range**: 
-   - Anytime (default)
-   - Last 30 days
-   - **🆕 Custom date range**: Modern calendar with 1 day, 1 week, 1 month, 6 month presets
-4. **Apply Filters**: Cloud cover, collections, etc.
-5. **Search**: Click the search button to find datasets
-
-### Advanced Features
-
-#### Location Search
-- **Geocoding**: Type any location name for automatic geocoding
-- **Map Drawing**: Use drawing tools to select precise areas
-- **WKT Input**: Paste Well-Known Text geometry directly
-
-#### Dataset Exploration
-- **Dataset Details**: Click info button for comprehensive metadata
-- **Map Visualization**: View dataset footprints on the interactive map
-- **Copy Information**: Export dataset metadata to clipboard
-
-#### Multi-Source Search
-- Enable "Everything" mode to search across all configured catalogs
-- Results are aggregated and deduplicated automatically
-
-#### 🧪 Experimental Visualization Features
-- **Raster Visualization**: Click "Visualize" on supported datasets to open the visualization panel
-- **Band Combinations**: Choose from predefined combinations (True Color, False Color, NDVI) or create custom RGB mappings
-- **Color Controls**: Adjust contrast, brightness, and color scaling for optimal display
-- **Layer Management**: Control visualization layer opacity and blending with base maps
-- **Note**: Visualization features are experimental and may have limitations with certain datasets
-
-## 🔧 Technical Details
-
-### Architecture
-
-- **Frontend**: Vanilla JavaScript ES2022 modules
-- **Styling**: Modern CSS with CSS variables and glassmorphism
-- **Mapping**: Leaflet.js with custom styling
-- **API**: STAC-compliant REST APIs
-- **Deployment**: Static files with optional Node.js proxy
-
-### Key Components
-
-- **CardSearchPanel**: Main search interface with card-based layout
-- **MapManager**: Interactive map with drawing tools
-- **InlineDropdownManager**: Smart search dropdowns with autocomplete
-- **ResultsPanel**: Paginated results with enhanced modals
-- **StacApiClient**: STAC API communication with error handling
-
-### Performance Features
-
-- **Efficient Rendering**: Virtual scrolling for large result sets
-- **Caching**: API response caching for better performance  
-- **Lazy Loading**: On-demand component loading
-- **Responsive Images**: Optimized thumbnail loading
-
-## 🌟 Recent Updates (v2.3.0)
-
-### 🆕 Added - Modern Calendar System
-- **📅 Flatpickr Integration**: Replaced clunky dual calendar with professional Flatpickr library
-- **🎯 Standalone Date Picker**: Full-screen modal calendar for better user experience
-- **⏰ Quick Presets**: 1 day, 1 week, 1 month, 6 months preset buttons
-- **🛠️ Fixed Date Handling**: Resolved timezone conversion issues and -1 day offset
-- **📅 Inclusive Date Ranges**: Proper start 00:00:00 to end 23:59:59 handling
-- **🔗 URL State Restoration**: Fixed custom date loading from URLs
-- **🧹 Improved UX**: Clean backdrop handling, no more stuck overlays
-
-### 🔧 Technical Improvements
-- **📦 Lightweight**: Flatpickr adds only ~20KB vs previous bulky implementation
-- **📱 Mobile-Friendly**: Responsive calendar design for all devices
-- **🌙 Dark Theme**: Native dark theme support
-- **🚀 GitHub Pages Ready**: Static deployment workflow for easy hosting
-
-### 🔧 Previous Updates (v2.2.x) 🧪 *EXPERIMENTAL*
-- **🎨 Raster Visualization Panel**: Interactive visualization with band combinations
-- **📡 Sentinel-2 Support**: Specialized band combinations (True Color, False Color, NDVI, etc.)
-- **🔧 Band Combination Engine**: Flexible RGB band mapping for raster data
-- **🎛️ Color Management**: Dynamic color scaling and enhancement controls
-- **📊 Visualization Controls**: Layer opacity, contrast, and brightness adjustments
-- **Location Search Integration**: Enhanced search with proper location handling
-- **Enhanced Dataset Modals**: Beautiful modal redesign with copy functionality
-
-### ⚠️ Known Issues & Limitations
-- **🧪 Experimental Status**: Visualization features are in active development
-- **📡 Limited Data Support**: Currently optimized for Sentinel-2 and similar datasets
-- **🌐 CORS Limitations**: Some raster sources may require proxy configuration
-- **📱 Mobile Performance**: Visualization panel may have reduced functionality on mobile
-- **🔄 Browser Compatibility**: Advanced features require modern browsers with WebGL support
+### 🐛 Bug Fixes
+- **Collection Parameter Mismatch**: Fixed inconsistency between saving (`collections`) and restoring (`collection`)
+- **Z-Index Issues**: Search history dropdown now properly appears above all interface elements
+- **Container Clipping**: Moved dropdown outside search container to prevent visual clipping
 
 ## 📋 Browser Support
 
 - Chrome 90+
-- Firefox 88+
+- Firefox 88+  
 - Safari 14+
 - Edge 90+
 

@@ -26,6 +26,8 @@
     <link rel="stylesheet" href="css/map-fix.css">
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <!-- Flatpickr Dark Theme -->
+    <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
     <style>
         .header-actions {
             display: flex;
@@ -34,6 +36,11 @@
         }
         
         /* Enhanced Collection Dropdown Styling */
+        #collection-select {
+            height: 200px !important;
+            size: 10 !important;
+        }
+        
         #collection-select optgroup {
             font-weight: 600;
             font-size: 14px;
@@ -361,7 +368,7 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h1><i class="material-icons">satellite_alt</i> <span>STAC Explorer</span></h1>
+                <h1 id="app-logo" style="cursor: pointer;" title="Return to Homepage"><i class="material-icons">satellite_alt</i> <span>STAC Explorer</span></h1>
                 <button id="theme-toggle" class="theme-toggle">
                     <i class="material-icons">light_mode</i>
                 </button>
@@ -371,9 +378,16 @@
                 <div class="md-card" id="search-container">
                     <div class="md-card-header" id="search-container-header">
                         <h2 id="search-title"><i class="material-icons">search</i> Search</h2>
-                        <button id="load-stac-btn" class="header-action-btn" title="Load STAC item from URL or JSON">
-                            <i class="material-icons">file_download</i>
-                        </button>
+                        <div class="header-actions">
+                            <div class="search-history-dropdown" id="header-search-history" style="display: none;">
+                                <button id="header-search-history-btn" class="header-action-btn" title="Recent Searches">
+                                    <i class="material-icons">history</i>
+                                </button>
+                            </div>
+                            <button id="load-stac-btn" class="header-action-btn" title="Load STAC item from URL or JSON">
+                                <i class="material-icons">file_download</i>
+                            </button>
+                        </div>
                     </div>
                     <div class="md-card-body">
                         <!-- Beautiful Search Summary Interface -->
@@ -919,6 +933,23 @@
             
             console.log('Mobile sidebar manager initialized');
         });
+        
+        // Logo click handler - return to homepage
+        document.addEventListener('DOMContentLoaded', () => {
+            const appLogo = document.getElementById('app-logo');
+            if (appLogo) {
+                appLogo.addEventListener('click', () => {
+                    // Clear all URL parameters and return to homepage
+                    const currentUrl = new URL(window.location);
+                    const baseUrl = `${currentUrl.protocol}//${currentUrl.host}${currentUrl.pathname}`;
+                    
+                    // Navigate to clean homepage
+                    window.location.href = baseUrl;
+                });
+                
+                console.log('🏠 Logo click handler initialized');
+            }
+        });
     </script>
     
     <!-- Load modules with ES modules -->
@@ -1279,6 +1310,122 @@
             align-items: center;
             justify-content: space-between;
         }
+        
+        /* Search History Dropdown Styles */
+        .search-history-dropdown {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .history-menu {
+            position: fixed !important;
+            background: var(--surface-elevated, #2a2a2a) !important;
+            border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.1)) !important;
+            border-radius: 8px !important;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3) !important;
+            z-index: 2147483647 !important;
+            min-width: 300px !important;
+            max-width: 400px !important;
+            max-height: 400px !important;
+            overflow-y: auto !important;
+            display: none !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+        }
+        
+        .history-menu.active {
+            display: block !important;
+        }
+        
+        .history-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-primary, rgba(255, 255, 255, 0.1));
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-weight: 600;
+            color: var(--text-primary, #ffffff);
+            font-size: 14px;
+        }
+        
+        .clear-history-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary, #888);
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        
+        .clear-history-btn:hover {
+            background: var(--danger-color, #ef4444);
+            color: white;
+        }
+        
+        .history-list {
+            padding: 8px 0;
+        }
+        
+        .history-item {
+            padding: 10px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+        }
+        
+        .history-item:hover {
+            background: var(--surface-primary, rgba(255, 255, 255, 0.05));
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-title {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary, #ffffff);
+            margin-bottom: 4px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .history-meta {
+            font-size: 11px;
+            color: var(--text-secondary, #888);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .history-empty {
+            padding: 20px 16px;
+            text-align: center;
+            color: var(--text-secondary, #888);
+            font-size: 13px;
+        }
+        
+        .search-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
     </style>
+
+    <!-- Search History Dropdown Portal (outside all containers to avoid clipping) -->
+    <div id="header-search-history-menu" class="history-menu">
+        <div class="history-header">
+            <span>Recent Searches</span>
+            <button id="header-clear-history-btn" class="clear-history-btn" title="Clear History">
+                <i class="material-icons">delete</i>
+            </button>
+        </div>
+        <div id="header-search-history-list" class="history-list">
+            <div class="history-empty">No search history yet</div>
+        </div>
+    </div>
 </body>
 </html>

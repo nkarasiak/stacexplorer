@@ -418,16 +418,19 @@ export class SearchForm {
                     try {
                         console.log('🗺️ Displaying geometry on map from SearchForm');
                         
+                        // Use a consistent source ID to replace previous geometry
+                        const geometrySourceId = 'searchform-geometry';
+                        
                         // Display geometry with beautiful styling
                         if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
                             this.mapManager.addBeautifulGeometryLayer(
                                 geojson, 
-                                `searchform-geometry-${Date.now()}`
+                                geometrySourceId
                             );
                         } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
                             this.mapManager.addGeoJsonLayer(
                                 geojson, 
-                                `searchform-geometry-${Date.now()}`
+                                geometrySourceId
                             );
                         }
                         

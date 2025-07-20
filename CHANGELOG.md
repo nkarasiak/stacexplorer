@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2025-07-20
+
+### 🆕 Added
+- **Search History System**: Persistent search history with localStorage integration
+  - Recent searches dropdown in header (appears after first search)
+  - One-click re-execution of previous searches
+  - Smart collection selection restoration (preserves exact collection choices)
+  - Auto-saves successful searches with metadata (timestamp, result count, search title)
+  - Clear history functionality
+
+### 🔧 Improved
+- **Enhanced Collection Selection**: Increased collection dropdown height to 200px with size="10" for better browsing experience
+- **Search History UI**: 
+  - Positioned search history button next to load STAC button in header
+  - Only shows when user has search history (better UX)
+  - Dropdown appears above all interface elements without clipping
+- **Collection Parameter Handling**: 
+  - Fixed parameter normalization between `collections` (array) and `collection` (string) formats
+  - Enhanced search parameter sanitization and validation
+  - Improved collection title display and cleaning
+
+### 🐛 Fixed
+- **Search History Dropdown Positioning**: 
+  - Moved dropdown outside search container to prevent clipping
+  - Set maximum z-index (2147483647) to ensure proper layering
+  - Fixed dropdown appearing inside search card boundaries
+- **Collection Selection Restoration**: 
+  - Fixed mismatch between saving (`collections`) and restoring (`collection`) parameters
+  - Added comprehensive parameter validation and fallback handling
+  - Enhanced UI summary updates after search restoration
+- **Search Parameter Consistency**: 
+  - Normalized collection parameter formats across save/restore operations
+  - Added debugging logs for troubleshooting parameter issues
+  - Fixed collection title extraction and display formatting
+
+### 🛠️ Technical
+- **SearchHistoryManager**: New utility class for managing search history operations
+- **SearchHistoryUI**: New component for search history dropdown interface
+- **Enhanced Parameter Sanitization**: Improved search parameter validation and normalization
+- **Better Error Handling**: Added comprehensive logging and error recovery
+- **UI Component Updates**: Enhanced InlineDropdownManager integration with search history
+
 ## [2.2.2] - 2025-07-18
 
 ### Fixed - Priority Collections Order

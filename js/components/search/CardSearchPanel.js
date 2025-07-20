@@ -3,6 +3,8 @@
  * Replaces tab-based navigation with modern card dashboard
  */
 
+import { searchHistoryManager } from '../../utils/SearchHistoryManager.js';
+
 export class CardSearchPanel {
     /**
      * Create a new CardSearchPanel
@@ -1073,6 +1075,28 @@ export class CardSearchPanel {
                 detail: { results: items }
             }));
             
+            // Save search to history (only if we got results)
+            if (items.length > 0) {
+                try {
+                    // Prepare search parameters for history with additional metadata
+                    const historyParams = {
+                        ...searchParams,
+                        collectionTitle: selectedCollection ? this.getCollectionTitle(selectedCollection) : null,
+                        resultCount: items.length,
+                        searchTimestamp: new Date().toISOString()
+                    };
+                    
+                    // Dispatch event for search history manager to catch
+                    document.dispatchEvent(new CustomEvent('searchExecuted', {
+                        detail: historyParams
+                    }));
+                    
+                    console.log('💾 Search saved to history with', items.length, 'results');
+                } catch (historyError) {
+                    console.warn('⚠️ Failed to save search to history:', historyError);
+                }
+            }
+            
             // Hide loading indicator
             document.getElementById('loading').style.display = 'none';
             
@@ -1103,6 +1127,26 @@ export class CardSearchPanel {
             
             // Hide loading indicator
             document.getElementById('loading').style.display = 'none';
+        }
+    }
+    
+    /**
+     * Get the display title for a collection
+     * @param {string} collectionId - Collection ID
+     * @returns {string} Collection title or ID if title not found
+     */
+    getCollectionTitle(collectionId) {
+        try {
+            const collectionSelect = document.getElementById('collection-select');
+            if (collectionSelect) {
+                const option = Array.from(collectionSelect.options)
+                    .find(opt => opt.value === collectionId);
+                return option ? option.textContent : collectionId;
+            }
+            return collectionId;
+        } catch (error) {
+            console.warn('Failed to get collection title:', error);
+            return collectionId;
         }
     }
     

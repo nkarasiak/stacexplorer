@@ -303,10 +303,84 @@ export class CollectionManagerEnhanced {
                         this.apiClient.setEndpoints(endpoints);
                     }
                 }
+                
+                // Check if this is a DEM collection and auto-set time to "Anytime"
+                this.checkAndSetDEMTimeSettings(collection);
             }
         }
         
         console.log(`📋 Collection selected: ${collectionId}${source ? ` from ${source}` : ''}`);
+    }
+    
+    /**
+     * Check if the selected collection is a DEM and automatically set time to "Anytime"
+     * @param {Object} collection - The selected collection object
+     */
+    checkAndSetDEMTimeSettings(collection) {
+        if (!collection) return;
+        
+        // Check if this is a DEM collection based on ID, title, or keywords
+        const isDEM = this.isDEMCollection(collection);
+        
+        if (isDEM) {
+            console.log(`🏔️ DEM collection detected: ${collection.id}. Setting time to "Anytime"`);
+            
+            // Clear date inputs to set "Anytime"
+            const startInput = document.getElementById('date-start');
+            const endInput = document.getElementById('date-end');
+            
+            if (startInput) startInput.value = '';
+            if (endInput) endInput.value = '';
+            
+            // Update the search summary interface to show "Anytime"
+            const timeValue = document.querySelector('#summary-date .search-summary-value');
+            if (timeValue) {
+                timeValue.textContent = '🕐 Anytime';
+            }
+            
+            // Update inline dropdown manager state if available
+            if (window.inlineDropdownManager?.aiSearchHelper) {
+                window.inlineDropdownManager.aiSearchHelper.selectedDate = {
+                    type: 'anytime',
+                    start: null,
+                    end: null
+                };
+            }
+            
+            // Trigger change events to update any dependent UI components
+            if (startInput) startInput.dispatchEvent(new Event('change'));
+            if (endInput) endInput.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    /**
+     * Determine if a collection is a DEM (Digital Elevation Model) based on its metadata
+     * @param {Object} collection - The collection object
+     * @returns {boolean} True if this is a DEM collection
+     */
+    isDEMCollection(collection) {
+        if (!collection) return false;
+        
+        const id = collection.id?.toLowerCase() || '';
+        const title = collection.title?.toLowerCase() || '';
+        const description = collection.description?.toLowerCase() || '';
+        const keywords = collection.keywords ? collection.keywords.join(' ').toLowerCase() : '';
+        
+        // Common DEM identifiers
+        const demKeywords = [
+            'dem', 'elevation', 'altitude', 'height', 'topography', 'terrain',
+            'digital elevation model', 'dtm', 'dsm', 'digital terrain model',
+            'digital surface model', 'srtm', 'aster gdem', 'copernicus dem',
+            'alos palsar', 'tandem-x'
+        ];
+        
+        // Check if any DEM keywords match the collection metadata
+        return demKeywords.some(keyword => 
+            id.includes(keyword) || 
+            title.includes(keyword) || 
+            description.includes(keyword) || 
+            keywords.includes(keyword)
+        );
     }
     
     /**

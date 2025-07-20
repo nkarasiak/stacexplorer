@@ -20,12 +20,14 @@ import { SearchForm } from './components/search/SearchForm.js';
 import { ResultsPanel } from './components/results/ResultsPanel.js';
 // Removed: AI Search functionality removed
 import { InlineDropdownManager } from './components/ui/InlineDropdownManager.js';
+import { searchHistoryUI } from './components/ui/SearchHistoryUI.js';
 // Removed: URL state integration is now handled by UnifiedStateManager
 // Removed inline AI search imports - only using the full-screen version now
 
 // Import configuration
 import { CONFIG } from './config.js';
 import { cookieCache } from './utils/CookieCache.js';
+import { searchHistoryManager } from './utils/SearchHistoryManager.js';
 
 /**
  * Initialize the application when the DOM is fully loaded

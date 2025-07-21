@@ -484,20 +484,16 @@ export class FilterManager {
      * Update URL with current filter values
      */
     updateURLWithFilters() {
+        console.log('🔗 Attempting to update URL with filters...');
+        console.log('🔗 UnifiedStateManager available:', !!window.stacExplorer?.unifiedStateManager);
+        console.log('🔗 Active filters:', this.activeFilters);
+        
         if (window.stacExplorer?.unifiedStateManager) {
-            const filterState = {};
-            
-            // Convert active filters to state format
-            Object.values(this.activeFilters).forEach(filter => {
-                if (filter.id === 'cloud_cover') {
-                    filterState.cloudCover = parseInt(filter.value);
-                }
-                // Add other filter types here as needed
-            });
-            
-            // Update URL through the state manager
-            window.stacExplorer.unifiedStateManager.updateURLFromState(filterState);
-            console.log('🔗 Updated URL with filter state:', filterState);
+            // Call updateURL directly - it will read the current filter state from FilterManager
+            window.stacExplorer.unifiedStateManager.updateURL();
+            console.log('✅ Called updateURL() to refresh URL with current filter state');
+        } else {
+            console.error('❌ UnifiedStateManager not available for URL updates');
         }
     }
     
@@ -564,8 +560,8 @@ export class FilterManager {
     restoreFiltersFromURL() {
         const params = new URLSearchParams(window.location.search);
         
-        // Check for cloud cover in URL
-        if (params.has('cc')) { // 'cc' is the URL key for cloudCover
+        // Check for cloud cover in URL using the correct URL key
+        if (params.has('cc')) { // 'cc' is the URL key for cloudCover from UnifiedStateManager
             const cloudCoverValue = parseInt(params.get('cc'));
             
             // Find and activate cloud cover filter

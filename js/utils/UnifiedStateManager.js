@@ -872,6 +872,18 @@ export class UnifiedStateManager {
             params.set(this.urlKeys.locationBbox, bboxInput.value);
         }
         
+        // Add filter state (cloud cover)
+        if (window.stacExplorer?.filterManager) {
+            const activeFilters = window.stacExplorer.filterManager.getActiveFilters();
+            if (activeFilters.cloud_cover) {
+                params.set(this.urlKeys.cloudCover, activeFilters.cloud_cover.value.toString());
+                console.log('[UNIFIED] Added cloud cover to URL:', activeFilters.cloud_cover.value);
+            } else {
+                // Remove cloud cover parameter if filter is not active
+                params.delete(this.urlKeys.cloudCover);
+            }
+        }
+        
         // Add map state
         if (this.mapManager && this.mapManager.map) {
             const center = this.mapManager.map.getCenter();

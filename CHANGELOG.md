@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2025-01-28
+
+### 🆕 Added
+- **Cloud Cover Filter System**: Comprehensive filtering system with cloud cover filter (0-100%, default 20%)
+- **Intuitive Filter UI**: Clickable labels, apply button with confirmation, and auto-closing modal
+- **URL Filter Persistence**: Filter values automatically saved to URL and restored on page load
+- **LazyImageLoader**: Advanced image loading system with error handling and memory management
+
+### 🔧 Improved
+- **Search Filter Integration**: Filters now properly apply to STAC search queries with `eo:cloud_cover` parameter
+- **Image Loading Reliability**: Fixed `createObjectURL` errors and improved CORS handling for image thumbnails
+- **Memory Management**: Proper cleanup of image observers and blob URLs on search result changes
+- **URL State Management**: Enhanced UnifiedStateManager to handle filter parameters seamlessly
+
+### 🐛 Fixed
+- **Image Loading Errors**: Resolved "Overload resolution failed" errors on subsequent searches
+- **Filter Application**: Fixed filters not being applied to search queries
+- **Observer Cleanup**: Properly unobserve image elements when clearing search results
+- **URL Synchronization**: Filter changes now immediately update browser URL with `cc=XX` parameter
+
 ## [2.6.0] - 2025-07-20
 
 ### 🆕 Added

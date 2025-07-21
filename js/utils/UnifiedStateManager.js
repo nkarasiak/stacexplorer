@@ -593,9 +593,9 @@ export class UnifiedStateManager {
             if (this.activeAssetKey === 'geometry') {
                 await this.mapManager.displayItemGeometry(activeItem);
             } else if (this.activeAssetKey) {
-                await this.mapManager.displayItemOnMap(activeItem, this.activeAssetKey);
+                await this.mapManager.displayItemOnMap(activeItem, this.activeAssetKey, true);
             } else {
-                await this.mapManager.displayItemOnMap(activeItem, 'thumbnail');
+                await this.mapManager.displayItemOnMap(activeItem, 'thumbnail', true);
             }
             
             this.updateUIForActiveItem(activeItem);

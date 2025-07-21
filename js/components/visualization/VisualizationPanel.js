@@ -75,16 +75,13 @@ export class VisualizationPanel {
         this.container.classList.remove('active');
         this.isVisible = false;
         
-        // Remove current layer if any
-        if (this.currentLayerId) {
-            this.rasterManager.removeLayer(this.currentLayerId);
-            this.currentLayerId = null;
-        }
+        // Keep the high resolution preview layer visible on map
+        // Don't remove the layer when hiding the panel
         
         // Clear any pending scale updates
         this.clearScaleDebounce();
         
-        console.log('🎨 Visualization panel hidden');
+        console.log('🎨 Visualization panel hidden - preserving layer on map');
     }
 
     /**
@@ -552,7 +549,8 @@ export class VisualizationPanel {
                     opacity: 1.0,
                     blendMode: this.elements.blendModeSelect?.value || 'normal',
                     minScale: options.minScale,
-                    maxScale: options.maxScale
+                    maxScale: options.maxScale,
+                    zoomTo: false
                 }
             );
 
@@ -562,7 +560,7 @@ export class VisualizationPanel {
                 this.rasterManager.removeLayer(this.currentLayerId);
             }
             
-            // Also remove any preview layer created by mapManager.displayItemOnMap
+            // Remove any preview layer created by mapManager.displayItemOnMap
             if (newLayerId && this.rasterManager.mapManager && typeof this.rasterManager.mapManager.removeCurrentLayer === 'function') {
                 console.log(`🗑️ [LOADING] Removing preview layer`);
                 this.rasterManager.mapManager.removeCurrentLayer();

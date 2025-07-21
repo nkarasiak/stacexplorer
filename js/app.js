@@ -36,28 +36,33 @@ document.addEventListener('DOMContentLoaded', async function() {
     console.log('STAC Catalog Explorer - Initializing application...');
     
     try {
-        // Set initial theme
-        document.documentElement.classList.add('dark-theme');
-        
         // Initialize core services
         const notificationService = new NotificationService();
         
+        // Initialize UI manager first to set theme before map initialization
+        const uiManager = new UIManager();
+        
         // Use the global MapManager instance to prevent duplicates
         const mapManager = getMapManager('map', CONFIG);
-        mapManager.initialize('map').catch(error => {
-            console.error('Failed to initialize map:', error);
-        });
         
         const apiClient = new STACApiClient(); // Initialize without any endpoint
-        
-        // Initialize UI manager
-        const uiManager = new UIManager();
         
         // Initialize catalog selector first to handle default catalog load
         const catalogSelector = new CatalogSelector(apiClient, notificationService);
         
-        // Initialize enhanced collection manager with auto-loading from all sources
+        // Wait for map to be ready before initializing collection manager
+        await mapManager.initialize('map').then(() => {
+            // Update Deck.gl status indicator
+            updateDeckGLStatus(mapManager);
+        }).catch(error => {
+            console.error('Failed to initialize map:', error);
+        });
+        
+        // Initialize enhanced collection manager 
         const collectionManager = new CollectionManagerEnhanced(apiClient, notificationService, catalogSelector, CONFIG);
+        
+        // Start collection loading after all core components are ready
+        await collectionManager.loadAllCollectionsOnStartup();
         
         // Initialize results panel and search form
         const resultsPanel = new ResultsPanel(apiClient, mapManager, notificationService);
@@ -202,8 +207,69 @@ document.addEventListener('DOMContentLoaded', async function() {
                 clearAll: () => cookieCache.clearAll()
             }
         };
+        
     } catch (error) {
         console.error('Error initializing application:', error);
         alert(`Error initializing application: ${error.message}`);
     }
-});	
+});
+
+/**
+ * Update Deck.gl status indicator in the UI
+ * @param {MapManager} mapManager - The map manager instance
+ */
+function updateDeckGLStatus(mapManager) {
+    const statusElement = document.getElementById('deckgl-status');
+    const statusText = document.getElementById('deckgl-status-text');
+    
+    if (!statusElement || !statusText) return;
+    
+    if (mapManager.deckGLIntegration && mapManager.deckGLIntegration.isAvailable()) {
+        // Deck.gl is active
+        statusElement.style.display = 'flex';
+        statusElement.classList.remove('inactive');
+        statusElement.title = 'GPU acceleration active with Deck.gl';
+        statusText.textContent = 'GPU';
+        
+        // Get performance stats if available
+        const stats = mapManager.deckGLIntegration.getPerformanceStats();
+        if (stats && stats.isWebGL2) {
+            statusText.textContent = 'WebGL2';
+        }
+        
+        console.log('🎨 Deck.gl status: ACTIVE');
+    } else if (mapManager.deckGLIntegration) {
+        // Deck.gl integration exists but not available
+        statusElement.style.display = 'flex';
+        statusElement.classList.add('inactive');
+        statusElement.title = 'GPU acceleration unavailable';
+        statusText.textContent = 'CPU';
+        
+        console.log('⚠️ Deck.gl status: UNAVAILABLE');
+    } else {
+        // No Deck.gl integration
+        statusElement.style.display = 'none';
+        console.log('ℹ️ Deck.gl status: DISABLED');
+    }
+}
+
+/**
+ * Toggle Deck.gl mode (for advanced users)
+ */
+window.toggleDeckGLMode = function() {
+    const confirmation = confirm(
+        'Toggle GPU acceleration mode?\n\n' +
+        'This will reload the page to apply the change.\n' +
+        'Current mode will be switched between GPU and CPU rendering.'
+    );
+    
+    if (confirmation) {
+        // Toggle the setting in localStorage
+        const currentSetting = localStorage.getItem('stac-explorer-use-deckgl');
+        const newSetting = currentSetting === 'false' ? 'true' : 'false';
+        localStorage.setItem('stac-explorer-use-deckgl', newSetting);
+        
+        // Reload the page to apply the change
+        window.location.reload();
+    }
+};	

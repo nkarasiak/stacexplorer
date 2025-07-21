@@ -21,6 +21,17 @@ class MapManager {
         this.initializationPromise = null;
         this.currentTheme = 'dark'; // Default theme
         
+        // Deck.gl integration
+        this.deckGLIntegration = null;
+        
+        // Check user preference from localStorage, then config, default to true
+        const userPreference = localStorage.getItem('stac-explorer-use-deckgl');
+        if (userPreference !== null) {
+            this.useDeckGL = userPreference === 'true';
+        } else {
+            this.useDeckGL = config?.performanceSettings?.useDeckGL !== false; // Default to true, check config
+        }
+        
         // Don't auto-initialize here - let app.js control initialization
         // This prevents duplicate map instances
     }
@@ -69,8 +80,16 @@ class MapManager {
 
             console.log('🗺️ Initializing MapManager with container:', container);
 
-            // Detect current theme
-            this.currentTheme = document.documentElement.classList.contains('dark-theme') ? 'dark' : 'light';
+            // Detect current theme - check saved preference first, then default to dark
+            const savedTheme = localStorage.getItem('stac-explorer-theme');
+            if (savedTheme) {
+                this.currentTheme = savedTheme;
+            } else {
+                // Default to dark theme to match UIManager default
+                this.currentTheme = 'dark';
+            }
+            
+            console.log('🗺️ MapManager using theme:', this.currentTheme);
             
             // Get the appropriate map style based on theme
             const styleUrl = this.getMapStyle(this.currentTheme);
@@ -106,6 +125,11 @@ class MapManager {
             
             // Set up theme observer
             this.setupThemeObserver();
+            
+            // Initialize Deck.gl integration if enabled
+            if (this.useDeckGL) {
+                await this.initializeDeckGL();
+            }
 
             this.isInitialized = true;
             console.log('✅ MapManager initialized successfully');
@@ -167,12 +191,23 @@ class MapManager {
      * Set up observer for theme changes
      */
     setupThemeObserver() {
-        // Create a MutationObserver to watch for class changes on the document element
+        // Listen for themeChange events from UIManager (more reliable)
+        document.addEventListener('themeChange', (event) => {
+            const newTheme = event.detail.themeMode;
+            console.log(`🎨 MapManager received themeChange event: ${newTheme}`);
+            if (newTheme && newTheme !== this.currentTheme) {
+                this.currentTheme = newTheme;
+                this.updateMapTheme(newTheme);
+            }
+        });
+
+        // Also keep MutationObserver as fallback
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                     const newTheme = document.documentElement.classList.contains('dark-theme') ? 'dark' : 'light';
                     if (newTheme !== this.currentTheme) {
+                        console.log(`🎨 MapManager detected theme change via MutationObserver: ${newTheme}`);
                         this.currentTheme = newTheme;
                         this.updateMapTheme(newTheme);
                     }
@@ -418,8 +453,16 @@ class MapManager {
             }
         };
 
+        // Throttled mouse move for better mobile performance
+        let lastMoveTime = 0;
+        const moveThrottle = 16; // ~60fps
         const onMouseMove = (e) => {
             if (!isDrawing || !firstPoint) return;
+            
+            // Throttle mouse move events for better performance
+            const now = Date.now();
+            if (now - lastMoveTime < moveThrottle) return;
+            lastMoveTime = now;
             
             // Show preview of the rectangle as mouse moves
             const currentPoint = [e.lngLat.lng, e.lngLat.lat];
@@ -616,17 +659,67 @@ class MapManager {
     }
 
     /**
-     * Display item on map (thumbnail or specific asset)
-     * @param {Object} item - STAC item to display
-     * @param {string} assetKey - Asset key to display (e.g., 'thumbnail')
-     * @returns {Promise}
+     * Initialize Deck.gl integration
      */
+    async initializeDeckGL() {
+        try {
+            console.log('🎨 Initializing Deck.gl integration...');
+            
+            // Import SimpleDeckGLIntegration dynamically
+            const { default: SimpleDeckGLIntegration } = await import('./SimpleDeckGLIntegration.js');
+            
+            // Create integration instance
+            this.deckGLIntegration = new SimpleDeckGLIntegration(this);
+            
+            // Initialize
+            await this.deckGLIntegration.initialize();
+            
+            console.log('✅ Deck.gl integration initialized successfully');
+        } catch (error) {
+            console.warn('⚠️ Failed to initialize Deck.gl, falling back to MapLibre only:', error);
+            this.useDeckGL = false;
+            this.deckGLIntegration = null;
+        }
+    }
+
     /**
-     * Display an item on the map
+     * Display item on map with Deck.gl acceleration (enhanced method)
      * @param {Object} item - STAC item to display
      * @param {string} preferredAssetKey - Preferred asset key to display
+     * @param {boolean} preserveViewport - If true, don't fit map to bbox
+     * @param {Object} options - Display options
+     * @returns {Promise}
      */
-    async displayItemOnMap(item, preferredAssetKey = null) {
+    async displayItemOnMap(item, preferredAssetKey = null, preserveViewport = false, options = {}) {
+        // Try Deck.gl first if available
+        if (this.deckGLIntegration && this.deckGLIntegration.isAvailable() && !options.forceMapLibre) {
+            try {
+                const success = await this.deckGLIntegration.addStacItemLayer(
+                    item, 
+                    preferredAssetKey || 'rendered_preview',
+                    options
+                );
+                
+                if (success) {
+                    console.log('✅ Item displayed using Deck.gl acceleration');
+                    return;
+                }
+            } catch (error) {
+                console.warn('⚠️ Deck.gl rendering failed, falling back to MapLibre:', error);
+            }
+        }
+        
+        // Fallback to original MapLibre implementation
+        await this._displayItemOnMapLibre(item, preferredAssetKey, preserveViewport);
+    }
+
+    /**
+     * Original MapLibre display implementation
+     * @param {Object} item - STAC item to display
+     * @param {string} preferredAssetKey - Preferred asset key to display
+     * @param {boolean} preserveViewport - If true, don't fit map to bbox
+     */
+    async _displayItemOnMapLibre(item, preferredAssetKey = null, preserveViewport = false) {
         try {
             console.log('Displaying item on map:', item.id);
             
@@ -640,8 +733,10 @@ class MapManager {
                 return;
             }
             
-            // Fit map to item bounds
-            this.fitMapToBbox(bbox);
+            // Fit map to item bounds (unless preserveViewport is true)
+            if (!preserveViewport) {
+                this.fitMapToBbox(bbox);
+            }
             
             // Show loading indicator
             const loadingIndicator = document.getElementById('loading');
@@ -1021,6 +1116,12 @@ let geojson;
      * Destroy map manager and clean up resources
      */
     destroy() {
+        // Cleanup Deck.gl integration first
+        if (this.deckGLIntegration) {
+            this.deckGLIntegration.destroy();
+            this.deckGLIntegration = null;
+        }
+        
         if (this.map) {
             this.stopDrawing();
             this.clearAllThumbnails();
@@ -1037,9 +1138,14 @@ let geojson;
     }
     
         /**
-     * Remove current layer from map
+     * Remove current layer from map (enhanced with Deck.gl support)
      */
     removeCurrentLayer() {
+        // Clear Deck.gl layers first
+        if (this.deckGLIntegration && this.deckGLIntegration.isAvailable()) {
+            this.deckGLIntegration.removeStacLayer();
+        }
+        
         try {
             console.log('🧹 [CLEAR-DEBUG] Starting layer removal...');
             console.log('🧹 [CLEAR-DEBUG] Current layer state:', this.currentLayer);

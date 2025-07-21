@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" class="dark-theme">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -28,11 +28,70 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <!-- Flatpickr Dark Theme -->
     <link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+    <!-- Deck.gl CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/deck.gl@latest/dist/deck.css">
     <style>
         .header-actions {
             display: flex;
             align-items: center;
             gap: 10px;
+        }
+        
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .settings-toggle {
+            background: none;
+            border: none;
+            color: var(--text-secondary, #888);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .settings-toggle:hover {
+            background: var(--surface-primary, rgba(255, 255, 255, 0.1));
+            color: var(--primary-400, #64B5F6);
+            transform: translateY(-1px);
+        }
+        
+        .settings-toggle .material-icons {
+            font-size: 20px;
+        }
+        
+        #deckgl-status {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 6px 12px;
+            border-radius: 16px;
+            font-size: 12px;
+            font-weight: 500;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        #deckgl-status:hover {
+            background: linear-gradient(135deg, #0d9668, #047857);
+            transform: translateY(-1px);
+        }
+        
+        #deckgl-status.inactive {
+            background: linear-gradient(135deg, #6b7280, #4b5563);
+        }
+        
+        #deckgl-status .material-icons {
+            font-size: 16px;
         }
         
         /* Enhanced Collection Dropdown Styling */
@@ -369,9 +428,11 @@
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <h1 id="app-logo" style="cursor: pointer;" title="Return to Homepage"><i class="material-icons">satellite_alt</i> <span>STAC Explorer</span></h1>
-                <button id="theme-toggle" class="theme-toggle">
-                    <i class="material-icons">light_mode</i>
-                </button>
+                <div>
+                    <button id="theme-toggle" class="theme-toggle">
+                        <i class="material-icons">light_mode</i>
+                    </button>
+                </div>
             </div>
             <div class="sidebar-content">
                 <!-- Card-Based Search Container -->
@@ -379,6 +440,7 @@
                     <div class="md-card-header" id="search-container-header">
                         <h2 id="search-title"><i class="material-icons">search</i> Search</h2>
                         <div class="header-actions">
+                            <!-- Deck.gl Status Indicator - Hidden, functionality moved to settings -->
                             <div class="search-history-dropdown" id="header-search-history" style="display: none;">
                                 <button id="header-search-history-btn" class="header-action-btn" title="Recent Searches">
                                     <i class="material-icons">history</i>
@@ -457,7 +519,7 @@
                             </div>
                             
                             <!-- Form elements -->
-                            <select id="catalog-select">
+                            <select id="catalog-select" class="form-control">
                                 <option value="">Auto-detect from selected dataset</option>
                                 <option value="copernicus">🛰️ Copernicus Data Space</option>
                                 <option value="element84">🌍 Element84 Earth Search</option>
@@ -465,17 +527,17 @@
                                 <option value="planetlabs">🪐 Planet Labs Open Data</option>
                                 <option value="custom">⚙️ Custom STAC Catalog</option>
                             </select>
-                            <select id="collection-select">
+                            <select id="collection-select" class="form-control">
                                 <option value="">All datasets</option>
                             </select>
-                            <input type="text" id="bbox-input">
-                            <input type="date" id="date-start">
-                            <input type="date" id="date-end">
+                            <input type="text" id="bbox-input" class="form-control">
+                            <input type="date" id="date-start" class="form-control">
+                            <input type="date" id="date-end" class="form-control">
                             <input type="checkbox" id="cloud-cover-enabled">
                             <input type="range" id="cloud-cover" min="0" max="100" value="20">
                             <span id="cloud-cover-value">20%</span>
-                            <input type="text" id="custom-catalog-url">
-                            <input type="text" id="collections">
+                            <input type="text" id="custom-catalog-url" class="form-control">
+                            <input type="text" id="collections" class="form-control">
                             <button id="connect-catalog-btn">Connect</button>
                             <div id="custom-catalog-container"></div>
                             <button id="criteria-draw-bbox-btn">Draw Area</button>
@@ -538,6 +600,8 @@
 
     <!-- MapLibre GL JS -->
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <!-- Deck.gl JS -->
+    <script src="https://unpkg.com/deck.gl@8.9.0/dist.min.js"></script>
     <!-- Flatpickr JS -->
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     
@@ -1055,7 +1119,6 @@
     <!-- Leaflet JavaScript for mini maps -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <!-- Core JavaScript -->
-    <script type="module" src="js/map-auto-init.js"></script>
     
     <!-- Initialize shared URL handling for collection details -->
     <script>
@@ -1415,6 +1478,150 @@
             align-items: center;
             gap: 8px;
         }
+        
+        /* Settings Modal Styles */
+        .settings-section {
+            margin-bottom: 24px;
+        }
+        
+        .settings-section h4 {
+            margin: 0 0 16px 0;
+            color: var(--text-primary, #ffffff);
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .setting-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: var(--surface-primary, #1a1a1a);
+            border-radius: 8px;
+            border: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+            margin-bottom: 12px;
+        }
+        
+        .setting-content {
+            flex: 1;
+        }
+        
+        .setting-label {
+            font-weight: 500;
+            color: var(--text-primary, #ffffff);
+            margin-bottom: 4px;
+        }
+        
+        .setting-description {
+            font-size: 13px;
+            color: var(--text-secondary, #888);
+            line-height: 1.4;
+        }
+        
+        .setting-control {
+            margin-left: 16px;
+        }
+        
+        .setting-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: var(--surface-secondary, #2a2a2a);
+            border-radius: 8px;
+            font-size: 13px;
+            color: var(--text-secondary, #888);
+        }
+        
+        .setting-status.active {
+            background: rgba(16, 185, 129, 0.1);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .setting-status.inactive {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: var(--surface-tertiary, #444);
+            transition: 0.3s;
+            border-radius: 24px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: var(--primary-500, #2196F3);
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+        
+        /* Theme Selector Styles */
+        .theme-selector {
+            background: var(--surface-primary, #1a1a1a);
+            color: var(--text-primary, #ffffff);
+            border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.15));
+            border-radius: var(--border-radius-sm, 6px);
+            padding: 8px 12px;
+            font-size: 14px;
+            min-width: 120px;
+            cursor: pointer;
+            transition: var(--transition-fast, all 0.2s ease);
+        }
+        
+        .theme-selector:hover {
+            background: var(--hover-background, rgba(255, 255, 255, 0.1));
+            border-color: var(--primary-400, #64B5F6);
+        }
+        
+        .theme-selector:focus {
+            outline: none;
+            border-color: var(--primary-500, #2196F3);
+            box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+        }
+        
+        .theme-selector option {
+            background: var(--surface-elevated, #1a1a1a);
+            color: var(--text-primary, #ffffff);
+        }
     </style>
 
     <!-- Search History Dropdown Portal (outside all containers to avoid clipping) -->
@@ -1427,6 +1634,56 @@
         </div>
         <div id="header-search-history-list" class="history-list">
             <div class="history-empty">No search history yet</div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settings-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-dialog" style="max-width: 500px; width: 90vw;">
+            <div class="modal-header">
+                <h3><i class="material-icons">settings</i> Settings</h3>
+                <button class="modal-close" id="settings-modal-close">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="settings-section">
+                    <h4><i class="material-icons">palette</i> Appearance</h4>
+                    <div class="setting-item">
+                        <div class="setting-content">
+                            <div class="setting-label">Theme</div>
+                            <div class="setting-description">Choose your preferred color theme</div>
+                        </div>
+                        <div class="setting-control">
+                            <select id="theme-selector" class="theme-selector">
+                                <option value="auto">Auto (System)</option>
+                                <option value="dark">Dark</option>
+                                <option value="light">Light</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4><i class="material-icons">speed</i> Performance</h4>
+                    <div class="setting-item">
+                        <div class="setting-content">
+                            <div class="setting-label">GPU Acceleration</div>
+                            <div class="setting-description">Use Deck.gl for hardware-accelerated rendering when possible</div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="gpu-acceleration-toggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="setting-status" id="gpu-status-display">
+                        <i class="material-icons">info</i>
+                        <span id="gpu-status-text">Checking GPU acceleration status...</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </body>

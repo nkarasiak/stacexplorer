@@ -33,8 +33,8 @@ export class CollectionManagerEnhanced {
         // Setup collection info button
         this.setupCollectionInfoButton();
         
-        // Auto-load collections from all sources on startup
-        this.loadAllCollectionsOnStartup();
+        // Auto-load collections from all sources on startup - defer to manual call
+        // this.loadAllCollectionsOnStartup();
     }
     
     /**

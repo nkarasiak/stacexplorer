@@ -313,8 +313,20 @@ export class UnifiedStateManager {
             }
         }
         
-        // Bounding box
-        if (params.has(this.urlKeys.locationBbox)) {
+        // Geometry (prioritize WKT/GeoJSON geometry over bbox)  
+        if (params.has(this.urlKeys.geometry)) {
+            const geometryValue = params.get(this.urlKeys.geometry);
+            const bboxInput = document.getElementById('bbox-input');
+            if (bboxInput) {
+                bboxInput.value = geometryValue;
+                console.log(`[UNIFIED] WKT geometry restored: ${geometryValue}`);
+                
+                // Trigger geometry processing through existing system
+                const event = new Event('input', { bubbles: true });
+                bboxInput.dispatchEvent(event);
+            }
+        } else if (params.has(this.urlKeys.locationBbox)) {
+            // Fallback to bbox if no geometry parameter
             const bboxValue = params.get(this.urlKeys.locationBbox);
             const bboxInput = document.getElementById('bbox-input');
             if (bboxInput) {
@@ -387,6 +399,12 @@ export class UnifiedStateManager {
         }
         if (params.has(this.urlKeys.locationName)) {
             state.locationName = params.get(this.urlKeys.locationName);
+        }
+        
+        // Geometry parameters - prioritize geometry over bbox
+        if (params.has(this.urlKeys.geometry)) {
+            state.geometry = params.get(this.urlKeys.geometry);
+            console.log('[URL] Found WKT geometry in URL:', state.geometry);
         }
         
         // Date parameters

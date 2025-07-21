@@ -691,25 +691,33 @@ export class SearchForm {
                 }
             }
 
-            // Add cloud cover if enabled and provided
-            const cloudCoverEnabled = document.getElementById('cloud-cover-enabled');
-            const cloudCoverInput = document.getElementById('cloud-cover');
-            
-            if (cloudCoverEnabled?.checked && cloudCoverInput && !cloudCoverInput.disabled) {
-                const cloudCoverValue = parseInt(cloudCoverInput.value);
-                if (!isNaN(cloudCoverValue)) {
-                    // Check if we're dealing with collections that typically don't have cloud cover
-                    const collections = document.getElementById('collections')?.value || '';
-                    const isNonOpticalData = this.isNonOpticalCollection(collections);
-                    
-                    if (!isNonOpticalData) {
-                        // Only apply cloud cover filter for optical data collections
-                        params["eo:cloud_cover"] = { "lte": cloudCoverValue };
-                        console.log(`🌥️ Applying cloud cover filter: <= ${cloudCoverValue}%`);
-                    } else {
-                        console.log(`📡 Skipping cloud cover filter for non-optical data: ${collections}`);
+            // Add filters from FilterManager (new system)
+            if (window.stacExplorer?.filterManager) {
+                const filterParams = window.stacExplorer.filterManager.getSTACQueryParameters();
+                console.log('🔍 FilterManager query parameters:', filterParams);
+                Object.assign(params, filterParams);
+                console.log('🔍 Search parameters after applying filters:', params);
+            } else {
+                console.warn('⚠️ FilterManager not available, using legacy cloud cover system');
+                // Fallback to legacy cloud cover system
+                const cloudCoverEnabled = document.getElementById('cloud-cover-enabled');
+                const cloudCoverInput = document.getElementById('cloud-cover');
+                
+                if (cloudCoverEnabled?.checked && cloudCoverInput && !cloudCoverInput.disabled) {
+                    const cloudCoverValue = parseInt(cloudCoverInput.value);
+                    if (!isNaN(cloudCoverValue)) {
+                        // Check if we're dealing with collections that typically don't have cloud cover
+                        const collections = document.getElementById('collections')?.value || '';
+                        const isNonOpticalData = this.isNonOpticalCollection(collections);
+                        
+                        if (!isNonOpticalData) {
+                            // Only apply cloud cover filter for optical data collections
+                            params["eo:cloud_cover"] = { "lte": cloudCoverValue };
+                            console.log(`🌥️ Applying legacy cloud cover filter: <= ${cloudCoverValue}%`);
+                        } else {
+                            console.log(`📡 Skipping cloud cover filter for non-optical data: ${collections}`);
+                        }
                     }
-                    // For non-optical data (SAR, DEM, etc.), skip the cloud cover filter entirely
                 }
             }
 
@@ -725,6 +733,7 @@ export class SearchForm {
             console.error('Error getting search params:', error);
         }
         
+        console.log('🔍 Final search parameters being returned:', params);
         return params;
     }
 }

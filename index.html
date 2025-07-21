@@ -24,6 +24,8 @@
     <link rel="stylesheet" href="css/visualization-panel.css">
     <!-- AI Button Styling -->
     <link rel="stylesheet" href="css/map-fix.css">
+    <!-- Filter System CSS -->
+    <link rel="stylesheet" href="css/filter-system.css">
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <!-- Flatpickr Dark Theme -->
@@ -446,6 +448,10 @@
                                     <i class="material-icons">history</i>
                                 </button>
                             </div>
+                            <button id="smart-filters-btn" class="header-action-btn" title="Data Filters" style="display: block;">
+                                <i class="material-icons">tune</i>
+                                <span id="filter-count-badge" class="filter-badge" style="display: none;">0</span>
+                            </button>
                             <button id="load-stac-btn" class="header-action-btn" title="Load STAC item from URL or JSON">
                                 <i class="material-icons">file_download</i>
                             </button>
@@ -533,9 +539,10 @@
                             <input type="text" id="bbox-input" class="form-control">
                             <input type="date" id="date-start" class="form-control">
                             <input type="date" id="date-end" class="form-control">
-                            <input type="checkbox" id="cloud-cover-enabled">
-                            <input type="range" id="cloud-cover" min="0" max="100" value="20">
-                            <span id="cloud-cover-value">20%</span>
+                            <!-- Legacy cloud cover controls - hidden in favor of smart filter system -->
+                            <input type="checkbox" id="cloud-cover-enabled" style="display: none;">
+                            <input type="range" id="cloud-cover" min="0" max="100" value="20" style="display: none;">
+                            <span id="cloud-cover-value" style="display: none;">20%</span>
                             <input type="text" id="custom-catalog-url" class="form-control">
                             <input type="text" id="collections" class="form-control">
                             <button id="connect-catalog-btn">Connect</button>
@@ -1683,6 +1690,21 @@
                         <span id="gpu-status-text">Checking GPU acceleration status...</span>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Smart Filter System Modal -->
+    <div id="smart-filters-modal" class="modal-overlay filter-modal" style="display: none;">
+        <div class="modal-dialog filter-modal-dialog">
+            <div class="modal-header">
+                <h3><i class="material-icons">tune</i> Data Filters</h3>
+                <button class="modal-close" id="filters-modal-close">
+                    <i class="material-icons">close</i>
+                </button>
+            </div>
+            <div class="modal-body" id="smart-filters-container">
+                <!-- FilterManager will populate this -->
             </div>
         </div>
     </div>

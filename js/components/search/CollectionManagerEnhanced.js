@@ -442,6 +442,14 @@ export class CollectionManagerEnhanced {
         this.selectedCollection = '';
         
         console.log(`✅ Populated collection dropdown with ${collections.length} collections`);
+        
+        // Notify filter system of collection changes
+        document.dispatchEvent(new CustomEvent('collectionsChanged', {
+            detail: {
+                collections: collections,
+                count: collections.length
+            }
+        }));
     }
     
     /**

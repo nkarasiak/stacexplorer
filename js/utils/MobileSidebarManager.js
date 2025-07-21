@@ -69,14 +69,18 @@ export class MobileSidebarManager {
     }
     
     setupEventListeners() {
-        // Window resize handler
+        // Throttled window resize handler for better performance
+        let resizeTimeout;
         window.addEventListener('resize', () => {
-            const wasDesktop = this.isDesktop;
-            this.isDesktop = window.innerWidth > 768;
-            
-            if (wasDesktop !== this.isDesktop) {
-                this.updateLayout();
-            }
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                const wasDesktop = this.isDesktop;
+                this.isDesktop = window.innerWidth > 768;
+                
+                if (wasDesktop !== this.isDesktop) {
+                    this.updateLayout();
+                }
+            }, 100); // Debounce resize events
         });
         
         // Listen for URL changes to update mobile toggle visibility
@@ -131,16 +135,25 @@ export class MobileSidebarManager {
         let startX = 0;
         let currentX = 0;
         let isSwipping = false;
+        let lastTouchTime = 0;
+        const touchThrottle = 16; // ~60fps throttling
         
         document.addEventListener('touchstart', (e) => {
             if (!this.isDesktop) {
                 startX = e.touches[0].clientX;
                 isSwipping = true;
+                lastTouchTime = Date.now();
             }
         }, { passive: true });
         
         document.addEventListener('touchmove', (e) => {
             if (!isSwipping || this.isDesktop) return;
+            
+            // Throttle touch move events for better performance
+            const now = Date.now();
+            if (now - lastTouchTime < touchThrottle) return;
+            lastTouchTime = now;
+            
             currentX = e.touches[0].clientX;
         }, { passive: true });
         
@@ -326,22 +339,15 @@ export class MobileSidebarManager {
     
     /**
      * Determine if the mobile menu toggle should be shown
-     * Show the toggle when user is on the root/landing page (no URL parameters)
+     * Show the toggle on all pages - users always need access to navigation
      * @returns {boolean} Whether to show the mobile toggle
      */
     shouldShowMobileToggle() {
-        // Check if there are any URL parameters that indicate we're not on the landing page
-        const urlParams = new URLSearchParams(window.location.search);
-        const hasSearchParams = urlParams.toString().length > 0;
+        // Always show mobile toggle - users need access to navigation on all pages
+        // This was previously hiding the toggle on the root page, which was wrong
+        const shouldShow = true;
         
-        // Check if there's a hash that indicates a specific view/state
-        const hasHash = window.location.hash && window.location.hash.length > 1;
-        
-        // Show mobile toggle on the landing page (no parameters)
-        // Hide mobile toggle when there are URL parameters or hash (indicating user is in a specific view)
-        const shouldShow = !hasSearchParams && !hasHash;
-        
-        console.log(`Mobile toggle visibility: ${shouldShow ? 'visible' : 'hidden'} (params: ${hasSearchParams}, hash: ${hasHash})`);
+        console.log(`Mobile toggle visibility: always visible for better UX`);
         
         return shouldShow;
     }

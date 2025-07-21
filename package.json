@@ -12,6 +12,13 @@
     "serve": "http-server -p 3000 -c-1 --cors"
   },
   "dependencies": {
+    "@deck.gl/core": "^9.1.13",
+    "@deck.gl/geo-layers": "^9.1.13",
+    "@deck.gl/json": "^9.1.13",
+    "@deck.gl/layers": "^9.1.13",
+    "@deck.gl/mapbox": "^9.1.13",
+    "@loaders.gl/core": "^4.3.4",
+    "@loaders.gl/tiles": "^4.3.4",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "node-fetch": "^2.6.9"
@@ -21,7 +28,13 @@
     "http-server": "^14.1.1",
     "nodemon": "^3.0.2"
   },
-  "keywords": ["stac", "geospatial", "earth-observation", "catalog", "explorer"],
+  "keywords": [
+    "stac",
+    "geospatial",
+    "earth-observation",
+    "catalog",
+    "explorer"
+  ],
   "author": "Your Name",
   "license": "MIT"
 }

@@ -50,6 +50,14 @@ export const CONFIG = {
         }
     },
     
+    // Performance settings
+    performanceSettings: {
+        useDeckGL: true, // Enable GPU acceleration with Deck.gl
+        enableWebGL2: true, // Prefer WebGL2 when available
+        maxLayers: 10, // Maximum number of concurrent layers
+        cacheSize: 100 // Cache size for tiles and assets
+    },
+    
     // Default search parameters
     defaultSearchParams: {
         limit: 50 // Default number of items to return in a search

@@ -20,6 +20,59 @@ export class STACApiClient {
     }
     
     /**
+     * Fetch with retry logic for network resilience
+     * @param {string} url - URL to fetch
+     * @param {Object} options - Fetch options
+     * @param {number} retries - Number of retry attempts
+     * @param {number} delay - Delay between retries (ms)
+     */
+    async fetchWithRetry(url, options = {}, retries = 3, delay = 1000) {
+        for (let attempt = 1; attempt <= retries; attempt++) {
+            try {
+                console.log(`🌐 API Request attempt ${attempt}/${retries} to: ${url}`);
+                
+                // Add timeout to prevent hanging requests
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
+                
+                const response = await fetch(url, {
+                    ...options,
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                return response;
+                
+            } catch (error) {
+                console.warn(`❌ Attempt ${attempt} failed:`, error.message);
+                
+                if (attempt === retries) {
+                    // Last attempt failed
+                    throw new Error(`All ${retries} attempts failed. Last error: ${error.message}`);
+                }
+                
+                // Check if it's a network error that might benefit from retry
+                const isNetworkError = 
+                    error.name === 'TypeError' ||
+                    error.message.includes('Failed to fetch') ||
+                    error.message.includes('ERR_CONNECTION_RESET') ||
+                    error.message.includes('ERR_NETWORK') ||
+                    error.name === 'AbortError';
+                
+                if (!isNetworkError) {
+                    // Non-retryable error
+                    throw error;
+                }
+                
+                // Wait before retry with exponential backoff
+                const waitTime = delay * Math.pow(2, attempt - 1);
+                console.log(`⏳ Waiting ${waitTime}ms before retry...`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
+        }
+    }
+    
+    /**
      * Set API endpoints
      * @param {Object} endpoints - Object containing API endpoints
      */
@@ -62,7 +115,7 @@ export class STACApiClient {
             
             // Check if URL is valid by fetching the root catalog
             const proxyUrl = this.getProxyUrl(normalizedUrl);
-            const response = await fetch(proxyUrl);
+            const response = await this.fetchWithRetry(proxyUrl);
             
             if (!response.ok) {
                 throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
@@ -142,7 +195,7 @@ export class STACApiClient {
             
             // Use proxy for external URLs
             const proxyUrl = this.getProxyUrl(url.toString());
-            const response = await fetch(proxyUrl);
+            const response = await this.fetchWithRetry(proxyUrl);
             
             if (!response.ok) {
                 throw new Error(`HTTP error ${response.status}: ${response.statusText}`);
@@ -276,13 +329,13 @@ export class STACApiClient {
             console.log('Making search request to:', this.endpoints.search);
             console.log('Request params:', JSON.stringify(params, null, 2));
             
-            const response = await fetch(this.endpoints.search, {
+            const response = await this.fetchWithRetry(this.endpoints.search, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(params)
-            });
+            }, 3);
             
             if (!response.ok) {
                 const errorText = await response.text();
@@ -295,6 +348,44 @@ export class STACApiClient {
             }
             
             const data = await response.json();
+            
+            // Debug: Log some sample cloud cover values from returned items
+            let features = [];
+            if (data.features) {
+                features = data.features;
+            } else if (Array.isArray(data)) {
+                features = data;
+            }
+            
+            if (features.length > 0) {
+                console.log(`🔍 Search returned ${features.length} items`);
+                const sampleCloudCover = features.slice(0, 3).map(item => ({
+                    id: item.id,
+                    cloudCover: item.properties?.['eo:cloud_cover']
+                }));
+                console.log('🌥️ Sample cloud cover values from first 3 items:', sampleCloudCover);
+                
+                // Check if we have cloud cover filter in the search params
+                if (params['eo:cloud_cover']) {
+                    const filterValue = params['eo:cloud_cover'].lte;
+                    const exceedsFilter = features.filter(item => {
+                        const cloudCover = item.properties?.['eo:cloud_cover'];
+                        return cloudCover !== undefined && cloudCover > filterValue;
+                    });
+                    
+                    if (exceedsFilter.length > 0) {
+                        console.warn(`🚨 WARNING: Found ${exceedsFilter.length} items exceeding cloud cover filter (>${filterValue}%):`, 
+                            exceedsFilter.slice(0, 3).map(item => ({
+                                id: item.id,
+                                cloudCover: item.properties?.['eo:cloud_cover']
+                            }))
+                        );
+                    } else {
+                        console.log(`✅ All returned items respect cloud cover filter (<=${filterValue}%)`);
+                    }
+                }
+            }
+            
             // Check if the response has a features property (GeoJSON/STAC API spec)
             if (data.features) {
                 return await this.presignPlanetaryComputerUrls(data.features);

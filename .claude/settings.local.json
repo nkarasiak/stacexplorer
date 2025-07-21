@@ -32,7 +32,8 @@
       "WebFetch(domain:github.com)",
       "WebFetch(domain:developmentseed.org)",
       "WebFetch(domain:earth-search.aws.element84.com)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "WebFetch(domain:www.planet.com)"
     ],
     "deny": []
   }

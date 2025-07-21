@@ -17,6 +17,7 @@ import { CardSearchPanel } from './components/search/CardSearchPanel.js';
 import { CatalogSelector } from './components/search/CatalogSelector.js';
 import { CollectionManagerEnhanced } from './components/search/CollectionManagerEnhanced.js';
 import { SearchForm } from './components/search/SearchForm.js';
+import { FilterManager } from './components/search/FilterManager.js';
 import { ResultsPanel } from './components/results/ResultsPanel.js';
 // Removed: AI Search functionality removed
 import { InlineDropdownManager } from './components/ui/InlineDropdownManager.js';
@@ -68,6 +69,20 @@ document.addEventListener('DOMContentLoaded', async function() {
         const resultsPanel = new ResultsPanel(apiClient, mapManager, notificationService);
         const searchForm = new SearchForm(mapManager);
         
+        // Initialize smart filter system
+        const filterContainer = document.getElementById('smart-filters-container');
+        const filterManager = new FilterManager(filterContainer, notificationService);
+        
+        // Make filterManager globally accessible
+        if (!window.stacExplorer) window.stacExplorer = {};
+        window.stacExplorer.filterManager = filterManager;
+        
+        // Check if collections are already loaded and trigger filter update
+        if (collectionManager && collectionManager.allCollections && collectionManager.allCollections.length > 0) {
+            console.log('🔍 Collections already available, triggering filter update...');
+            filterManager.updateFiltersForCollections(collectionManager.allCollections);
+        }
+        
         // Initialize search panel with all required components
         const searchPanel = new CardSearchPanel(
             apiClient, 
@@ -117,6 +132,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             inlineDropdownManager,
             notificationService
         });
+        
+        // Make stateManager globally accessible
+        window.stacExplorer.unifiedStateManager = stateManager;
 
         // Initialize Visualization System
         const { RasterVisualizationManager } = await import('./components/visualization/RasterVisualizationManager.js');
@@ -193,6 +211,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             stateManager, // Now the unified state manager
             urlStateManager: stateManager, // Alias for backward compatibility
             collectionManager,
+            filterManager,
             inlineDropdownManager,
             geometrySync,
             config: CONFIG,

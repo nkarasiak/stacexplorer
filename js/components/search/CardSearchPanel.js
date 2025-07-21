@@ -1054,6 +1054,23 @@ export class CardSearchPanel {
             const searchParams = this.searchForm.getSearchParams();
             console.log('📋 Base search params from form:', JSON.stringify(searchParams, null, 2));
             
+            // Add filter parameters if FilterManager is available
+            if (window.stacExplorer?.filterManager) {
+                const filterParams = window.stacExplorer.filterManager.getSTACQueryParameters();
+                if (Object.keys(filterParams).length > 0) {
+                    // Merge filter parameters into the query
+                    if (!searchParams.query) {
+                        searchParams.query = {};
+                    }
+                    Object.assign(searchParams.query, filterParams);
+                    console.log('🌥️ Added filter parameters:', filterParams);
+                } else {
+                    console.log('🔍 No active filters to apply');
+                }
+            } else {
+                console.log('⚠️ FilterManager not available');
+            }
+            
             // CRITICAL: Override collection parameter from our card UI
             const collectionSelect = document.getElementById('collection-select');
             const selectedCollection = collectionSelect ? collectionSelect.value : '';
@@ -1199,7 +1216,23 @@ export class CardSearchPanel {
             }
         } catch (error) {
             console.error('❌ Error searching items:', error);
-            this.notificationService.showNotification(`Error searching items: ${error.message}`, 'error');
+            
+            // Provide user-friendly error messages
+            let userMessage = 'Search failed. Please try again.';
+            
+            if (error.message.includes('Failed to fetch') || 
+                error.message.includes('ERR_CONNECTION_RESET') ||
+                error.message.includes('All') && error.message.includes('attempts failed')) {
+                userMessage = 'Network connection issue. Please check your internet connection and try again.';
+            } else if (error.message.includes('timeout') || error.message.includes('AbortError')) {
+                userMessage = 'Request timed out. The server may be busy - please try again in a moment.';
+            } else if (error.message.includes('HTTP error 5')) {
+                userMessage = 'Server error. The STAC API is temporarily unavailable - please try again later.';
+            } else if (error.message.includes('HTTP error 4')) {
+                userMessage = 'Invalid search parameters. Please check your search criteria.';
+            }
+            
+            this.notificationService.showNotification(userMessage, 'error');
             
             // Hide loading indicator
             document.getElementById('loading').style.display = 'none';
@@ -1413,6 +1446,12 @@ export class CardSearchPanel {
         document.getElementById('cloud-cover').value = 50;
         document.getElementById('cloud-cover-value').textContent = '50%';
         document.getElementById('cloud-cover').disabled = true;
+        
+        // Reset smart filters if FilterManager is available
+        if (window.stacExplorer?.filterManager) {
+            window.stacExplorer.filterManager.resetFilters();
+            console.log('🔄 Smart filters reset');
+        }
         
         // Reset all card states
         document.querySelectorAll('.search-card').forEach(card => {

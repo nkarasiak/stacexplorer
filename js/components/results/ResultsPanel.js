@@ -2,6 +2,8 @@
  * ResultsPanel.js - Handles displaying search results with pagination
  */
 
+import { lazyImageLoader } from '../../utils/LazyImageLoader.js';
+
 export class ResultsPanel {
     /**
      * Create a new ResultsPanel
@@ -768,6 +770,16 @@ export class ResultsPanel {
      * Clear all results
      */
     clearResults() {
+        // Clean up LazyImageLoader observers before clearing DOM
+        const datasetList = document.getElementById('dataset-list');
+        if (datasetList) {
+            const existingImages = datasetList.querySelectorAll('img');
+            if (existingImages.length > 0) {
+                lazyImageLoader.unobserve(existingImages);
+                console.log('🧹 Cleaned up', existingImages.length, 'image observers');
+            }
+        }
+        
         this.items = [];
         this.currentPage = 1;
         this.totalPages = 1;
@@ -780,7 +792,7 @@ export class ResultsPanel {
         document.getElementById('total-pages').textContent = this.totalPages;
         
         // Clear the dataset list
-        document.getElementById('dataset-list').innerHTML = '';
+        datasetList.innerHTML = '';
         
         // Disable pagination buttons
         document.querySelector('.pagination-prev').disabled = true;
@@ -811,6 +823,12 @@ export class ResultsPanel {
             const li = this.createDatasetItem(item);
             datasetList.appendChild(li);
         });
+        
+        // Initialize lazy loading for newly added images
+        const newImages = datasetList.querySelectorAll('img.lazy-loading');
+        if (newImages.length > 0) {
+            lazyImageLoader.observe(newImages);
+        }
         
         // Update pagination info
         document.getElementById('current-page').textContent = this.currentPage;
@@ -935,7 +953,7 @@ export class ResultsPanel {
                         <div class="dataset-metadata">
                             <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                         </div>
-                        <img src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail">
+                        <img data-src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail lazy-loading">
                         <div class="thumbnail-overlay">
                             <button class="info-btn details-btn" title="Show details">
                                 <i class="material-icons">info</i>

@@ -8,9 +8,11 @@ export class SearchForm {
     /**
      * Create a new SearchForm
      * @param {Object} mapManager - Map manager for coordinating with the map 
+     * @param {Object} inlineDropdownManager - Inline dropdown manager for location updates
      */
-    constructor(mapManager) {
+    constructor(mapManager, inlineDropdownManager = null) {
         this.mapManager = mapManager;
+        this.inlineDropdownManager = inlineDropdownManager;
         this.currentGeometry = null; // Store current geometry for search
         this.initFromUrl();
         this.initEventListeners();
@@ -405,6 +407,13 @@ export class SearchForm {
             
             // Store current geometry for search
             this.currentGeometry = geojson;
+            
+            // Update location dropdown if available
+            if (this.inlineDropdownManager) {
+                const geometryFormat = format === 'wkt' ? 'WKT' : 'GEOJSON';
+                const displayText = `${geometryFormat} geometry`;
+                this.inlineDropdownManager.handleLocationSelection('custom', displayText);
+            }
             
             // Extract bbox from GeoJSON
             const bbox = geojsonToBbox(geojson);

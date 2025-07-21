@@ -135,9 +135,11 @@ function updateSearchSummary(field, value) {
     if (summaryElement) {
         const valueElement = summaryElement.querySelector('.search-summary-value');
         if (valueElement) {
-            // For WKT, show "Custom Area" instead of the full WKT
+            // For geometry formats, show the appropriate label
             if (field === 'location' && value && value.startsWith('POLYGON')) {
                 valueElement.textContent = 'Custom Area';
+            } else if (field === 'location' && value && (value === 'WKT' || value === 'GEOJSON' || value.includes('geometry'))) {
+                valueElement.textContent = value;
             } else {
                 valueElement.textContent = value || 'THE WORLD';
             }

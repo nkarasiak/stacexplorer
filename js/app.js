@@ -65,9 +65,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Start collection loading after all core components are ready
         await collectionManager.loadAllCollectionsOnStartup();
         
-        // Initialize results panel and search form
+        // Initialize results panel 
         const resultsPanel = new ResultsPanel(apiClient, mapManager, notificationService);
-        const searchForm = new SearchForm(mapManager);
         
         // Initialize smart filter system
         const filterContainer = document.getElementById('smart-filters-container');
@@ -83,6 +82,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             filterManager.updateFiltersForCollections(collectionManager.allCollections);
         }
         
+        // Initialize search form first (needed by search panel)
+        const searchForm = new SearchForm(mapManager, null); // Initially null, will be updated below
+        
         // Initialize search panel with all required components
         const searchPanel = new CardSearchPanel(
             apiClient, 
@@ -93,14 +95,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             notificationService
         );
         
-        // AI Search functionality removed
-        
-        // AI Search keyboard shortcut removed
-        
-        // REMOVED: Clickable search title functionality
-        // Search title is no longer clickable
-        
-        // NEW: Initialize Inline Dropdown Manager for enhanced menu behavior
+        // Initialize Inline Dropdown Manager for enhanced menu behavior
         const inlineDropdownManager = new InlineDropdownManager(
             apiClient,
             searchPanel,
@@ -111,6 +106,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         console.log('[DROPDOWN] Enhanced inline dropdowns initialized for left menu');
         
+        // Update search form with inline dropdown manager for location updates
+        if (searchForm.inlineDropdownManager === null) {
+            searchForm.inlineDropdownManager = inlineDropdownManager;
+        }
+        
         // URL State Management is now handled by UnifiedStateManager
         
         console.log('[URL] URL state management initialized - search params will sync between interfaces and be stored in URL');
@@ -120,7 +120,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Initialize geometry sync for seamless integration
         const geometrySync = initializeGeometrySync({
             mapManager,
-            notificationService
+            notificationService,
+            inlineDropdownManager
         });
         console.log('[SYNC] GeometrySync initialized');
         

@@ -5,6 +5,7 @@
  */
 
 import { defaultGeocodingService } from '../../utils/GeocodingService.js';
+import { isWKT, wktToGeoJSON, isGeoJSON, parseGeoJSON } from '../../utils/GeometryUtils.js';
 
 export class InlineDropdownManager {
     /**
@@ -48,6 +49,98 @@ export class InlineDropdownManager {
             showCollectionDetails(collection) {
                 // Simple implementation - just log for now
                 console.log('Collection details:', collection);
+            },
+            parseGeometry(text) {
+                if (!text || typeof text !== 'string') {
+                    return null;
+                }
+                
+                const trimmedText = text.trim();
+                
+                // Check if it's WKT format
+                if (isWKT(trimmedText)) {
+                    const geoJSON = wktToGeoJSON(trimmedText);
+                    if (geoJSON) {
+                        return {
+                            type: 'WKT',
+                            originalText: trimmedText,
+                            geoJSON: geoJSON,
+                            format: 'WKT'
+                        };
+                    }
+                }
+                
+                // Check if it's GeoJSON format
+                if (isGeoJSON(trimmedText)) {
+                    const geoJSON = parseGeoJSON(trimmedText);
+                    if (geoJSON) {
+                        return {
+                            type: 'GeoJSON',
+                            originalText: trimmedText,
+                            geoJSON: geoJSON,
+                            format: 'GeoJSON'
+                        };
+                    }
+                }
+                
+                return null;
+            },
+            handlePastedGeometry(geometryResult, originalText) {
+                // Update the selected location to indicate custom geometry
+                this.selectedLocation = 'custom';
+                const displayText = `${geometryResult.format.toUpperCase()} geometry`;
+                this.selectedLocationResult = {
+                    display_name: displayText,
+                    shortName: displayText,
+                    formattedName: displayText,
+                    geometry: geometryResult.geoJSON,
+                    bbox: this.extractBboxFromGeometry(geometryResult.geoJSON),
+                    wkt: geometryResult.format === 'WKT' ? originalText : null
+                };
+                
+                console.log('Geometry pasted and processed:', {
+                    format: geometryResult.format,
+                    geometry: geometryResult.geoJSON
+                });
+            },
+            extractBboxFromGeometry(geoJSON) {
+                // Simple bbox extraction - this could be enhanced
+                if (!geoJSON || !geoJSON.geometry) {
+                    return null;
+                }
+                
+                const geometry = geoJSON.geometry;
+                if (!geometry.coordinates) {
+                    return null;
+                }
+                
+                // For simple cases, extract from coordinates
+                let coords = [];
+                const extractCoords = (coordArray) => {
+                    if (Array.isArray(coordArray[0])) {
+                        coordArray.forEach(extractCoords);
+                    } else {
+                        coords.push(coordArray);
+                    }
+                };
+                
+                extractCoords(geometry.coordinates);
+                
+                if (coords.length === 0) {
+                    return null;
+                }
+                
+                let minLng = coords[0][0], maxLng = coords[0][0];
+                let minLat = coords[0][1], maxLat = coords[0][1];
+                
+                coords.forEach(coord => {
+                    minLng = Math.min(minLng, coord[0]);
+                    maxLng = Math.max(maxLng, coord[0]);
+                    minLat = Math.min(minLat, coord[1]);
+                    maxLat = Math.max(maxLat, coord[1]);
+                });
+                
+                return [minLng, minLat, maxLng, maxLat];
             }
         };
         
@@ -56,6 +149,9 @@ export class InlineDropdownManager {
         this.aiSearchHelper.createLocationDropdown = this.createSimpleLocationDropdown.bind(this);
         this.aiSearchHelper.createDateDropdown = this.createSimpleDateDropdown.bind(this);
         this.aiSearchHelper.showCollectionDetails = this.showCollectionDetails.bind(this);
+        this.aiSearchHelper.parseGeometry = this.aiSearchHelper.parseGeometry.bind(this.aiSearchHelper);
+        this.aiSearchHelper.handlePastedGeometry = this.aiSearchHelper.handlePastedGeometry.bind(this.aiSearchHelper);
+        this.aiSearchHelper.extractBboxFromGeometry = this.aiSearchHelper.extractBboxFromGeometry.bind(this.aiSearchHelper);
         
         this.currentDropdown = null;
         this.currentField = null;
@@ -1987,7 +2083,15 @@ export class InlineDropdownManager {
                 
                 if (geometryResult) {
                     this.aiSearchHelper.handlePastedGeometry(geometryResult, pastedText);
-                    this.updateSearchSummary('location', 'CUSTOM GEOMETRY');
+                    
+                    // Update dropdown and summary with geometry format
+                    const displayText = `${geometryResult.format.toUpperCase()} geometry`;
+                    this.handleLocationSelection('custom', displayText);
+                    
+                    // Also update the static system if the function exists
+                    if (typeof window.updateSearchSummary === 'function') {
+                        window.updateSearchSummary('location', displayText);
+                    }
                     
                     // Remove the temporary listener
                     document.removeEventListener('paste', pasteHandler);

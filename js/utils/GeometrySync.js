@@ -20,6 +20,7 @@ export class GeometrySync {
         this.aiSmartSearch = null;
         this.mapManager = null;
         this.notificationService = null;
+        this.inlineDropdownManager = null;
         
         // Callbacks for geometry updates
         this.onGeometryParsed = options.onGeometryParsed || null;
@@ -36,10 +37,11 @@ export class GeometrySync {
      * Initialize the geometry sync system
      * @param {Object} dependencies - Required dependencies
      */
-    initialize({ aiSmartSearch, mapManager, notificationService }) {
+    initialize({ aiSmartSearch, mapManager, notificationService, inlineDropdownManager }) {
         this.aiSmartSearch = aiSmartSearch;
         this.mapManager = mapManager;
         this.notificationService = notificationService;
+        this.inlineDropdownManager = inlineDropdownManager;
         
         this.setupEventListeners();
         console.log('✅ GeometrySync initialized with dependencies');
@@ -233,6 +235,12 @@ export class GeometrySync {
             
             // Sync to AI Search
             this.syncToAISearch(`Custom ${geometryType}`, bbox, 'geometry', geojson);
+            
+            // Update location dropdown menu if available
+            if (this.inlineDropdownManager) {
+                const displayText = `${geometryType.toUpperCase()} geometry`;
+                this.inlineDropdownManager.handleLocationSelection('custom', displayText);
+            }
             
             // Display geometry on map
             if (this.mapManager && typeof this.mapManager.displayGeometry === 'function') {

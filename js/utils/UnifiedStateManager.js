@@ -870,6 +870,14 @@ export class UnifiedStateManager {
         const bboxInput = document.getElementById('bbox-input');
         if (bboxInput && bboxInput.value) {
             params.set(this.urlKeys.locationBbox, bboxInput.value);
+            
+            // Add location name if available
+            const locationNameElement = document.querySelector('[data-location-name]');
+            if (locationNameElement && locationNameElement.dataset.locationName) {
+                params.set(this.urlKeys.locationName, locationNameElement.dataset.locationName);
+            } else if (this.currentState && this.currentState.locationName && this.currentState.locationName !== 'THE WORLD') {
+                params.set(this.urlKeys.locationName, this.currentState.locationName);
+            }
         }
         
         // Add filter state (cloud cover)

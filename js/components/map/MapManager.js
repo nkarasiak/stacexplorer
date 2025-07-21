@@ -603,6 +603,9 @@ class MapManager {
     finishDrawing(geometry) {
         this.stopDrawing();
         
+        // Clear any existing search bbox since we're drawing a new one
+        this.clearSearchBbox();
+        
         if (this.drawingCallback) {
             this.drawingCallback(geometry);
         }
@@ -2761,6 +2764,134 @@ let geojson;
             }
         });
         this.thumbnailLayers.clear();
+    }
+
+    /**
+     * Display a bounding box on the map with a name/label
+     * Called by UnifiedStateManager when restoring geometry from URL
+     * @param {Array} coords - [minX, minY, maxX, maxY] bounding box coordinates  
+     * @param {string} name - Display name for the geometry
+     */
+    displayBboxOnMap(coords, name = 'Search Area') {
+        console.log(`🗺️ Displaying bbox on map: ${name}`, coords);
+        
+        if (!coords || coords.length !== 4) {
+            console.warn('Invalid bbox coordinates provided to displayBboxOnMap:', coords);
+            return;
+        }
+        
+        const [minX, minY, maxX, maxY] = coords;
+        
+        // Create bbox geometry in GeoJSON format
+        const bboxGeometry = {
+            type: 'Feature',
+            properties: {
+                name: name,
+                type: 'search-area'
+            },
+            geometry: {
+                type: 'Polygon',
+                coordinates: [[
+                    [minX, minY],
+                    [maxX, minY], 
+                    [maxX, maxY],
+                    [minX, maxY],
+                    [minX, minY]
+                ]]
+            }
+        };
+        
+        const sourceId = 'search-bbox';
+        const layerId = 'search-bbox-layer';
+        
+        // Remove existing search bbox if it exists
+        if (this.map.getSource(sourceId)) {
+            if (this.map.getLayer(layerId)) {
+                this.map.removeLayer(layerId);
+            }
+            if (this.map.getLayer(layerId + '-stroke')) {
+                this.map.removeLayer(layerId + '-stroke');
+            }
+            this.map.removeSource(sourceId);
+        }
+        
+        // Add the bbox source
+        this.map.addSource(sourceId, {
+            type: 'geojson',
+            data: bboxGeometry
+        });
+        
+        // Add beautiful fill layer
+        this.map.addLayer({
+            id: layerId,
+            type: 'fill',
+            source: sourceId,
+            paint: {
+                'fill-color': '#ff6b35',
+                'fill-opacity': 0.1
+            }
+        });
+        
+        // Add stroke layer
+        this.map.addLayer({
+            id: layerId + '-stroke',
+            type: 'line',
+            source: sourceId,
+            paint: {
+                'line-color': '#ff6b35',
+                'line-width': 2,
+                'line-opacity': 0.8,
+                'line-dasharray': [2, 2]
+            }
+        });
+        
+        // Store search bbox info (separate from currentLayer to persist)
+        this.searchBbox = {
+            sourceId: sourceId,
+            layerIds: [layerId, layerId + '-stroke'],
+            coords: coords,
+            name: name
+        };
+        
+        // Fit map to bbox bounds with some padding
+        try {
+            this.fitMapToBbox([minX, minY, maxX, maxY]);
+        } catch (error) {
+            console.warn('Could not fit map to bbox bounds:', error);
+        }
+        
+        console.log(`✅ Search bbox '${name}' displayed on map`);
+    }
+    
+    /**
+     * Clear search bbox from map (only when new geometry is provided)
+     */
+    clearSearchBbox() {
+        if (this.searchBbox) {
+            console.log('🧹 Clearing search bbox from map:', this.searchBbox.name);
+            
+            // Remove layers
+            this.searchBbox.layerIds.forEach(layerId => {
+                if (this.map.getLayer(layerId)) {
+                    this.map.removeLayer(layerId);
+                }
+            });
+            
+            // Remove source
+            if (this.map.getSource(this.searchBbox.sourceId)) {
+                this.map.removeSource(this.searchBbox.sourceId);
+            }
+            
+            this.searchBbox = null;
+        }
+    }
+    
+    /**
+     * Get current search bbox if any
+     * @returns {Object|null} Current search bbox info
+     */
+    getCurrentSearchBbox() {
+        return this.searchBbox || null;
     }
 
     isMapReady() {

@@ -477,9 +477,70 @@
     }
 }
 
+/* Floating Action Button */
+.command-palette-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    border: none;
+    border-radius: 50%;
+    box-shadow: var(--shadow-lg);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: var(--transition-base);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.command-palette-fab:hover {
+    background: var(--color-primary-dark);
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: var(--shadow-xl);
+}
+
+.command-palette-fab:active {
+    transform: translateY(0) scale(1);
+}
+
+.command-palette-fab .material-icons {
+    font-size: 24px;
+}
+
+/* Hide FAB when command palette is open */
+.command-palette--open ~ * .command-palette-fab {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .command-palette-fab {
+        bottom: 20px;
+        right: 20px;
+        width: 48px;
+        height: 48px;
+    }
+    
+    .command-palette-fab .material-icons {
+        font-size: 20px;
+    }
+}
+
 /* Print styles */
 @media print {
     .command-palette {
+        display: none !important;
+    }
+    
+    .command-palette-fab {
         display: none !important;
     }
 }

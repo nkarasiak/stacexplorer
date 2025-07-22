@@ -18,7 +18,7 @@ export class CommandPalette extends BaseUIComponent {
             enablePreview: true,
             debounceMs: 150,
             shortcuts: {
-                toggle: ['cmd+k', 'ctrl+k'],
+                toggle: ['cmd+shift+p', 'ctrl+shift+p', 'f1'],
                 close: ['escape'],
                 execute: ['enter'],
                 nextResult: ['arrowdown', 'tab'],
@@ -49,6 +49,7 @@ export class CommandPalette extends BaseUIComponent {
         this.registerDefaultCommands();
         this.setupKeyboardShortcuts();
         this.attachEventListeners();
+        this.setupFloatingActionButton();
         this.loadUserPreferences();
     }
 
@@ -126,6 +127,9 @@ export class CommandPalette extends BaseUIComponent {
                         </span>
                         <span class="command-palette__shortcut">
                             <kbd>Esc</kbd> Close
+                        </span>
+                        <span class="command-palette__shortcut">
+                            <kbd>Ctrl+Shift+P</kbd> or <kbd>F1</kbd> Open
                         </span>
                     </div>
                 </div>
@@ -718,6 +722,21 @@ export class CommandPalette extends BaseUIComponent {
         } else {
             this.open();
         }
+    }
+
+    setupFloatingActionButton() {
+        // Set up FAB after DOM is ready
+        setTimeout(() => {
+            const fab = document.getElementById('command-palette-fab');
+            if (fab) {
+                this.addEventListener(fab, 'click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    this.open();
+                });
+                console.log('Command Palette FAB initialized');
+            }
+        }, 100);
     }
 
     loadUserPreferences() {

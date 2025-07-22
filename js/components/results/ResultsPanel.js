@@ -1025,6 +1025,11 @@ export class ResultsPanel {
         document.getElementById('current-page').textContent = this.currentPage;
         document.getElementById('total-pages').textContent = this.totalPages;
         
+        // Dispatch event for satellite animation
+        document.dispatchEvent(new CustomEvent('resultsUpdated', {
+            detail: { count: items.length, items: items }
+        }));
+        
         // Render first page
         this.renderPage();
     }
@@ -1053,6 +1058,9 @@ export class ResultsPanel {
         // Update pagination display
         document.getElementById('current-page').textContent = this.currentPage;
         document.getElementById('total-pages').textContent = this.totalPages;
+        
+        // Dispatch event for satellite animation
+        document.dispatchEvent(new CustomEvent('resultsCleared'));
         
         // Clear the dataset list
         datasetList.innerHTML = '';

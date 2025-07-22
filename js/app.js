@@ -23,6 +23,7 @@ import { ResultsPanel } from './components/results/ResultsPanel.js';
 import { InlineDropdownManager } from './components/ui/InlineDropdownManager.js';
 import { searchHistoryUI } from './components/ui/SearchHistoryUI.js';
 import { CommandPalette } from './components/ui/CommandPalette.js';
+import { SatelliteAnimation } from './components/ui/SatelliteAnimation.js';
 // Removed: URL state integration is now handled by UnifiedStateManager
 // Removed inline AI search imports - only using the full-screen version now
 
@@ -329,6 +330,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         console.log('⌨️ Command Palette initialized');
         
+        // Initialize Satellite Animation
+        const satelliteAnimation = new SatelliteAnimation();
+        console.log('🛰️ Satellite animation initialized');
+        
         // REMOVED: Share manager (no longer needed)
         // const shareManager = new ShareManager(stateManager, notificationService);
         
@@ -386,6 +391,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             inlineDropdownManager,
             geometrySync,
             commandPalette,
+            satelliteAnimation,
             config: CONFIG,
             // Visualization system
             visualizationPanel,

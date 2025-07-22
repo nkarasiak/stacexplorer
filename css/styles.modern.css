@@ -46,6 +46,63 @@
     --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+/* Satellite Animation Styles */
+.satellite-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 600; /* Behind the menu but above the map */
+    overflow: hidden;
+}
+
+.satellite {
+    position: absolute;
+    width: 70px;
+    height: auto;
+    opacity: 0;
+    transform: translateY(100vh) translateX(100px);
+    transition: opacity 0.5s ease-in-out;
+    pointer-events: none;
+    filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4));
+}
+
+.satellite.animate {
+    animation: satelliteFlight 10s linear;
+}
+
+.satellite.hidden {
+    opacity: 0;
+}
+
+.satellite.visible {
+    opacity: 0.8;
+}
+
+@keyframes satelliteFlight {
+    0% {
+        transform: translateY(100vh) translateX(100px) rotate(0deg);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.8;
+    }
+    90% {
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(-100px) translateX(-200px) rotate(-5deg);
+        opacity: 0;
+    }
+}
+
+/* Hide satellite animation when search results are present */
+.has-results .satellite-container {
+    display: none;
+}
+
 /* Dark Theme (Default) - Improved Contrast */
 html.dark-theme {
     --bg-primary: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
@@ -1701,7 +1758,8 @@ select, select * {
    COLLECTION DETAILS MODAL - Enhanced with Mini Map & Actions
    ================================================================= */
 
-.collection-details-modal-overlay {
+.collection-details-modal-overlay,
+.modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
@@ -1714,11 +1772,16 @@ select, select * {
     justify-content: center;
     align-items: center;
     z-index: 10000;
-    animation: fadeIn 0.3s ease;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
 }
 
-.collection-details-modal-overlay.active {
-    display: flex;
+.collection-details-modal-overlay.active,
+.modal-overlay.active {
+    display: flex !important;
+    opacity: 1 !important;
+    visibility: visible !important;
 }
 
 .collection-details-modal-dialog {

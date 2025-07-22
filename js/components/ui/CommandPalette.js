@@ -18,7 +18,7 @@ export class CommandPalette extends BaseUIComponent {
             enablePreview: true,
             debounceMs: 150,
             shortcuts: {
-                toggle: ['cmd+shift+p', 'ctrl+shift+p', 'f1'],
+                toggle: ['shift+/'],
                 close: ['escape'],
                 execute: ['enter'],
                 nextResult: ['arrowdown', 'tab'],
@@ -129,7 +129,7 @@ export class CommandPalette extends BaseUIComponent {
                             <kbd>Esc</kbd> Close
                         </span>
                         <span class="command-palette__shortcut">
-                            <kbd>Ctrl+Shift+P</kbd> or <kbd>F1</kbd> Open
+                            <kbd>Shift + /</kbd> Open
                         </span>
                     </div>
                 </div>

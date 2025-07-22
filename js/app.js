@@ -22,6 +22,7 @@ import { ResultsPanel } from './components/results/ResultsPanel.js';
 // Removed: AI Search functionality removed
 import { InlineDropdownManager } from './components/ui/InlineDropdownManager.js';
 import { searchHistoryUI } from './components/ui/SearchHistoryUI.js';
+import { CommandPalette } from './components/ui/CommandPalette.js';
 // Removed: URL state integration is now handled by UnifiedStateManager
 // Removed inline AI search imports - only using the full-screen version now
 
@@ -159,6 +160,55 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         console.log('🎨 Visualization system initialized');
         
+        // Initialize Command Palette
+        const commandPalette = new CommandPalette();
+        
+        // Register STAC Explorer specific commands
+        commandPalette.registerCommand({
+            id: 'focus-search',
+            title: 'Focus Search Field',
+            description: 'Jump to the main search interface',
+            category: 'navigation',
+            keywords: ['search', 'find', 'focus'],
+            action: () => {
+                const searchBtn = document.getElementById('main-search-btn');
+                if (searchBtn) {
+                    searchBtn.click();
+                    searchBtn.focus();
+                }
+            }
+        });
+        
+        commandPalette.registerCommand({
+            id: 'toggle-sidebar',
+            title: 'Toggle Sidebar',
+            description: 'Show or hide the sidebar',
+            category: 'navigation',
+            keywords: ['sidebar', 'menu', 'toggle', 'hide', 'show'],
+            action: () => {
+                const toggle = document.getElementById('sidebar-toggle');
+                if (toggle) {
+                    toggle.click();
+                }
+            }
+        });
+        
+        commandPalette.registerCommand({
+            id: 'view-results',
+            title: 'View Results',
+            description: 'Scroll to search results',
+            category: 'navigation', 
+            keywords: ['results', 'view', 'scroll'],
+            action: () => {
+                const resultsCard = document.getElementById('results-card');
+                if (resultsCard) {
+                    resultsCard.scrollIntoView({ behavior: 'smooth' });
+                }
+            }
+        });
+        
+        console.log('⌨️ Command Palette initialized');
+        
         // REMOVED: Share manager (no longer needed)
         // const shareManager = new ShareManager(stateManager, notificationService);
         
@@ -215,6 +265,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             filterManager,
             inlineDropdownManager,
             geometrySync,
+            commandPalette,
             config: CONFIG,
             // Visualization system
             visualizationPanel,

@@ -1,7 +1,8 @@
 import { BaseUIComponent } from '../base/BaseUIComponent.js';
 
 export class CommandPalette extends BaseUIComponent {
-    constructor(container, options = {}) {
+    constructor(container = null, options = {}) {
+        // Command palette creates its own container if none provided
         super(container, options);
     }
 

@@ -161,7 +161,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('🎨 Visualization system initialized');
         
         // Initialize Command Palette
-        const commandPalette = new CommandPalette();
+        const commandPalette = new CommandPalette(document.body);
         
         // Register STAC Explorer specific commands
         commandPalette.registerCommand({

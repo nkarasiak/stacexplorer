@@ -1,0 +1,671 @@
+/**
+ * Loading States Components CSS
+ * Professional loading indicators with skeleton screens and animations
+ */
+
+.loading-manager {
+    position: relative;
+}
+
+/* Global Loading Overlay */
+.loading-global-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 999998;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+/* Loading Overlay */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    border-radius: inherit;
+}
+
+/* ========================================
+   SKELETON LOADING
+   ======================================== */
+
+.loading-skeleton {
+    padding: var(--space-4);
+    background: var(--surface-primary, #1a1a1a);
+    border-radius: var(--radius-lg);
+}
+
+.skeleton-item {
+    display: flex;
+    gap: var(--space-4);
+    padding: var(--space-4) 0;
+    border-bottom: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.05));
+}
+
+.skeleton-item:last-child {
+    border-bottom: none;
+}
+
+/* Base skeleton elements */
+.skeleton-line,
+.skeleton-circle,
+.skeleton-rect,
+.skeleton-image,
+.skeleton-text {
+    background: linear-gradient(
+        90deg,
+        var(--color-secondary-700) 25%,
+        var(--color-secondary-600) 50%,
+        var(--color-secondary-700) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-wave 2s infinite ease-in-out;
+    border-radius: var(--radius-sm);
+}
+
+/* Skeleton line variations */
+.skeleton-line {
+    height: 16px;
+    width: 100%;
+}
+
+.skeleton-line--sm {
+    height: 12px;
+    width: 75%;
+}
+
+.skeleton-line--lg {
+    height: 20px;
+    width: 90%;
+}
+
+/* Skeleton shapes */
+.skeleton-circle {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.skeleton-rect {
+    height: 20px;
+    width: 80px;
+}
+
+.skeleton-rect--sm {
+    height: 16px;
+    width: 60px;
+}
+
+.skeleton-image {
+    width: 80px;
+    height: 80px;
+    flex-shrink: 0;
+    border-radius: var(--radius-md);
+}
+
+.skeleton-text {
+    height: 14px;
+    width: 100%;
+    margin: var(--space-1) 0;
+}
+
+/* Skeleton content layout */
+.skeleton-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+}
+
+.skeleton-meta {
+    display: flex;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+}
+
+.skeleton-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.05));
+}
+
+/* Specific skeleton templates */
+.stac-item-skeleton {
+    min-height: 120px;
+    align-items: flex-start;
+}
+
+.collection-skeleton {
+    min-height: 80px;
+    align-items: center;
+}
+
+.result-skeleton {
+    min-height: 60px;
+    align-items: center;
+}
+
+/* Skeleton wave animation */
+@keyframes skeleton-wave {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+/* ========================================
+   SPINNER LOADING
+   ======================================== */
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-6);
+    text-align: center;
+}
+
+.loading-spinner__icon {
+    position: relative;
+    width: 40px;
+    height: 40px;
+}
+
+.loading-spinner__circle {
+    width: 100%;
+    height: 100%;
+    border: 3px solid var(--color-secondary-600);
+    border-top-color: var(--color-primary-500);
+    border-radius: 50%;
+    animation: spinner-spin 1s linear infinite;
+}
+
+.loading-spinner__message {
+    color: var(--text-secondary, #aaa);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+@keyframes spinner-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ========================================
+   PROGRESS LOADING
+   ======================================== */
+
+.loading-progress {
+    padding: var(--space-4);
+    background: var(--surface-secondary, #2a2a2a);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-primary, rgba(255, 255, 255, 0.1));
+}
+
+.loading-progress__bar {
+    position: relative;
+    height: 8px;
+    background: var(--color-secondary-700);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    margin-bottom: var(--space-3);
+}
+
+.loading-progress__fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-primary-600), var(--color-primary-500));
+    border-radius: inherit;
+    width: 0%;
+    transition: width 0.3s ease-out;
+    position: relative;
+}
+
+.loading-progress__fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+    );
+    animation: progress-shine 2s infinite;
+}
+
+.loading-progress__info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--font-size-sm);
+}
+
+.loading-progress__text {
+    color: var(--text-primary, #ffffff);
+    font-weight: var(--font-weight-medium);
+    font-variant-numeric: tabular-nums;
+}
+
+.loading-progress__message {
+    color: var(--text-secondary, #aaa);
+}
+
+@keyframes progress-shine {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* ========================================
+   DOTS LOADING
+   ======================================== */
+
+.loading-dots {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-6);
+}
+
+.loading-dots__container {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.loading-dots__dot {
+    width: 12px;
+    height: 12px;
+    background: var(--color-primary-500);
+    border-radius: 50%;
+    animation: dots-bounce 1.4s infinite ease-in-out both;
+}
+
+.loading-dots__dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.loading-dots__dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.loading-dots__message {
+    color: var(--text-secondary, #aaa);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+@keyframes dots-bounce {
+    0%, 80%, 100% {
+        transform: scale(0.8);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ========================================
+   PULSE LOADING
+   ======================================== */
+
+.loading-pulse {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-6);
+}
+
+.loading-pulse__icon {
+    position: relative;
+    width: 48px;
+    height: 48px;
+}
+
+.loading-pulse__circle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 24px;
+    height: 24px;
+    background: var(--color-primary-500);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: pulse-scale 2s infinite ease-out;
+}
+
+.loading-pulse__ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 48px;
+    height: 48px;
+    border: 2px solid var(--color-primary-500);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: pulse-ring 2s infinite ease-out;
+}
+
+.loading-pulse__message {
+    color: var(--text-secondary, #aaa);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-medium);
+}
+
+@keyframes pulse-scale {
+    0%, 100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: translate(-50%, -50%) scale(0.8);
+        opacity: 0.7;
+    }
+}
+
+@keyframes pulse-ring {
+    0% {
+        transform: translate(-50%, -50%) scale(0.5);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(-50%, -50%) scale(1.2);
+        opacity: 0;
+    }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 768px) {
+    .loading-skeleton {
+        padding: var(--space-3);
+    }
+    
+    .skeleton-item {
+        gap: var(--space-3);
+        padding: var(--space-3) 0;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .stac-item-skeleton,
+    .collection-skeleton,
+    .result-skeleton {
+        min-height: auto;
+    }
+    
+    .skeleton-image {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .skeleton-meta {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .loading-progress__info {
+        flex-direction: column;
+        gap: var(--space-2);
+        text-align: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .skeleton-image {
+        width: 48px;
+        height: 48px;
+    }
+    
+    .loading-spinner__icon,
+    .loading-pulse__icon {
+        width: 32px;
+        height: 32px;
+    }
+    
+    .loading-pulse__circle {
+        width: 16px;
+        height: 16px;
+    }
+    
+    .loading-pulse__ring {
+        width: 32px;
+        height: 32px;
+    }
+}
+
+/* ========================================
+   THEME VARIATIONS
+   ======================================== */
+
+/* Light theme adjustments */
+.light-theme .skeleton-line,
+.light-theme .skeleton-circle,
+.light-theme .skeleton-rect,
+.light-theme .skeleton-image,
+.light-theme .skeleton-text {
+    background: linear-gradient(
+        90deg,
+        var(--color-secondary-200) 25%,
+        var(--color-secondary-100) 50%,
+        var(--color-secondary-200) 75%
+    );
+}
+
+.light-theme .loading-skeleton {
+    background: var(--surface-primary, #ffffff);
+}
+
+.light-theme .skeleton-item {
+    border-color: rgba(0, 0, 0, 0.05);
+}
+
+.light-theme .loading-progress {
+    background: var(--surface-secondary, #f5f5f5);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .loading-progress__bar {
+    background: var(--color-secondary-300);
+}
+
+.light-theme .loading-progress__text {
+    color: var(--text-primary, #1a1a1a);
+}
+
+.light-theme .loading-progress__message,
+.light-theme .loading-spinner__message,
+.light-theme .loading-dots__message,
+.light-theme .loading-pulse__message {
+    color: var(--text-secondary, #666);
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .skeleton-line,
+    .skeleton-circle,
+    .skeleton-rect,
+    .skeleton-image,
+    .skeleton-text {
+        background: ButtonShadow;
+        animation: none;
+    }
+    
+    .loading-spinner__circle {
+        border-color: ButtonText;
+        border-top-color: Highlight;
+    }
+    
+    .loading-progress__bar {
+        background: ButtonShadow;
+        border: 1px solid ButtonText;
+    }
+    
+    .loading-progress__fill {
+        background: Highlight;
+    }
+    
+    .loading-dots__dot {
+        background: Highlight;
+    }
+    
+    .loading-pulse__circle,
+    .loading-pulse__ring {
+        background: Highlight;
+        border-color: Highlight;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .skeleton-line,
+    .skeleton-circle,
+    .skeleton-rect,
+    .skeleton-image,
+    .skeleton-text {
+        animation: none;
+        background: var(--color-secondary-600);
+    }
+    
+    .loading-spinner__circle {
+        animation: none;
+        border-top-color: var(--color-secondary-600);
+    }
+    
+    .loading-progress__fill::after {
+        animation: none;
+    }
+    
+    .loading-dots__dot {
+        animation: none;
+        opacity: 0.7;
+    }
+    
+    .loading-pulse__circle,
+    .loading-pulse__ring {
+        animation: none;
+    }
+    
+    /* Add static indicators for reduced motion */
+    .loading-spinner::after,
+    .loading-dots::after,
+    .loading-pulse::after {
+        content: '⏳';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 24px;
+    }
+}
+
+/* Print styles */
+@media print {
+    .loading-global-overlay,
+    .loading-overlay,
+    .loading-skeleton,
+    .loading-spinner,
+    .loading-progress,
+    .loading-dots,
+    .loading-pulse {
+        display: none !important;
+    }
+}
+
+/* ========================================
+   ACCESSIBILITY ENHANCEMENTS
+   ======================================== */
+
+/* Focus management for loading states */
+.loading-skeleton:focus,
+.loading-spinner:focus,
+.loading-progress:focus,
+.loading-dots:focus,
+.loading-pulse:focus {
+    outline: 2px solid var(--color-primary-500);
+    outline-offset: 2px;
+}
+
+/* Screen reader optimizations */
+.loading-skeleton[aria-hidden="true"],
+.loading-spinner[aria-hidden="true"],
+.loading-progress[aria-hidden="true"],
+.loading-dots[aria-hidden="true"],
+.loading-pulse[aria-hidden="true"] {
+    display: none;
+}
+
+/* Ensure proper contrast for status messages */
+.loading-spinner__message,
+.loading-progress__message,
+.loading-dots__message,
+.loading-pulse__message {
+    min-height: 1.2em;
+    line-height: 1.2;
+}
+
+/* Loading overlay accessibility */
+.loading-overlay[role="status"] {
+    border: 2px solid transparent;
+}
+
+.loading-overlay:focus {
+    border-color: var(--color-primary-500);
+}
+
+/* Performance optimizations */
+.loading-skeleton,
+.loading-spinner,
+.loading-progress,
+.loading-dots,
+.loading-pulse {
+    contain: layout style paint;
+    will-change: opacity;
+}
+
+.loading-spinner__circle,
+.loading-dots__dot,
+.loading-pulse__circle,
+.loading-pulse__ring {
+    will-change: transform;
+}
+
+.loading-progress__fill {
+    will-change: width;
+}

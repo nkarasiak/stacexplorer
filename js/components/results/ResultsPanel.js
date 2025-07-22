@@ -22,6 +22,9 @@ export class ResultsPanel {
         this.modal = null;
         this.currentAssetKey = null;
         
+        // Flag to temporarily disable overlay click detection
+        this.temporarilyDisableOverlayClick = false;
+        
         // Initialize pagination controls
         this.initPagination();
         
@@ -106,6 +109,11 @@ export class ResultsPanel {
         closeBtn.addEventListener('click', () => this.closeModal());
         closeBtnFooter.addEventListener('click', () => this.closeModal());
         modalOverlay.addEventListener('click', (e) => {
+            // Skip overlay click detection if temporarily disabled
+            if (this.temporarilyDisableOverlayClick) {
+                return;
+            }
+            
             if (e.target === modalOverlay) {
                 this.closeModal();
             }
@@ -168,6 +176,13 @@ export class ResultsPanel {
         this.modal.overlay.classList.add('active');
         console.log('📋 Modal should now be visible');
         
+        // Temporarily disable overlay click detection to prevent immediate closure
+        this.temporarilyDisableOverlayClick = true;
+        setTimeout(() => {
+            this.temporarilyDisableOverlayClick = false;
+            console.log('📋 Modal overlay click detection re-enabled');
+        }, 300);
+        
         // Add keyboard listener for Escape key
         document.addEventListener('keydown', this.handleEscapeKey);
     }
@@ -176,6 +191,9 @@ export class ResultsPanel {
      * Close the modal
      */
     closeModal() {
+        // Reset overlay click disable flag
+        this.temporarilyDisableOverlayClick = false;
+        
         this.modal.overlay.classList.remove('active');
         document.removeEventListener('keydown', this.handleEscapeKey);
         

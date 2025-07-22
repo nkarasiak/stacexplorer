@@ -30,6 +30,7 @@ import { CommandPalette } from './components/ui/CommandPalette.js';
 import { CONFIG } from './config.js';
 import { cookieCache } from './utils/CookieCache.js';
 import { searchHistoryManager } from './utils/SearchHistoryManager.js';
+import { DateUtils } from './utils/DateUtils.js';
 
 /**
  * Initialize the application when the DOM is fully loaded
@@ -161,7 +162,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.log('🎨 Visualization system initialized');
         
         // Initialize Command Palette
-        const commandPalette = new CommandPalette(document.body);
+        console.log('🎯 About to create CommandPalette...');
+        const commandPalette = new CommandPalette();
+        console.log('🎯 CommandPalette created:', commandPalette);
         
         // Register STAC Explorer specific commands
         commandPalette.registerCommand({
@@ -171,10 +174,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             category: 'navigation',
             keywords: ['search', 'find', 'focus'],
             action: () => {
+                console.log('🎯 Focus Search command executed!');
                 const searchBtn = document.getElementById('main-search-btn');
                 if (searchBtn) {
                     searchBtn.click();
                     searchBtn.focus();
+                    console.log('🎯 Search button clicked and focused');
+                } else {
+                    console.error('🎯 Search button not found!');
                 }
             }
         });
@@ -186,9 +193,13 @@ document.addEventListener('DOMContentLoaded', async function() {
             category: 'navigation',
             keywords: ['sidebar', 'menu', 'toggle', 'hide', 'show'],
             action: () => {
+                console.log('🎯 Toggle Sidebar command executed!');
                 const toggle = document.getElementById('sidebar-toggle');
                 if (toggle) {
                     toggle.click();
+                    console.log('🎯 Sidebar toggle clicked');
+                } else {
+                    console.error('🎯 Sidebar toggle not found!');
                 }
             }
         });
@@ -200,9 +211,118 @@ document.addEventListener('DOMContentLoaded', async function() {
             category: 'navigation', 
             keywords: ['results', 'view', 'scroll'],
             action: () => {
+                console.log('🎯 View Results command executed!');
                 const resultsCard = document.getElementById('results-card');
                 if (resultsCard) {
                     resultsCard.scrollIntoView({ behavior: 'smooth' });
+                    console.log('🎯 Scrolled to results card');
+                } else {
+                    console.error('🎯 Results card not found!');
+                }
+            }
+        });
+        
+        // Add time preset commands
+        const timePresets = [
+            { value: 'anytime', title: 'Anytime', description: 'No date restriction', icon: 'all_inclusive' },
+            { value: 'last7days', title: 'Last 7 days', description: 'Past week including today', icon: 'view_week' },
+            { value: 'last30days', title: 'Last 30 days', description: 'Past month including today', icon: 'calendar_month' },
+            { value: 'last3days', title: 'Last 3 days', description: 'Past 3 days including today', icon: 'view_day' },
+            { value: 'thisweek', title: 'This week', description: 'Monday to Sunday (current week)', icon: 'date_range' },
+            { value: 'lastweek', title: 'Last week', description: 'Previous Monday to Sunday', icon: 'skip_previous' },
+            { value: 'thismonth', title: 'This month', description: 'First to last day of current month', icon: 'calendar_today' },
+            { value: 'lastmonth', title: 'Last month', description: 'Previous month (first to last day)', icon: 'skip_previous' },
+            { value: 'last90days', title: 'Last 3 months', description: 'Past 3 months including today', icon: 'calendar_view_month' },
+            { value: 'last6months', title: 'Last 6 months', description: 'Past 6 months including today', icon: 'view_timeline' },
+            { value: 'thisyear', title: 'This year', description: 'January 1st to December 31st (current year)', icon: 'calendar_view_year' },
+            { value: 'lastyear', title: 'Last year', description: 'Previous year (January to December)', icon: 'skip_previous' }
+        ];
+        
+        timePresets.forEach(preset => {
+            commandPalette.registerCommand({
+                id: `time-${preset.value}`,
+                title: `Time: ${preset.title}`,
+                description: preset.description,
+                category: 'time',
+                keywords: ['time', 'date', preset.title.toLowerCase()],
+                action: () => {
+                    console.log(`🎯 Time preset command executed: ${preset.title}`);
+                    
+                    // Calculate the actual date range for this preset
+                    const dateRange = DateUtils.calculateDateRange(preset.value);
+                    
+                    console.log(`🎯 Calculated date range for ${preset.title}:`, dateRange);
+                    
+                    // Fill the date input fields if we have valid dates
+                    if (dateRange.start && dateRange.end) {
+                        const startInput = document.getElementById('date-start');
+                        const endInput = document.getElementById('date-end');
+                        
+                        if (startInput && endInput) {
+                            startInput.value = dateRange.start;
+                            endInput.value = dateRange.end;
+                            console.log(`🎯 Date inputs filled: ${dateRange.start} to ${dateRange.end}`);
+                            
+                            // Trigger change events to update any listeners
+                            startInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            endInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                        
+                        // Update the left panel search summary
+                        if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
+                            const displayText = `${dateRange.start} to ${dateRange.end}`;
+                            window.stacExplorer.inlineDropdownManager.updateSearchSummary('date', displayText.toUpperCase());
+                            console.log(`🎯 Search summary updated: ${displayText}`);
+                        }
+                    } else if (preset.value === 'anytime') {
+                        // Clear date inputs for "anytime"
+                        const startInput = document.getElementById('date-start');
+                        const endInput = document.getElementById('date-end');
+                        
+                        if (startInput && endInput) {
+                            startInput.value = '';
+                            endInput.value = '';
+                            console.log(`🎯 Date inputs cleared for "anytime"`);
+                            
+                            // Trigger change events
+                            startInput.dispatchEvent(new Event('change', { bubbles: true }));
+                            endInput.dispatchEvent(new Event('change', { bubbles: true }));
+                        }
+                        
+                        // Update the left panel search summary for anytime
+                        if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
+                            window.stacExplorer.inlineDropdownManager.updateSearchSummary('date', '🕐 ANYTIME');
+                            console.log(`🎯 Search summary updated: ANYTIME`);
+                        }
+                    }
+                    
+                    // Also use the inline dropdown manager to handle the selection
+                    if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
+                        window.stacExplorer.inlineDropdownManager.handleDateSelection(preset.value);
+                        console.log(`🎯 Date selection handled for: ${preset.title}`);
+                    } else {
+                        console.error('🎯 Inline dropdown manager not found!');
+                    }
+                }
+            });
+        });
+        
+        // Add custom date range command
+        commandPalette.registerCommand({
+            id: 'time-custom',
+            title: 'Time: Custom Date Range',
+            description: 'Select your own start and end dates',
+            category: 'time',
+            keywords: ['time', 'date', 'custom', 'range', 'picker'],
+            action: () => {
+                console.log('🎯 Custom date range command executed!');
+                
+                // Use the inline dropdown manager to open custom date picker
+                if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
+                    window.stacExplorer.inlineDropdownManager.openFlatpickrCalendar();
+                    console.log('🎯 Custom date picker opened');
+                } else {
+                    console.error('🎯 Inline dropdown manager not found!');
                 }
             }
         });

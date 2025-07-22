@@ -23,6 +23,9 @@ export class InlineDropdownManager {
         this.mapManager = mapManager;
         this.notificationService = notificationService;
         
+        // Flag to temporarily disable click-outside detection
+        this.temporarilyDisableClickOutside = false;
+        
         // Create a simple helper object to replace AI search functionality
         this.aiSearchHelper = {
             selectedDate: { type: 'anytime', start: null, end: null },
@@ -329,7 +332,7 @@ export class InlineDropdownManager {
         const searchInput = document.createElement('input');
         searchInput.type = 'text';
         searchInput.className = 'ai-search-input';
-        searchInput.placeholder = 'Search collections...';
+        searchInput.placeholder = 'Run Search';
         searchInput.autocomplete = 'off';
         
         searchSection.appendChild(searchInput);
@@ -468,6 +471,11 @@ export class InlineDropdownManager {
         // Add search functionality
         searchInput.addEventListener('input', (e) => {
             this.filterCollections(e.target.value, container);
+        });
+        
+        // Add keyboard navigation
+        searchInput.addEventListener('keydown', (e) => {
+            this.handleCollectionKeyboardNavigation(e, container);
         });
         
         return container;
@@ -691,8 +699,8 @@ export class InlineDropdownManager {
         // Add preset options (removed Today and Last 7 days as requested)
         const presets = [
             { value: 'anytime', title: 'Anytime', description: 'No date restriction', icon: 'all_inclusive' },
+            { value: 'last7days', title: 'Last 7 days', description: 'Past week including today', icon: 'view_week' },
             { value: 'last30days', title: 'Last 30 days', description: 'Past month including today', icon: 'calendar_month' },
-            { value: 'thismonth', title: 'This month', description: 'Current month', icon: 'calendar_today' },
             { value: 'custom', title: 'Custom range', description: 'Select your own dates', icon: 'date_range' }
         ];
         
@@ -1270,6 +1278,13 @@ export class InlineDropdownManager {
             
             // Ensure dropdown is visible after content is loaded
             this.ensureDropdownVisible();
+            
+            // Temporarily disable click-outside detection to prevent immediate closure
+            this.temporarilyDisableClickOutside = true;
+            setTimeout(() => {
+                this.temporarilyDisableClickOutside = false;
+                console.log('🎯 Click-outside detection re-enabled for dropdown');
+            }, 300);
             
             console.log(`✅ Showed inline dropdown for: ${fieldType}`);
             
@@ -2376,7 +2391,7 @@ export class InlineDropdownManager {
                          this.aiSearchHelper.allAvailableCollections.length : 0;
             header.textContent = `Search Results (${visibleCount} of ${total})`;
         } else if (header) {
-            header.textContent = 'Select Data Source';
+            header.textContent = 'Select Collection';
         }
         
         // Log debug info for troubleshooting
@@ -2386,6 +2401,67 @@ export class InlineDropdownManager {
                 id: c.id,
                 title: c.title
             })));
+        }
+    }
+    
+    /**
+     * Handle keyboard navigation in collection dropdown
+     * @param {KeyboardEvent} e - Keyboard event
+     * @param {HTMLElement} container - Dropdown container
+     */
+    handleCollectionKeyboardNavigation(e, container) {
+        const visibleOptions = container.querySelectorAll('.ai-option:not([style*="display: none"]):not(.filtered-hidden)');
+        
+        if (visibleOptions.length === 0) return;
+        
+        // Find currently highlighted option
+        let currentIndex = -1;
+        visibleOptions.forEach((option, index) => {
+            if (option.classList.contains('keyboard-highlighted')) {
+                currentIndex = index;
+            }
+        });
+        
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                // Remove current highlight
+                if (currentIndex >= 0) {
+                    visibleOptions[currentIndex].classList.remove('keyboard-highlighted');
+                }
+                // Move to next option (or first if none selected)
+                currentIndex = (currentIndex + 1) % visibleOptions.length;
+                visibleOptions[currentIndex].classList.add('keyboard-highlighted');
+                visibleOptions[currentIndex].scrollIntoView({ block: 'nearest' });
+                break;
+                
+            case 'ArrowUp':
+                e.preventDefault();
+                // Remove current highlight
+                if (currentIndex >= 0) {
+                    visibleOptions[currentIndex].classList.remove('keyboard-highlighted');
+                }
+                // Move to previous option (or last if none selected)
+                currentIndex = currentIndex <= 0 ? visibleOptions.length - 1 : currentIndex - 1;
+                visibleOptions[currentIndex].classList.add('keyboard-highlighted');
+                visibleOptions[currentIndex].scrollIntoView({ block: 'nearest' });
+                break;
+                
+            case 'Enter':
+                e.preventDefault();
+                if (currentIndex >= 0) {
+                    // Select the highlighted option
+                    visibleOptions[currentIndex].click();
+                } else if (visibleOptions.length === 1) {
+                    // If only one option visible and none highlighted, select it
+                    visibleOptions[0].click();
+                }
+                break;
+                
+            case 'Escape':
+                e.preventDefault();
+                this.closeCurrentDropdown();
+                break;
         }
     }
     
@@ -2610,6 +2686,9 @@ export class InlineDropdownManager {
      */
     closeCurrentDropdown() {
         try {
+            // Reset click-outside disable flag
+            this.temporarilyDisableClickOutside = false;
+            
             if (this.currentDropdown) {
                 // Animate out if possible
                 try {
@@ -2680,6 +2759,9 @@ export class InlineDropdownManager {
      */
     forceCloseCurrentDropdown() {
         try {
+            // Reset click-outside disable flag
+            this.temporarilyDisableClickOutside = false;
+            
             // Immediately remove dropdown without animation
             if (this.currentDropdown) {
                 try {
@@ -2788,6 +2870,11 @@ export class InlineDropdownManager {
         // Enhanced click outside handler
         this.globalClickHandler = (e) => {
             try {
+                // Skip click outside detection if temporarily disabled
+                if (this.temporarilyDisableClickOutside) {
+                    return;
+                }
+                
                 if (this.currentDropdown && 
                     !this.currentDropdown.contains(e.target) && 
                     !e.target.closest('.search-summary-item')) {

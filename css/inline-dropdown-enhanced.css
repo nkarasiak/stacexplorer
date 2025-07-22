@@ -364,7 +364,8 @@
     overflow: hidden !important;
 }
 
-.inline-dropdown-container .ai-option:hover {
+.inline-dropdown-container .ai-option:hover,
+.inline-dropdown-container .ai-option.keyboard-highlighted {
     background: linear-gradient(135deg, rgba(102, 110, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%) !important;
     transform: translateX(4px) scale(1.02) !important;
     border-radius: 10px !important;
@@ -716,7 +717,8 @@
         box-shadow: 0 0 0 3px rgba(102, 110, 234, 0.3) !important;
     }
     
-    .inline-dropdown-container .ai-option:hover {
+    .inline-dropdown-container .ai-option:hover,
+    .inline-dropdown-container .ai-option.keyboard-highlighted {
         outline: 2px solid #667eea !important;
         outline-offset: 2px !important;
     }

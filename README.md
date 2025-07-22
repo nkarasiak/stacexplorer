@@ -80,7 +80,7 @@ npm run serve
 
 ### Basic Search
 
-1. **Select Data Source**: Choose from Copernicus, Element84, or custom catalogs
+1. **Select Collection**: Choose from Copernicus, Element84, or custom catalogs
 2. **Choose Location**: Search by place name, draw area on map, or enter WKT geometry
 3. **Set Time Range**: Use the modern calendar with quick presets (1 day, 1 week, 1 month, 6 months)
 4. **Apply Filters**: Cloud cover, collections, etc.

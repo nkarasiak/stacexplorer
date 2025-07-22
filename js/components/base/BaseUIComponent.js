@@ -229,6 +229,15 @@ export class BaseUIComponent {
     }
     
     /**
+     * Alias for setState - for compatibility
+     * @param {Object} newState - New state values
+     * @param {boolean} shouldRender - Whether to trigger re-render
+     */
+    updateState(newState, shouldRender = true) {
+        return this.setState(newState, shouldRender);
+    }
+    
+    /**
      * Get current state
      * @returns {Object} Current state
      */

@@ -22,9 +22,6 @@ export class ResultsPanel {
         this.modal = null;
         this.currentAssetKey = null;
         
-        // Flag to temporarily disable overlay click detection
-        this.temporarilyDisableOverlayClick = false;
-        
         // Initialize pagination controls
         this.initPagination();
         
@@ -109,12 +106,7 @@ export class ResultsPanel {
         closeBtn.addEventListener('click', () => this.closeModal());
         closeBtnFooter.addEventListener('click', () => this.closeModal());
         modalOverlay.addEventListener('click', (e) => {
-            // Skip overlay click detection if temporarily disabled
-            if (this.temporarilyDisableOverlayClick) {
-                return;
-            }
-            
-            if (e.target === modalOverlay) {
+            if (e.target === modalOverlay && !this.temporarilyDisableOverlayClick) {
                 this.closeModal();
             }
         });
@@ -150,51 +142,311 @@ export class ResultsPanel {
         console.log('📋 showModal called with item:', item.id);
         this.currentItem = item;
         
-        // Update header
-        this.modal.title.textContent = item.properties?.title || item.id;
-        this.modal.collectionBadge.textContent = item.collection || 'Unknown Collection';
+        // Remove existing modal if any
+        const existingModal = document.getElementById('stac-item-modal');
+        if (existingModal) {
+            existingModal.remove();
+        }
         
-        // Format the JSON for display
-        const formattedJson = JSON.stringify(item, null, 2);
+        // Detect current theme
+        const isDarkTheme = document.documentElement.classList.contains('dark-theme') || 
+                           document.body.classList.contains('dark-theme') ||
+                           document.querySelector('.dark-theme') !== null;
         
-        // Create enhanced content with better organization
-        const content = document.createElement('div');
-        content.innerHTML = this.createEnhancedItemContent(item, formattedJson);
+        console.log('🎨 Detected theme:', isDarkTheme ? 'dark' : 'light');
         
-        // Update modal content
-        this.modal.content.innerHTML = '';
-        this.modal.content.appendChild(content);
+        // Theme-aware colors
+        const themeColors = isDarkTheme ? {
+            modalBg: '#1e1e1e',
+            modalBorder: '#333333',
+            textPrimary: '#ffffff',
+            textSecondary: '#cccccc',
+            textMuted: '#888888',
+            borderColor: '#333333',
+            headerBg: '#2a2a2a',
+            footerBg: '#2a2a2a',
+            buttonSecondaryBg: '#333333',
+            buttonSecondaryText: '#ffffff',
+            buttonSecondaryBorder: '#444444',
+            buttonSecondaryHover: '#444444'
+        } : {
+            modalBg: '#ffffff',
+            modalBorder: '#dddddd',
+            textPrimary: '#1f2937',
+            textSecondary: '#374151',
+            textMuted: '#6b7280',
+            borderColor: '#e5e7eb',
+            headerBg: '#ffffff',
+            footerBg: '#ffffff',
+            buttonSecondaryBg: '#f3f4f6',
+            buttonSecondaryText: '#374151',
+            buttonSecondaryBorder: '#d1d5db',
+            buttonSecondaryHover: '#e5e7eb'
+        };
         
-        console.log('📋 Modal content created with simple tabs');
+        // Create completely new modal overlay that bypasses all CSS
+        const freshOverlay = document.createElement('div');
+        freshOverlay.id = 'stac-item-modal';
+        freshOverlay.style.cssText = `
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0, 0, 0, 0.6) !important;
+            backdrop-filter: blur(4px) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 10000 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        `;
         
-        // Setup simple tab switching
-        this.setupSimpleTabSwitching(content);
+        // Create complete modal dialog structure with theme-aware inline styles
+        const workingDialog = document.createElement('div');
+        workingDialog.style.cssText = `
+            background: ${themeColors.modalBg} !important;
+            border: 1px solid ${themeColors.modalBorder} !important;
+            border-radius: 12px !important;
+            max-width: 900px !important;
+            width: 90% !important;
+            max-height: 80vh !important;
+            position: relative !important;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
+            color: ${themeColors.textPrimary} !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            display: flex !important;
+            flex-direction: column !important;
+        `;
         
-        // Action buttons are now static (just copy button)
+        // Create modal header
+        const modalHeader = document.createElement('div');
+        modalHeader.style.cssText = `
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 20px 24px !important;
+            border-bottom: 1px solid ${themeColors.borderColor} !important;
+            flex-shrink: 0 !important;
+            background: ${themeColors.headerBg} !important;
+            border-top-left-radius: 12px !important;
+            border-top-right-radius: 12px !important;
+        `;
         
-        // Show modal
-        this.modal.overlay.classList.add('active');
-        console.log('📋 Modal should now be visible');
+        modalHeader.innerHTML = `
+            <div style="display: flex; align-items: center; flex: 1;">
+                <h3 style="margin: 0; display: flex; align-items: center; font-size: 18px; font-weight: 600; color: ${themeColors.textPrimary};">
+                    <i class="material-icons" style="margin-right: 8px; color: #3b82f6;">dataset</i>
+                    <span>${item.properties?.title || item.id}</span>
+                </h3>
+                <div style="
+                    background: #e0e7ff; 
+                    color: #3730a3; 
+                    padding: 4px 12px; 
+                    border-radius: 12px; 
+                    font-size: 12px; 
+                    font-weight: 500; 
+                    margin-left: 16px;
+                ">
+                    ${item.collection || 'Unknown Collection'}
+                </div>
+            </div>
+            <button id="fresh-modal-close" style="
+                background: none !important;
+                border: none !important;
+                font-size: 24px !important;
+                cursor: pointer !important;
+                color: ${themeColors.textMuted} !important;
+                width: 32px !important;
+                height: 32px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                border-radius: 50% !important;
+                transition: all 0.2s !important;
+            ">
+                <i class="material-icons">close</i>
+            </button>
+        `;
         
-        // Temporarily disable overlay click detection to prevent immediate closure
-        this.temporarilyDisableOverlayClick = true;
-        setTimeout(() => {
-            this.temporarilyDisableOverlayClick = false;
-            console.log('📋 Modal overlay click detection re-enabled');
-        }, 300);
+        // Create modal body
+        const modalBody = document.createElement('div');
+        modalBody.style.cssText = `
+            flex: 1 !important;
+            padding: 24px !important;
+            overflow-y: auto !important;
+            color: ${themeColors.textPrimary} !important;
+            background: ${themeColors.modalBg} !important;
+        `;
+        
+        // Create enhanced content with better organization - reusing the good structure
+        const content = this.createEnhancedItemContent(item);
+        const contentDiv = document.createElement('div');
+        contentDiv.innerHTML = content;
+        
+        // Apply theme styles to content elements
+        contentDiv.style.color = themeColors.textPrimary;
+        
+        // Update specific elements within the content to match theme
+        const updateContentTheme = (element) => {
+            // Update all text colors
+            element.querySelectorAll('*').forEach(el => {
+                const styles = window.getComputedStyle(el);
+                if (styles.color === 'rgb(0, 0, 0)' || styles.color === 'black') {
+                    el.style.color = themeColors.textPrimary;
+                }
+                if (styles.backgroundColor === 'rgb(255, 255, 255)' || styles.backgroundColor === 'white') {
+                    el.style.backgroundColor = isDarkTheme ? '#2a2a2a' : 'white';
+                }
+                if (styles.borderColor === 'rgb(229, 231, 235)') {
+                    el.style.borderColor = themeColors.borderColor;
+                }
+            });
+        };
+        
+        setTimeout(() => updateContentTheme(contentDiv), 0);
+        modalBody.appendChild(contentDiv);
+        
+        // Create modal footer
+        const modalFooter = document.createElement('div');
+        modalFooter.style.cssText = `
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 16px 24px !important;
+            border-top: 1px solid ${themeColors.borderColor} !important;
+            flex-shrink: 0 !important;
+            background: ${themeColors.footerBg} !important;
+            border-bottom-left-radius: 12px !important;
+            border-bottom-right-radius: 12px !important;
+        `;
+        
+        modalFooter.innerHTML = `
+            <div>
+                <button id="fresh-copy-btn" style="
+                    background: ${themeColors.buttonSecondaryBg} !important;
+                    color: ${themeColors.buttonSecondaryText} !important;
+                    border: 1px solid ${themeColors.buttonSecondaryBorder} !important;
+                    padding: 8px 16px !important;
+                    border-radius: 6px !important;
+                    cursor: pointer !important;
+                    display: flex !important;
+                    align-items: center !important;
+                    font-size: 14px !important;
+                    font-weight: 500 !important;
+                    transition: all 0.2s !important;
+                ">
+                    <i class="material-icons" style="margin-right: 6px; font-size: 18px; color: ${themeColors.buttonSecondaryText};">content_copy</i>
+                    Copy Item Info
+                </button>
+            </div>
+            <div>
+                <button id="fresh-close-btn" style="
+                    background: #3b82f6 !important;
+                    color: white !important;
+                    border: none !important;
+                    padding: 8px 16px !important;
+                    border-radius: 6px !important;
+                    cursor: pointer !important;
+                    font-size: 14px !important;
+                    font-weight: 500 !important;
+                    transition: all 0.2s !important;
+                ">
+                    Close
+                </button>
+            </div>
+        `;
+        
+        // Assemble the modal
+        workingDialog.appendChild(modalHeader);
+        workingDialog.appendChild(modalBody);
+        workingDialog.appendChild(modalFooter);
+        
+        // Prevent clicks on the modal dialog from bubbling to overlay
+        workingDialog.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        
+        freshOverlay.appendChild(workingDialog);
+        document.body.appendChild(freshOverlay);
+        
+        console.log('📋 Fresh modal created and added to body');
+        
+        // Setup event listeners
+        const closeBtn = document.getElementById('fresh-modal-close');
+        const closeBtnFooter = document.getElementById('fresh-close-btn');
+        const copyBtn = document.getElementById('fresh-copy-btn');
+        
+        const closeFreshModal = () => {
+            const modal = document.getElementById('stac-item-modal');
+            if (modal) {
+                modal.remove();
+            }
+            document.removeEventListener('keydown', this.handleEscapeKey);
+            this.currentItem = null;
+        };
+        
+        closeBtn.addEventListener('click', closeFreshModal);
+        closeBtnFooter.addEventListener('click', closeFreshModal);
+        copyBtn.addEventListener('click', () => this.copyItemInfo());
+        
+        // Add theme-aware hover effects
+        closeBtn.addEventListener('mouseenter', () => {
+            closeBtn.style.background = isDarkTheme ? '#444444' : '#f3f4f6';
+            closeBtn.style.color = themeColors.textPrimary;
+        });
+        closeBtn.addEventListener('mouseleave', () => {
+            closeBtn.style.background = 'none';
+            closeBtn.style.color = themeColors.textMuted;
+        });
+        
+        copyBtn.addEventListener('mouseenter', () => {
+            copyBtn.style.background = themeColors.buttonSecondaryHover;
+        });
+        copyBtn.addEventListener('mouseleave', () => {
+            copyBtn.style.background = themeColors.buttonSecondaryBg;
+        });
+        
+        closeBtnFooter.addEventListener('mouseenter', () => {
+            closeBtnFooter.style.background = '#2563eb';
+        });
+        closeBtnFooter.addEventListener('mouseleave', () => {
+            closeBtnFooter.style.background = '#3b82f6';
+        });
+        
+        // Overlay click to close
+        freshOverlay.addEventListener('click', (e) => {
+            if (e.target === freshOverlay) {
+                closeFreshModal();
+            }
+        });
+        
+        // Store reference to close method
+        this.closeFreshModal = closeFreshModal;
+        
+        // Setup tab switching for the modal body
+        this.setupSimpleTabSwitching(modalBody);
         
         // Add keyboard listener for Escape key
-        document.addEventListener('keydown', this.handleEscapeKey);
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                closeFreshModal();
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+        
+        console.log('📋 Fresh modal should now be visible and functional');
     }
     
     /**
      * Close the modal
      */
     closeModal() {
-        // Reset overlay click disable flag
-        this.temporarilyDisableOverlayClick = false;
-        
         this.modal.overlay.classList.remove('active');
+        this.modal.overlay.style.display = 'none';
+        this.modal.overlay.style.opacity = '0';
+        this.modal.overlay.style.visibility = 'hidden';
         document.removeEventListener('keydown', this.handleEscapeKey);
         
         // Reset current item

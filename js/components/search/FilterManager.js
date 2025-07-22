@@ -126,20 +126,299 @@ export class FilterManager {
      * Show filter modal
      */
     showFilterModal() {
-        if (this.filterModal) {
-            this.filterModal.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
+        // Remove existing filter modal if any
+        const existingModal = document.getElementById('fresh-filter-modal');
+        if (existingModal) {
+            existingModal.remove();
         }
+        
+        // Detect current theme
+        const isDarkTheme = document.documentElement.classList.contains('dark-theme') || 
+                           document.body.classList.contains('dark-theme') ||
+                           document.querySelector('.dark-theme') !== null;
+        
+        // Theme-aware colors
+        const themeColors = isDarkTheme ? {
+            modalBg: '#1e1e1e',
+            modalBorder: '#333333',
+            textPrimary: '#ffffff',
+            textSecondary: '#cccccc',
+            textMuted: '#888888',
+            borderColor: '#333333',
+            headerBg: '#2a2a2a',
+            footerBg: '#2a2a2a',
+            buttonSecondaryBg: '#333333',
+            buttonSecondaryText: '#ffffff',
+            buttonSecondaryBorder: '#444444'
+        } : {
+            modalBg: '#ffffff',
+            modalBorder: '#dddddd',
+            textPrimary: '#1f2937',
+            textSecondary: '#374151',
+            textMuted: '#6b7280',
+            borderColor: '#e5e7eb',
+            headerBg: '#ffffff',
+            footerBg: '#ffffff',
+            buttonSecondaryBg: '#f3f4f6',
+            buttonSecondaryText: '#374151',
+            buttonSecondaryBorder: '#d1d5db'
+        };
+        
+        // Create fresh filter modal overlay
+        const freshOverlay = document.createElement('div');
+        freshOverlay.id = 'fresh-filter-modal';
+        freshOverlay.style.cssText = `
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            background: rgba(0, 0, 0, 0.6) !important;
+            backdrop-filter: blur(4px) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            z-index: 10001 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        `;
+        
+        // Create filter modal dialog
+        const filterDialog = document.createElement('div');
+        filterDialog.style.cssText = `
+            background: ${themeColors.modalBg} !important;
+            border: 1px solid ${themeColors.modalBorder} !important;
+            border-radius: 12px !important;
+            max-width: 600px !important;
+            width: 90% !important;
+            max-height: 80vh !important;
+            position: relative !important;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5) !important;
+            color: ${themeColors.textPrimary} !important;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+            display: flex !important;
+            flex-direction: column !important;
+        `;
+        
+        // Create modal header
+        const modalHeader = document.createElement('div');
+        modalHeader.style.cssText = `
+            display: flex !important;
+            align-items: center !important;
+            justify-content: space-between !important;
+            padding: 20px 24px !important;
+            border-bottom: 1px solid ${themeColors.borderColor} !important;
+            flex-shrink: 0 !important;
+            background: ${themeColors.headerBg} !important;
+            border-top-left-radius: 12px !important;
+            border-top-right-radius: 12px !important;
+        `;
+        
+        modalHeader.innerHTML = `
+            <h3 style="margin: 0; display: flex; align-items: center; font-size: 18px; font-weight: 600; color: ${themeColors.textPrimary};">
+                <i class="material-icons" style="margin-right: 8px; color: #3b82f6;">tune</i>
+                Data Filters
+            </h3>
+            <button id="fresh-filter-close" style="
+                background: none !important;
+                border: none !important;
+                font-size: 24px !important;
+                cursor: pointer !important;
+                color: ${themeColors.textMuted} !important;
+                width: 32px !important;
+                height: 32px !important;
+                display: flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                border-radius: 50% !important;
+                transition: all 0.2s !important;
+            ">
+                <i class="material-icons">close</i>
+            </button>
+        `;
+        
+        // Create modal body with filter content
+        const modalBody = document.createElement('div');
+        modalBody.style.cssText = `
+            flex: 1 !important;
+            padding: 24px !important;
+            overflow-y: auto !important;
+            color: ${themeColors.textPrimary} !important;
+            background: ${themeColors.modalBg} !important;
+        `;
+        
+        // Get current filter content from existing filter list
+        const existingFilterList = document.getElementById('filter-list');
+        if (existingFilterList && existingFilterList.innerHTML.trim()) {
+            modalBody.innerHTML = existingFilterList.innerHTML;
+            
+            // Re-attach event listeners to filter elements in the fresh modal
+            this.reattachFilterEventListeners(modalBody);
+        } else {
+            modalBody.innerHTML = `
+                <div style="text-align: center; padding: 40px; color: ${themeColors.textMuted};">
+                    <i class="material-icons" style="font-size: 48px; margin-bottom: 16px; opacity: 0.5;">tune</i>
+                    <p>No filters available for the current collections.</p>
+                    <p style="font-size: 14px;">Select some collections to see available filters.</p>
+                </div>
+            `;
+        }
+        
+        // Assemble the modal
+        filterDialog.appendChild(modalHeader);
+        filterDialog.appendChild(modalBody);
+        
+        // Prevent clicks on dialog from bubbling
+        filterDialog.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+        
+        freshOverlay.appendChild(filterDialog);
+        document.body.appendChild(freshOverlay);
+        
+        // Setup event listeners
+        const closeBtn = document.getElementById('fresh-filter-close');
+        const closeFreshFilterModal = () => {
+            const modal = document.getElementById('fresh-filter-modal');
+            if (modal) {
+                modal.remove();
+            }
+            document.body.style.overflow = '';
+        };
+        
+        closeBtn.addEventListener('click', closeFreshFilterModal);
+        
+        // Overlay click to close
+        freshOverlay.addEventListener('click', (e) => {
+            if (e.target === freshOverlay) {
+                closeFreshFilterModal();
+            }
+        });
+        
+        // Add hover effect to close button
+        closeBtn.addEventListener('mouseenter', () => {
+            closeBtn.style.background = isDarkTheme ? '#444444' : '#f3f4f6';
+            closeBtn.style.color = themeColors.textPrimary;
+        });
+        closeBtn.addEventListener('mouseleave', () => {
+            closeBtn.style.background = 'none';
+            closeBtn.style.color = themeColors.textMuted;
+        });
+        
+        // Store reference to close method
+        this.closeFreshFilterModal = closeFreshFilterModal;
+        
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+        
+        console.log('🔍 Fresh filter modal created and displayed');
     }
     
     /**
      * Hide filter modal
      */
     hideFilterModal() {
-        if (this.filterModal) {
-            this.filterModal.style.display = 'none';
-            document.body.style.overflow = '';
+        if (this.closeFreshFilterModal) {
+            this.closeFreshFilterModal();
+        } else {
+            // Fallback to old modal if fresh modal isn't available
+            if (this.filterModal) {
+                this.filterModal.style.display = 'none';
+                document.body.style.overflow = '';
+            }
         }
+    }
+    
+    /**
+     * Re-attach event listeners to filter elements in fresh modal
+     */
+    reattachFilterEventListeners(container) {
+        // Find all filter items and re-setup their interactions
+        const filterItems = container.querySelectorAll('.filter-item');
+        
+        filterItems.forEach(filterElement => {
+            const filterId = filterElement.id.replace('filter-', '');
+            const filter = this.filters.get(filterId);
+            
+            if (filter) {
+                this.setupRangeFilterInModal(filter, filterElement);
+            }
+        });
+    }
+    
+    /**
+     * Setup range filter interactions for elements in fresh modal
+     */
+    setupRangeFilterInModal(filter, element) {
+        const enableBtn = element.querySelector(`#enable-${filter.id}`);
+        const content = element.querySelector(`#content-${filter.id}`);
+        const range = element.querySelector(`#range-${filter.id}`);
+        const valueDisplay = element.querySelector(`#value-${filter.id}`);
+        const applyBtn = element.querySelector(`#apply-${filter.id}`);
+        const label = element.querySelector('.filter-label');
+        
+        if (!enableBtn || !content || !range || !valueDisplay || !applyBtn || !label) {
+            console.warn('Missing filter elements for', filter.id);
+            return;
+        }
+        
+        // Make label clickable to toggle filter
+        label.addEventListener('click', () => {
+            toggleFilter();
+        });
+        
+        // Enable/disable toggle
+        const toggleFilter = () => {
+            const isEnabled = !element.classList.contains('enabled');
+            
+            if (isEnabled) {
+                element.classList.add('enabled');
+                content.classList.remove('collapsed');
+                enableBtn.querySelector('i').textContent = 'check_box';
+                enableBtn.title = `Disable ${filter.name} filter`;
+            } else {
+                element.classList.remove('enabled');
+                content.classList.add('collapsed');
+                enableBtn.querySelector('i').textContent = 'check_box_outline_blank';
+                enableBtn.title = `Enable ${filter.name} filter`;
+                // Remove from active filters when disabled
+                delete this.activeFilters[filter.id];
+                this.onFiltersChanged();
+            }
+        };
+        
+        enableBtn.addEventListener('click', toggleFilter);
+        
+        // Range value updates (just update display, don't apply immediately)
+        range.addEventListener('input', () => {
+            valueDisplay.textContent = range.value;
+        });
+        
+        // Apply button - this is where the filter actually gets applied
+        applyBtn.addEventListener('click', () => {
+            if (element.classList.contains('enabled')) {
+                this.activeFilters[filter.id] = {
+                    ...filter,
+                    value: range.value
+                };
+                this.onFiltersChanged();
+                
+                // Visual feedback
+                applyBtn.innerHTML = '<i class="material-icons">check_circle</i><span>Applied!</span>';
+                applyBtn.classList.add('applied');
+                
+                // Close the modal after applying
+                setTimeout(() => {
+                    this.hideFilterModal();
+                }, 500);
+                
+                // Reset button appearance after modal closes
+                setTimeout(() => {
+                    applyBtn.innerHTML = '<i class="material-icons">check</i><span>Apply Filter</span>';
+                    applyBtn.classList.remove('applied');
+                }, 2000);
+            }
+        });
     }
     
     /**

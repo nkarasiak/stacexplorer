@@ -1933,6 +1933,10 @@ export class InlineDropdownManager {
                 dateRange = { start: null, end: null };
                 displayText = '🕐 Anytime';
                 break;
+            case 'last7days':
+                dateRange = this.calculateLast7DaysRange();
+                displayText = 'LAST 7 DAYS';
+                break;
             case 'last30days':
                 dateRange = this.calculateLast30DaysRange();
                 displayText = 'LAST 30 DAYS';
@@ -1982,9 +1986,20 @@ export class InlineDropdownManager {
     }
     
     /**
-     * Calculate current month date range
-     * @returns {Object} Date range for current month
+     * Calculate last 7 days date range
+     * @returns {Object} Date range for last 7 days including today
      */
+    calculateLast7DaysRange() {
+        const today = new Date();
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(today.getDate() - 6); // 7 days including today
+        
+        return {
+            start: this.formatDateForInput(sevenDaysAgo),
+            end: this.formatDateForInput(today)
+        };
+    }
+    
     calculateLast30DaysRange() {
         const today = new Date();
         const thirtyDaysAgo = new Date();

@@ -245,6 +245,14 @@ export class SearchHistoryManager {
                     cloudCoverEnabled.dispatchEvent(new Event('change'));
                     cloudCoverSlider.dispatchEvent(new Event('input'));
                 }
+                
+                // Also restore FilterManager cloud cover filter if available
+                if (window.stacExplorer?.filterManager) {
+                    console.log('☁️ Restoring cloud cover filter:', searchParams.cloudCover);
+                    setTimeout(() => {
+                        this.restoreFilterManagerCloudCover(searchParams.cloudCover);
+                    }, 100); // Small delay to ensure filters are loaded
+                }
             }
             
             // Update summary interface if available - with more robust updates
@@ -313,7 +321,7 @@ export class SearchHistoryManager {
     generateSearchTitle(searchParams) {
         const parts = [];
         
-        // Collection/Source
+        // Collection/Source - shortened
         let collectionName = null;
         if (searchParams.collection && searchParams.collection !== '') {
             collectionName = searchParams.collection;
@@ -322,44 +330,80 @@ export class SearchHistoryManager {
         }
         
         if (collectionName) {
-            parts.push(`📂 ${searchParams.collectionTitle || collectionName}`);
+            // Use collection ID directly (it's usually the most concise identifier)
+            parts.push(`📂${collectionName}`);
         } else {
-            parts.push('📂 All Collections');
+            parts.push('📂All');
         }
         
-        // Location
+        // Location - shortened
         if (searchParams.bbox && Array.isArray(searchParams.bbox)) {
-            parts.push('🗺️ Custom Area');
+            parts.push('🗺️Area');
         } else if (searchParams.geometry) {
-            parts.push('🗺️ Custom Geometry');
+            parts.push('🗺️Shape');
         } else {
-            parts.push('🌍 Worldwide');
+            parts.push('🌍Global');
         }
         
-        // Date range
+        // Date range - shortened
         if (searchParams.datetime) {
             if (searchParams.datetime.includes('/')) {
                 const [start, end] = searchParams.datetime.split('/');
                 const startDate = start.split('T')[0];
                 const endDate = end.split('T')[0];
-                if (startDate === endDate) {
-                    parts.push(`📅 ${startDate}`);
+                
+                // Check if it's within current year to shorten format
+                const currentYear = new Date().getFullYear().toString();
+                const startYear = startDate.split('-')[0];
+                const endYear = endDate.split('-')[0];
+                
+                if (startYear === currentYear && endYear === currentYear) {
+                    const startShort = startDate.substring(5); // MM-DD
+                    const endShort = endDate.substring(5); // MM-DD
+                    if (startShort === endShort) {
+                        parts.push(`📅${startShort}`);
+                    } else {
+                        parts.push(`📅${startShort}→${endShort}`);
+                    }
                 } else {
-                    parts.push(`📅 ${startDate} to ${endDate}`);
+                    if (startDate === endDate) {
+                        parts.push(`📅${startDate}`);
+                    } else {
+                        parts.push(`📅${startDate}→${endDate}`);
+                    }
                 }
             } else {
-                parts.push(`📅 ${searchParams.datetime.split('T')[0]}`);
+                const date = searchParams.datetime.split('T')[0];
+                const currentYear = new Date().getFullYear().toString();
+                if (date.startsWith(currentYear)) {
+                    parts.push(`📅${date.substring(5)}`);
+                } else {
+                    parts.push(`📅${date}`);
+                }
             }
-        } else {
-            parts.push('🕐 Anytime');
         }
         
-        // Cloud cover
+        // Cloud cover - much shorter
         if (searchParams.cloudCover !== undefined && searchParams.cloudCover !== null) {
-            parts.push(`☁️ <${searchParams.cloudCover}%`);
+            const cloudPercent = parseInt(searchParams.cloudCover);
+            let cloudIcon = '';
+            
+            if (cloudPercent <= 10) {
+                cloudIcon = '☀️';
+            } else if (cloudPercent <= 25) {
+                cloudIcon = '⛅';
+            } else if (cloudPercent <= 50) {
+                cloudIcon = '🌤️';
+            } else if (cloudPercent <= 75) {
+                cloudIcon = '🌥️';
+            } else {
+                cloudIcon = '☁️';
+            }
+            
+            parts.push(`${cloudIcon}≤${cloudPercent}%`);
         }
         
-        return parts.join(' • ');
+        return parts.join(' ');
     }
     
     /**
@@ -382,6 +426,15 @@ export class SearchHistoryManager {
             }
         });
         
+        // Extract cloud cover from query object if it exists there
+        if (searchParams.query && searchParams.query['eo:cloud_cover']) {
+            const cloudCoverFilter = searchParams.query['eo:cloud_cover'];
+            if (cloudCoverFilter && cloudCoverFilter.lte !== undefined) {
+                sanitized.cloudCover = cloudCoverFilter.lte;
+                console.log('☁️ Extracted cloud cover from query:', sanitized.cloudCover);
+            }
+        }
+        
         // Normalize collections format - convert collections array to single collection
         if (sanitized.collections && Array.isArray(sanitized.collections) && sanitized.collections.length > 0) {
             sanitized.collection = sanitized.collections[0];
@@ -389,6 +442,63 @@ export class SearchHistoryManager {
         }
         
         return sanitized;
+    }
+    
+    /**
+     * Restore FilterManager cloud cover filter from search history
+     * @param {number} cloudCoverValue - Cloud cover value to restore
+     */
+    restoreFilterManagerCloudCover(cloudCoverValue) {
+        const filterManager = window.stacExplorer?.filterManager;
+        if (!filterManager) {
+            console.warn('⚠️ FilterManager not available for cloud cover restoration');
+            return;
+        }
+        
+        // Check if cloud cover filter exists
+        const cloudCoverFilter = filterManager.filters.get('cloud_cover');
+        if (!cloudCoverFilter) {
+            console.warn('⚠️ Cloud cover filter not found in FilterManager');
+            return;
+        }
+        
+        // Find the cloud cover filter element
+        const filterElement = document.getElementById('filter-cloud_cover');
+        if (!filterElement) {
+            console.warn('⚠️ Cloud cover filter element not found');
+            return;
+        }
+        
+        // Restore the filter state
+        const rangeInput = filterElement.querySelector('#range-cloud_cover');
+        const valueDisplay = filterElement.querySelector('#value-cloud_cover');
+        const enableBtn = filterElement.querySelector('#enable-cloud_cover');
+        const content = filterElement.querySelector('#content-cloud_cover');
+        
+        if (rangeInput && valueDisplay && enableBtn && content) {
+            // Set the range value
+            rangeInput.value = cloudCoverValue;
+            valueDisplay.textContent = cloudCoverValue;
+            
+            // Enable the filter
+            filterElement.classList.add('enabled');
+            content.classList.remove('collapsed');
+            enableBtn.querySelector('i').textContent = 'check_box';
+            enableBtn.title = 'Disable Cloud Cover filter';
+            
+            // Set active filter in FilterManager
+            filterManager.activeFilters.cloud_cover = {
+                ...cloudCoverFilter,
+                value: cloudCoverValue
+            };
+            
+            // Update filter badge
+            filterManager.updateFilterBadge();
+            
+            console.log('✅ Successfully restored FilterManager cloud cover:', cloudCoverValue);
+        } else {
+            console.warn('⚠️ Missing cloud cover filter UI elements');
+        }
     }
     
     /**

@@ -595,7 +595,6 @@ export class ResultsPanel {
         if (!hasAnyTemporalData) {
             return `
                 <div class="tab-section">
-                    <h4>Temporal Information</h4>
                     <div class="no-data">
                         <i class="material-icons">schedule</i>
                         <p>No temporal information available for this item.</p>
@@ -606,7 +605,6 @@ export class ResultsPanel {
         
         return `
             <div class="tab-section">
-                <h4>Temporal Information</h4>
                 <div class="info-grid">
                     ${datetime ? `
                     <div class="info-item">
@@ -662,7 +660,6 @@ export class ResultsPanel {
         if (!hasAnySensorData) {
             return `
                 <div class="tab-section">
-                    <h4>Sensor & Platform Information</h4>
                     <div class="no-data">
                         <i class="material-icons">camera_alt</i>
                         <p>No sensor or platform information available for this item.</p>
@@ -673,7 +670,6 @@ export class ResultsPanel {
         
         return `
             <div class="tab-section">
-                <h4>Sensor & Platform Information</h4>
                 <div class="info-grid">
                     ${platform ? `
                     <div class="info-item">
@@ -745,7 +741,6 @@ export class ResultsPanel {
         
         return `
             <div class="tab-section">
-                <h4>Quality & Viewing Information</h4>
                 <div class="info-grid">
                     ${cloudCover !== undefined ? `
                     <div class="info-item">
@@ -824,7 +819,6 @@ export class ResultsPanel {
         
         return `
             <div class="tab-section">
-                <h4>Available Assets</h4>
                 <div class="assets-grid">
                     ${Object.entries(assets).map(([key, asset]) => `
                         <div class="asset-card">
@@ -869,7 +863,6 @@ export class ResultsPanel {
         
         return `
             <div class="tab-section">
-                <h4>All Properties</h4>
                 <div class="properties-list">
                     ${Object.entries(props).map(([key, value]) => `
                         <div class="property-row">

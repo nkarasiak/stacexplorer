@@ -1012,6 +1012,20 @@ export class CardSearchPanel {
         try {
             console.log('🔍 Starting search...');
             
+            // Dispatch search-started event for tutorial and other listeners
+            const searchParams = this.searchForm.getSearchParams();
+            const catalogValue = document.getElementById('catalog-select').value;
+            const collectionValue = document.getElementById('collection-select').value;
+            
+            document.dispatchEvent(new CustomEvent('search-started', {
+                detail: {
+                    catalog: catalogValue,
+                    collection: collectionValue,
+                    searchParams: searchParams,
+                    timestamp: new Date().toISOString()
+                }
+            }));
+            
             // Validate required fields
             if (!this.areRequiredCardsCompleted()) {
                 // Get current field values for detailed error messaging
@@ -1052,7 +1066,7 @@ export class CardSearchPanel {
             document.getElementById('loading').style.display = 'flex';
             
             // Get search parameters from SearchForm (maintains compatibility)
-            const searchParams = this.searchForm.getSearchParams();
+            // searchParams already declared above at line 1016
             console.log('📋 Base search params from form:', JSON.stringify(searchParams, null, 2));
             
             // Add filter parameters if FilterManager is available
@@ -1089,7 +1103,7 @@ export class CardSearchPanel {
             }
             
             // Check if we're in EVERYTHING mode
-            const catalogValue = document.getElementById('catalog-select').value;
+            // catalogValue already declared above at line 1017
             const isEverythingMode = catalogValue === '';
             
             // CRITICAL: Validate that we have required parameters for the search

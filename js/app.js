@@ -11,6 +11,7 @@ import { STACApiClient } from './components/api/StacApiClient.js';
 import { UnifiedStateManager } from './utils/UnifiedStateManager.js';
 // import { ShareManager } from './utils/ShareManager.js'; // REMOVED - no longer needed
 import { initializeGeometrySync } from './utils/GeometrySync.js';
+import { GeocodingService } from './utils/GeocodingService.js';
 
 // Import UI components
 import { CardSearchPanel } from './components/search/CardSearchPanel.js';
@@ -24,6 +25,7 @@ import { InlineDropdownManager } from './components/ui/InlineDropdownManager.js'
 import { searchHistoryUI } from './components/ui/SearchHistoryUI.js';
 import { CommandPalette } from './components/ui/CommandPalette.js';
 import { SatelliteAnimation } from './components/ui/SatelliteAnimation.js';
+import { InteractiveTutorial } from './components/ui/InteractiveTutorial.js';
 // Removed: URL state integration is now handled by UnifiedStateManager
 // Removed inline AI search imports - only using the full-screen version now
 
@@ -50,6 +52,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         const mapManager = getMapManager('map', CONFIG);
         
         const apiClient = new STACApiClient(); // Initialize without any endpoint
+        
+        // Initialize GeocodingService for tutorial
+        const geocodingService = new GeocodingService();
         
         // Initialize catalog selector first to handle default catalog load
         const catalogSelector = new CatalogSelector(apiClient, notificationService);
@@ -206,6 +211,18 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
         
         commandPalette.registerCommand({
+            id: 'show-tutorial',
+            title: 'Show Tutorial',
+            description: 'Start the interactive tutorial for beginners',
+            category: 'help',
+            keywords: ['tutorial', 'help', 'guide', 'learn', 'walkthrough'],
+            action: () => {
+                console.log('🎯 Show Tutorial command executed!');
+                interactiveTutorial.start();
+            }
+        });
+        
+        commandPalette.registerCommand({
             id: 'view-results',
             title: 'View Results',
             description: 'Scroll to search results',
@@ -334,6 +351,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         const satelliteAnimation = new SatelliteAnimation();
         console.log('🛰️ Satellite animation initialized');
         
+        // Initialize Interactive Tutorial
+        const interactiveTutorial = new InteractiveTutorial();
+        console.log('🎓 Interactive tutorial initialized');
+        
         // REMOVED: Share manager (no longer needed)
         // const shareManager = new ShareManager(stateManager, notificationService);
         
@@ -392,6 +413,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             geometrySync,
             commandPalette,
             satelliteAnimation,
+            interactiveTutorial,
+            geocodingService,
             config: CONFIG,
             // Visualization system
             visualizationPanel,

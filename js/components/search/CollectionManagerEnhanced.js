@@ -290,6 +290,11 @@ export class CollectionManagerEnhanced {
     handleCollectionSelection(collectionId) {
         this.selectedCollection = collectionId;
         
+        // Trigger tutorial event for collection selection
+        document.dispatchEvent(new CustomEvent('collection-selected', { 
+            detail: { collectionId } 
+        }));
+        
         let source = null;
         
         if (collectionId) {

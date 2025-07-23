@@ -455,7 +455,7 @@ body, html {
 }
 
 /* Modern Theme Toggle */
-.theme-toggle {
+#theme-toggle {
     position: absolute;
     top: 16px;
     right: 74px; /* 32px (settings button width) + 10px gap + 32px (right edge) */
@@ -474,12 +474,34 @@ body, html {
     z-index: 1002;
 }
 
-.theme-toggle:hover {
+/* Tutorial Button - Same style as theme toggle */
+#tutorial-btn {
+    position: absolute;
+    top: 16px;
+    right: 116px; /* 32px (theme toggle) + 10px gap + 74px (theme toggle right position) */
+    background: var(--primary-gradient);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1002;
+}
+
+#theme-toggle:hover,
+#tutorial-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-.theme-toggle i {
+#theme-toggle i,
+#tutorial-btn i {
     font-size: 18px;
 }
 
@@ -1507,12 +1529,16 @@ select, select * {
         border-radius: 0;
     }
     
-    .theme-toggle {
+    #theme-toggle {
         right: 70px;
     }
     
+    #tutorial-btn {
+        right: 112px;
+    }
+    
     .sidebar-header {
-        padding-right: 70px;
+        padding-right: 120px;
     }
 }
 

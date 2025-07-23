@@ -530,14 +530,14 @@ export class InlineDropdownManager {
         `;
         container.appendChild(header);
         
-        // Add search section
+        // Add search section with advanced geocoding
         const searchSection = document.createElement('div');
         searchSection.className = 'ai-search-section';
         
         const searchInput = document.createElement('input');
         searchInput.type = 'text';
         searchInput.className = 'ai-location-search-input';
-        searchInput.placeholder = 'Search for a place...';
+        searchInput.placeholder = 'Search places...';
         searchInput.autocomplete = 'off';
         
         // Create results container
@@ -548,6 +548,9 @@ export class InlineDropdownManager {
         searchSection.appendChild(searchInput);
         searchSection.appendChild(resultsContainer);
         container.appendChild(searchSection);
+        
+        // Set up advanced location search using the same GeocodingService as main interface
+        this.setupAdvancedLocationSearch(searchInput, resultsContainer);
         
         // Add options section
         const optionsSection = document.createElement('div');
@@ -600,6 +603,499 @@ export class InlineDropdownManager {
         return container;
     }
     
+    /**
+     * Set up advanced location search using GeocodingService (same as main interface)
+     * @param {HTMLElement} searchInput - Search input element
+     * @param {HTMLElement} resultsContainer - Results container element
+     */
+    setupAdvancedLocationSearch(searchInput, resultsContainer) {
+        let debounceTimer;
+        
+        // Input event handler with debouncing
+        searchInput.addEventListener('input', (e) => {
+            e.stopPropagation();
+            const query = e.target.value.trim();
+            
+            // Clear previous timer
+            if (debounceTimer) {
+                clearTimeout(debounceTimer);
+            }
+            
+            if (query.length < 2) {
+                resultsContainer.style.display = 'none';
+                resultsContainer.innerHTML = '';
+                return;
+            }
+            
+            // Debounced search
+            debounceTimer = setTimeout(() => {
+                this.performAdvancedLocationSearch(query, resultsContainer);
+            }, 300);
+        });
+        
+        // Focus event handler
+        searchInput.addEventListener('focus', (e) => {
+            e.stopPropagation();
+            if (searchInput.value.trim().length >= 2) {
+                resultsContainer.style.display = 'block';
+            }
+        });
+        
+        // Click event handler to prevent dropdown closure
+        searchInput.addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+    }
+    
+    /**
+     * Perform advanced location search using GeocodingService
+     * @param {string} query - Search query
+     * @param {HTMLElement} resultsContainer - Results container
+     */
+    async performAdvancedLocationSearch(query, resultsContainer) {
+        try {
+            // Show loading state
+            resultsContainer.innerHTML = '<div class="ai-location-loading">🔍 Searching locations...</div>';
+            resultsContainer.style.display = 'block';
+            
+            // Use the same GeocodingService as the main interface
+            const geocodingService = this.aiSearchHelper.geocodingService || defaultGeocodingService;
+            
+            geocodingService.searchLocations(query, (results, error) => {
+                if (error) {
+                    console.error('Dropdown location search error:', error);
+                    resultsContainer.innerHTML = '<div class="ai-location-error">Search temporarily unavailable</div>';
+                    return;
+                }
+                
+                this.displayAdvancedLocationResults(results, resultsContainer, query);
+            });
+            
+        } catch (error) {
+            console.error('Location search error:', error);
+            resultsContainer.innerHTML = '<div class="ai-location-error">Search temporarily unavailable</div>';
+        }
+    }
+    
+    /**
+     * Display advanced location search results
+     * @param {Array} results - Search results from GeocodingService
+     * @param {HTMLElement} resultsContainer - Results container
+     * @param {string} query - Original search query
+     */
+    displayAdvancedLocationResults(results, resultsContainer, query) {
+        if (results.length === 0) {
+            resultsContainer.innerHTML = '<div class="ai-location-no-results">No locations found</div>';
+            resultsContainer.style.display = 'block';
+            return;
+        }
+        
+        // Sort by relevance score (higher is better)
+        const sortedResults = results.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+        
+        // Create result items
+        const resultItems = sortedResults.map(result => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'ai-location-result-item';
+            resultItem.setAttribute('tabindex', '0');
+            
+            // Get emoji for location type
+            const emoji = this.getLocationEmoji(result.category, result.type, result.class);
+            
+            // Format display name
+            const formattedName = result.formattedName || result.displayName;
+            const shortName = result.shortName || result.name;
+            
+            resultItem.innerHTML = `
+                <div class="ai-location-result-content">
+                    <div class="ai-location-info">
+                        <div class="ai-location-name">${emoji} ${formattedName}</div>
+                    </div>
+                </div>
+            `;
+            
+            // Store result data
+            resultItem.dataset.lat = result.lat;
+            resultItem.dataset.lon = result.lon;
+            resultItem.dataset.name = shortName;
+            resultItem.dataset.formattedName = formattedName;
+            if (result.bbox) {
+                resultItem.dataset.bbox = result.bbox.join(',');
+            }
+            
+            // Add hover functionality to show bbox on map
+            resultItem.addEventListener('mouseenter', (e) => {
+                this.showLocationPreviewOnMap(result);
+            });
+            
+            resultItem.addEventListener('mouseleave', (e) => {
+                this.hideLocationPreviewOnMap();
+            });
+            
+            // Add click handler for selection and zoom to bbox
+            resultItem.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.selectAndZoomToLocation(result, query);
+            });
+            
+            // Add keyboard support
+            resultItem.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    resultItem.click();
+                }
+            });
+            
+            return resultItem;
+        });
+        
+        // Clear container and add results
+        resultsContainer.innerHTML = '';
+        resultItems.forEach(item => resultsContainer.appendChild(item));
+        resultsContainer.style.display = 'block';
+    }
+    
+    /**
+     * Show location preview on map (hover effect)
+     * @param {Object} result - Location result to preview
+     */
+    showLocationPreviewOnMap(result) {
+        if (!this.mapManager || !this.mapManager.map) return;
+        
+        const map = this.mapManager.map;
+        
+        // Remove any existing preview layer
+        this.hideLocationPreviewOnMap();
+        
+        // If location has bbox, show it
+        if (result.bbox && result.bbox.length === 4) {
+            const [west, south, east, north] = result.bbox;
+            
+            // Create preview geometry
+            const previewGeometry = {
+                type: 'Feature',
+                properties: {
+                    name: result.shortName || result.name,
+                    preview: true
+                },
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [[
+                        [west, south],
+                        [east, south],
+                        [east, north],
+                        [west, north],
+                        [west, south]
+                    ]]
+                }
+            };
+            
+            // Add preview source and layer
+            if (!map.getSource('location-preview')) {
+                map.addSource('location-preview', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: []
+                    }
+                });
+                
+                // Add fill layer
+                map.addLayer({
+                    id: 'location-preview-fill',
+                    type: 'fill',
+                    source: 'location-preview',
+                    paint: {
+                        'fill-color': '#667eea',
+                        'fill-opacity': 0.2
+                    }
+                });
+                
+                // Add outline layer
+                map.addLayer({
+                    id: 'location-preview-outline',
+                    type: 'line',
+                    source: 'location-preview',
+                    paint: {
+                        'line-color': '#667eea',
+                        'line-width': 2,
+                        'line-opacity': 0.8
+                    }
+                });
+            }
+            
+            // Update preview data
+            map.getSource('location-preview').setData({
+                type: 'FeatureCollection',
+                features: [previewGeometry]
+            });
+            
+            // Fit map to bbox with padding
+            map.fitBounds([[west, south], [east, north]], {
+                padding: 50,
+                duration: 500
+            });
+        } else if (result.lat && result.lon) {
+            // For point locations, show a marker
+            const previewGeometry = {
+                type: 'Feature',
+                properties: {
+                    name: result.shortName || result.name,
+                    preview: true
+                },
+                geometry: {
+                    type: 'Point',
+                    coordinates: [result.lon, result.lat]
+                }
+            };
+            
+            // Add preview source and layer if not exists
+            if (!map.getSource('location-preview')) {
+                map.addSource('location-preview', {
+                    type: 'geojson',
+                    data: {
+                        type: 'FeatureCollection',
+                        features: []
+                    }
+                });
+                
+                // Add point layer
+                map.addLayer({
+                    id: 'location-preview-point',
+                    type: 'circle',
+                    source: 'location-preview',
+                    paint: {
+                        'circle-color': '#667eea',
+                        'circle-radius': 8,
+                        'circle-stroke-color': '#ffffff',
+                        'circle-stroke-width': 2,
+                        'circle-opacity': 0.8
+                    }
+                });
+            }
+            
+            // Update preview data
+            map.getSource('location-preview').setData({
+                type: 'FeatureCollection',
+                features: [previewGeometry]
+            });
+            
+            // Center map on point
+            map.easeTo({
+                center: [result.lon, result.lat],
+                zoom: Math.max(map.getZoom(), 10),
+                duration: 500
+            });
+        }
+    }
+    
+    /**
+     * Hide location preview on map
+     */
+    hideLocationPreviewOnMap() {
+        if (!this.mapManager || !this.mapManager.map) return;
+        
+        const map = this.mapManager.map;
+        
+        // Remove preview layers and source
+        if (map.getLayer('location-preview-fill')) {
+            map.removeLayer('location-preview-fill');
+        }
+        if (map.getLayer('location-preview-outline')) {
+            map.removeLayer('location-preview-outline');
+        }
+        if (map.getLayer('location-preview-point')) {
+            map.removeLayer('location-preview-point');
+        }
+        if (map.getSource('location-preview')) {
+            map.removeSource('location-preview');
+        }
+    }
+    
+    /**
+     * Select location and zoom to its geometry (click effect)
+     * @param {Object} result - Selected location result
+     * @param {string} query - Original search query
+     */
+    selectAndZoomToLocation(result, query) {
+        console.log('✅ Dropdown location selected and zooming:', result);
+        
+        // Update the AI search helper state
+        this.aiSearchHelper.selectedLocation = 'custom';
+        this.aiSearchHelper.selectedLocationResult = result;
+        
+        // Update search summary display
+        const locationText = `🌍 ${result.shortName || result.name}`;
+        this.updateSearchSummary('location', locationText);
+        
+        // Close the dropdown
+        this.closeCurrentDropdown();
+        
+        // Hide preview and add permanent location layer
+        this.hideLocationPreviewOnMap();
+        this.addPermanentLocationLayer(result);
+        
+        // Show notification
+        if (this.notificationService) {
+            this.notificationService.showNotification(
+                `Location selected: ${result.shortName || result.name}`,
+                'success'
+            );
+        }
+    }
+    
+    /**
+     * Add permanent location layer to map after selection
+     * @param {Object} result - Selected location result
+     */
+    addPermanentLocationLayer(result) {
+        if (!this.mapManager || !this.mapManager.map) return;
+        
+        const map = this.mapManager.map;
+        
+        // Remove any existing location layer
+        this.removePermanentLocationLayer();
+        
+        // If location has bbox, show it permanently
+        if (result.bbox && result.bbox.length === 4) {
+            const [west, south, east, north] = result.bbox;
+            
+            // Create location geometry
+            const locationGeometry = {
+                type: 'Feature',
+                properties: {
+                    name: result.shortName || result.name,
+                    selected: true
+                },
+                geometry: {
+                    type: 'Polygon',
+                    coordinates: [[
+                        [west, south],
+                        [east, south],
+                        [east, north],
+                        [west, north],
+                        [west, south]
+                    ]]
+                }
+            };
+            
+            // Add location source and layer
+            map.addSource('selected-location', {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: [locationGeometry]
+                }
+            });
+            
+            // Add fill layer
+            map.addLayer({
+                id: 'selected-location-fill',
+                type: 'fill',
+                source: 'selected-location',
+                paint: {
+                    'fill-color': '#ff6b6b',
+                    'fill-opacity': 0.15
+                }
+            });
+            
+            // Add outline layer
+            map.addLayer({
+                id: 'selected-location-outline',
+                type: 'line',
+                source: 'selected-location',
+                paint: {
+                    'line-color': '#ff6b6b',
+                    'line-width': 2,
+                    'line-opacity': 1
+                }
+            });
+            
+            // Fit map to bbox with padding
+            map.fitBounds([[west, south], [east, north]], {
+                padding: 100,
+                duration: 1000
+            });
+        } else if (result.lat && result.lon) {
+            // For point locations, show a permanent marker
+            const locationGeometry = {
+                type: 'Feature',
+                properties: {
+                    name: result.shortName || result.name,
+                    selected: true
+                },
+                geometry: {
+                    type: 'Point',
+                    coordinates: [result.lon, result.lat]
+                }
+            };
+            
+            // Add location source and layer
+            map.addSource('selected-location', {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: [locationGeometry]
+                }
+            });
+            
+            // Add point layer
+            map.addLayer({
+                id: 'selected-location-point',
+                type: 'circle',
+                source: 'selected-location',
+                paint: {
+                    'circle-color': '#ff6b6b',
+                    'circle-radius': 10,
+                    'circle-stroke-color': '#ffffff',
+                    'circle-stroke-width': 3,
+                    'circle-opacity': 0.9
+                }
+            });
+            
+            // Center map on point
+            map.easeTo({
+                center: [result.lon, result.lat],
+                zoom: Math.max(map.getZoom(), 12),
+                duration: 1000
+            });
+        }
+    }
+    
+    /**
+     * Remove permanent location layer from map
+     */
+    removePermanentLocationLayer() {
+        if (!this.mapManager || !this.mapManager.map) return;
+        
+        const map = this.mapManager.map;
+        
+        // Remove location layers and source
+        if (map.getLayer('selected-location-fill')) {
+            map.removeLayer('selected-location-fill');
+        }
+        if (map.getLayer('selected-location-outline')) {
+            map.removeLayer('selected-location-outline');
+        }
+        if (map.getLayer('selected-location-point')) {
+            map.removeLayer('selected-location-point');
+        }
+        if (map.getSource('selected-location')) {
+            map.removeSource('selected-location');
+        }
+    }
+
+    /**
+     * Handle location selection from dropdown (deprecated - use selectAndZoomToLocation)
+     * @param {Object} result - Selected location result
+     * @param {string} query - Original search query
+     */
+    selectDropdownLocation(result, query) {
+        // Redirect to the new enhanced method
+        this.selectAndZoomToLocation(result, query);
+    }
+
     /**
      * Get appropriate emoji for location type
      * @param {string} category - Location category
@@ -1699,18 +2195,9 @@ export class InlineDropdownManager {
                     this.filterCollections(e.target.value, dropdown);
                 });
             } else if (fieldType === 'location') {
-                let searchTimeout;
-                searchInput.addEventListener('input', (e) => {
-                    clearTimeout(searchTimeout);
-                    searchTimeout = setTimeout(() => {
-                        this.searchLocations(e.target.value, dropdown);
-                    }, 300);
-                });
-                
-                // Also handle focus for better UX
-                searchInput.addEventListener('focus', () => {
-                    console.log('🔍 Location search input focused in inline dropdown');
-                });
+                // Location search is now handled by setupAdvancedLocationSearch in createSimpleLocationDropdown
+                // No additional event handlers needed here
+                console.log('🔍 Location search handled by advanced GeocodingService');
             }
         }
         
@@ -2481,11 +2968,12 @@ export class InlineDropdownManager {
     }
     
     /**
-     * Search locations in dropdown
+     * OLD: Search locations in dropdown - REPLACED by setupAdvancedLocationSearch
      * @param {string} query - Search query
      * @param {HTMLElement} dropdown - Dropdown container
+     * @deprecated Use setupAdvancedLocationSearch instead
      */
-    searchLocations(query, dropdown) {
+    searchLocations_OLD_UNUSED(query, dropdown) {
         const resultsContainer = dropdown.querySelector('.ai-location-search-results');
         if (!resultsContainer) {
             console.error('❌ Location results container not found in dropdown');
@@ -2703,6 +3191,9 @@ export class InlineDropdownManager {
         try {
             // Reset click-outside disable flag
             this.temporarilyDisableClickOutside = false;
+            
+            // Clean up location preview when closing dropdown
+            this.hideLocationPreviewOnMap();
             
             if (this.currentDropdown) {
                 // Animate out if possible

@@ -420,6 +420,357 @@
             transform: translateY(-1px) !important;
         }
 
+        /* Light Theme Dropdown Styles */
+        .light-theme .search-suggestions, 
+        .light-theme .ai-dropdown-content, 
+        .light-theme .dropdown-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%) !important;
+            backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+            border-radius: 12px !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .suggestion-item, 
+        .light-theme .ai-option, 
+        .light-theme .dropdown-item {
+            background: transparent !important;
+            border-radius: 8px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+            border: 1px solid transparent !important;
+        }
+
+        .light-theme .suggestion-item:hover, 
+        .light-theme .ai-option:hover, 
+        .light-theme .dropdown-item:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.04) 100%) !important;
+            backdrop-filter: blur(12px) saturate(120%) !important;
+            -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
+            border-color: rgba(102, 126, 234, 0.2) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Light theme dropdown headers */
+        .light-theme .ai-dropdown-header {
+            background: linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%) !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        /* Light theme dropdown option titles and text */
+        .light-theme .ai-option-title,
+        .light-theme .ai-option-subtitle,
+        .light-theme .ai-location-name,
+        .light-theme .ai-location-details {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .ai-option-subtitle,
+        .light-theme .ai-location-details {
+            color: var(--text-secondary, #64748b) !important;
+        }
+
+        /* Light theme search input in dropdown */
+        .light-theme .ai-location-search-input,
+        .light-theme .ai-search-input {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%) !important;
+            border: 2px solid rgba(0, 0, 0, 0.1) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .ai-location-search-input::placeholder,
+        .light-theme .ai-search-input::placeholder {
+            color: var(--text-secondary, #64748b) !important;
+        }
+
+        .light-theme .ai-location-search-input:focus,
+        .light-theme .ai-search-input:focus {
+            border-color: rgba(102, 126, 234, 0.4) !important;
+            box-shadow: 
+                0 0 0 3px rgba(102, 126, 234, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+        }
+
+        /* Light theme loading and error states in dropdown */
+        .light-theme .ai-location-loading,
+        .light-theme .ai-location-error,
+        .light-theme .ai-location-no-results {
+            color: var(--text-secondary, #64748b) !important;
+        }
+
+        /* Light theme close button and icons */
+        .light-theme .ai-dropdown-close {
+            color: var(--text-secondary, #64748b) !important;
+            background: transparent !important;
+            border: none !important;
+        }
+
+        .light-theme .ai-dropdown-close:hover {
+            color: var(--text-primary, #1a1a1a) !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .light-theme .ai-dropdown-header-content i {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        /* Light theme search results */
+        .light-theme .ai-location-result-item {
+            background: transparent !important;
+            border: 1px solid transparent !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .ai-location-result-item:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.03) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.15) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        /* Light theme collection options */
+        .light-theme .ai-everything-option {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.2) !important;
+        }
+
+        .light-theme .ai-everything-option:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.08) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.3) !important;
+        }
+
+        /* Light theme option icons */
+        .light-theme .ai-option i,
+        .light-theme .ai-location-option i {
+            color: var(--text-secondary, #64748b) !important;
+        }
+
+        .light-theme .ai-option:hover i,
+        .light-theme .ai-location-option:hover i {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        /* Light theme date picker elements */
+        .light-theme .flatpickr-calendar {
+            background: rgba(255, 255, 255, 0.98) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .light-theme .flatpickr-day {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .flatpickr-day:hover {
+            background: rgba(102, 126, 234, 0.1) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .flatpickr-day.selected {
+            background: rgba(102, 126, 234, 0.8) !important;
+            color: white !important;
+        }
+
+        /* Light theme buttons in dropdowns */
+        .light-theme .btn,
+        .light-theme .md-btn,
+        .light-theme .ai-dropdown-content .btn,
+        .light-theme .ai-dropdown-content button {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .btn:hover,
+        .light-theme .md-btn:hover,
+        .light-theme .ai-dropdown-content .btn:hover,
+        .light-theme .ai-dropdown-content button:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.3) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        /* Light theme primary buttons */
+        .light-theme .btn-primary,
+        .light-theme .md-btn-primary {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.8) !important;
+            color: white !important;
+        }
+
+        .light-theme .btn-primary:hover,
+        .light-theme .md-btn-primary:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 1) 0%, rgba(118, 75, 162, 1) 100%) !important;
+            border-color: rgba(102, 126, 234, 1) !important;
+        }
+
+        /* Light theme sliders and form elements in dropdowns */
+        .light-theme .ai-slider {
+            background: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .light-theme .ai-slider::-webkit-slider-thumb {
+            background: rgba(102, 126, 234, 0.9) !important;
+            border: 2px solid rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .light-theme .ai-slider::-moz-range-thumb {
+            background: rgba(102, 126, 234, 0.9) !important;
+            border: 2px solid rgba(255, 255, 255, 0.9) !important;
+        }
+
+        /* Light Theme Notification Styles */
+        .light-theme .notification {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%) !important;
+            backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .notification--success {
+            background: linear-gradient(135deg, 
+                rgba(34, 197, 94, 0.08) 0%, 
+                rgba(255, 255, 255, 0.98) 100%) !important;
+            border-left: 4px solid rgba(34, 197, 94, 0.8) !important;
+        }
+
+        .light-theme .notification--error {
+            background: linear-gradient(135deg, 
+                rgba(239, 68, 68, 0.08) 0%, 
+                rgba(255, 255, 255, 0.98) 100%) !important;
+            border-left: 4px solid rgba(239, 68, 68, 0.8) !important;
+        }
+
+        .light-theme .notification--warning {
+            background: linear-gradient(135deg, 
+                rgba(245, 158, 11, 0.08) 0%, 
+                rgba(255, 255, 255, 0.98) 100%) !important;
+            border-left: 4px solid rgba(245, 158, 11, 0.8) !important;
+        }
+
+        .light-theme .notification--info {
+            background: linear-gradient(135deg, 
+                rgba(59, 130, 246, 0.08) 0%, 
+                rgba(255, 255, 255, 0.98) 100%) !important;
+            border-left: 4px solid rgba(59, 130, 246, 0.8) !important;
+        }
+
+        .light-theme .notification--loading {
+            background: linear-gradient(135deg, 
+                rgba(102, 126, 234, 0.08) 0%, 
+                rgba(255, 255, 255, 0.98) 100%) !important;
+            border-left: 4px solid rgba(102, 126, 234, 0.8) !important;
+        }
+
+        .light-theme .notification__title {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .notification__message {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .notification__description {
+            color: var(--text-secondary, #64748b) !important;
+        }
+
+        .light-theme .notification__close {
+            color: var(--text-secondary, #64748b) !important;
+            background: transparent !important;
+        }
+
+        .light-theme .notification__close:hover {
+            color: var(--text-primary, #1a1a1a) !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .light-theme .notification__icon {
+            opacity: 0.9 !important;
+        }
+
+        .light-theme .notification--success .notification__icon {
+            color: rgba(34, 197, 94, 0.9) !important;
+        }
+
+        .light-theme .notification--error .notification__icon {
+            color: rgba(239, 68, 68, 0.9) !important;
+        }
+
+        .light-theme .notification--warning .notification__icon {
+            color: rgba(245, 158, 11, 0.9) !important;
+        }
+
+        .light-theme .notification--info .notification__icon {
+            color: rgba(59, 130, 246, 0.9) !important;
+        }
+
+        .light-theme .notification--loading .notification__icon {
+            color: rgba(102, 126, 234, 0.9) !important;
+        }
+
+        .light-theme .notification__actions {
+            border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .light-theme .notification__action {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%) !important;
+            color: white !important;
+            border: none !important;
+        }
+
+        .light-theme .notification__action:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 1) 0%, rgba(118, 75, 162, 1) 100%) !important;
+        }
+
+        .light-theme .notification__progress {
+            background: rgba(0, 0, 0, 0.08) !important;
+        }
+
+        /* Light Theme Notification Container (from styles.modern.css) */
+        .light-theme .notification-container {
+            /* Container positioning remains the same */
+        }
+
+        .light-theme .notification-container .notification {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%) !important;
+            backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .notification-container .notification i {
+            opacity: 0.9 !important;
+        }
+
+        .light-theme .notification-container .notification.success i {
+            color: rgba(34, 197, 94, 0.9) !important;
+        }
+
+        .light-theme .notification-container .notification.error i {
+            color: rgba(239, 68, 68, 0.9) !important;
+        }
+
+        .light-theme .notification-container .notification.warning i {
+            color: rgba(245, 158, 11, 0.9) !important;
+        }
+
+        .light-theme .notification-container .notification.info i {
+            color: rgba(59, 130, 246, 0.9) !important;
+        }
+
         /* Glassmorphism for Dataset Cards */
         .dataset-item, .stac-item {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%) !important;

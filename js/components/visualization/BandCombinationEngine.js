@@ -23,7 +23,7 @@ export class BandCombinationEngine {
                 name: '🌍 True Color',
                 description: 'Natural color as seen by human eye',
                 assets: ['red', 'green', 'blue'],
-                rescale: '0,3000',
+                rescale: '0,4000',
                 resampling: 'bilinear',
                 color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
@@ -32,7 +32,7 @@ export class BandCombinationEngine {
                 name: '🌿 False Color (Vegetation)',
                 description: 'Vegetation appears red, healthy plants bright red',
                 assets: ['nir', 'red', 'green'], 
-                rescale: '0,3000',
+                rescale: '0,4000',
                 resampling: 'bilinear',
                 color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
@@ -41,7 +41,7 @@ export class BandCombinationEngine {
                 name: '🔥 SWIR Composite',
                 description: 'Enhanced for fire detection and burn scars',
                 assets: ['swir22', 'nir', 'red'],
-                rescale: '0,3000',
+                rescale: '0,4000',
                 resampling: 'bilinear',
                 color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
@@ -50,7 +50,7 @@ export class BandCombinationEngine {
                 name: '🏙️ Urban Enhancement',
                 description: 'Enhanced urban features and infrastructure',
                 assets: ['swir22', 'swir11', 'red'],
-                rescale: '0,3000',
+                rescale: '0,4000',
                 resampling: 'bilinear',
                 color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
@@ -59,7 +59,7 @@ export class BandCombinationEngine {
                 name: '🗻 Geology',
                 description: 'Geological features and rock type variations',
                 assets: ['swir22', 'swir11', 'blue'],
-                rescale: '0,3000',
+                rescale: '0,4000',
                 resampling: 'bilinear',
                 color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
@@ -68,7 +68,7 @@ export class BandCombinationEngine {
                 name: '🚜 Agriculture',
                 description: 'Optimized for crop health and field boundaries',
                 assets: ['swir11', 'nir', 'red'],
-                rescale: '0,3000',
+                rescale: '0,4000',
                 resampling: 'bilinear',
                 color_formula: 'sigmoidal RGB 7 0.65',
                 category: 'composite'
@@ -79,7 +79,7 @@ export class BandCombinationEngine {
                 name: '🔴 Red Band',
                 description: 'Red wavelength only (monochrome)',
                 assets: ['red'],
-                rescale: '0,3000',
+                rescale: '0,4000',
                 colormap_name: 'gray',
                 resampling: 'bilinear',
                 category: 'monochrome'
@@ -88,7 +88,7 @@ export class BandCombinationEngine {
                 name: '🟢 Green Band',
                 description: 'Green wavelength only (monochrome)',
                 assets: ['green'],
-                rescale: '0,3000',
+                rescale: '0,4000',
                 colormap_name: 'gray',
                 resampling: 'bilinear',
                 category: 'monochrome'
@@ -97,7 +97,7 @@ export class BandCombinationEngine {
                 name: '🔵 Blue Band',
                 description: 'Blue wavelength only (monochrome)',
                 assets: ['blue'],
-                rescale: '0,3000',
+                rescale: '0,4000',
                 colormap_name: 'gray',
                 resampling: 'bilinear',
                 category: 'monochrome'
@@ -106,7 +106,7 @@ export class BandCombinationEngine {
                 name: '⚫ Near Infrared',
                 description: 'NIR wavelength only (vegetation bright)',
                 assets: ['nir'],
-                rescale: '0,3000',
+                rescale: '0,4000',
                 colormap_name: 'gray',
                 resampling: 'bilinear',
                 category: 'monochrome'
@@ -115,7 +115,7 @@ export class BandCombinationEngine {
                 name: '🟤 SWIR 1 (1.6μm)',
                 description: 'Short Wave Infrared 1 (monochrome)',
                 assets: ['swir11'],
-                rescale: '0,3000',
+                rescale: '0,4000',
                 colormap_name: 'gray',
                 resampling: 'bilinear',
                 category: 'monochrome'
@@ -124,7 +124,7 @@ export class BandCombinationEngine {
                 name: '🟫 SWIR 2 (2.2μm)',
                 description: 'Short Wave Infrared 2 (monochrome)',
                 assets: ['swir22'],
-                rescale: '0,3000',
+                rescale: '0,4000',
                 colormap_name: 'gray',
                 resampling: 'bilinear',
                 category: 'monochrome'

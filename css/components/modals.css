@@ -54,6 +54,10 @@
 }
 
 /* Modal Open State */
+.modal--open {
+    display: flex;
+}
+
 .modal--open .modal-backdrop {
     opacity: 1;
 }

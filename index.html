@@ -175,9 +175,13 @@
         }
         
 
-        /* Beautiful Search Summary Interface */
+        /* Compact Search Summary Interface - Optimized for Vertical Space */
         .search-summary-interface {
             padding: 16px 0;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.02) 0%, rgba(255, 255, 255, 0.01) 100%);
+            border-radius: 16px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
         }
         
         .search-summary-row {
@@ -191,63 +195,696 @@
         .search-summary-item {
             display: flex;
             align-items: center;
-            padding: 12px 16px;
-            border-radius: 8px;
+            padding: 8px 12px;
+            border-radius: 10px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            background: var(--surface-secondary, #f8fafc);
-            border: 1px solid transparent;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 
+                0 3px 16px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
             user-select: none;
+            position: relative;
+            overflow: hidden;
+            min-height: 40px;
+        }
+        
+        .search-summary-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border-radius: 16px;
         }
         
         .search-summary-item:hover {
-            background: var(--surface-tertiary, #f1f5f9);
-            border-color: var(--primary-200, #c7d2fe);
-            transform: translateY(-1px);
-            box-shadow: 0 2px 8px rgba(79, 70, 229, 0.1);
+            transform: translateY(-2px) scale(1.01);
+            border-color: rgba(102, 126, 234, 0.3);
+            box-shadow: 
+                0 8px 32px rgba(102, 126, 234, 0.15),
+                0 4px 16px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
+        }
+        
+        .search-summary-item:hover::before {
+            opacity: 1;
         }
         
         .search-summary-item:active {
-            transform: translateY(0);
-            box-shadow: 0 1px 4px rgba(79, 70, 229, 0.1);
+            transform: translateY(-1px) scale(1.005);
+            box-shadow: 
+                0 4px 16px rgba(102, 126, 234, 0.2),
+                0 2px 8px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4);
         }
         
         .search-summary-icon {
-            width: 36px;
-            height: 36px;
-            border-radius: 8px;
-            background: var(--primary-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 12px;
+            margin-right: 16px;
             flex-shrink: 0;
+            position: relative;
+            box-shadow: 
+                0 3px 12px rgba(102, 126, 234, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .search-summary-icon::after {
+            content: '';
+            position: absolute;
+            inset: 1px;
+            border-radius: 9px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
         }
         
         .search-summary-icon i {
             color: white;
             font-size: 18px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+        
+        .search-summary-item:hover .search-summary-icon {
+            transform: scale(1.05);
+            box-shadow: 
+                0 4px 16px rgba(102, 126, 234, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
         }
         
         .search-summary-content {
             flex: 1;
             min-width: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            z-index: 1;
         }
         
         .search-summary-label {
-            font-size: 12px;
-            font-weight: 500;
+            font-size: 13px;
+            font-weight: 600;
             color: var(--text-secondary, #64748b);
-            margin-bottom: 2px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            white-space: nowrap;
+            opacity: 0.9;
+            flex-shrink: 0;
         }
         
         .search-summary-value {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 600;
             color: var(--text-primary, #1a1a1a);
             font-family: 'Roboto', sans-serif;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.3;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            min-width: 0;
+        }
+        
+        /* Inline format for compact display */
+        .search-summary-inline {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Glassmorphism for Main Interface Elements */
+        .md-card, .sidebar-content, .search-container {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.18) !important;
+            box-shadow: 
+                0 8px 32px rgba(0, 0, 0, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+            border-radius: 16px !important;
+        }
+
+        .md-card-header {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%) !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+            border-radius: 16px 16px 0 0 !important;
+            padding: 16px 20px !important;
+        }
+
+        .md-card-body {
+            background: transparent !important;
+            padding: 20px !important;
+        }
+
+        /* Glassmorphism for Buttons and Interactive Elements */
+        .md-btn, .header-action-btn, .main-search-btn {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 
+                0 4px 16px rgba(0, 0, 0, 0.1),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+            border-radius: 12px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        }
+
+        .md-btn:hover, .header-action-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.1) 100%) !important;
+            border-color: rgba(255, 255, 255, 0.3) !important;
+            transform: translateY(-2px) scale(1.02) !important;
+            box-shadow: 
+                0 6px 24px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+        }
+
+        /* Glassmorphism for Primary Buttons */
+        .md-btn-primary {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
+            border: 1px solid rgba(102, 126, 234, 0.3) !important;
+            color: white !important;
+        }
+
+        .md-btn-primary:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.5) !important;
+        }
+
+        /* Dark Glassmorphism for Dropdowns - Match cards */
+        .search-suggestions, .ai-dropdown-content, .dropdown-content {
+            background: linear-gradient(135deg, rgba(30, 30, 60, 0.95) 0%, rgba(25, 25, 55, 0.98) 100%) !important;
+            backdrop-filter: blur(16px) saturate(140%) brightness(1.1) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+            border-radius: 12px !important;
+        }
+
+        .suggestion-item, .ai-option, .dropdown-item {
+            background: transparent !important;
+            border-radius: 8px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            color: rgba(255, 255, 255, 0.9) !important;
+            border: 1px solid transparent !important;
+        }
+
+        .suggestion-item:hover, .ai-option:hover, .dropdown-item:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%) !important;
+            backdrop-filter: blur(12px) saturate(120%) !important;
+            -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
+            border-color: rgba(255, 255, 255, 0.15) !important;
+            color: rgba(255, 255, 255, 0.98) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Light Theme Dropdown Styles */
+        .light-theme .search-suggestions, 
+        .light-theme .ai-dropdown-content, 
+        .light-theme .dropdown-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%) !important;
+            backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+            border-radius: 12px !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .suggestion-item, 
+        .light-theme .ai-option, 
+        .light-theme .dropdown-item {
+            background: transparent !important;
+            border-radius: 8px !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+            border: 1px solid transparent !important;
+        }
+
+        .light-theme .suggestion-item:hover, 
+        .light-theme .ai-option:hover, 
+        .light-theme .dropdown-item:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.04) 100%) !important;
+            backdrop-filter: blur(12px) saturate(120%) !important;
+            -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
+            border-color: rgba(102, 126, 234, 0.2) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+            transform: translateY(-1px) !important;
+        }
+
+        /* Light theme dropdown headers */
+        .light-theme .ai-dropdown-header {
+            background: linear-gradient(135deg, rgba(248, 250, 252, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%) !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        /* Light theme dropdown option titles and text */
+        .light-theme .ai-option-title,
+        .light-theme .ai-option-subtitle,
+        .light-theme .ai-location-name,
+        .light-theme .ai-location-details {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .ai-option-subtitle,
+        .light-theme .ai-location-details {
+            color: var(--text-secondary, #64748b) !important;
+        }
+
+        /* Light theme search input in dropdown */
+        .light-theme .ai-location-search-input,
+        .light-theme .ai-search-input {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%) !important;
+            border: 2px solid rgba(0, 0, 0, 0.1) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .ai-location-search-input::placeholder,
+        .light-theme .ai-search-input::placeholder {
+            color: var(--text-secondary, #64748b) !important;
+        }
+
+        .light-theme .ai-location-search-input:focus,
+        .light-theme .ai-search-input:focus {
+            border-color: rgba(102, 126, 234, 0.4) !important;
+            box-shadow: 
+                0 0 0 3px rgba(102, 126, 234, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+        }
+
+        /* Light theme loading and error states in dropdown */
+        .light-theme .ai-location-loading,
+        .light-theme .ai-location-error,
+        .light-theme .ai-location-no-results {
+            color: var(--text-secondary, #64748b) !important;
+        }
+
+        /* Light theme close button and icons */
+        .light-theme .ai-dropdown-close {
+            color: var(--text-secondary, #64748b) !important;
+            background: transparent !important;
+            border: none !important;
+        }
+
+        .light-theme .ai-dropdown-close:hover {
+            color: var(--text-primary, #1a1a1a) !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .light-theme .ai-dropdown-header-content i {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        /* Light theme search results */
+        .light-theme .ai-location-result-item {
+            background: transparent !important;
+            border: 1px solid transparent !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .ai-location-result-item:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.03) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.15) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        /* Light theme collection options */
+        .light-theme .ai-everything-option {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.2) !important;
+        }
+
+        .light-theme .ai-everything-option:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.08) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.3) !important;
+        }
+
+        /* Light theme option icons */
+        .light-theme .ai-option i,
+        .light-theme .ai-location-option i {
+            color: var(--text-secondary, #64748b) !important;
+        }
+
+        .light-theme .ai-option:hover i,
+        .light-theme .ai-location-option:hover i {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        /* Light theme date picker elements */
+        .light-theme .flatpickr-calendar {
+            background: rgba(255, 255, 255, 0.98) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
+        }
+
+        .light-theme .flatpickr-day {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .flatpickr-day:hover {
+            background: rgba(102, 126, 234, 0.1) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .flatpickr-day.selected {
+            background: rgba(102, 126, 234, 0.8) !important;
+            color: white !important;
+        }
+
+        /* Light theme buttons in dropdowns */
+        .light-theme .btn,
+        .light-theme .md-btn,
+        .light-theme .ai-dropdown-content .btn,
+        .light-theme .ai-dropdown-content button {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .btn:hover,
+        .light-theme .md-btn:hover,
+        .light-theme .ai-dropdown-content .btn:hover,
+        .light-theme .ai-dropdown-content button:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.3) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        /* Light theme primary buttons */
+        .light-theme .btn-primary,
+        .light-theme .md-btn-primary {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.8) !important;
+            color: white !important;
+        }
+
+        .light-theme .btn-primary:hover,
+        .light-theme .md-btn-primary:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 1) 0%, rgba(118, 75, 162, 1) 100%) !important;
+            border-color: rgba(102, 126, 234, 1) !important;
+        }
+
+        /* Light theme sliders and form elements in dropdowns */
+        .light-theme .ai-slider {
+            background: rgba(0, 0, 0, 0.1) !important;
+        }
+
+        .light-theme .ai-slider::-webkit-slider-thumb {
+            background: rgba(102, 126, 234, 0.9) !important;
+            border: 2px solid rgba(255, 255, 255, 0.9) !important;
+        }
+
+        .light-theme .ai-slider::-moz-range-thumb {
+            background: rgba(102, 126, 234, 0.9) !important;
+            border: 2px solid rgba(255, 255, 255, 0.9) !important;
+        }
+
+        /* Light Theme Notification Styles */
+        .light-theme .notification {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%) !important;
+            backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .notification--success {
+            background: linear-gradient(135deg, 
+                rgba(34, 197, 94, 0.08) 0%, 
+                rgba(255, 255, 255, 0.98) 100%) !important;
+            border-left: 4px solid rgba(34, 197, 94, 0.8) !important;
+        }
+
+        .light-theme .notification--error {
+            background: linear-gradient(135deg, 
+                rgba(239, 68, 68, 0.08) 0%, 
+                rgba(255, 255, 255, 0.98) 100%) !important;
+            border-left: 4px solid rgba(239, 68, 68, 0.8) !important;
+        }
+
+        .light-theme .notification--warning {
+            background: linear-gradient(135deg, 
+                rgba(245, 158, 11, 0.08) 0%, 
+                rgba(255, 255, 255, 0.98) 100%) !important;
+            border-left: 4px solid rgba(245, 158, 11, 0.8) !important;
+        }
+
+        .light-theme .notification--info {
+            background: linear-gradient(135deg, 
+                rgba(59, 130, 246, 0.08) 0%, 
+                rgba(255, 255, 255, 0.98) 100%) !important;
+            border-left: 4px solid rgba(59, 130, 246, 0.8) !important;
+        }
+
+        .light-theme .notification--loading {
+            background: linear-gradient(135deg, 
+                rgba(102, 126, 234, 0.08) 0%, 
+                rgba(255, 255, 255, 0.98) 100%) !important;
+            border-left: 4px solid rgba(102, 126, 234, 0.8) !important;
+        }
+
+        .light-theme .notification__title {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .notification__message {
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .notification__description {
+            color: var(--text-secondary, #64748b) !important;
+        }
+
+        .light-theme .notification__close {
+            color: var(--text-secondary, #64748b) !important;
+            background: transparent !important;
+        }
+
+        .light-theme .notification__close:hover {
+            color: var(--text-primary, #1a1a1a) !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+        }
+
+        .light-theme .notification__icon {
+            opacity: 0.9 !important;
+        }
+
+        .light-theme .notification--success .notification__icon {
+            color: rgba(34, 197, 94, 0.9) !important;
+        }
+
+        .light-theme .notification--error .notification__icon {
+            color: rgba(239, 68, 68, 0.9) !important;
+        }
+
+        .light-theme .notification--warning .notification__icon {
+            color: rgba(245, 158, 11, 0.9) !important;
+        }
+
+        .light-theme .notification--info .notification__icon {
+            color: rgba(59, 130, 246, 0.9) !important;
+        }
+
+        .light-theme .notification--loading .notification__icon {
+            color: rgba(102, 126, 234, 0.9) !important;
+        }
+
+        .light-theme .notification__actions {
+            border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+        }
+
+        .light-theme .notification__action {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.9) 0%, rgba(118, 75, 162, 0.9) 100%) !important;
+            color: white !important;
+            border: none !important;
+        }
+
+        .light-theme .notification__action:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 1) 0%, rgba(118, 75, 162, 1) 100%) !important;
+        }
+
+        .light-theme .notification__progress {
+            background: rgba(0, 0, 0, 0.08) !important;
+        }
+
+        /* Light Theme Notification Container (from styles.modern.css) */
+        .light-theme .notification-container {
+            /* Container positioning remains the same */
+        }
+
+        .light-theme .notification-container .notification {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 250, 252, 0.95) 100%) !important;
+            backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
+            color: var(--text-primary, #1a1a1a) !important;
+        }
+
+        .light-theme .notification-container .notification i {
+            opacity: 0.9 !important;
+        }
+
+        .light-theme .notification-container .notification.success i {
+            color: rgba(34, 197, 94, 0.9) !important;
+        }
+
+        .light-theme .notification-container .notification.error i {
+            color: rgba(239, 68, 68, 0.9) !important;
+        }
+
+        .light-theme .notification-container .notification.warning i {
+            color: rgba(245, 158, 11, 0.9) !important;
+        }
+
+        .light-theme .notification-container .notification.info i {
+            color: rgba(59, 130, 246, 0.9) !important;
+        }
+
+        /* Glassmorphism for Dataset Cards */
+        .dataset-item, .stac-item {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            box-shadow: 
+                0 4px 16px rgba(0, 0, 0, 0.08),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+            border-radius: 12px !important;
+        }
+
+        .dataset-item:hover, .stac-item:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%) !important;
+            border-color: rgba(255, 255, 255, 0.25) !important;
+            transform: translateY(-2px) !important;
+            box-shadow: 
+                0 8px 24px rgba(0, 0, 0, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+        }
+
+        /* Glassmorphism for Modals and Overlays */
+        .modal-content, .modal-dialog, .notification {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%) !important;
+            backdrop-filter: blur(25px) !important;
+            -webkit-backdrop-filter: blur(25px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 
+                0 16px 48px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
+            border-radius: 16px !important;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.1) 100%) !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 16px 16px 0 0 !important;
+        }
+
+        /* Glassmorphism for Navigation and Sidebar */
+        .sidebar, .navbar, .navigation {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%) !important;
+            backdrop-filter: blur(20px) !important;
+            -webkit-backdrop-filter: blur(20px) !important;
+            border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
+        }
+
+        /* Glassmorphism for Form Elements */
+        input[type="text"], input[type="email"], input[type="password"], 
+        select, textarea {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 10px !important;
+        }
+
+        input[type="text"]:focus, input[type="email"]:focus, 
+        input[type="password"]:focus, select:focus, textarea:focus {
+            border-color: rgba(102, 126, 234, 0.4) !important;
+            box-shadow: 
+                0 0 0 3px rgba(102, 126, 234, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
+        }
+
+        /* Glassmorphism for Badges and Labels */
+        .md-badge, .badge, .label, .tag {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            border: 1px solid rgba(102, 126, 234, 0.3) !important;
+            box-shadow: 
+                0 2px 8px rgba(102, 126, 234, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+            border-radius: 8px !important;
+            color: white !important;
+        }
+
+        /* Glassmorphism for Tooltips */
+        .tooltip, .tooltip-content {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0.6) 100%) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            box-shadow: 
+                0 4px 16px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+            border-radius: 8px !important;
+            color: white !important;
+        }
+
+        /* Glassmorphism for Loading States */
+        .loading-overlay, .spinner-container {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%) !important;
+            backdrop-filter: blur(15px) !important;
+            -webkit-backdrop-filter: blur(15px) !important;
+            border-radius: 12px !important;
+        }
+
+        /* Glassmorphism for Tabs and Navigation */
+        .tab, .nav-item, .breadcrumb {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%) !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            border-radius: 10px !important;
+        }
+
+        .tab.active, .nav-item.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.6) 0%, rgba(118, 75, 162, 0.6) 100%) !important;
+            border-color: rgba(102, 126, 234, 0.4) !important;
+            color: white !important;
         }
         
         /* Dark theme support */
@@ -293,12 +930,16 @@
                 font-size: 16px;
             }
             
+            .search-summary-content {
+                max-width: 100px; /* Even smaller on mobile */
+            }
+
             .search-summary-label {
-                font-size: 11px;
+                font-size: 9px;
             }
             
             .search-summary-value {
-                font-size: 13px;
+                font-size: 11px;
             }
         }
         
@@ -315,6 +956,583 @@
             100% { background-color: transparent; }
         }
         
+        /* Source Card - Very compact */
+        .source-card-expanded {
+            display: flex !important;
+            align-items: center !important;
+            gap: 16px !important;
+            padding: 10px 14px !important;
+            min-height: 44px !important;
+        }
+
+        .source-card-main {
+            display: flex !important;
+            align-items: center !important;
+            gap: 20px !important;
+            flex: 1 !important;
+            min-width: 200px !important;
+            max-width: 60% !important;
+        }
+
+        .source-presets-mini {
+            display: flex;
+            gap: 12px;
+            flex-shrink: 0;
+            margin-left: 20px;
+        }
+
+        .source-mini-btn {
+            padding: 10px 16px !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+            color: var(--text-secondary, #888) !important;
+            border-radius: 12px !important;
+            cursor: pointer !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            text-align: center !important;
+            line-height: 1.3 !important;
+            min-height: 40px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            position: relative !important;
+            overflow: hidden !important;
+            min-width: 54px !important;
+            white-space: nowrap !important;
+        }
+
+        .source-mini-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+            border-radius: 12px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .source-mini-btn:hover {
+            transform: translateY(-2px) scale(1.02) !important;
+            border-color: rgba(102, 126, 234, 0.4) !important;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25) !important;
+        }
+
+        .source-mini-btn:hover::before {
+            opacity: 1;
+        }
+
+        .source-mini-btn:hover,
+        .source-mini-btn.active {
+            color: white !important;
+        }
+
+        .source-mini-btn.active::before {
+            opacity: 1;
+        }
+
+        .source-mini-btn.active {
+            transform: translateY(-1px) scale(1.01) !important;
+            border-color: rgba(102, 126, 234, 0.6) !important;
+            box-shadow: 0 2px 12px rgba(102, 126, 234, 0.3) !important;
+        }
+
+        /* Very compact spacing for other search cards */
+        .time-card-expanded,
+        .search-summary-item:not(.source-card-expanded):not(.location-card-expanded) {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 8px 12px !important;
+            min-height: 36px !important;
+        }
+
+        .location-card-main,
+        .time-card-main,
+        .search-summary-item:not(.source-card-expanded) .search-summary-content {
+            display: flex !important;
+            align-items: center !important;
+            gap: 16px !important;
+            flex: 1 !important;
+            min-width: 150px !important;
+        }
+
+        /* Compact buttons for other cards */
+        .location-presets-mini,
+        .time-presets-mini,
+        .search-summary-item:not(.source-card-expanded) .presets-mini {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+            margin-left: 12px;
+        }
+
+        .location-mini-btn,
+        .time-mini-btn,
+        .search-summary-item:not(.source-card-expanded) .mini-btn {
+            padding: 6px 10px !important;
+            font-size: 11px !important;
+            font-weight: 600 !important;
+            border: 1px solid rgba(255, 255, 255, 0.15) !important;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%) !important;
+            color: var(--text-secondary, #888) !important;
+            border-radius: 8px !important;
+            cursor: pointer !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            text-align: center !important;
+            line-height: 1.2 !important;
+            min-height: 28px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            backdrop-filter: blur(8px) !important;
+            -webkit-backdrop-filter: blur(8px) !important;
+            position: relative !important;
+            overflow: hidden !important;
+            min-width: 40px !important;
+            white-space: nowrap !important;
+        }
+
+        /* Hide buttons for catalog card specifically */
+        #summary-source[data-field="collection"] .source-presets-mini {
+            display: none !important;
+        }
+
+        /* Adjust catalog card layout when buttons are hidden */
+        #summary-source[data-field="collection"] .source-card-main {
+            max-width: 100% !important;
+        }
+
+        .source-more-btn {
+            background: var(--surface-secondary, rgba(255, 255, 255, 0.1)) !important;
+            border-color: var(--border-primary, rgba(255, 255, 255, 0.3)) !important;
+        }
+
+        .source-more-btn:hover {
+            background: var(--surface-tertiary, rgba(255, 255, 255, 0.2)) !important;
+            color: var(--text-primary, #ffffff) !important;
+            border-color: var(--border-primary, rgba(255, 255, 255, 0.5)) !important;
+        }
+
+        .source-more-btn .material-icons {
+            font-size: 14px !important;
+        }
+
+        /* Location Card - Very compact */
+        .location-card-expanded {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 6px !important;
+            padding: 10px 14px !important;
+            min-height: auto !important;
+            overflow: visible !important;
+        }
+
+        .location-card-main {
+            display: flex !important;
+            align-items: center !important;
+            gap: 20px !important;
+            flex: 1 !important;
+            min-width: 200px !important;
+            max-width: 100% !important;
+        }
+
+        .location-tools-inline {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1px 0px;
+            border-radius: 0 0 10px 0;
+            position: absolute;
+            bottom: -5px;
+            right: 0;
+            width: auto;
+            overflow: visible !important;
+        }
+
+        .location-search-inline {
+            position: relative;
+            display: flex;
+            align-items: center;
+            flex: 1;
+            max-width: 200px;
+            overflow: visible !important;
+        }
+
+
+        .location-action-btn {
+            padding: 3px 6px !important;
+            background: transparent !important;
+            border: none !important;
+            color: rgba(255, 255, 255, 0.7) !important;
+            cursor: pointer !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 2px !important;
+            font-size: 9px !important;
+            font-weight: 600 !important;
+            white-space: nowrap !important;
+            position: relative !important;
+            overflow: hidden !important;
+            min-height: 20px !important;
+            flex-shrink: 0 !important;
+            border-radius: 3px !important;
+            min-width: 40px !important;
+        }
+
+        .location-action-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+            border-radius: 9px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .location-action-btn:hover {
+            transform: translateY(-2px) scale(1.02) !important;
+            border-color: rgba(102, 126, 234, 0.4) !important;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25) !important;
+            color: white !important;
+        }
+
+        .location-action-btn:hover::before {
+            opacity: 1;
+        }
+
+        .location-action-btn .material-icons {
+            font-size: 16px !important;
+        }
+
+        /* Light theme compatibility for location tools */
+        .light-theme .location-action-btn {
+            color: rgba(15, 23, 42, 0.7) !important;
+        }
+
+
+        .light-theme .location-tools-inline {
+            background: transparent !important;
+            border-top: none !important;
+        }
+
+        /* Light theme compatibility for time presets */
+        .light-theme .time-presets-mini {
+            background: transparent !important;
+            border-top: none !important;
+        }
+
+        .light-theme .preset-mini-btn {
+            color: rgba(15, 23, 42, 0.7) !important;
+        }
+
+        /* Time Card - Vertical layout with buttons at bottom */
+        .time-card-expanded {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: 0 !important;
+            padding: 0 !important;
+            min-height: auto !important;
+            position: relative !important;
+        }
+
+        .time-card-main {
+            display: flex !important;
+            align-items: center !important;
+            gap: 12px !important;
+            padding: 4px 12px !important;
+            flex: 1 !important;
+        }
+
+        .time-presets-mini {
+            display: flex;
+            gap: 0;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 1px 0px;
+            border-radius: 0 0 10px 0;
+            align-self: flex-end;
+            width: auto;
+            margin-top: 0px;
+            margin-right: 0px;
+            position: absolute;
+            bottom: 0;
+            right: 0;
+        }
+
+        .preset-mini-btn {
+            padding: 3px 6px !important;
+            font-size: 9px !important;
+            font-weight: 600 !important;
+            border: none !important;
+            background: transparent !important;
+            color: rgba(255, 255, 255, 0.7) !important;
+            border-radius: 3px !important;
+            cursor: pointer !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            text-align: center !important;
+            line-height: 1.1 !important;
+            position: relative !important;
+            overflow: hidden !important;
+            min-height: 20px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            flex: none !important;
+            margin: 0px !important;
+            min-width: 28px !important;
+        }
+
+        .preset-mini-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+            border-radius: 9px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .preset-mini-btn:hover {
+            transform: translateY(-2px) scale(1.02) !important;
+            border-color: rgba(102, 126, 234, 0.4) !important;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25) !important;
+        }
+
+        .preset-mini-btn:hover::before {
+            opacity: 1;
+        }
+
+        .preset-mini-btn:hover,
+        .preset-mini-btn.active {
+            color: white !important;
+        }
+
+        .preset-mini-btn.active::before {
+            opacity: 1;
+        }
+
+        .preset-mini-btn.active {
+            transform: translateY(-1px) scale(1.01) !important;
+            border-color: rgba(102, 126, 234, 0.6) !important;
+            box-shadow: 0 2px 12px rgba(102, 126, 234, 0.3) !important;
+        }
+
+        /* Tool Sections */
+        .location-tools {
+            margin: 16px 0;
+            padding: 16px;
+            background: var(--surface-secondary, rgba(255, 255, 255, 0.02));
+            border-radius: 12px;
+            border: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
+        }
+
+        .preset-section-title {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary, #ffffff);
+        }
+
+        .preset-section-title .material-icons {
+            font-size: 18px;
+            color: var(--primary-400, #64B5F6);
+        }
+
+        .tool-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .tool-btn {
+            padding: 10px 12px !important;
+            font-size: 13px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            gap: 6px !important;
+            transition: all 0.2s ease !important;
+            border-radius: 8px !important;
+        }
+
+        .tool-btn .material-icons {
+            font-size: 16px !important;
+        }
+
+        .tool-btn:hover {
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2) !important;
+        }
+
+        /* Dark theme support */
+        .dark-theme .location-tools {
+            background: var(--surface-secondary, rgba(255, 255, 255, 0.05));
+            border-color: var(--border-secondary, rgba(255, 255, 255, 0.1));
+        }
+
+        .dark-theme .preset-mini-btn {
+            background: var(--surface-primary, rgba(255, 255, 255, 0.02)) !important;
+            border-color: var(--border-secondary, rgba(255, 255, 255, 0.1)) !important;
+        }
+
+
+        .search-suggestions {
+            position: fixed !important;
+            top: auto !important;
+            bottom: 25px !important;
+            left: auto !important;
+            right: 8px !important;
+            background: linear-gradient(135deg, rgba(30, 30, 60, 0.95) 0%, rgba(25, 25, 55, 0.98) 100%) !important;
+            backdrop-filter: blur(16px) saturate(140%) brightness(1.1) !important;
+            -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.1) !important;
+            border: 1px solid rgba(255, 255, 255, 0.2) !important;
+            border-radius: 12px !important;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000000 !important;
+            display: none;
+            box-shadow: 
+                0 12px 40px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+            width: 250px !important;
+            min-width: 250px !important;
+        }
+
+        .search-suggestions.active {
+            display: block;
+        }
+
+        .suggestion-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .suggestion-item:hover {
+            background: var(--surface-primary, rgba(255, 255, 255, 0.05));
+            border-left: 3px solid var(--primary-500, #2196F3);
+            padding-left: 13px; /* Compensate for border */
+        }
+
+        .suggestion-item.map-preview-active {
+            background: rgba(33, 150, 243, 0.1);
+            border-left: 3px solid var(--primary-500, #2196F3);
+            padding-left: 13px;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-item .material-icons {
+            font-size: 18px;
+            color: var(--primary-400, #64B5F6);
+        }
+
+        .suggestion-content {
+            flex: 1;
+        }
+
+        .suggestion-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-primary, #ffffff);
+        }
+
+        .suggestion-details {
+            font-size: 12px;
+            color: var(--text-secondary, #888);
+        }
+
+        /* Result Count Badge */
+        .result-count-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+            background: var(--primary-500, #2196F3);
+            color: white;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+
+        .result-count-badge .material-icons {
+            font-size: 14px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 480px) {
+            .tool-buttons {
+                grid-template-columns: 1fr;
+            }
+            
+            .tool-btn {
+                padding: 12px 16px !important;
+                font-size: 14px !important;
+            }
+
+            .quick-location-search {
+                margin: 12px 0;
+                padding: 12px;
+            }
+
+            .location-search-input {
+                padding: 10px 12px;
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+
+            /* Location card responsive - already uses column layout */
+            .location-tools-inline {
+                gap: 6px;
+            }
+
+
+            .location-action-btn {
+                padding: 6px 8px !important;
+                font-size: 10px !important;
+            }
+
+            /* Mini preset buttons responsive */
+            .time-card-expanded {
+                flex-direction: column !important;
+                align-items: stretch !important;
+                gap: 8px !important;
+            }
+
+            .time-presets-mini {
+                margin-left: 0 !important;
+                width: 100% !important;
+                grid-template-columns: 1fr 1fr 1fr 1fr !important;
+                gap: 6px;
+                justify-items: center;
+            }
+
+            .preset-mini-btn {
+                padding: 6px 8px !important;
+                font-size: 11px !important;
+                min-width: 32px !important;
+            }
+        }
+
         /* Debug test - simple red background to verify class is applied */
         .dropdown-active {
             background: red !important;
@@ -472,42 +1690,87 @@
                         <!-- Beautiful Search Summary Interface -->
                         <div class="search-summary-interface">
                             <div class="search-summary-row">
-                                <div class="search-summary-item" id="summary-source" data-field="collection">
-                                    <div class="search-summary-icon">
-                                        <i class="material-icons">public</i>
+                                <div class="search-summary-item source-card-expanded" id="summary-source" data-field="collection">
+                                    <div class="source-card-main">
+                                        <div class="search-summary-icon">
+                                            <i class="material-icons">public</i>
+                                        </div>
+                                        <div class="search-summary-content">
+                                            <div class="search-summary-label">SOURCE:</div>
+                                            <div class="search-summary-value">Everything</div>
+                                        </div>
                                     </div>
-                                    <div class="search-summary-content">
-                                        <div class="search-summary-label">Source</div>
-                                        <div class="search-summary-value">📂 Everything</div>
+                                    <div class="source-presets-mini">
+                                        <button id="source-s1" class="source-mini-btn" data-collection="sentinel-1-rtc" title="Sentinel-1 RTC (Planetary Computer)">
+                                            S1
+                                        </button>
+                                        <button id="source-s2" class="source-mini-btn" data-collection="sentinel-2-c1-l2a" title="Sentinel-2 C1 L2A (Element84)">
+                                            S2
+                                        </button>
+                                        <button id="source-s3" class="source-mini-btn" data-collection="sentinel-3-olci-1-efr-nrt" title="Sentinel-3 OCLI NRT (Element84)">
+                                            S3
+                                        </button>
+                                        <button id="source-dem" class="source-mini-btn" data-collection="cop-dem-glo-30" title="Copernicus DEM 30m (Element84)">
+                                            DEM
+                                        </button>
+                                        <button id="source-more" class="source-mini-btn source-more-btn" title="More Collections">
+                                            <i class="material-icons">add</i>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="search-summary-row">
-                                <div class="search-summary-item" id="summary-location" data-field="location">
-                                    <div class="search-summary-icon">
-                                        <i class="material-icons">place</i>
+                                <div class="search-summary-item location-card-expanded" id="summary-location" data-field="location">
+                                    <div class="location-card-main">
+                                        <div class="search-summary-icon">
+                                            <i class="material-icons">place</i>
+                                        </div>
+                                        <div class="search-summary-content">
+                                            <div class="search-summary-label">LOCATION:</div>
+                                            <div class="search-summary-value">Worldwide</div>
+                                        </div>
                                     </div>
-                                    <div class="search-summary-content">
-                                        <div class="search-summary-label">Location</div>
-                                        <div class="search-summary-value">🌍 Worldwide</div>
+                                    <div class="location-tools-inline">
+                                        <button id="draw-bbox-inline" class="location-action-btn" title="Draw Area on Map">
+                                            <i class="material-icons">crop_free</i>
+                                            Draw
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="search-summary-row">
-                                <div class="search-summary-item" id="summary-date" data-field="date">
-                                    <div class="search-summary-icon">
-                                        <i class="material-icons">schedule</i>
+                                <div class="search-summary-item time-card-expanded" id="summary-date" data-field="date">
+                                    <div class="time-card-main">
+                                        <div class="search-summary-icon">
+                                            <i class="material-icons">schedule</i>
+                                        </div>
+                                        <div class="search-summary-content">
+                                            <div class="search-summary-label">TIME:</div>
+                                            <div class="search-summary-value">Anytime</div>
+                                        </div>
                                     </div>
-                                    <div class="search-summary-content">
-                                        <div class="search-summary-label">Time</div>
-                                        <div class="search-summary-value">🕐 Anytime</div>
+                                    <div class="time-presets-mini">
+                                        <button id="preset-last-7-days" class="preset-mini-btn" data-days="7" title="Last 7 Days">
+                                            7D
+                                        </button>
+                                        <button id="preset-last-30-days" class="preset-mini-btn" data-days="30" title="Last 30 Days">
+                                            30D
+                                        </button>
+                                        <button id="preset-this-year" class="preset-mini-btn" data-year="current" title="This Year">
+                                            2025
+                                        </button>
+                                        <button id="preset-2024" class="preset-mini-btn" data-year="2024" title="2024">
+                                            2024
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
                         
+
+
                         <!-- Search Action Buttons -->
                         <div class="search-actions">
                             <button id="main-search-btn" class="md-btn md-btn-primary">
@@ -1101,8 +2364,875 @@
                     });
                     console.log('Collection info button initialized (hidden)');
                 }
+
+                // Set up visible date preset buttons
+                setupDatePresetButtons();
+                
+                // Set up source preset buttons
+                setupSourcePresetButtons();
+                
+                // Set up visible drawing and info tools
+                setupVisibleTools();
                 
             }, 1000); // Wait 1 second to ensure everything is loaded
+        });
+
+        // Enhanced Date Preset Button Setup
+        function setupDatePresetButtons() {
+            const presetButtons = document.querySelectorAll('.preset-mini-btn');
+            
+            presetButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent triggering the parent click
+                    
+                    const days = this.getAttribute('data-days');
+                    const year = this.getAttribute('data-year');
+                    
+                    // Remove active class from all preset buttons
+                    presetButtons.forEach(btn => btn.classList.remove('active'));
+                    // Add active class to clicked button
+                    this.classList.add('active');
+                    
+                    if (days) {
+                        setDateRange(parseInt(days));
+                        console.log(`✅ Date preset: Last ${days} days`);
+                    } else if (year) {
+                        if (year === 'current') {
+                            setYearRange(new Date().getFullYear());
+                            console.log(`✅ Date preset: Current year (${new Date().getFullYear()})`);
+                        } else {
+                            setYearRange(parseInt(year));
+                            console.log(`✅ Date preset: Year ${year}`);
+                        }
+                    }
+                    
+                    // Update the search summary display
+                    updateSearchSummaryDisplay();
+                });
+            });
+            
+            console.log('✅ Date preset mini buttons initialized');
+        }
+
+        // Source Preset Button Setup
+        function setupSourcePresetButtons() {
+            const sourceButtons = document.querySelectorAll('.source-mini-btn');
+            
+            sourceButtons.forEach(button => {
+                button.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent triggering the parent click
+                    
+                    const collection = this.getAttribute('data-collection');
+                    const buttonId = this.id;
+                    
+                    if (buttonId === 'source-more') {
+                        // Handle "+" button - open the source dropdown
+                        const summarySource = document.getElementById('summary-source');
+                        if (summarySource) {
+                            // Trigger the dropdown by simulating a click on the source card
+                            summarySource.click();
+                        }
+                        console.log('✅ Opened source dropdown for more collections');
+                        return;
+                    }
+                    
+                    if (collection) {
+                        // Remove active class from all source preset buttons
+                        sourceButtons.forEach(btn => {
+                            if (btn.id !== 'source-more') {
+                                btn.classList.remove('active');
+                            }
+                        });
+                        // Add active class to clicked button
+                        this.classList.add('active');
+                        
+                        // Select the collection in the hidden dropdown
+                        setSelectedCollection(collection);
+                        
+                        // Update the search summary display
+                        updateSourceSummaryDisplay(this.textContent, this.title);
+                        
+                        console.log(`✅ Source preset selected: ${this.title} (${collection})`);
+                    }
+                });
+            });
+            
+            console.log('✅ Source preset mini buttons initialized');
+        }
+
+        // Set selected collection in hidden form
+        function setSelectedCollection(collectionId) {
+            const collectionSelect = document.getElementById('collection-select');
+            if (collectionSelect) {
+                // Find option with matching value or create one if it doesn't exist
+                let option = Array.from(collectionSelect.options).find(opt => opt.value === collectionId);
+                
+                if (!option) {
+                    // Create a new option for this collection ID
+                    option = new Option(collectionId, collectionId);
+                    collectionSelect.appendChild(option);
+                }
+                
+                collectionSelect.value = collectionId;
+                collectionSelect.dispatchEvent(new Event('change'));
+            }
+        }
+
+        // Update source summary display
+        function updateSourceSummaryDisplay(buttonText, fullName) {
+            const sourceValueElement = document.querySelector('.search-summary-item:has(.search-summary-label:contains("Source")) .search-summary-value');
+            if (!sourceValueElement) {
+                // Alternative selector if :has() is not supported
+                const sourceItems = document.querySelectorAll('.search-summary-item');
+                for (const item of sourceItems) {
+                    const label = item.querySelector('.search-summary-label');
+                    if (label && label.textContent.includes('Source')) {
+                        const valueElement = item.querySelector('.search-summary-value');
+                        if (valueElement) {
+                            valueElement.textContent = `🛰️ ${fullName}`;
+                            break;
+                        }
+                    }
+                }
+            } else {
+                sourceValueElement.textContent = `🛰️ ${fullName}`;
+            }
+        }
+
+        // Set date range for last N days
+        function setDateRange(days) {
+            const today = new Date();
+            const startDate = new Date(today);
+            startDate.setDate(today.getDate() - days);
+            
+            const startDateStr = startDate.toISOString().split('T')[0];
+            const endDateStr = today.toISOString().split('T')[0];
+            
+            // Set the hidden form inputs
+            document.getElementById('date-start').value = startDateStr;
+            document.getElementById('date-end').value = endDateStr;
+            
+            // Trigger change events to notify other components
+            document.getElementById('date-start').dispatchEvent(new Event('change'));
+            document.getElementById('date-end').dispatchEvent(new Event('change'));
+        }
+
+        // Set date range for a specific year
+        function setYearRange(year) {
+            const startDateStr = `${year}-01-01`;
+            const endDateStr = `${year}-12-31`;
+            
+            // Set the hidden form inputs
+            document.getElementById('date-start').value = startDateStr;
+            document.getElementById('date-end').value = endDateStr;
+            
+            // Trigger change events to notify other components
+            document.getElementById('date-start').dispatchEvent(new Event('change'));
+            document.getElementById('date-end').dispatchEvent(new Event('change'));
+        }
+
+        // Update the search summary display with current date selection
+        function updateSearchSummaryDisplay() {
+            const startDate = document.getElementById('date-start').value;
+            const endDate = document.getElementById('date-end').value;
+            const summaryDateElement = document.querySelector('#summary-date .search-summary-value');
+            
+            if (startDate && endDate) {
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                const today = new Date();
+                
+                // Format dates nicely
+                const startStr = start.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                const endStr = end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                
+                // Check for common presets
+                const daysDiff = Math.round((end - start) / (1000 * 60 * 60 * 24));
+                const todayStr = today.toISOString().split('T')[0];
+                const endStr2 = end.toISOString().split('T')[0];
+                
+                let displayText;
+                if (endStr2 === todayStr && daysDiff === 6) {
+                    displayText = '📅 Last 7 Days';
+                } else if (endStr2 === todayStr && daysDiff === 29) {
+                    displayText = '📅 Last 30 Days';
+                } else if (startDate.endsWith('-01-01') && endDate.endsWith('-12-31')) {
+                    const year = startDate.split('-')[0];
+                    displayText = `📅 Year ${year}`;
+                } else {
+                    displayText = `📅 ${startStr} - ${endStr}`;
+                }
+                
+                if (summaryDateElement) {
+                    summaryDateElement.textContent = displayText;
+                }
+            }
+        }
+
+        // Setup visible drawing and info tools
+        function setupVisibleTools() {
+            // Inline draw bbox button in location card
+            const inlineDrawBtn = document.getElementById('draw-bbox-inline');
+            const hiddenDrawBtn = document.getElementById('criteria-draw-bbox-btn');
+            
+            if (inlineDrawBtn && hiddenDrawBtn) {
+                inlineDrawBtn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent triggering the parent card click
+                    console.log('✅ Inline Draw Area button clicked');
+                    
+                    // Trigger the hidden button's functionality
+                    hiddenDrawBtn.click();
+                    
+                    // Visual feedback
+                    this.style.background = 'var(--primary-500, #2196F3)';
+                    this.style.color = 'white';
+                    setTimeout(() => {
+                        this.style.background = '';
+                        this.style.color = '';
+                    }, 2000);
+                });
+                console.log('✅ Inline draw area button connected');
+            }
+        }
+        
+        // Enhanced Search Interface Management
+        function setupEnhancedSearchInterface() {
+            // Set up clickable search summary items
+            setupSearchSummaryItems();
+            
+            
+            // Set up result count preview
+            setupResultCountPreview();
+        }
+
+        // Setup clickable search summary items
+        function setupSearchSummaryItems() {
+            const summaryItems = document.querySelectorAll('.search-summary-item:not(.location-card-expanded):not(.time-card-expanded)');
+            
+            summaryItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const field = this.getAttribute('data-field');
+                    console.log(`✅ Search summary ${field} clicked`);
+                    
+                    if (field === 'collection') {
+                        // Trigger the source dropdown from the inline dropdown system
+                        const summarySource = document.getElementById('summary-source');
+                        if (summarySource) {
+                            summarySource.click();
+                        }
+                    }
+                });
+            });
+
+        }
+
+
+        // Initialize the beautiful GeocodingService and map preview
+        let geocodingService;
+        let mapPreviewHandler = null;
+        let originalMapView = null;
+        let previewLayer = null;
+        
+        async function initializeGeocodingService() {
+            try {
+                // Import the beautiful GeocodingService
+                const { defaultGeocodingService } = await import('./js/utils/GeocodingService.js');
+                geocodingService = defaultGeocodingService;
+                console.log('✅ Beautiful GeocodingService loaded');
+                
+                // Initialize map preview functionality
+                initializeMapPreview();
+            } catch (error) {
+                console.error('❌ Failed to load GeocodingService, falling back to simple implementation');
+                geocodingService = null;
+            }
+        }
+
+        // Initialize map preview functionality
+        function initializeMapPreview() {
+            // Wait for map to be available
+            setTimeout(() => {
+                if (window.stacExplorer && window.stacExplorer.mapManager && window.stacExplorer.mapManager.map) {
+                    mapPreviewHandler = new LocationMapPreview(window.stacExplorer.mapManager.map);
+                    console.log('✅ Map preview handler initialized');
+                } else {
+                    console.log('⏳ Map not ready, retrying map preview init...');
+                    initializeMapPreview(); // Retry
+                }
+            }, 1000);
+        }
+
+        // Location Map Preview Handler Class
+        class LocationMapPreview {
+            constructor(map) {
+                this.map = map;
+                this.originalView = null;
+                this.previewSourceId = 'location-preview';
+                this.previewLayerId = 'location-preview-layer';
+                this.isPreviewActive = false;
+                this.hasStoredOriginalView = false;
+            }
+
+            // Store the original view when search starts (before any hover)
+            storeOriginalView() {
+                if (!this.hasStoredOriginalView && this.map) {
+                    this.originalView = {
+                        center: this.map.getCenter(),
+                        zoom: this.map.getZoom(),
+                        bearing: this.map.getBearing(),
+                        pitch: this.map.getPitch()
+                    };
+                    this.hasStoredOriginalView = true;
+                    console.log('🗺️ Original map view stored for search session');
+                }
+            }
+
+            // Reset the stored view (call when search ends)
+            resetStoredView() {
+                this.originalView = null;
+                this.hasStoredOriginalView = false;
+                console.log('🗺️ Original map view reset');
+            }
+
+            // Show location preview on map
+            showLocationPreview(result) {
+                if (!this.map || this.isPreviewActive) return;
+
+                this.isPreviewActive = true;
+                
+                // Store original view if not already stored
+                this.storeOriginalView();
+
+                // Create GeoJSON for the location
+                const geoJson = this.createLocationGeoJSON(result);
+                
+                // Add preview layer to map
+                this.addPreviewLayer(geoJson);
+                
+                // Zoom to location
+                this.zoomToLocation(result);
+                
+                console.log(`🗺️ Showing preview for: ${result.name || result.shortName}`);
+            }
+
+            // Hide location preview
+            hideLocationPreview() {
+                if (!this.map || !this.isPreviewActive) return;
+
+                this.isPreviewActive = false;
+                
+                // Remove preview layer
+                this.removePreviewLayer();
+                
+                // Restore original view with smooth transition
+                if (this.originalView) {
+                    this.map.easeTo({
+                        center: this.originalView.center,
+                        zoom: this.originalView.zoom,
+                        bearing: this.originalView.bearing,
+                        pitch: this.originalView.pitch,
+                        duration: 500,
+                        essential: false
+                    });
+                }
+                
+                console.log('🗺️ Preview hidden, map restored');
+            }
+
+            // Create GeoJSON from location result
+            createLocationGeoJSON(result) {
+                const features = [];
+                
+                // Add point feature
+                features.push({
+                    type: 'Feature',
+                    properties: {
+                        type: 'point',
+                        name: result.name || result.shortName,
+                        category: result.category
+                    },
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [result.lon, result.lat]
+                    }
+                });
+
+                // Add bounding box feature if available
+                if (result.bbox && result.bbox.length === 4) {
+                    const [west, south, east, north] = result.bbox;
+                    features.push({
+                        type: 'Feature',
+                        properties: {
+                            type: 'bbox',
+                            name: result.name || result.shortName,
+                            category: result.category
+                        },
+                        geometry: {
+                            type: 'Polygon',
+                            coordinates: [[
+                                [west, south],
+                                [east, south],
+                                [east, north],
+                                [west, north],
+                                [west, south]
+                            ]]
+                        }
+                    });
+                }
+
+                return {
+                    type: 'FeatureCollection',
+                    features: features
+                };
+            }
+
+            // Add preview layer to map
+            addPreviewLayer(geoJson) {
+                // Remove existing preview layer if any
+                this.removePreviewLayer();
+
+                // Add source
+                this.map.addSource(this.previewSourceId, {
+                    type: 'geojson',
+                    data: geoJson
+                });
+
+                // Add polygon fill layer (for bbox)
+                this.map.addLayer({
+                    id: this.previewLayerId + '-fill',
+                    type: 'fill',
+                    source: this.previewSourceId,
+                    filter: ['==', ['get', 'type'], 'bbox'],
+                    paint: {
+                        'fill-color': '#2196F3',
+                        'fill-opacity': 0.1
+                    }
+                });
+
+                // Add polygon outline layer (for bbox)
+                this.map.addLayer({
+                    id: this.previewLayerId + '-outline',
+                    type: 'line',
+                    source: this.previewSourceId,
+                    filter: ['==', ['get', 'type'], 'bbox'],
+                    paint: {
+                        'line-color': '#2196F3',
+                        'line-width': 2,
+                        'line-opacity': 0.8
+                    }
+                });
+
+                // Add point layer
+                this.map.addLayer({
+                    id: this.previewLayerId + '-point',
+                    type: 'circle',
+                    source: this.previewSourceId,
+                    filter: ['==', ['get', 'type'], 'point'],
+                    paint: {
+                        'circle-color': '#2196F3',
+                        'circle-radius': 8,
+                        'circle-stroke-color': '#ffffff',
+                        'circle-stroke-width': 2,
+                        'circle-opacity': 0.9
+                    }
+                });
+            }
+
+            // Remove preview layer from map
+            removePreviewLayer() {
+                const layerIds = [
+                    this.previewLayerId + '-fill',
+                    this.previewLayerId + '-outline', 
+                    this.previewLayerId + '-point'
+                ];
+
+                layerIds.forEach(layerId => {
+                    if (this.map.getLayer(layerId)) {
+                        this.map.removeLayer(layerId);
+                    }
+                });
+
+                if (this.map.getSource(this.previewSourceId)) {
+                    this.map.removeSource(this.previewSourceId);
+                }
+            }
+
+            // Zoom map to location
+            zoomToLocation(result) {
+                if (result.bbox && result.bbox.length === 4) {
+                    // Use bbox for zoom
+                    const [west, south, east, north] = result.bbox;
+                    this.map.fitBounds([
+                        [west, south],
+                        [east, north]
+                    ], {
+                        padding: 50,
+                        duration: 800,
+                        essential: false
+                    });
+                } else {
+                    // Use point location with appropriate zoom based on category
+                    const zoomLevels = {
+                        'country': 5,
+                        'state': 7,
+                        'city': 11,
+                        'town': 13,
+                        'village': 15,
+                        'address': 17
+                    };
+                    const zoom = zoomLevels[result.category] || 12;
+
+                    this.map.easeTo({
+                        center: [result.lon, result.lat],
+                        zoom: zoom,
+                        duration: 800,
+                        essential: false
+                    });
+                }
+            }
+        }
+
+        // Search locations using the beautiful GeocodingService
+        async function searchLocations(query, container) {
+            if (!geocodingService) {
+                // Fallback to simple implementation
+                return searchLocationsSimple(query, container);
+            }
+
+            try {
+                // Use the beautiful geocoding service
+                geocodingService.searchLocations(query, (results, error) => {
+                    if (error) {
+                        console.error('Beautiful geocoding error:', error);
+                        container.innerHTML = '<div class="suggestion-item">Search temporarily unavailable</div>';
+                        container.classList.add('active');
+                        return;
+                    }
+                    
+                    displayBeautifulLocationSuggestions(results, container);
+                });
+            } catch (error) {
+                console.error('Location search error:', error);
+                container.innerHTML = '<div class="suggestion-item">Search temporarily unavailable</div>';
+                container.classList.add('active');
+            }
+        }
+
+        // Simple fallback implementation
+        async function searchLocationsSimple(query, container) {
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&addressdetails=1`
+                );
+                const results = await response.json();
+                
+                displayLocationSuggestions(results, container);
+            } catch (error) {
+                console.error('Location search error:', error);
+                container.innerHTML = '<div class="suggestion-item">Search temporarily unavailable</div>';
+                container.classList.add('active');
+            }
+        }
+
+        // Display beautiful location suggestions using processed results
+        function displayBeautifulLocationSuggestions(results, container) {
+            if (results.length === 0) {
+                container.innerHTML = '<div class="suggestion-item">No locations found</div>';
+                container.classList.add('active');
+                return;
+            }
+
+            // Sort by relevance score (higher is better)
+            const sortedResults = results.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
+
+            const html = sortedResults.map(result => {
+                const categoryIcons = {
+                    'country': 'public',
+                    'state': 'location_city',
+                    'city': 'location_city',
+                    'town': 'location_on',
+                    'village': 'home',
+                    'administrative': 'account_balance',
+                    'natural': 'landscape',
+                    'address': 'place'
+                };
+                
+                const icon = categoryIcons[result.category] || 'place';
+                const shortName = result.shortName || result.name;
+                const details = result.formattedName !== result.name ? 
+                    result.formattedName.replace(result.name + ', ', '') : 
+                    (result.address?.country || '');
+                
+                return `
+                    <div class="suggestion-item" 
+                         data-lat="${result.lat}" 
+                         data-lon="${result.lon}" 
+                         data-name="${shortName}"
+                         data-bbox="${result.bbox ? result.bbox.join(',') : ''}"
+                         data-category="${result.category}">
+                        <i class="material-icons">${icon}</i>
+                        <div class="suggestion-content">
+                            <div class="suggestion-name">${shortName}</div>
+                            <div class="suggestion-details">${details}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+            container.classList.add('active');
+            
+            // Add click and hover handlers to suggestions
+            container.querySelectorAll('.suggestion-item').forEach((item, index) => {
+                const result = sortedResults[index];
+                
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent triggering dropdown menu
+                    selectBeautifulLocation(this);
+                });
+
+                // Add hover preview functionality
+                item.addEventListener('mouseenter', function() {
+                    if (mapPreviewHandler && result) {
+                        this.classList.add('map-preview-active');
+                        mapPreviewHandler.showLocationPreview(result);
+                    }
+                });
+
+                item.addEventListener('mouseleave', function() {
+                    if (mapPreviewHandler) {
+                        this.classList.remove('map-preview-active');
+                        mapPreviewHandler.hideLocationPreview();
+                    }
+                });
+            });
+        }
+
+        // Simple fallback display
+        function displayLocationSuggestions(results, container) {
+            if (results.length === 0) {
+                container.innerHTML = '<div class="suggestion-item">No locations found</div>';
+                container.classList.add('active');
+                return;
+            }
+
+            const html = results.map(result => {
+                const name = result.display_name.split(',')[0];
+                const details = result.display_name.split(',').slice(1, 3).join(',').trim();
+                
+                return `
+                    <div class="suggestion-item" data-lat="${result.lat}" data-lon="${result.lon}" data-name="${name}">
+                        <i class="material-icons">place</i>
+                        <div class="suggestion-content">
+                            <div class="suggestion-name">${name}</div>
+                            <div class="suggestion-details">${details}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            
+            container.innerHTML = html;
+            container.classList.add('active');
+            
+            // Add click and hover handlers to suggestions
+            container.querySelectorAll('.suggestion-item').forEach((item, index) => {
+                const result = results[index];
+                
+                item.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent triggering dropdown menu
+                    selectLocation(this);
+                });
+
+                // Add basic hover preview functionality
+                item.addEventListener('mouseenter', function() {
+                    if (mapPreviewHandler && result) {
+                        this.classList.add('map-preview-active');
+                        // Convert simple result to compatible format
+                        const compatibleResult = {
+                            lat: parseFloat(result.lat),
+                            lon: parseFloat(result.lon),
+                            name: result.display_name.split(',')[0],
+                            shortName: result.display_name.split(',')[0],
+                            category: 'place',
+                            bbox: result.boundingbox ? [
+                                parseFloat(result.boundingbox[2]), // west
+                                parseFloat(result.boundingbox[0]), // south
+                                parseFloat(result.boundingbox[3]), // east
+                                parseFloat(result.boundingbox[1])  // north
+                            ] : null
+                        };
+                        mapPreviewHandler.showLocationPreview(compatibleResult);
+                    }
+                });
+
+                item.addEventListener('mouseleave', function() {
+                    if (mapPreviewHandler) {
+                        this.classList.remove('map-preview-active');
+                        mapPreviewHandler.hideLocationPreview();
+                    }
+                });
+            });
+        }
+
+        // Select a beautiful location with enhanced data
+        function selectBeautifulLocation(suggestionElement) {
+            const lat = parseFloat(suggestionElement.getAttribute('data-lat'));
+            const lon = parseFloat(suggestionElement.getAttribute('data-lon'));
+            const name = suggestionElement.getAttribute('data-name');
+            const bboxStr = suggestionElement.getAttribute('data-bbox');
+            const category = suggestionElement.getAttribute('data-category');
+            
+            console.log(`✅ Selected beautiful location: ${name} (${lat}, ${lon}) [${category}]`);
+            
+            let bbox;
+            if (bboxStr && bboxStr !== '') {
+                // Use the precise bounding box from the geocoding service
+                bbox = bboxStr;
+            } else {
+                // Fallback: create a buffer based on location category
+                const buffers = {
+                    'country': 2.0,
+                    'state': 1.0,
+                    'city': 0.1,
+                    'town': 0.05,
+                    'village': 0.02,
+                    'address': 0.001
+                };
+                const buffer = buffers[category] || 0.1;
+                
+                bbox = [
+                    lon - buffer,
+                    lat - buffer,
+                    lon + buffer,
+                    lat + buffer
+                ].join(',');
+            }
+            
+            // Update the hidden bbox input
+            const bboxInput = document.getElementById('bbox-input');
+            if (bboxInput) {
+                bboxInput.value = bbox;
+                bboxInput.dispatchEvent(new Event('change'));
+            }
+            
+            // Category icons for display
+            const categoryEmojis = {
+                'country': '🌍',
+                'state': '🏛️',
+                'city': '🏙️',
+                'town': '🏘️',
+                'village': '🏡',
+                'administrative': '📍',
+                'natural': '🏔️',
+                'address': '📍'
+            };
+            
+            const emoji = categoryEmojis[category] || '📍';
+            
+            // Update the search summary display
+            const summaryLocationElement = document.querySelector('#summary-location .search-summary-value');
+            if (summaryLocationElement) {
+                summaryLocationElement.textContent = `${emoji} ${name}`;
+            }
+            
+            // Keep current map view when location is selected
+            if (mapPreviewHandler) {
+                mapPreviewHandler.hideLocationPreview();
+                // Don't reset the stored view - keep current position
+            }
+            
+            
+            // Show result count if possible
+            updateResultCountPreview();
+        }
+
+        // Fallback select function for simple results
+        function selectLocation(suggestionElement) {
+            const lat = parseFloat(suggestionElement.getAttribute('data-lat'));
+            const lon = parseFloat(suggestionElement.getAttribute('data-lon'));
+            const name = suggestionElement.getAttribute('data-name');
+            
+            console.log(`✅ Selected location: ${name} (${lat}, ${lon})`);
+            
+            // Create a bounding box around the location (roughly 0.1 degree buffer)
+            const buffer = 0.1;
+            const bbox = [
+                lon - buffer,
+                lat - buffer,
+                lon + buffer,
+                lat + buffer
+            ].join(',');
+            
+            // Update the hidden bbox input
+            const bboxInput = document.getElementById('bbox-input');
+            if (bboxInput) {
+                bboxInput.value = bbox;
+                bboxInput.dispatchEvent(new Event('change'));
+            }
+            
+            // Update the search summary display
+            const summaryLocationElement = document.querySelector('#summary-location .search-summary-value');
+            if (summaryLocationElement) {
+                summaryLocationElement.textContent = `📍 ${name}`;
+            }
+            
+            // Keep current map view when location is selected
+            if (mapPreviewHandler) {
+                mapPreviewHandler.hideLocationPreview();
+                // Don't reset the stored view - keep current position
+            }
+            
+            
+            // Show result count if possible
+            updateResultCountPreview();
+        }
+
+        // Setup result count preview
+        function setupResultCountPreview() {
+            const searchBtn = document.getElementById('main-search-btn');
+            
+            // Add result count badge to search button
+            if (searchBtn && !searchBtn.querySelector('.result-count-badge')) {
+                const badge = document.createElement('span');
+                badge.className = 'result-count-badge';
+                badge.style.display = 'none';
+                badge.innerHTML = '<i class="material-icons">search</i><span class="count">0</span>';
+                searchBtn.appendChild(badge);
+            }
+        }
+
+        // Update result count preview (placeholder - would integrate with actual search)
+        function updateResultCountPreview() {
+            // This would integrate with your actual search system
+            // For now, just show a placeholder
+            setTimeout(() => {
+                const badge = document.querySelector('.result-count-badge');
+                if (badge) {
+                    const countSpan = badge.querySelector('.count');
+                    if (countSpan) {
+                        // Simulate getting a count
+                        const simulatedCount = Math.floor(Math.random() * 500) + 50;
+                        countSpan.textContent = simulatedCount;
+                        badge.style.display = 'inline-flex';
+                        
+                        setTimeout(() => {
+                            badge.style.display = 'none';
+                        }, 3000);
+                    }
+                }
+            }, 500);
+        }
+
+        // Initialize everything when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize the beautiful geocoding service first
+            initializeGeocodingService();
+            
+            // Wait for app to be ready then set up enhanced functionality
+            setTimeout(() => {
+                updateSearchSummaryDisplay(); // Update initial display
+                setupEnhancedSearchInterface(); // Setup enhanced search features
+            }, 2000);
         });
         
         // Fix collection details modal to prevent scrolling issues

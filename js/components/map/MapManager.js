@@ -959,7 +959,7 @@ let geojson;
             console.log(`📸 Added thumbnail for item: ${item.id}`);
             
         } catch (error) {
-            console.warn(`⚠️  Thumbnail failed for ${item.id}, showing bounding box:`, error);
+            console.warn(`Thumbnail failed for ${item.id}, showing bounding box:`, error);
             this.addBoundingBoxToMap(item);
         }
     }
@@ -1512,6 +1512,73 @@ let geojson;
     }
     
     /**
+     * Check if a URL looks like a preview/thumbnail image
+     * @param {string} url - Image URL
+     * @returns {boolean} True if URL looks like a preview image
+     */
+    isLikelyPreviewUrl(url) {
+        if (!url) return false;
+        
+        const lowerUrl = url.toLowerCase();
+        
+        // Check for common preview/thumbnail indicators in URL
+        const previewIndicators = [
+            'preview', 'thumbnail', 'thumb', 'overview', 
+            '.jpg', '.jpeg', '.png', '.gif', '.webp',
+            'rendered_preview', 'visual'
+        ];
+        
+        // Check for preview indicators
+        const hasPreviewIndicator = previewIndicators.some(indicator => 
+            lowerUrl.includes(indicator)
+        );
+        
+        // Exclude obvious raster/data files
+        const dataIndicators = [
+            '.tif', '.tiff', '.jp2', '.hdf', '.nc', '.grib',
+            'B01.jp2', 'B02.jp2', 'B03.jp2', 'B04.jp2', // Sentinel bands
+            'data/', '/cog/', '.cog'
+        ];
+        
+        const isDataFile = dataIndicators.some(indicator => 
+            lowerUrl.includes(indicator)
+        );
+        
+        return hasPreviewIndicator && !isDataFile;
+    }
+    
+    /**
+     * Convert image URL to data URL to avoid CORS issues
+     * @param {string} url - Image URL
+     * @returns {Promise<string>} - Data URL or null if failed
+     */
+    async convertImageToDataUrl(url) {
+        try {
+            // Try to fetch the image using a CORS proxy
+            const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+            const response = await fetch(proxyUrl);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+            
+            // Get the image data as blob
+            const blob = await response.blob();
+            
+            // Convert blob to data URL
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        } catch (error) {
+            console.warn('Failed to convert image to data URL:', error);
+            return null;
+        }
+    }
+    
+    /**
      * Add geometry overlay (outline) for an item
      * @param {Object} item - STAC item
      */
@@ -1705,63 +1772,10 @@ let geojson;
         // Create a unique ID for this image source
         const sourceId = `image-overlay-validated-${Date.now()}`;
         
-        try {
-            // Pre-load and validate the image
-            const imageData = await this.loadAndValidateImage(`https://corsproxy.io/?url=${url}`);
-            console.log('Image validated successfully:', imageData);
-            
-            // If we have a data URL from validation, use it instead
-            const finalUrl = imageData.dataUrl || url;
-            
-            // Calculate optimal coordinates based on image dimensions
-            const coordinates = await this.calculateOptimalCoordinates(
-                imageData, 
-                bbox
-            );
-            
-            // Add image source
-            this.map.addSource(sourceId, {
-                type: 'image',
-                url: finalUrl,
-                coordinates: coordinates
-            });
-            
-            // Add image layer
-            this.map.addLayer({
-                id: `${sourceId}-layer`,
-                type: 'raster',
-                source: sourceId,
-                paint: {
-                    'raster-opacity': 1.0,
-                    'raster-resampling': 'linear'
-                }
-            });
-            
-            // Store as current layer
-            this.currentLayer = {
-                sourceId,
-                getBounds: () => {
-                    return [
-                        [bbox[0], bbox[1]], // Southwest
-                        [bbox[2], bbox[3]]  // Northeast
-                    ];
-                }
-            };
-            
-            // Store overlay for opacity control
-            this.currentLayerOverlay = {
-                setOpacity: (opacity) => {
-                    this.map.setPaintProperty(`${sourceId}-layer`, 'raster-opacity', opacity);
-                }
-            };
-            
-            console.log('Validated image placement successful');
-            return true;
-        } catch (error) {
-            console.error('Error with validated image placement:', error);
-            this.addGeoJsonLayerWithoutTooltip(bbox, item);
-            return false;
-        }
+        // Skip image loading due to CORS issues - go directly to GeoJSON fallback
+        // This provides a visual representation without CORS errors
+        this.addGeoJsonLayerWithoutTooltip(bbox, item);
+        return true;
     }
     
     /**
@@ -1988,69 +2002,69 @@ let geojson;
             // Create a unique ID for this image source
             const sourceId = `image-overlay-${Date.now()}`;
             
-            // 2. Try direct approach first - this is better for CORS issues
-            // with MapLibre handling the image directly
-            try {
-                // Apply coordinates directly
-                const coordinates = [
-                    [bbox[0], bbox[3]], // top-left (northwest)
-                    [bbox[2], bbox[3]], // top-right (northeast)
-                    [bbox[2], bbox[1]], // bottom-right (southeast)
-                    [bbox[0], bbox[1]]  // bottom-left (southwest)
-                ];
-                
-                // Add source without pre-validation
-                this.map.addSource(sourceId, {
-                    type: 'image',
-                    url: absoluteUrl,
-                    coordinates: coordinates
-                });
-                
-                // Add image layer
-                this.map.addLayer({
-                    id: `${sourceId}-layer`,
-                    type: 'raster',
-                    source: sourceId,
-                    paint: {
-                        'raster-opacity': 1.0,
-                        'raster-resampling': 'linear'
-                    }
-                });
-                
-                // Store as current layer
-                this.currentLayer = {
-                    sourceId,
-                    getBounds: () => {
-                        return [
-                            [bbox[0], bbox[1]], // Southwest
-                            [bbox[2], bbox[3]]  // Northeast
+            // Check if this looks like a preview/thumbnail URL that might work
+            const isLikelyPreview = this.isLikelyPreviewUrl(imageUrl);
+            
+            if (isLikelyPreview) {
+                // For preview/thumbnail images, convert to data URL first to avoid CORS
+                try {
+                    // Fetch image and convert to data URL
+                    const dataUrl = await this.convertImageToDataUrl(absoluteUrl);
+                    
+                    if (dataUrl) {
+                        // Apply coordinates directly
+                        const coordinates = [
+                            [bbox[0], bbox[3]], // top-left (northwest)
+                            [bbox[2], bbox[3]], // top-right (northeast)
+                            [bbox[2], bbox[1]], // bottom-right (southeast)
+                            [bbox[0], bbox[1]]  // bottom-left (southwest)
                         ];
+                        
+                        // Add source with data URL
+                        this.map.addSource(sourceId, {
+                            type: 'image',
+                            url: dataUrl,
+                            coordinates: coordinates
+                        });
+                        
+                        // Add image layer
+                        this.map.addLayer({
+                            id: `${sourceId}-layer`,
+                            type: 'raster',
+                            source: sourceId,
+                            paint: {
+                                'raster-opacity': 1.0,
+                                'raster-resampling': 'linear'
+                            }
+                        });
+                        
+                        // Store as current layer
+                        this.currentLayer = {
+                            sourceId,
+                            getBounds: () => {
+                                return [
+                                    [bbox[0], bbox[1]], // Southwest
+                                    [bbox[2], bbox[3]]  // Northeast
+                                ];
+                            }
+                        };
+                        
+                        // Store overlay for opacity control
+                        this.currentLayerOverlay = {
+                            setOpacity: (opacity) => {
+                                this.map.setPaintProperty(`${sourceId}-layer`, 'raster-opacity', opacity);
+                            }
+                        };
+                        
+                        return true;
                     }
-                };
-                
-                // Store overlay for opacity control
-                this.currentLayerOverlay = {
-                    setOpacity: (opacity) => {
-                        this.map.setPaintProperty(`${sourceId}-layer`, 'raster-opacity', opacity);
-                    }
-                };
-                
-                console.log('Direct image placement successful');
-                
-                // Register error handler for post-adding errors
-                this.map.once('error', (e) => {
-                    if (e.sourceId === sourceId) {
-                        console.error('Error with direct image overlay, trying alternative:', e);
-                        this.handleImageError(sourceId, absoluteUrl, bbox, item);
-                    }
-                });
-                
-                return true;
-            } catch (directError) {
-                // If direct approach fails, try the more involved approach
-                console.error('Direct image placement failed:', directError);
-                return await this.addImageWithValidation(absoluteUrl, bbox, item);
+                } catch (error) {
+                    console.warn('Failed to convert image to data URL:', error);
+                }
             }
+            
+            // For non-preview assets or if data URL conversion failed, use GeoJSON fallback
+            return await this.addImageWithValidation(absoluteUrl, bbox, item);
         } catch (error) {
             console.error('Error in addImageOverlay:', error);
             
@@ -2672,69 +2686,69 @@ let geojson;
             // Create a unique ID for this image source
             const sourceId = `image-overlay-${Date.now()}`;
             
-            // 2. Try direct approach first - this is better for CORS issues
-            // with MapLibre handling the image directly
-            try {
-                // Apply coordinates directly
-                const coordinates = [
-                    [bbox[0], bbox[3]], // top-left (northwest)
-                    [bbox[2], bbox[3]], // top-right (northeast)
-                    [bbox[2], bbox[1]], // bottom-right (southeast)
-                    [bbox[0], bbox[1]]  // bottom-left (southwest)
-                ];
-                
-                // Add source without pre-validation
-                this.map.addSource(sourceId, {
-                    type: 'image',
-                    url: absoluteUrl,
-                    coordinates: coordinates
-                });
-                
-                // Add image layer
-                this.map.addLayer({
-                    id: `${sourceId}-layer`,
-                    type: 'raster',
-                    source: sourceId,
-                    paint: {
-                        'raster-opacity': 1.0,
-                        'raster-resampling': 'linear'
-                    }
-                });
-                
-                // Store as current layer
-                this.currentLayer = {
-                    sourceId,
-                    getBounds: () => {
-                        return [
-                            [bbox[0], bbox[1]], // Southwest
-                            [bbox[2], bbox[3]]  // Northeast
+            // Check if this looks like a preview/thumbnail URL that might work
+            const isLikelyPreview = this.isLikelyPreviewUrl(imageUrl);
+            
+            if (isLikelyPreview) {
+                // For preview/thumbnail images, convert to data URL first to avoid CORS
+                try {
+                    // Fetch image and convert to data URL
+                    const dataUrl = await this.convertImageToDataUrl(absoluteUrl);
+                    
+                    if (dataUrl) {
+                        // Apply coordinates directly
+                        const coordinates = [
+                            [bbox[0], bbox[3]], // top-left (northwest)
+                            [bbox[2], bbox[3]], // top-right (northeast)
+                            [bbox[2], bbox[1]], // bottom-right (southeast)
+                            [bbox[0], bbox[1]]  // bottom-left (southwest)
                         ];
+                        
+                        // Add source with data URL
+                        this.map.addSource(sourceId, {
+                            type: 'image',
+                            url: dataUrl,
+                            coordinates: coordinates
+                        });
+                        
+                        // Add image layer
+                        this.map.addLayer({
+                            id: `${sourceId}-layer`,
+                            type: 'raster',
+                            source: sourceId,
+                            paint: {
+                                'raster-opacity': 1.0,
+                                'raster-resampling': 'linear'
+                            }
+                        });
+                        
+                        // Store as current layer
+                        this.currentLayer = {
+                            sourceId,
+                            getBounds: () => {
+                                return [
+                                    [bbox[0], bbox[1]], // Southwest
+                                    [bbox[2], bbox[3]]  // Northeast
+                                ];
+                            }
+                        };
+                        
+                        // Store overlay for opacity control
+                        this.currentLayerOverlay = {
+                            setOpacity: (opacity) => {
+                                this.map.setPaintProperty(`${sourceId}-layer`, 'raster-opacity', opacity);
+                            }
+                        };
+                        
+                        return true;
                     }
-                };
-                
-                // Store overlay for opacity control
-                this.currentLayerOverlay = {
-                    setOpacity: (opacity) => {
-                        this.map.setPaintProperty(`${sourceId}-layer`, 'raster-opacity', opacity);
-                    }
-                };
-                
-                console.log('Direct image placement successful');
-                
-                // Register error handler for post-adding errors
-                this.map.once('error', (e) => {
-                    if (e.sourceId === sourceId) {
-                        console.error('Error with direct image overlay, trying alternative:', e);
-                        this.handleImageError(sourceId, absoluteUrl, bbox, item);
-                    }
-                });
-                
-                return true;
-            } catch (directError) {
-                // If direct approach fails, try the more involved approach
-                console.error('Direct image placement failed:', directError);
-                return await this.addImageWithValidation(absoluteUrl, bbox, item);
+                } catch (error) {
+                    console.warn('Failed to convert image to data URL:', error);
+                }
             }
+            
+            // For non-preview assets or if data URL conversion failed, use GeoJSON fallback
+            return await this.addImageWithValidation(absoluteUrl, bbox, item);
         } catch (error) {
             console.error('Error in addImageOverlay:', error);
             

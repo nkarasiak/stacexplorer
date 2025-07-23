@@ -105,52 +105,131 @@
 
 /* Dark Theme (Default) - Improved Contrast */
 html.dark-theme {
-    --bg-primary: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-    --bg-secondary: rgba(15, 15, 35, 0.95);
-    --surface-primary: rgba(25, 25, 45, 0.98);  /* Darker, more uniform */
-    --surface-secondary: rgba(25, 25, 45, 0.98);  /* Same as primary for consistency */
-    --surface-elevated: rgba(30, 30, 50, 0.98);  /* Slightly lighter for hierarchy */
-    --surface-tertiary: rgba(20, 20, 40, 0.98);  /* Darker for secondary elements */
+    --bg-primary: linear-gradient(135deg, #0a0a1f 0%, #1a1a3a 30%, #2d1b69 70%, #1e3a8a 100%);
+    --bg-secondary: rgba(20, 20, 45, 0.95);
+    --surface-primary: rgba(30, 30, 60, 0.9);     /* Unified surface for consistency */
+    --surface-secondary: rgba(30, 30, 60, 0.9);   /* Same as primary for uniformity */
+    --surface-elevated: rgba(30, 30, 60, 0.9);    /* Consistent elevation */
+    --surface-tertiary: rgba(30, 30, 60, 0.9);    /* Unified tertiary surface */
     
-    --text-primary: rgba(255, 255, 255, 0.95);
-    --text-secondary: rgba(255, 255, 255, 0.8);   /* Improved contrast */
-    --text-tertiary: rgba(255, 255, 255, 0.6);
+    --text-primary: rgba(255, 255, 255, 0.98);    /* Maximum contrast */
+    --text-secondary: rgba(255, 255, 255, 0.85);  /* Excellent readability */
+    --text-tertiary: rgba(255, 255, 255, 0.65);   /* Better contrast than before */
     
-    --border-primary: rgba(255, 255, 255, 0.2);  /* Stronger borders for glass definition */
-    --border-secondary: rgba(255, 255, 255, 0.15);  /* Stronger secondary borders */
+    --border-primary: rgba(255, 255, 255, 0.1);   /* Subtle, elegant borders */
+    --border-secondary: rgba(255, 255, 255, 0.05); /* Very subtle secondary borders */
     
-    --hover-overlay: rgba(255, 255, 255, 0.1);
-    --hover-background: rgba(255, 255, 255, 0.1);
-    --active-overlay: rgba(255, 255, 255, 0.15);
+    --hover-overlay: rgba(255, 255, 255, 0.12);   /* More responsive hover */
+    --hover-background: rgba(255, 255, 255, 0.08); /* Subtle background hover */
+    --active-overlay: rgba(255, 255, 255, 0.18);   /* Clear active state */
     
-    /* Glass Effects - Optimized for dark theme */
-    --glass-blur: blur(12px);  /* Reduced to prevent over-blurring */
-    --glass-blur-sm: blur(8px);  /* Reduced to match original values */
-    --glass-border: 1px solid rgba(255, 255, 255, 0.15);  /* Subtler border */
-    --glass-saturate: saturate(120%);  /* Moderate saturation boost */
+    /* Glass Effects - Enhanced for dark theme beauty */
+    --glass-blur: blur(16px);  /* Enhanced blur for premium feel */
+    --glass-blur-sm: blur(10px);  /* Refined small blur */
+    --glass-border: 1px solid rgba(255, 255, 255, 0.2);  /* Better border visibility */
+    --glass-saturate: saturate(140%);  /* Enhanced saturation for vibrancy */
+    --glass-brightness: brightness(1.1);  /* Subtle brightness boost */
     
-    /* Primary colors */
-    --primary-500: #2196F3;
-    --primary-400: #64B5F6;
-    --primary-100: rgba(33, 150, 243, 0.1);
+    /* Primary colors - Enhanced for dark theme */
+    --primary-500: #4facfe;
+    --primary-400: #6bcfff;
+    --primary-300: #89daff;
+    --primary-100: rgba(79, 172, 254, 0.15);
     
-    /* Status colors */
-    --success-color: #4CAF50;
-    --warning-color: #FF9800;
-    --error-color: #F44336;
-    --info-color: #2196F3;
+    /* Status colors - Vibrant for dark theme */
+    --success-color: #10d876;
+    --warning-color: #fbbf24;
+    --error-color: #f87171;
+    --info-color: #60a5fa;
     
     /* Modal/overlay backgrounds */
     --overlay-background: rgba(0, 0, 0, 0.6);
     --modal-backdrop: rgba(0, 0, 0, 0.7);
 }
 
-/* Dark theme specific overrides for consistent card backgrounds */
+/* Dark theme specific overrides for enhanced glass effects */
 html.dark-theme .search-summary-interface {
     background: var(--surface-primary) !important;
+    backdrop-filter: var(--glass-blur) var(--glass-saturate) var(--glass-brightness);
+    border: none !important;
 }
 
 html.dark-theme .md-card-header {
+    background: var(--surface-primary) !important;
+    backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
+}
+
+html.dark-theme .sidebar {
+    backdrop-filter: var(--glass-blur) var(--glass-saturate) var(--glass-brightness);
+    border-right: var(--glass-border);
+}
+
+html.dark-theme .card,
+html.dark-theme .md-card {
+    backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
+    border: var(--glass-border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+html.dark-theme .modal-content {
+    backdrop-filter: var(--glass-blur) var(--glass-saturate) var(--glass-brightness);
+    border: var(--glass-border);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+}
+
+/* Clean up ugly border-bottom styles in dark theme */
+html.dark-theme .modal-header,
+html.dark-theme .collection-details-modal-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+html.dark-theme .collection-section-title,
+html.dark-theme .item-section-title {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+}
+
+html.dark-theme .tab-header {
+    border-bottom: 1px solid transparent !important;
+}
+
+html.dark-theme .tab-header.active {
+    border-bottom: 2px solid var(--primary-400) !important;
+}
+
+html.dark-theme .tab-headers,
+html.dark-theme .asset-header,
+html.dark-theme .json-header {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+
+html.dark-theme .info-row,
+html.dark-theme .history-item {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
+}
+
+html.dark-theme .info-row:last-child,
+html.dark-theme .history-item:last-child {
+    border-bottom: none !important;
+}
+
+/* Ensure consistent backgrounds throughout dark theme */
+html.dark-theme .tab-headers,
+html.dark-theme .asset-header,
+html.dark-theme .json-header,
+html.dark-theme .collection-details-modal-header,
+html.dark-theme .modal-header {
+    background: var(--surface-primary) !important;
+}
+
+html.dark-theme .tab-content,
+html.dark-theme .asset-list,
+html.dark-theme .json-content {
+    background: var(--surface-primary) !important;
+}
+
+/* Remove any conflicting background styles */
+html.dark-theme .md-card,
+html.dark-theme .card {
     background: var(--surface-primary) !important;
 }
 

@@ -157,6 +157,21 @@ html.dark-theme .search-summary-interface {
 html.dark-theme .md-card-header {
     background: var(--surface-primary) !important;
     backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
+    border-bottom: none !important;
+    padding: 12px 12px !important;
+}
+
+html.light-theme .md-card-header {
+    border-bottom: none !important;
+    padding: 12px 12px !important;
+}
+
+html.light-theme .md-card-body {
+    padding: 0px 16px 16px 16px !important;
+}
+
+html.dark-theme .md-card-body {
+    padding: 0px 16px 16px 16px !important;
 }
 
 html.dark-theme .sidebar {
@@ -177,15 +192,15 @@ html.dark-theme .modal-content {
     box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
 }
 
-/* Clean up ugly border-bottom styles in dark theme */
+/* Clean up border-bottom styles in dark theme */
 html.dark-theme .modal-header,
 html.dark-theme .collection-details-modal-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-bottom: none !important;
 }
 
 html.dark-theme .collection-section-title,
 html.dark-theme .item-section-title {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+    border-bottom: none !important;
 }
 
 html.dark-theme .tab-header {
@@ -199,7 +214,7 @@ html.dark-theme .tab-header.active {
 html.dark-theme .tab-headers,
 html.dark-theme .asset-header,
 html.dark-theme .json-header {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-bottom: none !important;
 }
 
 html.dark-theme .info-row,
@@ -219,6 +234,7 @@ html.dark-theme .json-header,
 html.dark-theme .collection-details-modal-header,
 html.dark-theme .modal-header {
     background: var(--surface-primary) !important;
+    border-bottom: none !important;
 }
 
 html.dark-theme .tab-content,
@@ -577,7 +593,7 @@ body, html {
 }
 
 .md-card-header {
-    padding: 16px 20px;  /* Reduced from 20px 24px */
+    padding: 12px 12px !important;  /* Forced consistent padding */
     background: var(--surface-secondary);
     backdrop-filter: var(--glass-blur-sm) var(--glass-saturate, saturate(100%));
     -webkit-backdrop-filter: var(--glass-blur-sm) var(--glass-saturate, saturate(100%));
@@ -590,6 +606,7 @@ body, html {
     user-select: none;
     min-height: auto;
     transition: var(--transition-fast);
+    border-bottom: none !important;
 }
 
 .md-card-header:hover {
@@ -622,7 +639,7 @@ body, html {
 }
 
 .md-card-body {
-    padding: 0 16px 16px 16px;  /* Reduced from 24px */
+    padding: 0px 16px 16px 16px !important;  /* Forced consistent padding */
     transition: var(--transition-all);
     overflow: hidden;
 }
@@ -1008,14 +1025,15 @@ select, select * {
         box-shadow: var(--shadow-lg);
     }
     
-    /* Mobile Search Interface Enhancements - Compact */
+    /* Mobile Search Interface Enhancements - No Padding/Border */
     .search-summary-interface {
-        padding: var(--space-2) var(--space-3) !important;
+        padding: 0 !important;
         margin: var(--space-2) var(--space-1) !important;
         border-radius: var(--border-radius) !important;
         backdrop-filter: var(--glass-blur-sm) !important;
-        border: 1px solid var(--border-primary) !important;
-        box-shadow: var(--shadow-lg) !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
     }
     
     .search-input-container {
@@ -1111,7 +1129,7 @@ select, select * {
         font-size: 1.1rem !important;
         font-weight: 600 !important;
         color: var(--text-primary) !important;
-        border-bottom: 1px solid var(--border-primary) !important;
+        border-bottom: none !important;
         margin-bottom: 0 !important;
     }
     
@@ -2131,7 +2149,10 @@ select, select * {
     /* Extra compact spacing for small screens */
     .search-summary-interface {
         margin: var(--space-1) !important;
-        padding: var(--space-2) !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
     }
     
     .mobile-menu-btn {
@@ -2162,6 +2183,7 @@ select, select * {
         font-size: 1rem !important;
         padding: var(--space-1) var(--space-2) !important;
         margin-bottom: 0 !important;
+        border-bottom: none !important;
     }
     
     .md-card-content,
@@ -2269,7 +2291,10 @@ select, select * {
     }
     
     .search-summary-interface {
-        padding: var(--space-3) !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: transparent !important;
     }
     
     .search-results-container {
@@ -2506,10 +2531,10 @@ select, select * {
     }
     
     html.light-theme .search-summary-interface {
-        background: rgba(255, 255, 255, 0.98) !important;
-        border-color: rgba(15, 23, 42, 0.15) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
-        color: rgba(15, 23, 42, 0.9) !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        color: var(--text-primary) !important;
     }
     
     html.light-theme .search-input {
@@ -2545,7 +2570,7 @@ select, select * {
     html.light-theme .md-card-header,
     html.light-theme .card-header {
         color: rgba(15, 23, 42, 0.95) !important;
-        border-bottom-color: rgba(15, 23, 42, 0.12) !important;
+        border-bottom: none !important;
         padding: var(--space-2) var(--space-3) var(--space-1) var(--space-3) !important;
         margin-bottom: 0 !important;
     }
@@ -2678,8 +2703,9 @@ select, select * {
     }
     
     html.dark-theme .search-summary-interface {
-        background: var(--surface-primary) !important;
-        border-color: var(--border-primary) !important;
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
         color: var(--text-primary) !important;
     }
     
@@ -2931,7 +2957,7 @@ select, select * {
 }
 
 .results-card .md-card-body {
-    padding: 0;
+    padding: 0px 16px 16px 16px !important;  /* Forced consistent padding */
     flex-grow: 1;
     overflow-y: auto;
     max-height: calc(100vh - 180px);  /* Adjusted for smaller header */

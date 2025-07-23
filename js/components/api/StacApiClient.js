@@ -311,14 +311,32 @@ export class STACApiClient {
     }
     
     /**
+     * Check if Planet Labs catalog is currently selected
+     * @returns {boolean} - True if Planet Labs catalog is currently active
+     */
+    isCurrentlyPlanetLabs() {
+        // Check if the catalog selector indicates Planet Labs is selected
+        const catalogSelect = document.getElementById('catalog-select');
+        const selectedCatalog = catalogSelect?.value || '';
+        
+        // Check if it's planetlabs or any Planet Labs-related catalog
+        const isPlanetLabs = selectedCatalog === 'planetlabs' || 
+                             selectedCatalog.includes('planet') ||
+                             // Also check if the current endpoints indicate Planet Labs
+                             (this.endpoints.root && this.endpoints.root.includes('planet'));
+        
+        return isPlanetLabs;
+    }
+    
+    /**
      * Search for STAC items
      * @param {Object} params - Search parameters
      * @returns {Promise<Array>} - Promise resolving to an array of items
      */
     async searchItems(params = {}) {
         try {
-            // Handle Planet Labs catalog specially
-            if (this.planetLabsCatalogData) {
+            // Handle Planet Labs catalog specially - but only if it's currently selected
+            if (this.planetLabsCatalogData && this.isCurrentlyPlanetLabs()) {
                 return await this.searchPlanetLabsItems(params);
             }
             
@@ -436,30 +454,23 @@ export class STACApiClient {
      * @returns {Array} - Items with presigned URLs
      */
     async presignPlanetaryComputerUrls(items) {
-        console.log('🔍 [PRESIGN] Starting presigning process for', items.length, 'items');
         
         if (!Array.isArray(items)) {
-            console.log('🔍 [PRESIGN] Input is not an array, returning as-is');
             return items;
         }
         
         return Promise.all(items.map(async (item, itemIndex) => {
-            console.log(`🔍 [PRESIGN] Processing item ${itemIndex}:`, item.id);
             
             if (!item.assets) {
-                console.log(`🔍 [PRESIGN] Item ${itemIndex} has no assets`);
                 return item;
             }
             
-            console.log(`🔍 [PRESIGN] Item ${itemIndex} has ${Object.keys(item.assets).length} assets:`, Object.keys(item.assets));
             
             // Process each asset in the item
             await Promise.all(Object.keys(item.assets).map(async assetKey => {
                 const asset = item.assets[assetKey];
-                console.log(`🔍 [PRESIGN] Checking asset ${assetKey}:`, asset.href);
                 
                 const needsPresigning = asset.href && (asset.href.includes('planetarycomputer') || this.needsPlanetaryComputerPresigning(asset.href));
-                console.log(`🔍 [PRESIGN] Asset ${assetKey} needs presigning:`, needsPresigning);
                 
                 if (needsPresigning) {
                     // Convert to presigned URL
@@ -469,12 +480,9 @@ export class STACApiClient {
                             'https://planetarycomputer.microsoft.com/api/stac/v1',
                             'https://planetarycomputer.microsoft.com/api/data/v1'
                         );
-                        console.log(`🔗 [PRESIGN] STAC API conversion for ${assetKey}:`, originalUrl, '→', asset.href);
                     } else {
                         // Handle direct blob storage URLs that need presigning
-                        console.log(`🔗 [PRESIGN] Getting presigned URL for blob storage ${assetKey}:`, originalUrl);
                         asset.href = await this.getPresignedUrl(asset.href);
-                        console.log(`🔗 [PRESIGN] Blob storage conversion for ${assetKey}:`, originalUrl, '→', asset.href);
                     }
                 }
             }));
@@ -502,7 +510,6 @@ export class STACApiClient {
         ];
         
         const needsPresigning = pcBlobDomains.some(domain => url.includes(domain));
-        console.log(`🔍 [DOMAIN-CHECK] URL: ${url} | Needs presigning: ${needsPresigning}`);
         return needsPresigning;
     }
     

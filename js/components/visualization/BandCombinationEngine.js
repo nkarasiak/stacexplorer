@@ -441,7 +441,6 @@ export class BandCombinationEngine {
         ];
         
         const needsPresigning = pcBlobDomains.some(domain => url.includes(domain));
-        console.log(`🔍 [DOMAIN-CHECK] URL: ${url} | Needs presigning: ${needsPresigning}`);
         return needsPresigning;
     }
 

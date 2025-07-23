@@ -80,13 +80,13 @@ class MapManager {
 
             console.log('🗺️ Initializing MapManager with container:', container);
 
-            // Detect current theme - check saved preference first, then default to dark
+            // Detect current theme - check saved preference first, then default to light
             const savedTheme = localStorage.getItem('stac-explorer-theme');
             if (savedTheme) {
                 this.currentTheme = savedTheme;
             } else {
-                // Default to dark theme to match UIManager default
-                this.currentTheme = 'dark';
+                // Default to light theme to match UIManager default
+                this.currentTheme = 'light';
             }
             
             console.log('🗺️ MapManager using theme:', this.currentTheme);

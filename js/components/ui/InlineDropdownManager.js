@@ -51,7 +51,6 @@ export class InlineDropdownManager {
             },
             showCollectionDetails(collection) {
                 // Simple implementation - just log for now
-                console.log('Collection details:', collection);
             },
             parseGeometry(text) {
                 if (!text || typeof text !== 'string') {
@@ -101,10 +100,6 @@ export class InlineDropdownManager {
                     wkt: geometryResult.format === 'WKT' ? originalText : null
                 };
                 
-                console.log('Geometry pasted and processed:', {
-                    format: geometryResult.format,
-                    geometry: geometryResult.geoJSON
-                });
             },
             extractBboxFromGeometry(geoJSON) {
                 // Simple bbox extraction - this could be enhanced
@@ -192,11 +187,9 @@ export class InlineDropdownManager {
      */
     async preloadCollections() {
         try {
-            console.log('🔄 Pre-loading collections in background...');
             await this.getCachedCollections();
-            console.log('✅ Collections pre-loaded successfully');
         } catch (error) {
-            console.warn('⚠️ Failed to pre-load collections:', error);
+            console.warn('Failed to pre-load collections:', error);
         }
     }
     
@@ -210,7 +203,6 @@ export class InlineDropdownManager {
         if (this.collectionsCache && 
             this.cacheTimestamp && 
             (now - this.cacheTimestamp) < this.CACHE_DURATION) {
-            console.log('📦 Using cached collections from InlineDropdownManager');
             this.aiSearchHelper.allAvailableCollections = this.collectionsCache;
             return this.collectionsCache;
         }
@@ -218,7 +210,6 @@ export class InlineDropdownManager {
         // Try to get from collection manager first
         if (this.collectionManager && typeof this.collectionManager.getAllCollections === 'function') {
             const managerCollections = this.collectionManager.getAllCollections();
-            console.log(`🔍 Collection manager has ${managerCollections?.length || 0} collections`);
             
             if (managerCollections && managerCollections.length > 0) {
                 this.collectionsCache = managerCollections;
@@ -943,6 +934,15 @@ export class InlineDropdownManager {
                 'success'
             );
         }
+        
+        // Dispatch location selected event for tutorial system
+        document.dispatchEvent(new CustomEvent('location-selected', {
+            detail: { 
+                location: result,
+                locationName: result.shortName || result.name,
+                query: query
+            }
+        }));
     }
     
     /**
@@ -1351,6 +1351,22 @@ export class InlineDropdownManager {
                 // Update button states
                 presetButtons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                
+                // Get preset name from button text
+                const presetName = btn.querySelector('span')?.textContent || `${days} Days`;
+                
+                // Dispatch date preset selected event for tutorial system
+                document.dispatchEvent(new CustomEvent('date-preset-selected', {
+                    detail: { 
+                        preset: `${days}days`,
+                        presetName: presetName,
+                        dateRange: {
+                            start: this.formatDateForInput(startDate),
+                            end: this.formatDateForInput(endDate)
+                        },
+                        source: 'flatpickr-preset'
+                    }
+                }));
             });
         });
         
@@ -1783,6 +1799,17 @@ export class InlineDropdownManager {
             }, 300);
             
             console.log(`✅ Showed inline dropdown for: ${fieldType}`);
+            
+            // Dispatch dropdown opened events for tutorial system
+            if (fieldType === 'location') {
+                document.dispatchEvent(new CustomEvent('location-dropdown-opened', {
+                    detail: { triggerElement, fieldType }
+                }));
+            } else if (fieldType === 'date') {
+                document.dispatchEvent(new CustomEvent('date-dropdown-opened', {
+                    detail: { triggerElement, fieldType }
+                }));
+            }
             
         } catch (error) {
             console.error(`❌ Error showing inline dropdown for ${fieldType}:`, error);
@@ -2402,6 +2429,15 @@ export class InlineDropdownManager {
         // Show success notification
         this.notificationService.showNotification(`📍 Location selected: ${displayText}`, 'success');
         
+        // Dispatch location selected event for tutorial system
+        document.dispatchEvent(new CustomEvent('location-selected', {
+            detail: { 
+                location: location,
+                locationName: displayText,
+                displayText: displayText
+            }
+        }));
+        
         console.log(`📍 Location selected: ${displayText}`, location);
     }
     
@@ -2468,6 +2504,15 @@ export class InlineDropdownManager {
             if (startInput) startInput.value = '';
             if (endInput) endInput.value = '';
         }
+        
+        // Dispatch date preset selected event for tutorial system
+        document.dispatchEvent(new CustomEvent('date-preset-selected', {
+            detail: { 
+                preset: dateType,
+                presetName: displayText,
+                dateRange: dateRange
+            }
+        }));
         
         console.log(`✅ Date selected: ${dateType}`, this.aiSearchHelper.selectedDate);
     }
@@ -3592,6 +3637,16 @@ export class InlineDropdownManager {
             
             // Emit state change event to ensure all components are updated
             this.emitStateChangeEvent();
+            
+            // Dispatch location selected event for tutorial system
+            document.dispatchEvent(new CustomEvent('location-selected', {
+                detail: { 
+                    location: resultElement.dataset,
+                    locationName: shortName || name,
+                    originalQuery: originalQuery,
+                    bbox: bbox
+                }
+            }));
             
             console.log(`[SUCCESS] Enhanced location selection complete for: ${name}`);
             

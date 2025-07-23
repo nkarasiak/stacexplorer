@@ -2,7 +2,6 @@ import { BaseUIComponent } from '../base/BaseUIComponent.js';
 
 export class CommandPalette extends BaseUIComponent {
     constructor(container = null, options = {}) {
-        console.log('🎯 CommandPalette constructor called', { container, options });
         
         // Singleton pattern - prevent multiple instances
         if (CommandPalette.instance) {
@@ -13,14 +12,12 @@ export class CommandPalette extends BaseUIComponent {
         // Command palette creates its own container if none provided
         // Create a temporary div to satisfy BaseUIComponent, then replace it in render()
         const tempContainer = container || document.body;
-        console.log('🎯 Using container:', tempContainer);
         
         super(tempContainer, options);
         this.needsOwnContainer = !container;
         
         // Store singleton instance
         CommandPalette.instance = this;
-        console.log('🎯 CommandPalette instance created and stored');
     }
 
     getDefaultOptions() {
@@ -48,7 +45,6 @@ export class CommandPalette extends BaseUIComponent {
     }
 
     getInitialState() {
-        console.log('🎯 Getting initial state - palette should be closed');
         return {
             isOpen: false,
             query: '',
@@ -64,7 +60,6 @@ export class CommandPalette extends BaseUIComponent {
     }
 
     onInit() {
-        console.log('🎯 CommandPalette onInit called');
         
         this.registerDefaultCommands();
         this.setupKeyboardShortcuts();
@@ -76,41 +71,34 @@ export class CommandPalette extends BaseUIComponent {
             this.forceClose();
         }, 10);
         
-        console.log('🎯 CommandPalette initialization complete');
     }
 
     // Override BaseUIComponent's onRender to prevent automatic re-rendering
     onRender() {
-        console.log('🎯 onRender called - skipping to prevent re-render loops');
         // Do nothing - we control our own rendering
     }
 
     // Override BaseUIComponent's setState to prevent automatic re-rendering
     setState(newState, shouldRender = false) {
-        console.log('🎯 setState called, shouldRender:', shouldRender);
         // Call parent setState but never trigger re-render
         super.setState(newState, false);
     }
 
     // Override BaseUIComponent's updateState to prevent automatic re-rendering  
     updateState(newState, shouldRender = false) {
-        console.log('🎯 updateState called, shouldRender:', shouldRender);
         // Call parent updateState but never trigger re-render
         super.updateState(newState, false);
     }
 
     render() {
-        console.log('🎯 CommandPalette render() called');
         
         // Only render once during initialization
         if (this.hasRendered) {
-            console.log('🎯 Already rendered, skipping...');
             return;
         }
         
         // Prevent infinite render loops
         if (this.isRendering) {
-            console.log('🎯 Currently rendering, skipping...');
             return;
         }
         this.isRendering = true;
@@ -118,7 +106,6 @@ export class CommandPalette extends BaseUIComponent {
         // Clean up any existing command palette elements first
         const existingPalettes = document.querySelectorAll('.command-palette');
         existingPalettes.forEach(el => el.remove());
-        console.log('🎯 Cleaned up existing palettes:', existingPalettes.length);
 
         // Generate unique IDs to avoid conflicts
         const inputId = `command-palette-input-${this.componentId}`;
@@ -208,7 +195,6 @@ export class CommandPalette extends BaseUIComponent {
         // Append to document.body if we need our own container, otherwise to the provided container
         const targetContainer = this.needsOwnContainer ? document.body : this.container;
         targetContainer.appendChild(paletteContainer);
-        console.log('🎯 Palette container appended to:', targetContainer);
         
         this.paletteContainer = paletteContainer;
         this.input = paletteContainer.querySelector('.command-palette__input');

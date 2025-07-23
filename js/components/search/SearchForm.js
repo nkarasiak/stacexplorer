@@ -689,13 +689,48 @@ export class SearchForm {
             if (this.currentGeometry) {
                 // Use intersects with the current geometry if available
                 params.intersects = this.currentGeometry.geometry;
+                console.log('🔍 Using currentGeometry for intersects:', this.currentGeometry.geometry);
             } else {
                 // Otherwise use bbox if provided
-                const bboxValue = document.getElementById('bbox-input')?.value.trim();
+                const bboxInput = document.getElementById('bbox-input');
+                const bboxValue = bboxInput?.value.trim();
+                console.log('🔍 Checking bbox-input element:', bboxInput);
+                console.log('🔍 bbox-input value:', bboxValue);
                 if (bboxValue) {
                     const bbox = bboxValue.split(',').map(Number);
+                    console.log('🔍 Parsed bbox array:', bbox);
                     if (bbox.length === 4 && !bbox.some(isNaN)) {
                         params.bbox = bbox;
+                        console.log('✅ Added bbox to search params:', bbox);
+                    } else {
+                        console.warn('⚠️ Invalid bbox format:', bbox);
+                    }
+                } else {
+                    // If no explicit bbox, check for URL location parameters (mapCenter + mapZoom)
+                    const urlParams = new URLSearchParams(window.location.search);
+                    
+                    if (urlParams.has('mapCenter') && urlParams.has('mapZoom')) {
+                        try {
+                            // Try to get map from this.mapManager first, then fall back to global state
+                            let map = this.mapManager?.map;
+                            if (!map && window.stacExplorer?.unifiedStateManager?.mapManager?.map) {
+                                map = window.stacExplorer.unifiedStateManager.mapManager.map;
+                            }
+                            
+                            if (map) {
+                                // Use current map bounds as search constraint
+                                const mapBounds = map.getBounds();
+                                const mapBbox = [
+                                    mapBounds.getWest(),
+                                    mapBounds.getSouth(),
+                                    mapBounds.getEast(),
+                                    mapBounds.getNorth()
+                                ];
+                                params.bbox = mapBbox;
+                            }
+                        } catch (error) {
+                            console.warn('Error getting map bounds for search constraint:', error);
+                        }
                     }
                 }
             }

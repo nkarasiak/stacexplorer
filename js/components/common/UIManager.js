@@ -185,15 +185,15 @@ export class UIManager {
         // Check system preference
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         
-        let themeToApply = 'dark'; // Default theme
+        let themeToApply = 'light'; // Default theme
         
         if (savedTheme) {
             // Use saved preference
             themeToApply = savedTheme;
             console.log('🎨 Using saved theme preference:', savedTheme);
         } else {
-            // Always default to dark theme if no saved preference
-            console.log('🎨 Using default theme: dark');
+            // Always default to light theme if no saved preference
+            console.log('🎨 Using default theme: light');
         }
         
         // Apply the theme

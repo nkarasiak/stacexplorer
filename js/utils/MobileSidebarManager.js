@@ -133,16 +133,35 @@ export class MobileSidebarManager {
     
     setupSwipeGestures() {
         let startX = 0;
+        let startY = 0;
         let currentX = 0;
+        let currentY = 0;
         let isSwipping = false;
         let lastTouchTime = 0;
         const touchThrottle = 16; // ~60fps throttling
         
+        // Enhanced touch start with better detection
         document.addEventListener('touchstart', (e) => {
             if (!this.isDesktop) {
-                startX = e.touches[0].clientX;
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+                currentX = startX;
+                currentY = startY;
                 isSwipping = true;
                 lastTouchTime = Date.now();
+                
+                // Add subtle feedback for edge swipes
+                if (startX < 20 && !this.isOpen) {
+                    document.body.style.transition = 'transform 0.2s ease';
+                    document.body.style.transform = 'translateX(2px)';
+                    setTimeout(() => {
+                        document.body.style.transform = 'translateX(0)';
+                        setTimeout(() => {
+                            document.body.style.transition = '';
+                        }, 200);
+                    }, 100);
+                }
             }
         }, { passive: true });
         
@@ -154,27 +173,122 @@ export class MobileSidebarManager {
             if (now - lastTouchTime < touchThrottle) return;
             lastTouchTime = now;
             
-            currentX = e.touches[0].clientX;
+            const touch = e.touches[0];
+            currentX = touch.clientX;
+            currentY = touch.clientY;
+            
+            // Add live drag feedback for sidebar
+            if (this.isOpen) {
+                const diffX = currentX - startX;
+                if (diffX < 0) {
+                    const dragAmount = Math.max(diffX, -200);
+                    const opacity = 1 + (dragAmount / 200) * 0.3;
+                    this.sidebar.style.transform = `translateX(${dragAmount}px)`;
+                    this.sidebar.style.opacity = opacity;
+                }
+            }
         }, { passive: true });
         
-        document.addEventListener('touchend', () => {
+        document.addEventListener('touchend', (e) => {
             if (!isSwipping || this.isDesktop) return;
             
             const diffX = currentX - startX;
+            const diffY = Math.abs(currentY - startY);
             const threshold = 100; // Minimum swipe distance
+            const velocityThreshold = 50; // Minimum velocity for quick swipes
             
-            // Swipe right to open (from left edge)
-            if (diffX > threshold && startX < 50 && !this.isOpen) {
-                this.openSidebar();
+            // Reset any drag transforms
+            if (this.sidebar.style.transform) {
+                this.sidebar.style.transform = '';
+                this.sidebar.style.opacity = '';
             }
             
-            // Swipe left to close (when sidebar is open)
-            if (diffX < -threshold && this.isOpen) {
-                this.closeSidebar();
+            // Check if this is primarily a horizontal swipe
+            const isHorizontalSwipe = Math.abs(diffX) > diffY;
+            
+            if (isHorizontalSwipe) {
+                // Swipe right to open (from left edge)
+                if (diffX > threshold && startX < 50 && !this.isOpen) {
+                    this.openSidebar();
+                    this.provideTactileFeedback();
+                }
+                // Quick swipe right from anywhere when closed
+                else if (diffX > velocityThreshold && !this.isOpen && startX < 100) {
+                    this.openSidebar();
+                    this.provideTactileFeedback();
+                }
+                // Swipe left to close (when sidebar is open)
+                else if (diffX < -threshold && this.isOpen) {
+                    this.closeSidebar();
+                    this.provideTactileFeedback();
+                }
+                // Quick swipe left when open
+                else if (diffX < -velocityThreshold && this.isOpen) {
+                    this.closeSidebar();
+                    this.provideTactileFeedback();
+                }
             }
             
             isSwipping = false;
         }, { passive: true });
+        
+        // Add pinch-to-zoom prevention on sidebar
+        document.addEventListener('touchstart', (e) => {
+            if (e.touches.length > 1 && this.isOpen) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+    
+    // Add subtle haptic-like feedback
+    provideTactileFeedback() {
+        // Visual feedback since we can't access haptic APIs in web
+        const feedback = document.createElement('div');
+        feedback.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 60px;
+            height: 60px;
+            background: var(--primary-500);
+            border-radius: 50%;
+            opacity: 0.8;
+            pointer-events: none;
+            z-index: 10000;
+            animation: tactilePulse 0.3s ease-out;
+        `;
+        
+        // Add animation keyframes if not already present
+        if (!document.querySelector('#tactile-feedback-styles')) {
+            const style = document.createElement('style');
+            style.id = 'tactile-feedback-styles';
+            style.textContent = `
+                @keyframes tactilePulse {
+                    0% {
+                        transform: translate(-50%, -50%) scale(0.5);
+                        opacity: 0.8;
+                    }
+                    50% {
+                        transform: translate(-50%, -50%) scale(1);
+                        opacity: 0.4;
+                    }
+                    100% {
+                        transform: translate(-50%, -50%) scale(1.5);
+                        opacity: 0;
+                    }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        
+        document.body.appendChild(feedback);
+        
+        setTimeout(() => {
+            if (feedback.parentNode) {
+                feedback.parentNode.removeChild(feedback);
+            }
+        }, 300);
     }
     
     setupFocusManagement() {

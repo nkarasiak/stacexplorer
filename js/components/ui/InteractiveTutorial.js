@@ -5,6 +5,13 @@
 
 export class InteractiveTutorial {
     constructor() {
+        // Disable tutorial on mobile devices
+        this.isMobile = window.innerWidth <= 768;
+        if (this.isMobile) {
+            console.log('📱 Tutorial disabled on mobile devices');
+            return;
+        }
+        
         this.currentStep = 0;
         this.isActive = false;
         this.overlay = null;
@@ -248,7 +255,7 @@ export class InteractiveTutorial {
      * Start the tutorial
      */
     start() {
-        if (this.isActive) return;
+        if (this.isMobile || this.isActive) return;
         
         this.isActive = true;
         this.currentStep = 0;
@@ -703,6 +710,8 @@ export class InteractiveTutorial {
      * Bind global events
      */
     bindEvents() {
+        if (this.isMobile) return;
+        
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isActive) {
                 this.close();
@@ -724,8 +733,14 @@ export class InteractiveTutorial {
     initializeTutorialButton() {
         const tutorialBtn = document.getElementById('tutorial-btn');
         if (tutorialBtn) {
-            tutorialBtn.addEventListener('click', () => this.start());
-            console.log('🎓 Tutorial button initialized');
+            if (this.isMobile) {
+                // Hide tutorial button on mobile
+                tutorialBtn.style.display = 'none';
+                console.log('📱 Tutorial button hidden on mobile');
+            } else {
+                tutorialBtn.addEventListener('click', () => this.start());
+                console.log('🎓 Tutorial button initialized');
+            }
         }
     }
     

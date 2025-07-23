@@ -602,7 +602,8 @@ export class CardSearchPanel {
         }
         
         // Handle load button click to show modal
-        loadButton.addEventListener('click', () => {
+        loadButton.addEventListener('click', (event) => {
+            event.stopPropagation(); // Prevent header click from toggling card
             this.showStacLoadModal();
         });
         

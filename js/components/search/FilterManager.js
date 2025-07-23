@@ -99,7 +99,8 @@ export class FilterManager {
     setupModalHandlers() {
         // Filter button click
         if (this.filterButton) {
-            this.filterButton.addEventListener('click', () => {
+            this.filterButton.addEventListener('click', (event) => {
+                event.stopPropagation(); // Prevent header click from toggling card
                 this.showFilterModal();
             });
         }

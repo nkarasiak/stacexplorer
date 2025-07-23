@@ -1168,8 +1168,8 @@
             align-items: center;
             gap: 4px;
             flex-shrink: 0;
-            background: rgba(255, 255, 255, 0.05);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            background: transparent;
+            border-top: none;
             padding: 1px 0px;
             border-radius: 0 0 10px 0;
             position: absolute;
@@ -1215,7 +1215,7 @@
             content: '';
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.8) 0%, rgba(118, 75, 162, 0.8) 100%);
+            background: transparent;
             border-radius: 9px;
             opacity: 0;
             transition: opacity 0.3s ease;
@@ -1229,7 +1229,7 @@
         }
 
         .location-action-btn:hover::before {
-            opacity: 1;
+            opacity: 0;
         }
 
         .location-action-btn .material-icons {

@@ -5,11 +5,19 @@
   "main": "proxy.js",
   "type": "module",
   "scripts": {
-    "start": "node proxy.js",
-    "dev": "concurrently \"npm run proxy\" \"npm run watch\"",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "npm run preview",
+    "validate": "node validate-build.js",
+    "test:build": "npm run build && npm run validate",
+    "legacy:dev": "concurrently \"npm run proxy\" \"npm run watch\"",
+    "legacy:start": "node proxy.js",
     "proxy": "node proxy.js",
     "watch": "nodemon --watch js --watch css --ext js,css --exec \"echo 'Files changed - refresh browser'\"",
-    "serve": "http-server -p 3000 -c-1 --cors"
+    "serve": "http-server -p 3000 -c-1 --cors",
+    "serve:python": "python serve.py -p 8000",
+    "serve:simple": "python -m http.server 8000"
   },
   "dependencies": {
     "@deck.gl/core": "^9.1.13",
@@ -24,9 +32,12 @@
     "node-fetch": "^2.6.9"
   },
   "devDependencies": {
+    "@vitejs/plugin-legacy": "^7.1.0",
     "concurrently": "^8.2.2",
     "http-server": "^14.1.1",
-    "nodemon": "^3.0.2"
+    "nodemon": "^3.0.2",
+    "vite": "^7.0.5",
+    "vite-plugin-eslint": "^1.8.1"
   },
   "keywords": [
     "stac",

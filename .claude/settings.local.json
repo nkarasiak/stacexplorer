@@ -33,7 +33,14 @@
       "WebFetch(domain:developmentseed.org)",
       "WebFetch(domain:earth-search.aws.element84.com)",
       "Bash(dir:*)",
-      "WebFetch(domain:www.planet.com)"
+      "WebFetch(domain:www.planet.com)",
+      "Bash(cp:*)",
+      "Bash(sed:*)",
+      "Bash(timeout 10s npm run dev)",
+      "Bash(timeout 10s npm run preview)",
+      "Bash(timeout 15s npm run dev)",
+      "Bash(start python serve.py)",
+      "Bash(gh repo view:*)"
     ],
     "deny": []
   }

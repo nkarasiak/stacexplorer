@@ -238,7 +238,6 @@ export class CardSearchPanel {
         });
         
         const allCompleted = sourceCompleted && locationCompleted && timeCompleted;
-        console.log('🎯 Final validation result:', allCompleted);
         
         return allCompleted;
     }
@@ -362,8 +361,6 @@ export class CardSearchPanel {
      * @param {string} presetName - Name of the preset to apply
      */
     applyPreset(presetName) {
-        console.log(`🎯 Applying preset: ${presetName}`);
-        
         switch (presetName) {
             case 'sentinel-toulouse':
                 this.applyToulousePreset();
@@ -496,7 +493,6 @@ export class CardSearchPanel {
                     setTimeout(() => {
                         const selectedValue = collectionSelect.value;
                         if (selectedValue === matchingOption.value) {
-                            console.log(`🎯 Collection selected successfully: ${selectedValue}`);
                             resolve(selectedValue);
                         } else {
                             console.warn(`⚠️ Collection selection failed: expected ${matchingOption.value}, got ${selectedValue}`);
@@ -619,6 +615,8 @@ export class CardSearchPanel {
             }
         });
         
+        // Escape key handler will be added when modal is shown
+        
         // Initialize tab switching
         this.initModalTabs();
         
@@ -635,6 +633,14 @@ export class CardSearchPanel {
         const modal = document.getElementById('stac-load-modal');
         modal.style.display = 'flex';
         
+        // Add escape key handler when modal is shown
+        this.handleStacModalEscape = (e) => {
+            if (e.key === 'Escape') {
+                this.hideStacLoadModal();
+            }
+        };
+        document.addEventListener('keydown', this.handleStacModalEscape);
+        
         // Focus on the URL input by default
         setTimeout(() => {
             const urlInput = document.getElementById('stac-item-url-modal');
@@ -648,6 +654,11 @@ export class CardSearchPanel {
     hideStacLoadModal() {
         const modal = document.getElementById('stac-load-modal');
         modal.style.display = 'none';
+        
+        // Remove escape key handler
+        if (this.handleStacModalEscape) {
+            document.removeEventListener('keydown', this.handleStacModalEscape);
+        }
         
         // Clear inputs
         const urlInput = document.getElementById('stac-item-url-modal');
@@ -893,7 +904,7 @@ export class CardSearchPanel {
         
         // Show success notification
         this.notificationService.showNotification(
-            `🎯 Loaded STAC item: ${stacItem.id}`, 
+            `Loaded STAC item: ${stacItem.id}`, 
             'success'
         );
     }
@@ -1090,9 +1101,6 @@ export class CardSearchPanel {
             const collectionSelect = document.getElementById('collection-select');
             const selectedCollection = collectionSelect ? collectionSelect.value : '';
             
-            console.log('🎯 Collection select element:', collectionSelect);
-            console.log('🎯 Selected collection value:', selectedCollection);
-            console.log('🎯 Collection select options count:', collectionSelect?.options.length || 0);
             
             // Add collection if specified
             if (selectedCollection) {
@@ -1154,7 +1162,6 @@ export class CardSearchPanel {
                 items = await this.performMultiSourceSearch(searchParams);
             } else {
                 // Use regular single-source search
-                console.log('🎯 Using single-source search');
                 console.log('🌐 Making API request...');
                 items = await this.apiClient.searchItems(searchParams);
             }
@@ -1381,7 +1388,6 @@ export class CardSearchPanel {
         }
         
         // Log final results
-        console.log('🎯 EVERYTHING search completed:');
         console.log(`📊 Total results: ${allResults.length}`);
         console.log('📈 Results by source:', Object.keys(sourceResults).map(source => 
             `${source}: ${sourceResults[source].length}`
@@ -1556,7 +1562,6 @@ export class CardSearchPanel {
                 collectionSelect.value = option.value;
                 collectionSelect.dispatchEvent(new Event('change'));
                 this.completeCard('dataset-card', option.value);
-                console.log('🎯 Collection selected and card completed:', option.value);
             } else {
                 console.warn('⚠️ Could not find collection:', targetCollection);
                 console.log('🔍 Available options were:', 
@@ -1591,7 +1596,6 @@ export class CardSearchPanel {
             this.handleGlobalPaste(pastedText.trim());
         });
         
-        console.log('🎯 Global paste listener initialized for STAC items');
     }
     
     /**
@@ -1600,27 +1604,22 @@ export class CardSearchPanel {
      */
     async handleGlobalPaste(pastedText) {
         try {
-            console.log('🎯 [PASTE-DEBUG] Handling global paste, text length:', pastedText.length);
             
             // Try to parse as JSON
             let jsonData;
             try {
-                console.log('🎯 [PASTE-DEBUG] Attempting JSON parse...');
                 jsonData = JSON.parse(pastedText);
-                console.log('🎯 [PASTE-DEBUG] JSON parse successful, object keys:', Object.keys(jsonData));
             } catch (parseError) {
-                console.log('🎯 [PASTE-DEBUG] JSON parse failed:', parseError.message);
                 // Not valid JSON, ignore silently
                 return;
             }
             
             // Check if it looks like a STAC item
             if (this.isValidStacItem(jsonData)) {
-                console.log('🎯 Detected STAC item from paste:', jsonData.id);
                 
                 // Show notification
                 this.notificationService.showNotification(
-                    `🎯 STAC item detected! Loading: ${jsonData.id}`,
+                    `STAC item detected! Loading: ${jsonData.id}`,
                     'info'
                 );
                 

@@ -296,6 +296,15 @@ export class FilterManager {
             }
         });
         
+        // Escape key to close
+        const handleEscapeKey = (e) => {
+            if (e.key === 'Escape') {
+                closeFreshFilterModal();
+                document.removeEventListener('keydown', handleEscapeKey);
+            }
+        };
+        document.addEventListener('keydown', handleEscapeKey);
+        
         // Add hover effect to close button
         closeBtn.addEventListener('mouseenter', () => {
             closeBtn.style.background = isDarkTheme ? '#444444' : '#f3f4f6';
@@ -496,7 +505,6 @@ export class FilterManager {
             
             if (isOptical) {
                 types.add('optical');
-                console.log(`🛰️ Detected optical collection: ${collection.id}`);
             }
             
             // Additional optical/multispectral indicators

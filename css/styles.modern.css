@@ -167,11 +167,11 @@ html.light-theme .md-card-header {
 }
 
 html.light-theme .md-card-body {
-    padding: 0px 16px 16px 16px !important;
+    padding: 0px 16px 0px 16px !important;
 }
 
 html.dark-theme .md-card-body {
-    padding: 0px 16px 16px 16px !important;
+    padding: 0px 16px 0px 16px !important;
 }
 
 html.dark-theme .sidebar {
@@ -639,7 +639,7 @@ body, html {
 }
 
 .md-card-body {
-    padding: 0px 16px 16px 16px !important;  /* Forced consistent padding */
+    padding: 0px 16px 0px 16px !important;  /* Forced consistent padding */
     transition: var(--transition-all);
     overflow: hidden;
 }
@@ -926,10 +926,17 @@ select, select * {
 }
 
 .dataset-title {
-    font-weight: 600;
-    font-size: 16px;
-    margin-bottom: 6px;  /* Reduced from 8px */
+    font-weight: 500;
+    font-size: 12px;
+    margin-bottom: 4px;
     color: var(--text-primary);
+    line-height: 1.2;
+    max-height: 2.4em; /* Limit to 2 lines */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 .dataset-date {
@@ -1750,8 +1757,9 @@ select, select * {
     }
     
     .dataset-title {
-        font-size: 18px !important;
-        line-height: 1.4 !important;
+        font-size: 13px !important;
+        line-height: 1.3 !important;
+        max-height: 2.6em !important;
     }
     
     .dataset-info {
@@ -1785,7 +1793,6 @@ select, select * {
     .loading-spinner {
         transform: scale(1.2) !important;
     }
-}
 
 /* Modal Dialog - Enhanced for Better Functionality */
 .modal-overlay {
@@ -1830,6 +1837,18 @@ select, select * {
     justify-content: space-between;
     align-items: center;
     background: var(--surface-secondary);
+}
+
+/* Match Load STAC Item modal header styling to Data Filters modal */
+#stac-load-modal .modal-header {
+    background: #ffffff !important;
+    padding: 20px 24px !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+html.dark-theme #stac-load-modal .modal-header {
+    background: #2a2a2a !important;
 }
 
 .modal-title {
@@ -2957,7 +2976,7 @@ select, select * {
 }
 
 .results-card .md-card-body {
-    padding: 0px 16px 16px 16px !important;  /* Forced consistent padding */
+    padding: 0px 16px 0px 16px !important;  /* Forced consistent padding */
     flex-grow: 1;
     overflow-y: auto;
     max-height: calc(100vh - 180px);  /* Adjusted for smaller header */
@@ -3827,8 +3846,7 @@ select, select * {
 .search-actions {
     display: flex;
     gap: 12px;
-    padding: 16px 20px;
-    background: var(--surface-secondary);
+    padding: 0px 16px 16px 16px;
     border-radius: var(--border-radius) var(--border-radius);
 }
 
@@ -3895,15 +3913,51 @@ select, select * {
 
 /* No thumbnail cards need special styling */
 .clickable-card.no-thumbnail {
-    min-height: 100px;
+    min-height: 80px;
     display: flex;
-    align-items: center;
+    align-items: stretch;
     border: 2px dashed transparent;
+    padding: 12px;
+    position: relative;
 }
 
 .clickable-card.no-thumbnail:hover {
     border-color: var(--primary-500);
     background: var(--surface-elevated);
+}
+
+/* Fix dataset-info positioning for no-thumbnail cards */
+.clickable-card.no-thumbnail .dataset-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    width: 100%;
+    position: relative;
+}
+
+/* Fix metadata positioning for no-thumbnail cards */
+.clickable-card.no-thumbnail .dataset-metadata {
+    position: static !important;
+    width: 100% !important;
+    margin-bottom: 8px !important;
+    justify-content: flex-start !important;
+}
+
+/* Fix title positioning for no-thumbnail cards */
+.clickable-card.no-thumbnail .dataset-title {
+    margin-top: auto;
+    margin-bottom: 8px;
+}
+
+/* Fix overlay positioning for no-thumbnail cards */
+.clickable-card.no-thumbnail .thumbnail-overlay {
+    position: absolute !important;
+    top: 8px !important;
+    right: 8px !important;
+    left: auto !important;
+    bottom: auto !important;
+    display: flex !important;
+    gap: 4px;
 }
 
 /* Ensure info button stays on top */
@@ -3917,9 +3971,15 @@ select, select * {
 .clickable-card .dataset-title {
     font-weight: 500;
     color: var(--text-primary);
-    margin-bottom: 4px;
-    font-size: 13px;
-    line-height: 1.3;
+    margin-bottom: 3px;
+    font-size: 11px;
+    line-height: 1.2;
+    max-height: 2.4em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
 }
 
 /* ============================================

@@ -55,6 +55,14 @@ export class UIManager {
                     this.hideSettingsModal();
                 }
             });
+            
+            // Close modal with Escape key
+            this.handleSettingsModalEscape = (e) => {
+                if (e.key === 'Escape') {
+                    this.hideSettingsModal();
+                }
+            };
+            document.addEventListener('keydown', this.handleSettingsModalEscape);
         }
         
         // Sidebar toggle
@@ -345,6 +353,11 @@ export class UIManager {
         if (settingsModal) {
             settingsModal.style.display = 'none';
             document.body.style.overflow = ''; // Restore scroll
+        }
+        
+        // Remove escape key handler
+        if (this.handleSettingsModalEscape) {
+            document.removeEventListener('keydown', this.handleSettingsModalEscape);
         }
     }
 }

@@ -35,11 +35,13 @@ import { cookieCache } from './utils/CookieCache.js';
 import { searchHistoryManager } from './utils/SearchHistoryManager.js';
 import { DateUtils } from './utils/DateUtils.js';
 
-/**
- * Initialize the application when the DOM is fully loaded
- */
-document.addEventListener('DOMContentLoaded', async function() {
-    console.log('STAC Catalog Explorer - Initializing application...');
+// Export the main initialization function for Vite
+export async function initializeApp() {
+  await initApp();
+}
+
+// Keep the original function for backwards compatibility
+async function initApp() {
     
     try {
         // Initialize core services
@@ -70,9 +72,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Initialize enhanced collection manager 
         const collectionManager = new CollectionManagerEnhanced(apiClient, notificationService, catalogSelector, CONFIG);
         
-        // Start collection loading after all core components are ready
-        await collectionManager.loadAllCollectionsOnStartup();
-        
         // Initialize results panel 
         const resultsPanel = new ResultsPanel(apiClient, mapManager, notificationService);
         
@@ -83,12 +82,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Make filterManager globally accessible
         if (!window.stacExplorer) window.stacExplorer = {};
         window.stacExplorer.filterManager = filterManager;
-        
-        // Check if collections are already loaded and trigger filter update
-        if (collectionManager && collectionManager.allCollections && collectionManager.allCollections.length > 0) {
-            console.log('🔍 Collections already available, triggering filter update...');
-            filterManager.updateFiltersForCollections(collectionManager.allCollections);
-        }
         
         // Initialize search form first (needed by search panel)
         const searchForm = new SearchForm(mapManager, null); // Initially null, will be updated below
@@ -103,7 +96,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             notificationService
         );
         
-        // Initialize Inline Dropdown Manager for enhanced menu behavior
+        // Initialize Inline Dropdown Manager for enhanced menu behavior BEFORE loading collections
         const inlineDropdownManager = new InlineDropdownManager(
             apiClient,
             searchPanel,
@@ -112,7 +105,14 @@ document.addEventListener('DOMContentLoaded', async function() {
             notificationService
         );
         
-        console.log('[DROPDOWN] Enhanced inline dropdowns initialized for left menu');
+        // Start collection loading after all core components are ready (including dropdown manager)
+        await collectionManager.loadAllCollectionsOnStartup();
+        
+        // Check if collections are already loaded and trigger filter update
+        if (collectionManager && collectionManager.allCollections && collectionManager.allCollections.length > 0) {
+            filterManager.updateFiltersForCollections(collectionManager.allCollections);
+        }
+        
         
         // Update search form with inline dropdown manager for location updates
         if (searchForm.inlineDropdownManager === null) {
@@ -121,7 +121,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         
         // URL State Management is now handled by UnifiedStateManager
         
-        console.log('[URL] URL state management initialized - search params will sync between interfaces and be stored in URL');
         
         // AI Search keyboard shortcut removed
         
@@ -131,7 +130,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             notificationService,
             inlineDropdownManager
         });
-        console.log('[SYNC] GeometrySync initialized');
         
         // Initialize unified state manager after all components are ready
         const stateManager = new UnifiedStateManager({
@@ -165,12 +163,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             notificationService
         );
         
-        console.log('🎨 Visualization system initialized');
         
         // Initialize Command Palette
-        console.log('🎯 About to create CommandPalette...');
         const commandPalette = new CommandPalette();
-        console.log('🎯 CommandPalette created:', commandPalette);
         
         // Register STAC Explorer specific commands
         commandPalette.registerCommand({
@@ -180,12 +175,10 @@ document.addEventListener('DOMContentLoaded', async function() {
             category: 'navigation',
             keywords: ['search', 'find', 'focus'],
             action: () => {
-                console.log('🎯 Focus Search command executed!');
                 const searchBtn = document.getElementById('main-search-btn');
                 if (searchBtn) {
                     searchBtn.click();
                     searchBtn.focus();
-                    console.log('🎯 Search button clicked and focused');
                 } else {
                     console.error('🎯 Search button not found!');
                 }
@@ -199,11 +192,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             category: 'navigation',
             keywords: ['sidebar', 'menu', 'toggle', 'hide', 'show'],
             action: () => {
-                console.log('🎯 Toggle Sidebar command executed!');
                 const toggle = document.getElementById('sidebar-toggle');
                 if (toggle) {
                     toggle.click();
-                    console.log('🎯 Sidebar toggle clicked');
                 } else {
                     console.error('🎯 Sidebar toggle not found!');
                 }
@@ -217,7 +208,6 @@ document.addEventListener('DOMContentLoaded', async function() {
             category: 'help',
             keywords: ['tutorial', 'help', 'guide', 'learn', 'walkthrough'],
             action: () => {
-                console.log('🎯 Show Tutorial command executed!');
                 interactiveTutorial.start();
             }
         });
@@ -229,11 +219,9 @@ document.addEventListener('DOMContentLoaded', async function() {
             category: 'navigation', 
             keywords: ['results', 'view', 'scroll'],
             action: () => {
-                console.log('🎯 View Results command executed!');
                 const resultsCard = document.getElementById('results-card');
                 if (resultsCard) {
                     resultsCard.scrollIntoView({ behavior: 'smooth' });
-                    console.log('🎯 Scrolled to results card');
                 } else {
                     console.error('🎯 Results card not found!');
                 }
@@ -264,12 +252,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 category: 'time',
                 keywords: ['time', 'date', preset.title.toLowerCase()],
                 action: () => {
-                    console.log(`🎯 Time preset command executed: ${preset.title}`);
-                    
                     // Calculate the actual date range for this preset
                     const dateRange = DateUtils.calculateDateRange(preset.value);
-                    
-                    console.log(`🎯 Calculated date range for ${preset.title}:`, dateRange);
                     
                     // Fill the date input fields if we have valid dates
                     if (dateRange.start && dateRange.end) {
@@ -279,7 +263,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                         if (startInput && endInput) {
                             startInput.value = dateRange.start;
                             endInput.value = dateRange.end;
-                            console.log(`🎯 Date inputs filled: ${dateRange.start} to ${dateRange.end}`);
                             
                             // Trigger change events to update any listeners
                             startInput.dispatchEvent(new Event('change', { bubbles: true }));
@@ -290,7 +273,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                         if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
                             const displayText = `${dateRange.start} to ${dateRange.end}`;
                             window.stacExplorer.inlineDropdownManager.updateSearchSummary('date', displayText.toUpperCase());
-                            console.log(`🎯 Search summary updated: ${displayText}`);
                         }
                     } else if (preset.value === 'anytime') {
                         // Clear date inputs for "anytime"
@@ -300,7 +282,6 @@ document.addEventListener('DOMContentLoaded', async function() {
                         if (startInput && endInput) {
                             startInput.value = '';
                             endInput.value = '';
-                            console.log(`🎯 Date inputs cleared for "anytime"`);
                             
                             // Trigger change events
                             startInput.dispatchEvent(new Event('change', { bubbles: true }));
@@ -309,15 +290,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                         
                         // Update the left panel search summary for anytime
                         if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
-                            window.stacExplorer.inlineDropdownManager.updateSearchSummary('date', '🕐 ANYTIME');
-                            console.log(`🎯 Search summary updated: ANYTIME`);
+                            window.stacExplorer.inlineDropdownManager.updateSearchSummary('date', 'ANYTIME');
                         }
                     }
                     
                     // Also use the inline dropdown manager to handle the selection
                     if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
                         window.stacExplorer.inlineDropdownManager.handleDateSelection(preset.value);
-                        console.log(`🎯 Date selection handled for: ${preset.title}`);
                     } else {
                         console.error('🎯 Inline dropdown manager not found!');
                     }
@@ -333,27 +312,20 @@ document.addEventListener('DOMContentLoaded', async function() {
             category: 'time',
             keywords: ['time', 'date', 'custom', 'range', 'picker'],
             action: () => {
-                console.log('🎯 Custom date range command executed!');
-                
                 // Use the inline dropdown manager to open custom date picker
                 if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
                     window.stacExplorer.inlineDropdownManager.openFlatpickrCalendar();
-                    console.log('🎯 Custom date picker opened');
                 } else {
                     console.error('🎯 Inline dropdown manager not found!');
                 }
             }
         });
         
-        console.log('⌨️ Command Palette initialized');
-        
         // Initialize Satellite Animation
         const satelliteAnimation = new SatelliteAnimation();
-        console.log('🛰️ Satellite animation initialized');
         
         // Initialize Interactive Tutorial
         const interactiveTutorial = new InteractiveTutorial();
-        console.log('🎓 Interactive tutorial initialized');
         
         // REMOVED: Share manager (no longer needed)
         // const shareManager = new ShareManager(stateManager, notificationService);
@@ -386,14 +358,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
                 
         // Sidebar is now visible by default
-        if (!stateManager.hasUrlStateParams()) {
-            console.log('[INIT] No URL state detected, sidebar visible');
-        } else {
-            console.log('[URL] URL state parameters detected, sidebar visible for state restoration');
-        }
         
         
-        console.log('STAC Catalog Explorer - Initialization complete');
         
         // Expose key objects to the global scope for developer console access
         // Preserve existing window.stacExplorer properties if they exist
@@ -432,7 +398,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         console.error('Error initializing application:', error);
         alert(`Error initializing application: ${error.message}`);
     }
-});
+}
 
 /**
  * Update Deck.gl status indicator in the UI
@@ -457,7 +423,6 @@ function updateDeckGLStatus(mapManager) {
             statusText.textContent = 'WebGL2';
         }
         
-        console.log('🎨 Deck.gl status: ACTIVE');
     } else if (mapManager.deckGLIntegration) {
         // Deck.gl integration exists but not available
         statusElement.style.display = 'flex';
@@ -465,11 +430,9 @@ function updateDeckGLStatus(mapManager) {
         statusElement.title = 'GPU acceleration unavailable';
         statusText.textContent = 'CPU';
         
-        console.log('⚠️ Deck.gl status: UNAVAILABLE');
     } else {
         // No Deck.gl integration
         statusElement.style.display = 'none';
-        console.log('ℹ️ Deck.gl status: DISABLED');
     }
 }
 

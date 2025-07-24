@@ -171,7 +171,10 @@ export class InlineDropdownManager {
         };
         
         // Update the search summary to show default values
-        this.updateSearchSummary('date', '🕐 Anytime');
+        this.updateSearchSummary('date', 'Anytime');
+        
+        // Initialize persistent preset button handler (survives DOM updates)
+        this.setupPersistentPresetHandler();
         
         // Initialize event listeners
         this.initializeInlineDropdowns();
@@ -180,6 +183,70 @@ export class InlineDropdownManager {
         
         // Pre-load collections in background
         setTimeout(() => this.preloadCollections(), 1000);
+    }
+    
+    /**
+     * Setup persistent event handler for preset buttons using event delegation
+     * This survives DOM updates and re-initialization
+     */
+    setupPersistentPresetHandler() {
+        // Use event delegation on document to catch all preset button clicks
+        document.addEventListener('click', (e) => {
+            // Check if clicked element is a preset button
+            const presetBtn = e.target.closest('.ai-preset-btn');
+            if (!presetBtn) return;
+            
+            // Prevent default and stop propagation
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Get days from data attribute
+            const days = parseInt(presetBtn.dataset.days);
+            if (isNaN(days)) return;
+            
+            // Calculate dates
+            const startDate = new Date();
+            const endDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+            
+            // Format dates
+            const startDateStr = this.formatDateForInput(startDate);
+            const endDateStr = this.formatDateForInput(endDate);
+            
+            // Update form inputs immediately
+            const startInput = document.getElementById('date-start');
+            const endInput = document.getElementById('date-end');
+            if (startInput) startInput.value = startDateStr;
+            if (endInput) endInput.value = endDateStr;
+            
+            // Close any open dropdown immediately
+            if (this.currentDropdown) {
+                this.forceCloseCurrentDropdown();
+            }
+            
+            // Set flag to prevent reopening
+            this.presetJustSelected = true;
+            
+            // Delay search summary update and events
+            setTimeout(() => {
+                // Update search summary
+                const dateRange = `${this.formatDateDisplay(startDate)} to ${this.formatDateDisplay(endDate)}`;
+                this.updateSearchSummary('date', dateRange.toUpperCase());
+                
+                // Trigger search parameter change event
+                document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                    detail: {
+                        type: 'date',
+                        dateType: 'custom',
+                        dateStart: startDateStr,
+                        dateEnd: endDateStr
+                    }
+                }));
+                
+                // Clear the prevention flag
+                this.presetJustSelected = false;
+            }, 300);
+            
+        }, true); // Use capture phase to ensure it runs first
     }
     
     /**
@@ -215,14 +282,12 @@ export class InlineDropdownManager {
                 this.collectionsCache = managerCollections;
                 this.cacheTimestamp = now;
                 this.aiSearchHelper.allAvailableCollections = managerCollections;
-                console.log(`✅ Loaded ${managerCollections.length} collections from collection manager`);
                 return managerCollections;
             }
         }
         
         // If collection manager is still loading, wait a bit and try again
         if (this.collectionManager && this.collectionManager.isLoadingCollections && this.collectionManager.isLoadingCollections()) {
-            console.log('⏳ Collection manager is still loading, waiting...');
             await new Promise(resolve => setTimeout(resolve, 1000));
             
             // Try again after waiting
@@ -231,7 +296,6 @@ export class InlineDropdownManager {
                 this.collectionsCache = managerCollections;
                 this.cacheTimestamp = now;
                 this.aiSearchHelper.allAvailableCollections = managerCollections;
-                console.log(`✅ Loaded ${managerCollections.length} collections after waiting`);
                 return managerCollections;
             }
         }
@@ -246,7 +310,6 @@ export class InlineDropdownManager {
     interceptMapDrawing() {
         if (!this.mapManager) return;
         
-        console.log('🎯 Setting up comprehensive map drawing interception...');
         
         // Store original method if it exists
         this.originalStartDrawing = this.mapManager.startDrawingBbox;
@@ -256,7 +319,6 @@ export class InlineDropdownManager {
         
         // Override the drawing method
         this.mapManager.startDrawingBbox = (callback) => {
-            console.log('🎯 Intercepted map drawing - preventing fullscreen triggers');
             
             // Set drawing active flag
             this.isDrawingActive = true;
@@ -266,7 +328,6 @@ export class InlineDropdownManager {
             // Call original method with our custom callback
             if (this.originalStartDrawing) {
                 this.originalStartDrawing.call(this.mapManager, (bbox) => {
-                    console.log('📍 Drawing completed, handling inline:', bbox);
                     
                     // Reset drawing state
                     this.isDrawingActive = false;
@@ -287,7 +348,6 @@ export class InlineDropdownManager {
         // Also intercept any global drawing events that might trigger fullscreen
         this.interceptDrawingEvents();
         
-        console.log('🎯 Map drawing interception set up with fullscreen prevention');
     }
     
     // Simple dropdown creation methods to replace AI search functionality
@@ -297,6 +357,7 @@ export class InlineDropdownManager {
      */
     createSimpleCollectionDropdown() {
         const collections = this.aiSearchHelper.allAvailableCollections || [];
+        const collectionsLoading = !this.collectionsCache && collections.length === 0;
         
         // Create the main dropdown container
         const container = document.createElement('div');
@@ -414,7 +475,6 @@ export class InlineDropdownManager {
                 option.setAttribute('data-source', collection.source);
                 option.setAttribute('data-collection-id', collection.id);
                 
-                console.log(`🌟 Created priority option: ${collection.id} with source: ${collection.source}`);
                 optionsSection.appendChild(option);
             });
         }
@@ -456,6 +516,20 @@ export class InlineDropdownManager {
                 optionsSection.appendChild(option);
             });
         });
+        
+        // Add loading message if collections are still loading
+        if (collectionsLoading) {
+            const loadingMessage = document.createElement('div');
+            loadingMessage.className = 'ai-loading-collections';
+            loadingMessage.innerHTML = `
+                <div class="ai-loading">
+                    <i class="material-icons spinning">sync</i>
+                    <div>Loading collections...</div>
+                    <div class="ai-loading-subtitle">Please wait while we fetch available collections</div>
+                </div>
+            `;
+            optionsSection.appendChild(loadingMessage);
+        }
         
         container.appendChild(optionsSection);
         
@@ -910,7 +984,6 @@ export class InlineDropdownManager {
      * @param {string} query - Original search query
      */
     selectAndZoomToLocation(result, query) {
-        console.log('✅ Dropdown location selected and zooming:', result);
         
         // Update the AI search helper state
         this.aiSearchHelper.selectedLocation = 'custom';
@@ -1341,7 +1414,9 @@ export class InlineDropdownManager {
         
         // Preset button functionality
         presetButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 const days = parseInt(btn.dataset.days);
                 const startDate = new Date();
                 const endDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
@@ -1355,18 +1430,54 @@ export class InlineDropdownManager {
                 // Get preset name from button text
                 const presetName = btn.querySelector('span')?.textContent || `${days} Days`;
                 
-                // Dispatch date preset selected event for tutorial system
-                document.dispatchEvent(new CustomEvent('date-preset-selected', {
-                    detail: { 
-                        preset: `${days}days`,
-                        presetName: presetName,
-                        dateRange: {
-                            start: this.formatDateForInput(startDate),
-                            end: this.formatDateForInput(endDate)
-                        },
-                        source: 'flatpickr-preset'
-                    }
-                }));
+                // Immediately apply the selection and close
+                const startDateStr = this.formatDateForInput(startDate);
+                const endDateStr = this.formatDateForInput(endDate);
+                
+                // Update form inputs
+                const startInput = document.getElementById('date-start');
+                const endInput = document.getElementById('date-end');
+                if (startInput) startInput.value = startDateStr;
+                if (endInput) endInput.value = endDateStr;
+                
+                // Close the dropdown immediately first
+                cleanup();
+                
+                // Set flag to prevent dropdown from reopening
+                this.presetJustSelected = true;
+                
+                // Delay all updates until after dropdown is completely closed
+                setTimeout(() => {
+                    // Update search summary
+                    const dateRange = `${this.formatDateDisplay(startDate)} to ${this.formatDateDisplay(endDate)}`;
+                    this.updateSearchSummary('date', dateRange.toUpperCase());
+                    
+                    // Trigger search parameter change event
+                    document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                        detail: {
+                            type: 'date',
+                            dateType: 'custom',
+                            dateStart: startDateStr,
+                            dateEnd: endDateStr
+                        }
+                    }));
+                    
+                    // Dispatch date preset selected event for tutorial system
+                    document.dispatchEvent(new CustomEvent('date-preset-selected', {
+                        detail: { 
+                            preset: `${days}days`,
+                            presetName: presetName,
+                            dateRange: {
+                                start: startDateStr,
+                                end: endDateStr
+                            },
+                            source: 'flatpickr-preset'
+                        }
+                    }));
+                    
+                    // Clear the prevention flag
+                    this.presetJustSelected = false;
+                }, 300);
             });
         });
         
@@ -1409,7 +1520,6 @@ export class InlineDropdownManager {
                 // Close the dropdown
                 this.closeCurrentDropdown();
                 
-                console.log('📅 Date range applied:', { startDate, endDate });
             }
         });
         
@@ -1420,7 +1530,6 @@ export class InlineDropdownManager {
             applyBtn.disabled = true;
         });
         
-        console.log('📅 Flatpickr calendar initialized');
     }
     
     /**
@@ -1458,7 +1567,6 @@ export class InlineDropdownManager {
                 if (fp) fp.destroy();
                 if (tempInput && tempInput.parentNode) document.body.removeChild(tempInput);
                 if (backdrop && backdrop.parentNode) document.body.removeChild(backdrop);
-                console.log('📅 Calendar cleanup completed');
             } catch (error) {
                 console.warn('Calendar cleanup error:', error);
             }
@@ -1567,15 +1675,6 @@ export class InlineDropdownManager {
                         }
                     }));
                     
-                    console.log('📅 Date range applied from standalone calendar:', { 
-                        selectedDates: selectedDates.map(d => d.toISOString()),
-                        startDateStr: startDateStr,
-                        endDateStr: endDateStr,
-                        startDate: startDate, 
-                        endDate: endDate,
-                        display: `${startDateStr} 00:00:00 to ${endDateStr} 23:59:59`
-                    });
-                    
                     // Auto-close after selection with cleanup
                     setTimeout(cleanup, 300);
                 }
@@ -1603,7 +1702,6 @@ export class InlineDropdownManager {
     showCollectionDetails(collection) {
         if (!collection) return;
         
-        console.log('Collection details:', collection);
         this.notificationService.showNotification(`Collection: ${collection.title || collection.id}`, 'info');
     }
     
@@ -1614,7 +1712,6 @@ export class InlineDropdownManager {
         // Listen for any drawing completion events
         document.addEventListener('drawingCompleted', (event) => {
             if (this.isDrawingActive) {
-                console.log('🎯 Intercepted drawing completion event');
                 event.stopPropagation();
                 event.preventDefault();
                 
@@ -1629,13 +1726,11 @@ export class InlineDropdownManager {
         // Also listen for any geometry sync events that might trigger fullscreen
         document.addEventListener('geometryChanged', (event) => {
             if (this.isDrawingActive) {
-                console.log('🎯 Intercepted geometry change event during drawing');
                 event.stopPropagation();
                 event.preventDefault();
             }
         }, true);
         
-        console.log('🎯 Drawing event interception set up');
     }
     
     /**
@@ -1659,13 +1754,11 @@ export class InlineDropdownManager {
             const bboxInput = document.getElementById('bbox-input');
             if (bboxInput) {
                 bboxInput.value = bbox.join(',');
-                console.log(`[LOCATION] Updated bbox-input from drawing: ${bboxInput.value}`);
             }
             
             // Show success notification
             this.notificationService.showNotification('📍 Location drawn and applied!', 'success');
             
-            console.log('✅ Drawing handled inline, no fullscreen opened');
             
         } catch (error) {
             console.error('❌ Error handling drawing completion:', error);
@@ -1692,8 +1785,17 @@ export class InlineDropdownManager {
                 e.preventDefault();
                 e.stopPropagation();
                 
+                // Prevent reopening immediately after preset selection
+                if (this.presetJustSelected) {
+                    return;
+                }
+                
+                // Don't open dropdown if clicking on a preset button or within a dropdown
+                if (e.target.closest('.ai-preset-btn') || e.target.closest('.flatpickr-calendar') || e.target.closest('.ai-dropdown-container')) {
+                    return;
+                }
+                
                 const field = item.dataset.field;
-                console.log(`🎯 Search summary item clicked for inline dropdown: ${field}`);
                 
                 this.showInlineDropdown(field, item);
             });
@@ -1718,7 +1820,6 @@ export class InlineDropdownManager {
             });
         });
         
-        console.log(`✅ Initialized inline dropdowns for ${newSummaryItems.length} search summary items`);
     }
     
     /**
@@ -1733,7 +1834,6 @@ export class InlineDropdownManager {
             
             // Prevent multiple dropdowns during loading with timeout fallback
             if (this.isLoading) {
-                console.log('⏳ Already loading dropdown, attempting recovery...');
                 // If loading state persists for more than 10 seconds, force reset
                 if (!this.loadingStartTime || (Date.now() - this.loadingStartTime) > 10000) {
                     console.warn('⚠️ Loading state stuck, forcing reset...');
@@ -1743,7 +1843,6 @@ export class InlineDropdownManager {
                 }
             }
             
-            console.log(`📋 Opening inline dropdown for: ${fieldType}`);
             this.isLoading = true;
             this.loadingStartTime = Date.now();
             
@@ -1756,23 +1855,39 @@ export class InlineDropdownManager {
                 }
             }, 15000); // 15 second timeout
             
-            // Show loading state immediately
-            this.showLoadingDropdown(fieldType, triggerElement);
+            // Only show loading state for collection dropdown (which needs async data)
+            // Location and date dropdowns are synchronous and don't need loading state
+            if (fieldType === 'collection') {
+                this.showLoadingDropdown(fieldType, triggerElement);
+            }
             
             // Create dropdown content based on field type
             let dropdownContent;
             
             switch (fieldType) {
                 case 'collection':
-                    // Use cached collections for instant loading
-                    const collections = await this.getCachedCollections();
-                    this.aiSearchHelper.allAvailableCollections = collections;
+                    // Don't wait for collections - create dropdown immediately
+                    // Collections will be loaded in background and dropdown will update
+                    this.aiSearchHelper.allAvailableCollections = this.collectionsCache || [];
                     dropdownContent = this.aiSearchHelper.createCollectionDropdown();
+                    
+                    // Load collections in background and update dropdown
+                    this.getCachedCollections().then(collections => {
+                        if (this.currentDropdown && this.currentField === 'collection') {
+                            this.aiSearchHelper.allAvailableCollections = collections;
+                            const updatedContent = this.aiSearchHelper.createCollectionDropdown();
+                            this.updateDropdownContent(updatedContent, fieldType);
+                        }
+                    }).catch(error => {
+                        console.warn('Failed to load collections in background:', error);
+                    });
                     break;
                 case 'location':
+                    // Location dropdown doesn't need to wait for collections
                     dropdownContent = this.aiSearchHelper.createLocationDropdown();
                     break; 
                 case 'date':
+                    // Date dropdown doesn't need to wait for collections
                     dropdownContent = this.aiSearchHelper.createDateDropdown();
                     break;
                 default:
@@ -1785,8 +1900,14 @@ export class InlineDropdownManager {
                 throw new Error(`Failed to create dropdown content for ${fieldType}`);
             }
             
-            // Replace loading dropdown with actual content
-            this.replaceLoadingWithContent(dropdownContent, fieldType);
+            // Handle dropdown display based on type
+            if (fieldType === 'collection') {
+                // Collection dropdown: replace loading content with actual content
+                this.replaceLoadingWithContent(dropdownContent, fieldType);
+            } else {
+                // Location/Date dropdowns: show directly without loading state
+                this.showDirectDropdown(dropdownContent, fieldType, triggerElement);
+            }
             
             // Ensure dropdown is visible after content is loaded
             this.ensureDropdownVisible();
@@ -1795,10 +1916,8 @@ export class InlineDropdownManager {
             this.temporarilyDisableClickOutside = true;
             setTimeout(() => {
                 this.temporarilyDisableClickOutside = false;
-                console.log('🎯 Click-outside detection re-enabled for dropdown');
             }, 300);
             
-            console.log(`✅ Showed inline dropdown for: ${fieldType}`);
             
             // Dispatch dropdown opened events for tutorial system
             if (fieldType === 'location') {
@@ -1879,7 +1998,6 @@ export class InlineDropdownManager {
         // Add active state to trigger element
         triggerElement.classList.add('dropdown-active');
         
-        console.log(`⏳ Loading dropdown shown for: ${fieldType}`);
     }
     
     /**
@@ -1922,13 +2040,111 @@ export class InlineDropdownManager {
         if (searchInput) {
             setTimeout(() => {
                 searchInput.focus();
-                console.log(`🎯 Auto-focused search input for ${fieldType} dropdown`);
             }, 150);
         }
         
-        console.log(`🔄 Loading dropdown replaced with content for: ${fieldType}`);
         
         // Force visibility check after content is added
+        setTimeout(() => {
+            this.ensureDropdownVisible();
+        }, 50);
+    }
+    
+    /**
+     * Show dropdown directly without loading state (for synchronous dropdowns)
+     * @param {HTMLElement} dropdownContent - Dropdown content
+     * @param {string} fieldType - Field type
+     * @param {HTMLElement} triggerElement - Trigger element
+     */
+    showDirectDropdown(dropdownContent, fieldType, triggerElement) {
+        // Create dropdown container
+        const dropdown = document.createElement('div');
+        dropdown.className = 'inline-dropdown-container';
+        dropdown.setAttribute('data-field', fieldType);
+        
+        // Add the dropdown content directly
+        dropdown.appendChild(dropdownContent);
+        
+        // Position and show the dropdown
+        this.positionInlineDropdown(dropdown, triggerElement);
+        
+        // Add to document body for better positioning control
+        document.body.appendChild(dropdown);
+        
+        // Set as current dropdown
+        this.currentDropdown = dropdown;
+        this.currentField = fieldType;
+        
+        // Set up dropdown-specific event handlers
+        this.setupDropdownHandlers(dropdown, fieldType);
+        
+        // Set up close button handler
+        this.setupCloseButtonHandler(dropdown);
+        
+        // Mark trigger as active
+        triggerElement.classList.add('dropdown-active');
+        
+        // Auto-focus search input field when dropdown opens
+        let searchInput = null;
+        
+        // Try to find the specific search input based on field type
+        if (fieldType === 'location') {
+            searchInput = dropdown.querySelector('.ai-location-search-input');
+        } else if (fieldType === 'date') {
+            searchInput = dropdown.querySelector('input, button, [tabindex]');
+        }
+        
+        // Focus the search input with a small delay to ensure DOM is ready
+        if (searchInput) {
+            setTimeout(() => {
+                searchInput.focus();
+            }, 150);
+        }
+    }
+    
+    /**
+     * Update dropdown content in place (for background loading)
+     * @param {HTMLElement} newContent - New dropdown content
+     * @param {string} fieldType - Field type
+     */
+    updateDropdownContent(newContent, fieldType) {
+        if (!this.currentDropdown) return;
+        
+        // Clear current content
+        this.currentDropdown.innerHTML = '';
+        
+        // Add the updated dropdown content
+        this.currentDropdown.appendChild(newContent);
+        
+        // Set up dropdown-specific event handlers
+        this.setupDropdownHandlers(this.currentDropdown, fieldType);
+        
+        // Set up close button handler
+        this.setupCloseButtonHandler(this.currentDropdown);
+        
+        // Auto-focus search input field when dropdown updates
+        let searchInput = null;
+        
+        // Try to find the specific search input based on field type
+        if (fieldType === 'location') {
+            searchInput = this.currentDropdown.querySelector('.ai-location-search-input');
+        } else if (fieldType === 'collection') {
+            searchInput = this.currentDropdown.querySelector('.ai-search-input');
+        }
+        
+        // Fallback to any input field if specific search input not found
+        if (!searchInput) {
+            searchInput = this.currentDropdown.querySelector('input, button, [tabindex]');
+        }
+        
+        // Focus the search input with a small delay to ensure DOM is ready
+        if (searchInput) {
+            setTimeout(() => {
+                searchInput.focus();
+            }, 150);
+        }
+        
+        // Force visibility check after content is updated
         setTimeout(() => {
             this.ensureDropdownVisible();
         }, 50);
@@ -1946,9 +2162,6 @@ export class InlineDropdownManager {
         const viewportHeight = window.innerHeight;
         const viewportWidth = window.innerWidth;
         
-        console.log(`📍 Positioning dropdown - Trigger:`, triggerRect);
-        console.log(`📍 Positioning dropdown - Sidebar:`, sidebarRect);
-        console.log(`📍 Positioning dropdown - Viewport: ${viewportWidth}x${viewportHeight}`);
         
         // Enhanced positioning logic - always position at top of viewport
         dropdown.style.position = 'fixed';
@@ -2000,7 +2213,6 @@ export class InlineDropdownManager {
             dropdown.style.transform = 'translateY(0) scale(1)';
         });
         
-        console.log(`📍 Positioned inline dropdown at (${left}, ${top}) with size ${width}x${dropdown.style.maxHeight}`);
         
         // Debug: Check if dropdown is actually visible
         setTimeout(() => {
@@ -2009,14 +2221,6 @@ export class InlineDropdownManager {
                             window.getComputedStyle(dropdown).display !== 'none' &&
                             window.getComputedStyle(dropdown).visibility !== 'hidden';
             
-            console.log(`📍 Dropdown final position check:`, {
-                rect: finalRect,
-                visible: isVisible,
-                display: window.getComputedStyle(dropdown).display,
-                visibility: window.getComputedStyle(dropdown).visibility,
-                opacity: window.getComputedStyle(dropdown).opacity,
-                zIndex: window.getComputedStyle(dropdown).zIndex
-            });
             
             if (!isVisible) {
                 console.error('❌ Dropdown positioned but not visible! Check for CSS conflicts.');
@@ -2084,7 +2288,6 @@ export class InlineDropdownManager {
                     dropdown.insertBefore(indicator, dropdown.firstChild);
                 }
                 
-                console.log('✅ Applied fallback positioning for dropdown visibility');
                 
                 // Show success notification
                 if (this.notificationService) {
@@ -2094,7 +2297,6 @@ export class InlineDropdownManager {
                     );
                 }
             } else {
-                console.log('✅ Dropdown is properly visible');
             }
         }, 200);
     }
@@ -2109,7 +2311,6 @@ export class InlineDropdownManager {
             closeButton.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('🚪 Close button clicked');
                 this.closeCurrentDropdown();
             });
         }
@@ -2130,7 +2331,6 @@ export class InlineDropdownManager {
                 // Handle custom date button first (before generic option handling)
                 const customDateBtn = e.target.closest('#custom-date');
                 if (customDateBtn) {
-                    console.log('📅 Custom date button clicked - opening standalone calendar');
                     this.openFlatpickrCalendar();
                     return;
                 }
@@ -2138,14 +2338,12 @@ export class InlineDropdownManager {
                 // Handle custom date range option - open Flatpickr immediately
                 const option = e.target.closest('.ai-option');
                 if (option && option.dataset.value === 'custom') {
-                    console.log('📅 Custom date range clicked - opening Flatpickr calendar');
                     this.openFlatpickrCalendar();
                     return;
                 }
                 
                 // Handle other date options
                 if (option && option.dataset.value && option.dataset.value !== 'custom') {
-                    console.log(`📅 Date option clicked: ${option.dataset.value}`);
                     this.handleDateSelection(option.dataset.value);
                     this.closeCurrentDropdown();
                     return;
@@ -2172,7 +2370,6 @@ export class InlineDropdownManager {
                     const collection = this.aiSearchHelper.allAvailableCollections
                         .find(c => c.id === collectionId && c.source === collectionSource);
                     if (collection) {
-                        console.log('📄 Attempting to show collection details for:', collectionId, collectionSource);
                         try {
                             this.aiSearchHelper.showCollectionDetails(collection);
                         } catch (error) {
@@ -2184,7 +2381,6 @@ export class InlineDropdownManager {
                         }
                     } else {
                         console.warn('⚠️ Collection not found:', collectionId, collectionSource);
-                        console.log('Available collections:', this.aiSearchHelper.allAvailableCollections?.length);
                         this.notificationService.showNotification(
                             'Collection details not available', 
                             'warning'
@@ -2224,7 +2420,6 @@ export class InlineDropdownManager {
             } else if (fieldType === 'location') {
                 // Location search is now handled by setupAdvancedLocationSearch in createSimpleLocationDropdown
                 // No additional event handlers needed here
-                console.log('🔍 Location search handled by advanced GeocodingService');
             }
         }
         
@@ -2331,7 +2526,6 @@ export class InlineDropdownManager {
             // Check if this is a DEM collection and auto-set time to "Anytime"
             this.checkAndSetDEMTimeSettings(actualCollectionId, collectionTitle);
             
-            console.log(`🎯 Collection selected: ${actualCollectionId} from source: ${collectionSource}`);
         }
     }
     
@@ -2347,7 +2541,6 @@ export class InlineDropdownManager {
         const isDEM = this.isDEMCollection(collectionId, collectionTitle);
         
         if (isDEM) {
-            console.log(`🏔️ DEM collection detected: ${collectionId}. Setting time to "Anytime"`);
             
             // Update the AI search helper state
             this.aiSearchHelper.selectedDate = {
@@ -2364,7 +2557,7 @@ export class InlineDropdownManager {
             if (endInput) endInput.value = '';
             
             // Update the search summary interface to show "Anytime"
-            this.updateSearchSummary('date', '🕐 Anytime');
+            this.updateSearchSummary('date', 'Anytime');
             
             // Trigger change events to update any dependent UI components
             if (startInput) startInput.dispatchEvent(new Event('change'));
@@ -2438,7 +2631,6 @@ export class InlineDropdownManager {
             }
         }));
         
-        console.log(`📍 Location selected: ${displayText}`, location);
     }
     
     /**
@@ -2446,7 +2638,6 @@ export class InlineDropdownManager {
      * @param {string} dateType - Date type
      */
     handleDateSelection(dateType) {
-        console.log(`📅 Handling date selection: ${dateType}`);
         
         let dateRange;
         let displayText;
@@ -2454,7 +2645,7 @@ export class InlineDropdownManager {
         switch (dateType) {
             case 'anytime':
                 dateRange = { start: null, end: null };
-                displayText = '🕐 Anytime';
+                displayText = 'Anytime';
                 break;
             case 'last7days':
                 dateRange = this.calculateLast7DaysRange();
@@ -2514,7 +2705,6 @@ export class InlineDropdownManager {
             }
         }));
         
-        console.log(`✅ Date selected: ${dateType}`, this.aiSearchHelper.selectedDate);
     }
     
     /**
@@ -2579,7 +2769,6 @@ export class InlineDropdownManager {
             // Start drawing with proper callback
             this.mapManager.startDrawingBbox((bbox) => {
                 if (bbox && Array.isArray(bbox) && bbox.length === 4) {
-                    console.log('📍 Drawing completed with bbox:', bbox);
                     
                     // Store location data in AI search helper
                     this.aiSearchHelper.selectedLocation = bbox;
@@ -2597,7 +2786,6 @@ export class InlineDropdownManager {
                     const bboxInput = document.getElementById('bbox-input');
                     if (bboxInput) {
                         bboxInput.value = bbox.join(',');
-                        console.log(`[LOCATION] Updated bbox-input from map drawing: ${bboxInput.value}`);
                     }
                     
                     // Display on map if not already displayed
@@ -2613,7 +2801,6 @@ export class InlineDropdownManager {
                     // Show success notification
                     this.notificationService.showNotification('✅ Location drawn and applied successfully!', 'success');
                     
-                    console.log('✅ Map drawing completed and location set');
                 } else {
                     console.warn('⚠️ Invalid bbox returned from drawing:', bbox);
                     this.notificationService.showNotification('⚠️ Drawing incomplete - please try again', 'warning');
@@ -2674,7 +2861,6 @@ export class InlineDropdownManager {
      * @param {HTMLElement} dropdown - Dropdown container
      */
     handleCustomDate(dropdown) {
-        console.log('📅 Showing custom date section');
         
         const customSection = dropdown.querySelector('#custom-date-section');
         if (customSection) {
@@ -2689,7 +2875,6 @@ export class InlineDropdownManager {
                         try {
                             startInput.showPicker();
                         } catch (e) {
-                            console.log('Date picker not available, using fallback');
                         }
                     }
                 }, 100);
@@ -2709,7 +2894,6 @@ export class InlineDropdownManager {
                     this.applyCustomDateRange(dropdown);
                 });
                 
-                console.log('✅ Custom date apply button set up');
             }
             
             // Set up cancel button
@@ -2717,7 +2901,6 @@ export class InlineDropdownManager {
             if (cancelBtn) {
                 cancelBtn.addEventListener('click', () => {
                     customSection.style.display = 'none';
-                    console.log('📅 Custom date section hidden');
                 });
             }
         }
@@ -2735,7 +2918,6 @@ export class InlineDropdownManager {
             // When start date is selected, automatically focus end date
             startInput.addEventListener('change', () => {
                 if (startInput.value) {
-                    console.log(`📅 Start date set to: ${startInput.value}`);
                     
                     // Set minimum date for end input
                     endInput.min = startInput.value;
@@ -2747,7 +2929,6 @@ export class InlineDropdownManager {
                             try {
                                 endInput.showPicker();
                             } catch (e) {
-                                console.log('End date picker not available');
                             }
                         }
                     }, 200);
@@ -2764,14 +2945,12 @@ export class InlineDropdownManager {
             // Auto-apply when both dates are selected
             endInput.addEventListener('change', () => {
                 if (startInput.value && endInput.value) {
-                    console.log(`📅 Both dates selected, auto-applying`);
                     setTimeout(() => {
                         this.applyCustomDateRange(dropdown);
                     }, 500);
                 }
             });
             
-            console.log('✅ Smart date picker flow set up');
         }
     }
     
@@ -2780,7 +2959,6 @@ export class InlineDropdownManager {
      * @param {HTMLElement} dropdown - Dropdown container
      */
     applyCustomDateRange(dropdown) {
-        console.log('📅 Applying custom date range');
         
         const startInput = dropdown.querySelector('#dropdown-date-start');
         const endInput = dropdown.querySelector('#dropdown-date-end');
@@ -2819,7 +2997,6 @@ export class InlineDropdownManager {
             if (globalStartInput) globalStartInput.dispatchEvent(new Event('change'));
             if (globalEndInput) globalEndInput.dispatchEvent(new Event('change'));
             
-            console.log(`✅ Custom date range applied: ${dateText}`);
             
             // Close dropdown
             this.closeCurrentDropdown();
@@ -2890,14 +3067,6 @@ export class InlineDropdownManager {
             
             // Debug logging for specific search terms
             if (normalizedQuery === 'rtc' && collection) {
-                console.log(`🔍 Checking collection for 'rtc':`, {
-                    id: collection.id,
-                    title: collection.title,
-                    description: collection.description,
-                    keywords: collection.keywords,
-                    source: collection.source,
-                    matches: matches
-                });
             }
         });
         
@@ -2944,10 +3113,6 @@ export class InlineDropdownManager {
         // Log debug info for troubleshooting
         if (query.trim() && visibleCount === 0) {
             console.warn(`⚠️ No collections found for query: "${query}"`);
-            console.log('Available collections:', this.aiSearchHelper.allAvailableCollections?.map(c => ({
-                id: c.id,
-                title: c.title
-            })));
         }
     }
     
@@ -3091,7 +3256,6 @@ export class InlineDropdownManager {
                     e.preventDefault();
                     e.stopPropagation();
                     
-                    console.log('🎯 Inline location result clicked:', result);
                     
                     this.handleLocationSelectionEnhanced(resultItem, query);
                 });
@@ -3116,7 +3280,6 @@ export class InlineDropdownManager {
                 resultsContainer.appendChild(resultItem);
             });
             
-            console.log(`✅ Displayed ${results.length} location results in inline dropdown`);
             
         }).catch(error => {
             console.error('❌ Error searching locations in inline dropdown:', error);
@@ -3153,7 +3316,6 @@ export class InlineDropdownManager {
                 summaryElement.style.animation = '';
             }, 500);
             
-            console.log(`🔄 Updated search summary ${fieldType}: ${value}`);
             
             // Emit URL state change event
             this.emitStateChangeEvent();
@@ -3222,7 +3384,6 @@ export class InlineDropdownManager {
             
             document.dispatchEvent(event);
             
-            console.log('📡 Emitted search parameter change event:', currentState);
             
         } catch (error) {
             console.error('❌ Error emitting state change event:', error);
@@ -3297,7 +3458,6 @@ export class InlineDropdownManager {
                 this.loadingTimeout = null;
             }
             
-            console.log('🚪 Closed inline dropdown successfully');
             
         } catch (error) {
             console.error('❌ Error closing dropdown, forcing reset:', error);
@@ -3347,7 +3507,6 @@ export class InlineDropdownManager {
                 this.loadingTimeout = null;
             }
             
-            console.log('🚪 Force closed dropdown');
             
         } catch (error) {
             console.error('❌ Critical error in force close, using nuclear reset:', error);
@@ -3401,7 +3560,6 @@ export class InlineDropdownManager {
             this.isLoading = false;
             this.loadingStartTime = null;
             
-            console.log('✅ Force reset completed successfully');
             
         } catch (criticalError) {
             console.error('❌ Critical error in force reset - manual intervention may be required:', criticalError);
@@ -3429,7 +3587,6 @@ export class InlineDropdownManager {
                 if (this.currentDropdown && 
                     !this.currentDropdown.contains(e.target) && 
                     !e.target.closest('.search-summary-item')) {
-                    console.log('👆 Click outside detected, closing dropdown');
                     this.closeCurrentDropdown();
                 }
             } catch (error) {
@@ -3442,7 +3599,6 @@ export class InlineDropdownManager {
         this.globalEscapeHandler = (e) => {
             try {
                 if (e.key === 'Escape' && this.currentDropdown) {
-                    console.log('⌨️ Escape key pressed, closing dropdown');
                     this.closeCurrentDropdown();
                 }
             } catch (error) {
@@ -3455,7 +3611,6 @@ export class InlineDropdownManager {
         this.visibilityChangeHandler = () => {
             try {
                 if (document.hidden && this.currentDropdown) {
-                    console.log('👁️ Page hidden, closing dropdown');
                     this.forceCloseCurrentDropdown();
                 }
             } catch (error) {
@@ -3473,7 +3628,6 @@ export class InlineDropdownManager {
         this.windowBlurHandler = () => {
             try {
                 if (this.currentDropdown) {
-                    console.log('🪟 Window blur detected, closing dropdown');
                     this.forceCloseCurrentDropdown();
                 }
             } catch (error) {
@@ -3484,7 +3638,6 @@ export class InlineDropdownManager {
         
         window.addEventListener('blur', this.windowBlurHandler, { passive: true });
         
-        console.log('🎧 Enhanced global event listeners set up for inline dropdowns');
     }
     
     /**
@@ -3512,7 +3665,6 @@ export class InlineDropdownManager {
                 this.windowBlurHandler = null;
             }
             
-            console.log('🧹 Global event listeners cleaned up');
         } catch (error) {
             console.warn('⚠️ Error cleaning up global listeners:', error);
         }
@@ -3523,7 +3675,6 @@ export class InlineDropdownManager {
      */
     destroy() {
         try {
-            console.log('🗑️ Destroying InlineDropdownManager...');
             
             // Force close any open dropdowns
             this.forceReset();
@@ -3545,7 +3696,6 @@ export class InlineDropdownManager {
             this.notificationService = null;
             this.aiSearchHelper = null;
             
-            console.log('✅ InlineDropdownManager destroyed successfully');
         } catch (error) {
             console.error('❌ Error destroying InlineDropdownManager:', error);
         }
@@ -3565,7 +3715,6 @@ export class InlineDropdownManager {
             const lon = parseFloat(resultElement.dataset.lon);
             const category = resultElement.dataset.category;
             
-            console.log(`[LOCATION] Enhanced location selected: ${name}`, { bbox, lat, lon, category, originalQuery });
             
             // Store the location with complete information
             let locationBbox;
@@ -3620,7 +3769,6 @@ export class InlineDropdownManager {
             const bboxInput = document.getElementById('bbox-input');
             if (bboxInput) {
                 bboxInput.value = locationBbox.join(',');
-                console.log(`[LOCATION] Updated bbox-input: ${bboxInput.value}`);
             }
             
             // Display location on map and zoom to it
@@ -3648,7 +3796,6 @@ export class InlineDropdownManager {
                 }
             }));
             
-            console.log(`[SUCCESS] Enhanced location selection complete for: ${name}`);
             
         } catch (error) {
             console.error('[ERROR] Error in enhanced location selection:', error);
@@ -3670,7 +3817,6 @@ export class InlineDropdownManager {
         }
         
         try {
-            console.log(`[MAP] Displaying location "${name}" on map:`, bbox);
             
             // Clear any previous location geometry first
             this.clearPreviousLocationGeometry();
@@ -3682,10 +3828,8 @@ export class InlineDropdownManager {
             // Use MapManager's addBeautifulGeometryLayer method directly
             if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
                 this.mapManager.addBeautifulGeometryLayer(locationGeometry, layerId);
-                console.log(`[SUCCESS] Added beautiful geometry layer via MapManager: ${layerId}`);
             } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
                 this.mapManager.addGeoJsonLayer(locationGeometry, layerId);
-                console.log(`[SUCCESS] Added GeoJSON layer via MapManager: ${layerId}`);
             } else {
                 // Fallback: add directly to map
                 const map = this.mapManager.map || this.mapManager.getMap();
@@ -3718,7 +3862,6 @@ export class InlineDropdownManager {
                         }
                     });
                     
-                    console.log(`[SUCCESS] Added geometry layer directly to map: ${layerId}`);
                 }
             }
             
@@ -3743,7 +3886,6 @@ export class InlineDropdownManager {
             // Store the current layer for later cleanup
             this.currentLocationLayerId = layerId;
             
-            console.log(`[SUCCESS] Location "${name}" successfully displayed and zoomed on map (Layer: ${layerId})`);
             
         } catch (mapError) {
             console.error('[ERROR] Error displaying location on map:', mapError);
@@ -3760,15 +3902,12 @@ export class InlineDropdownManager {
         }
         
         try {
-            console.log('[CLEANUP] Clearing previous location geometry using MapManager');
             
             // Use MapManager's built-in cleanup method
             if (typeof this.mapManager.removeCurrentLayer === 'function') {
                 this.mapManager.removeCurrentLayer();
-                console.log('[SUCCESS] Used MapManager.removeCurrentLayer()');
             } else if (typeof this.mapManager.clearAllThumbnails === 'function') {
                 this.mapManager.clearAllThumbnails();
-                console.log('[SUCCESS] Used MapManager.clearAllThumbnails()');
             }
             
             // Also clear any layers with our tracked ID if we have one
@@ -3794,7 +3933,6 @@ export class InlineDropdownManager {
                         try {
                             if (map.getLayer(layerId)) {
                                 map.removeLayer(layerId);
-                                console.log(`[SUCCESS] Removed layer: ${layerId}`);
                             }
                         } catch (layerError) {
                             console.warn(`[WARN] Could not remove layer ${layerId}:`, layerError);
@@ -3805,7 +3943,6 @@ export class InlineDropdownManager {
                     try {
                         if (map.getSource(this.currentLocationLayerId)) {
                             map.removeSource(this.currentLocationLayerId);
-                            console.log(`[SUCCESS] Removed source: ${this.currentLocationLayerId}`);
                         }
                     } catch (sourceError) {
                         console.warn(`[WARN] Could not remove source:`, sourceError);
@@ -3814,7 +3951,6 @@ export class InlineDropdownManager {
             }
             
             this.currentLocationLayerId = null;
-            console.log('[SUCCESS] Successfully cleared previous location geometry');
             
         } catch (error) {
             console.warn('[WARN] Error clearing previous location geometry:', error);

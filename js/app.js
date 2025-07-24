@@ -325,6 +325,9 @@ async function initApp() {
         // Initialize Satellite Animation
         const satelliteAnimation = new SatelliteAnimation();
         
+        // Make satellite animation globally accessible for debugging
+        window.satelliteAnimation = satelliteAnimation;
+        
         // Initialize Interactive Tutorial
         const interactiveTutorial = new InteractiveTutorial();
         

@@ -121,7 +121,6 @@ export class SatelliteAnimation {
         this.container = document.createElement('div');
         this.container.className = 'satellite-container';
         this.container.id = 'satellite-container';
-        this.container.style.position = 'relative'; // Needed for message positioning
         
         // Create satellite image
         this.satellite = document.createElement('img');
@@ -334,6 +333,45 @@ export class SatelliteAnimation {
         this.hasResults = false;
         this.isActive = false;
         this.startAnimation();
+    }
+    
+    /**
+     * Force satellite animation to start regardless of results state
+     */
+    forceStart() {
+        console.log('🛰️ FORCE: Starting satellite animation regardless of results');
+        this.hasResults = false;
+        this.isActive = false;
+        this.startAnimation();
+    }
+    
+    /**
+     * Debug method to check satellite visibility and positioning
+     */
+    debugSatellite() {
+        console.log('🛰️ DEBUG: Satellite element:', this.satellite);
+        console.log('🛰️ DEBUG: Container element:', this.container);
+        console.log('🛰️ DEBUG: Satellite computed style:', window.getComputedStyle(this.satellite));
+        console.log('🛰️ DEBUG: Container computed style:', window.getComputedStyle(this.container));
+        console.log('🛰️ DEBUG: Satellite classes:', this.satellite.className);
+        console.log('🛰️ DEBUG: Container position:', this.container.getBoundingClientRect());
+        console.log('🛰️ DEBUG: Satellite position:', this.satellite.getBoundingClientRect());
+        
+        // Make satellite very visible for testing
+        this.satellite.style.cssText += `
+            background: red !important;
+            width: 100px !important;
+            height: 100px !important;
+            opacity: 1 !important;
+            z-index: 99999 !important;
+            position: fixed !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: none !important;
+            border: 5px solid yellow !important;
+        `;
+        
+        console.log('🛰️ DEBUG: Made satellite highly visible at center of screen');
     }
     
     /**

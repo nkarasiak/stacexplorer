@@ -48,14 +48,15 @@
 
 /* Satellite Animation Styles */
 .satellite-container {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    pointer-events: none;
-    z-index: 600; /* Behind the menu but above the map */
-    overflow: hidden;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    pointer-events: none !important;
+    z-index: 9999 !important; /* Ensure it's on top */
+    overflow: hidden !important;
+    display: block !important;
 }
 
 .satellite {
@@ -67,6 +68,7 @@
     transition: opacity 0.5s ease-in-out;
     pointer-events: none;
     filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4));
+    z-index: 9999; /* Ensure satellite is on top */
 }
 
 .satellite.animate {

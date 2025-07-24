@@ -420,17 +420,20 @@
 
 /* Dark Theme Adjustments */
 .dark-theme .btn--secondary {
-    background: rgba(255, 255, 255, 0.05);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--surface-secondary);
+    border-color: var(--border-primary);
+    color: var(--text-primary);
 }
 
 .dark-theme .btn--secondary:hover:not(:disabled):not(.btn--disabled) {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: var(--primary-400);
+    background: var(--surface-elevated);
+    border-color: var(--border-focus);
+    box-shadow: var(--input-focus-shadow);
 }
 
 .dark-theme .btn--ghost:hover:not(:disabled):not(.btn--disabled) {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--hover-overlay);
+    color: var(--text-primary);
 }
 
 /* Light Theme Adjustments */

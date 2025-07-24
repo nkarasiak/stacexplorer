@@ -154,56 +154,60 @@
     display: none;
 }
 
-/* Dark Theme (Default) - Improved Contrast */
+/* Dark Theme - Premium Design with Deeper Darkness */
 html.dark-theme {
-    --bg-primary: linear-gradient(135deg, #0a0a1f 0%, #1a1a3a 30%, #2d1b69 70%, #1e3a8a 100%);
-    --bg-secondary: rgba(20, 20, 45, 0.95);
-    --surface-primary: rgba(30, 30, 60, 0.9);     /* Unified surface for consistency */
-    --surface-secondary: rgba(30, 30, 60, 0.9);   /* Same as primary for uniformity */
-    --surface-elevated: rgba(30, 30, 60, 0.9);    /* Consistent elevation */
-    --surface-tertiary: rgba(30, 30, 60, 0.9);    /* Unified tertiary surface */
+    --bg-primary: linear-gradient(135deg, #030509 0%, #0a0f1c 25%, #121829 50%, #1a202c 100%);
+    --bg-secondary: rgba(10, 15, 23, 0.98);
+    --surface-primary: rgba(20, 25, 35, 0.98);      /* Darker primary surface */
+    --surface-secondary: rgba(15, 20, 28, 0.95);    /* Deeper secondary surface */
+    --surface-elevated: rgba(25, 30, 40, 0.98);     /* Darker elevated surface */
+    --surface-tertiary: rgba(12, 17, 24, 0.93);     /* Very dark tertiary surface */
     
-    --text-primary: rgba(255, 255, 255, 0.98);    /* Maximum contrast */
-    --text-secondary: rgba(255, 255, 255, 0.85);  /* Excellent readability */
-    --text-tertiary: rgba(255, 255, 255, 0.65);   /* Better contrast than before */
+    --text-primary: rgba(248, 250, 252, 0.98);      /* High contrast primary text */
+    --text-secondary: rgba(226, 232, 240, 0.85);    /* Secondary text with good readability */
+    --text-tertiary: rgba(203, 213, 225, 0.68);     /* Tertiary text for subtle elements */
     
-    --border-primary: rgba(255, 255, 255, 0.1);   /* Subtle, elegant borders */
-    --border-secondary: rgba(255, 255, 255, 0.05); /* Very subtle secondary borders */
+    --border-primary: rgba(45, 55, 75, 0.40);       /* Darker but visible borders */
+    --border-secondary: rgba(35, 45, 65, 0.25);     /* Darker subtle borders */
+    --border-focus: rgba(99, 179, 237, 0.7);        /* Brighter focus for contrast */
     
-    --hover-overlay: rgba(255, 255, 255, 0.12);   /* More responsive hover */
-    --hover-background: rgba(255, 255, 255, 0.08); /* Subtle background hover */
-    --active-overlay: rgba(255, 255, 255, 0.18);   /* Clear active state */
+    --hover-overlay: rgba(55, 65, 85, 0.20);        /* Darker hover overlay */
+    --hover-background: rgba(40, 50, 70, 0.18);     /* Darker background hover */
+    --active-overlay: rgba(60, 70, 90, 0.28);       /* Darker active state */
     
-    /* Glass Effects - Enhanced for dark theme beauty */
-    --glass-blur: blur(16px);  /* Enhanced blur for premium feel */
-    --glass-blur-sm: blur(10px);  /* Refined small blur */
-    --glass-border: 1px solid rgba(255, 255, 255, 0.2);  /* Better border visibility */
-    --glass-saturate: saturate(140%);  /* Enhanced saturation for vibrancy */
-    --glass-brightness: brightness(1.1);  /* Subtle brightness boost */
+    /* Glass Effects - Premium dark theme styling */
+    --glass-blur: blur(20px);                       /* Enhanced blur for luxury feel */
+    --glass-blur-sm: blur(12px);                    /* Refined small blur */
+    --glass-border: 1px solid rgba(60, 75, 95, 0.30); /* Darker sophisticated border */
+    --glass-saturate: saturate(120%);               /* Balanced saturation */
+    --glass-brightness: brightness(1.05);           /* Subtle brightness enhancement */
     
-    /* Primary colors - Enhanced for dark theme */
-    --primary-500: #4facfe;
-    --primary-400: #6bcfff;
-    --primary-300: #89daff;
-    --primary-100: rgba(79, 172, 254, 0.15);
+    /* Primary colors - Refined for dark theme harmony */
+    --primary-500: #63b3ed;                         /* Refined primary blue */
+    --primary-400: #7cc7f0;                         /* Lighter primary variant */
+    --primary-300: #90cdf4;                         /* Light primary for accents */
+    --primary-200: #bee3f8;                         /* Very light primary */
+    --primary-100: rgba(99, 179, 237, 0.15);        /* Primary with transparency */
     
-    /* Status colors - Vibrant for dark theme */
-    --success-color: #10d876;
-    --warning-color: #fbbf24;
-    --error-color: #f87171;
-    --info-color: #60a5fa;
+    /* Status colors - Harmonious with dark theme */
+    --success-color: #48bb78;                       /* Balanced success green */
+    --warning-color: #ed8936;                       /* Warm warning orange */
+    --error-color: #f56565;                         /* Clear error red */
+    --info-color: #4299e1;                          /* Informative blue */
     
     /* Modal/overlay backgrounds */
-    --overlay-background: rgba(0, 0, 0, 0.6);
-    --modal-backdrop: rgba(0, 0, 0, 0.7);
+    --overlay-background: rgba(0, 0, 0, 0.85);      /* Much darker overlay */
+    --modal-backdrop: rgba(5, 10, 18, 0.92);        /* Very dark modal backdrop */
+    
+    /* Interactive states */
+    --button-hover-bg: rgba(55, 65, 85, 0.20);      /* Darker button hover */
+    --input-focus-shadow: 0 0 0 3px rgba(99, 179, 237, 0.20); /* Brighter focus shadow */
+    
+    /* Card and component styling */
+    --card-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);  /* Much deeper shadows */
+    --elevated-shadow: 0 25px 60px rgba(0, 0, 0, 0.7); /* Very deep elevated shadows */
 }
 
-/* Dark theme specific overrides for enhanced glass effects */
-html.dark-theme .search-summary-interface {
-    background: var(--surface-primary) !important;
-    backdrop-filter: var(--glass-blur) var(--glass-saturate) var(--glass-brightness);
-    border: none !important;
-}
 
 html.dark-theme .md-card-header {
     background: var(--surface-primary) !important;
@@ -232,15 +236,28 @@ html.dark-theme .sidebar {
 
 html.dark-theme .card,
 html.dark-theme .md-card {
-    backdrop-filter: var(--glass-blur-sm) var(--glass-saturate);
+    background: var(--surface-primary) !important;
+    backdrop-filter: var(--glass-blur-sm) var(--glass-saturate) var(--glass-brightness);
     border: var(--glass-border);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--card-shadow);
+    color: var(--text-primary);
+}
+
+html.dark-theme .card:hover,
+html.dark-theme .md-card:hover {
+    background: var(--surface-elevated) !important;
+    border-color: var(--border-focus);
+    box-shadow: var(--elevated-shadow);
+    transform: translateY(-2px);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 html.dark-theme .modal-content {
+    background: var(--surface-elevated) !important;
     backdrop-filter: var(--glass-blur) var(--glass-saturate) var(--glass-brightness);
     border: var(--glass-border);
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+    box-shadow: var(--elevated-shadow);
+    color: var(--text-primary);
 }
 
 /* Clean up border-bottom styles in dark theme */
@@ -1872,6 +1889,24 @@ select, select * {
     -webkit-backdrop-filter: var(--glass-blur) var(--glass-saturate, saturate(100%));
     border: 1px solid var(--border-primary);
     border-radius: var(--border-radius);
+}
+
+html.dark-theme .modal-dialog {
+    background: var(--surface-elevated) !important;
+    border-color: var(--border-primary) !important;
+    box-shadow: var(--elevated-shadow) !important;
+}
+
+html.dark-theme .modal-overlay,
+html.dark-theme .collection-details-modal-overlay {
+    background-color: var(--modal-backdrop) !important;
+}
+
+html.dark-theme .collection-details-modal-dialog {
+    background: var(--surface-elevated) !important;
+    border-color: var(--border-primary) !important;
+    box-shadow: var(--elevated-shadow) !important;
+}
     box-shadow: var(--shadow-xl);
     width: 90%;
     max-width: 800px;
@@ -1899,7 +1934,8 @@ select, select * {
 }
 
 html.dark-theme #stac-load-modal .modal-header {
-    background: #2a2a2a !important;
+    background: var(--surface-primary) !important;
+    color: var(--text-primary) !important;
 }
 
 .modal-title {
@@ -1937,6 +1973,11 @@ html.dark-theme #stac-load-modal .modal-header {
     background: var(--surface-primary);
 }
 
+html.dark-theme .modal-body {
+    background: var(--surface-primary) !important;
+    color: var(--text-secondary) !important;
+}
+
 .modal-body h4 {
     color: var(--text-primary);
     margin-bottom: 12px;
@@ -1950,9 +1991,19 @@ html.dark-theme #stac-load-modal .modal-header {
     border: 1px solid var(--border-primary);
 }
 
+html.dark-theme .modal-body .info-group {
+    background: var(--surface-secondary) !important;
+    border-color: var(--border-primary) !important;
+    color: var(--text-secondary) !important;
+}
+
 .modal-body .info-group div {
     margin-bottom: 8px;
     color: var(--text-primary);
+}
+
+html.dark-theme .modal-body .info-group div {
+    color: var(--text-secondary) !important;
 }
 
 .modal-body .info-group div:last-child {
@@ -2744,23 +2795,48 @@ html.dark-theme #stac-load-modal .modal-header {
 /* Mobile Dark Theme Class-based Optimizations */
 @media (max-width: 768px) {
     html.dark-theme .mobile-loading-overlay {
-        background: rgba(0, 0, 0, 0.9) !important;
+        background: var(--modal-backdrop) !important;
+        backdrop-filter: blur(12px) !important;
+    }
+    
+    html.dark-theme .mobile-loading-text {
+        color: var(--text-primary) !important;
+    }
+    
+    html.dark-theme .mobile-loading-spinner {
+        border-color: var(--border-secondary) !important;
+        border-top-color: var(--primary-400) !important;
     }
     
     html.dark-theme .mobile-toast {
-        background: var(--surface-primary) !important;
+        background: var(--surface-elevated) !important;
         border-color: var(--border-primary) !important;
         color: var(--text-primary) !important;
+        box-shadow: var(--card-shadow) !important;
     }
     
     html.dark-theme .mobile-skeleton {
         background: linear-gradient(90deg, 
-            rgba(255, 255, 255, 0.05) 0%, 
-            rgba(255, 255, 255, 0.1) 50%, 
-            rgba(255, 255, 255, 0.05) 100%) !important;
+            var(--hover-background) 0%, 
+            var(--hover-overlay) 50%, 
+            var(--hover-background) 100%) !important;
     }
     
     html.dark-theme .mobile-menu-btn {
+        background: var(--surface-primary) !important;
+        border-color: var(--border-primary) !important;
+        color: var(--text-primary) !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    html.dark-theme .mobile-menu-btn:hover,
+    html.dark-theme .mobile-menu-btn:focus {
+        background: var(--surface-elevated) !important;
+        border-color: var(--border-focus) !important;
+        box-shadow: var(--elevated-shadow) !important;
+    }
+    
+    html.dark-theme .mobile-close-btn {
         background: var(--surface-primary) !important;
         border-color: var(--border-primary) !important;
         color: var(--text-primary) !important;
@@ -2768,16 +2844,11 @@ html.dark-theme #stac-load-modal .modal-header {
     
     html.dark-theme .sidebar {
         background: var(--surface-primary) !important;
-        border-right-color: var(--border-primary) !important;
+        border-right: 1px solid var(--border-primary) !important;
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.4) !important;
         color: var(--text-primary) !important;
     }
     
-    html.dark-theme .search-summary-interface {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        color: var(--text-primary) !important;
-    }
     
     html.dark-theme .search-input {
         background: var(--surface-secondary) !important;
@@ -2785,11 +2856,134 @@ html.dark-theme #stac-load-modal .modal-header {
         color: var(--text-primary) !important;
     }
     
+    html.dark-theme .search-input:focus {
+        background: var(--surface-elevated) !important;
+        border-color: var(--border-focus) !important;
+        box-shadow: var(--input-focus-shadow) !important;
+    }
+    
+    html.dark-theme .search-input::placeholder {
+        color: var(--text-tertiary) !important;
+    }
+    
     html.dark-theme .md-card, 
     html.dark-theme .card {
+        background: var(--surface-primary) !important;
+        border-color: var(--border-primary) !important;
+        box-shadow: var(--card-shadow) !important;
+        color: var(--text-primary) !important;
+    }
+    
+    html.dark-theme .md-card:hover, 
+    html.dark-theme .card:hover {
+        background: var(--surface-elevated) !important;
+        border-color: var(--border-focus) !important;
+        box-shadow: var(--elevated-shadow) !important;
+        transform: translateY(-1px);
+    }
+    
+    html.dark-theme .md-card-header,
+    html.dark-theme .card-header {
+        color: var(--text-primary) !important;
+        border-bottom: none !important;
+        padding: var(--space-2) var(--space-3) var(--space-1) var(--space-3) !important;
+        margin-bottom: 0 !important;
+    }
+    
+    html.dark-theme .md-card-content,
+    html.dark-theme .md-card-body,
+    html.dark-theme .card-body,
+    html.dark-theme .card-content,
+    html.dark-theme .collection-details-content,
+    html.dark-theme .item-details-content,
+    html.dark-theme .property-list,
+    html.dark-theme .assets-list,
+    html.dark-theme .details-section {
+        color: var(--text-secondary) !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    html.dark-theme .property-row,
+    html.dark-theme .asset-row,
+    html.dark-theme .metadata-row {
+        padding: var(--space-1) 0 !important;
+        margin: 0 !important;
+        color: var(--text-secondary) !important;
+    }
+    
+    html.dark-theme input, 
+    html.dark-theme select, 
+    html.dark-theme textarea {
         background: var(--surface-secondary) !important;
         border-color: var(--border-primary) !important;
         color: var(--text-primary) !important;
+    }
+    
+    html.dark-theme input:focus, 
+    html.dark-theme select:focus, 
+    html.dark-theme textarea:focus {
+        background: var(--surface-elevated) !important;
+        border-color: var(--border-focus) !important;
+        box-shadow: var(--input-focus-shadow) !important;
+    }
+    
+    html.dark-theme .btn, 
+    html.dark-theme .md-btn, 
+    html.dark-theme button {
+        color: var(--text-primary) !important;
+    }
+    
+    html.dark-theme .btn--secondary {
+        background: var(--surface-secondary) !important;
+        border-color: var(--border-primary) !important;
+        color: var(--text-primary) !important;
+    }
+    
+    html.dark-theme .btn--secondary:hover {
+        background: var(--surface-elevated) !important;
+        border-color: var(--border-focus) !important;
+    }
+    
+    html.dark-theme .list-item {
+        background: var(--surface-primary) !important;
+        border-color: var(--border-primary) !important;
+        color: var(--text-primary) !important;
+    }
+    
+    html.dark-theme .list-item:hover {
+        background: var(--surface-elevated) !important;
+        border-color: var(--border-focus) !important;
+        box-shadow: var(--card-shadow) !important;
+    }
+    
+    html.dark-theme .sidebar-backdrop.active {
+        background: var(--overlay-background) !important;
+        backdrop-filter: blur(8px) !important;
+    }
+    
+    /* Enhanced contrast for text elements */
+    html.dark-theme h1, 
+    html.dark-theme h2, 
+    html.dark-theme h3, 
+    html.dark-theme .h1, 
+    html.dark-theme .h2, 
+    html.dark-theme .h3 {
+        color: var(--text-primary) !important;
+    }
+    
+    html.dark-theme p, 
+    html.dark-theme .text {
+        color: var(--text-secondary) !important;
+    }
+    
+    /* Fix mobile progress bar for dark theme */
+    html.dark-theme .mobile-progress {
+        background: var(--border-secondary) !important;
+    }
+    
+    html.dark-theme .mobile-progress-bar {
+        background: linear-gradient(90deg, var(--primary-400), var(--primary-300)) !important;
     }
 }
 

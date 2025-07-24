@@ -248,14 +248,29 @@ body.modal-open {
 }
 
 /* Dark Theme Adjustments */
+.dark-theme .modal-backdrop {
+    background: var(--modal-backdrop);
+}
+
 .dark-theme .modal-dialog {
-    background: var(--surface-elevated, #1e1e1e);
-    border-color: rgba(255, 255, 255, 0.1);
+    background: var(--surface-elevated);
+    border-color: var(--border-primary);
+    box-shadow: var(--elevated-shadow);
+    color: var(--text-primary);
 }
 
 .dark-theme .modal-header,
 .dark-theme .modal-footer {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--border-secondary);
+    color: var(--text-primary);
+}
+
+.dark-theme .modal-title {
+    color: var(--text-primary);
+}
+
+.dark-theme .modal-body {
+    color: var(--text-secondary);
 }
 
 /* Light Theme Adjustments */

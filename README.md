@@ -3,7 +3,7 @@
 > A modern, interactive web application for exploring SpatioTemporal Asset Catalog (STAC) datasets with advanced search capabilities and beautiful visualizations.
 
 ![STAC Explorer](https://img.shields.io/badge/STAC-Explorer-blue?style=for-the-badge&logo=satellite)
-![Version](https://img.shields.io/badge/version-2.5.0-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.8.0-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 
 ## ✨ Features
@@ -86,16 +86,17 @@ npm run serve
 4. **Apply Filters**: Cloud cover, collections, etc.
 5. **Search**: Click the search button to find datasets
 
-### New Features (v2.5.0)
+### New Features (v2.8.0)
 
-#### 🕒 Search History
+#### 🛰️ Enhanced Satellite Animation & Offline Mode
+- **Improved Satellite Animation**: Restored visibility with better CSS positioning
+- **Offline Connectivity Detection**: Smart offline mode with satellite indicator
+- **SEO Optimization**: Enhanced metadata and search engine optimization
+
+#### 🕒 Search History (Previous)
 - **Recent Searches**: Access your recent searches from the header dropdown
 - **Smart Restoration**: Automatically restores exact collection selections
 - **One-Click Re-execution**: Quickly repeat previous searches
-
-#### 📋 Enhanced Collection Selection
-- **Taller Dropdown**: Easier browsing with larger collection dropdown menu
-- **Better Visibility**: See more options at once without scrolling
 
 ## 🛠️ Development
 
@@ -123,24 +124,22 @@ npm run serve  # Serve static files
 npm run proxy  # Development proxy only
 ```
 
-## 🌟 What's New in v2.5.0
+## 🌟 What's New in v2.8.0
 
-### 🆕 Search History System
-- **Persistent Search History**: Automatically saves successful searches to localStorage
-- **Header Integration**: Recent searches button appears next to load STAC button after first search
-- **Smart Collection Restoration**: Properly restores specific collection selections (e.g., "sentinel-1-rtc")
-- **One-Click Re-execution**: Click any search from history to instantly repeat it
-- **Fixed Positioning**: Dropdown appears above all elements without clipping
+### 🛰️ Satellite Animation & Offline Enhancements
+- **Restored Satellite Animation**: Fixed CSS positioning issues that were hiding the satellite animation
+- **Improved Offline Detection**: Enhanced connectivity monitoring with visual satellite indicator
+- **Better Offline Experience**: Smooth transitions between online/offline modes
 
-### 🔧 UI Improvements  
-- **Enhanced Collection Dropdown**: Increased height (200px) with size="10" for better browsing
-- **Better Search UX**: Search history only appears when relevant (after user has searched)
-- **Improved Reliability**: Fixed parameter saving/restoring issues
+### 🔍 SEO & Performance Improvements
+- **Enhanced SEO**: Improved metadata, structured data, and search engine optimization
+- **Better Performance**: Optimized asset loading and rendering performance
+- **Modern CSS Positioning**: Updated CSS architecture for better layout stability
 
-### 🐛 Bug Fixes
-- **Collection Parameter Mismatch**: Fixed inconsistency between saving (`collections`) and restoring (`collection`)
-- **Z-Index Issues**: Search history dropdown now properly appears above all interface elements
-- **Container Clipping**: Moved dropdown outside search container to prevent visual clipping
+### 🔧 UI/UX Polish
+- **Refined Animation System**: Smoother satellite animations with proper z-index management
+- **Enhanced Visual Feedback**: Better offline/online state indicators
+- **Improved Accessibility**: Better screen reader support and keyboard navigation
 
 ## 📋 Browser Support
 

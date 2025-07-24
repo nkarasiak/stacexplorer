@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2025-07-24
+
+### 🛰️ Enhanced
+- **Satellite Animation Visibility**: Restored satellite animation visibility with improved CSS positioning and z-index management
+- **Offline Connectivity Detection**: Enhanced offline mode detection with better user feedback and smooth transitions
+- **SEO Optimization**: Improved metadata structure, search engine optimization, and page performance
+
+### 🔧 Improved
+- **CSS Architecture**: Updated CSS positioning system for better layout stability and visual hierarchy
+- **Animation System**: Refined satellite animation with proper layering and smoother transitions
+- **Performance**: Optimized asset loading and rendering performance across the application
+- **User Experience**: Better visual feedback for online/offline states with satellite indicator
+
+### 🐛 Fixed
+- **Animation Positioning**: Fixed CSS issues that were hiding the satellite animation from view
+- **Layout Stability**: Resolved z-index conflicts and positioning problems affecting UI elements
+- **Connectivity Feedback**: Improved offline/online state detection and user notification system
+
+### 🛠️ Technical
+- **Modern CSS**: Updated CSS architecture with better positioning strategies
+- **Animation Management**: Enhanced animation system with proper cleanup and state management
+- **Performance Monitoring**: Improved performance tracking and optimization strategies
+
 ## [2.7.0] - 2025-01-28
 
 ### 🆕 Added

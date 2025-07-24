@@ -993,6 +993,13 @@ export class InlineDropdownManager {
         const locationText = `🌍 ${result.shortName || result.name}`;
         this.updateSearchSummary('location', locationText);
         
+        // Update the bbox input field if bbox is available
+        const bboxInput = document.getElementById('bbox-input');
+        if (bboxInput && result.bbox && Array.isArray(result.bbox) && result.bbox.length === 4) {
+            bboxInput.value = result.bbox.join(',');
+            bboxInput.dispatchEvent(new Event('change'));
+        }
+        
         // Close the dropdown
         this.closeCurrentDropdown();
         

@@ -9,8 +9,6 @@
  * @param {HTMLElement} trigger - Trigger element
  */
 function positionInlineDropdownEnhanced(dropdown, trigger) {
-    console.log('🎯 [ENHANCED] Starting dropdown positioning...');
-    
     try {
         // Get all necessary measurements
         const measurements = this.gatherPositioningMeasurements(dropdown, trigger);

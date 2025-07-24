@@ -60,7 +60,6 @@ export class SatelliteAnimation {
      */
     calculateLayout() {
         this.columnWidth = window.innerWidth / this.maxColumns;
-        console.log('🛰️ Column width calculated:', this.columnWidth);
     }
     
     /**
@@ -155,10 +154,8 @@ export class SatelliteAnimation {
         
         // Show container
         this.container.style.display = 'block';
-        console.log('🛰️ Container display set to block');
         
-        // Start the animation cycle immediately for testing
-        console.log('🛰️ Starting first flight immediately...');
+        // Start the animation cycle immediately
         this.executeFlight();
     }
     
@@ -209,14 +206,10 @@ export class SatelliteAnimation {
             return;
         }
         
-        console.log('🛰️ Executing flight, column:', this.currentColumn);
-        console.log('🛰️ Column width:', this.columnWidth);
-        
         // Position satellite at bottom of current column (right to left)
         const rightToLeftColumn = (this.maxColumns - 1) - this.currentColumn; // Reverse the column order
         const columnCenter = (rightToLeftColumn * this.columnWidth) + (this.columnWidth / 2);
         this.satellite.style.left = columnCenter + 'px';
-        console.log('🛰️ Satellite positioned at column', this.currentColumn, '-> x position:', columnCenter + 'px');
         
         // Reset position and show satellite (starting from right)
         this.satellite.style.transform = 'translateY(100vh) translateX(100px)';

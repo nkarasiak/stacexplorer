@@ -30,7 +30,6 @@ export class GeometrySync {
         this.currentGeometry = null;
         this.currentBbox = null;
         
-        console.log('🔄 GeometrySync initialized');
     }
     
     /**
@@ -44,7 +43,6 @@ export class GeometrySync {
         this.inlineDropdownManager = inlineDropdownManager;
         
         this.setupEventListeners();
-        console.log('✅ GeometrySync initialized with dependencies');
     }
     
     /**
@@ -71,7 +69,6 @@ export class GeometrySync {
                 this.handleMainInputChange(e.target.value);
             });
             
-            console.log('📝 Main bbox input listeners set up');
         } else {
             console.warn('⚠️ Main bbox input not found');
         }
@@ -83,7 +80,6 @@ export class GeometrySync {
             }
         });
         
-        console.log('🗺️ Map drawing listeners set up');
     }
     
     /**
@@ -100,11 +96,9 @@ export class GeometrySync {
         
         // Check if this looks like geometry data
         if (this.looksLikeGeometry(trimmedValue)) {
-            console.log('📐 Detected potential geometry in main input:', trimmedValue.substring(0, 50) + '...');
             this.parseAndSyncGeometry(trimmedValue, 'main-input');
         } else if (this.looksLikeBbox(trimmedValue)) {
             // Handle simple bbox coordinates
-            console.log('📦 Detected bbox coordinates in main input:', trimmedValue);
             this.handleBboxCoordinates(trimmedValue);
         }
     }
@@ -180,7 +174,6 @@ export class GeometrySync {
                         this.mapManager.setBboxFromCoordinates(coords);
                     }
                     
-                    console.log('📦 Bbox coordinates parsed and synced:', coords);
                     
                     if (this.notificationService) {
                         this.notificationService.showNotification('✅ Coordinates applied to AI Search', 'success');
@@ -247,7 +240,6 @@ export class GeometrySync {
                 this.mapManager.displayGeometry(geojson, bbox);
             }
             
-            console.log(`📐 ${geometryType} parsed and synced from ${source}:`, { geojson, bbox });
             
             // Show success notification
             if (this.notificationService) {
@@ -283,7 +275,6 @@ export class GeometrySync {
             this.currentBbox = bbox;
             this.syncToAISearch('Map Selection', bbox, 'drawn');
             
-            console.log('🗺️ Map-drawn bbox synced to AI Search:', bbox);
             
             if (this.notificationService) {
                 this.notificationService.showNotification('✅ Map selection added to AI Search', 'success');
@@ -327,7 +318,6 @@ export class GeometrySync {
             this.aiSmartSearch.updateLocationFieldDisplay(displayName, category);
         }
         
-        console.log('🔄 Geometry synced to AI Search:', locationResult);
     }
     
     /**
@@ -352,7 +342,6 @@ export class GeometrySync {
             this.aiSmartSearch.resetLocationSelection();
         }
         
-        console.log('🧹 Geometry cleared');
     }
     
     /**
@@ -374,7 +363,6 @@ export class GeometrySync {
  */
 export const defaultGeometrySync = new GeometrySync({
     onGeometryParsed: (data) => {
-        console.log('🎉 Geometry parsed successfully:', data);
     },
     onGeometryError: (error) => {
         console.error('💥 Geometry parsing failed:', error);

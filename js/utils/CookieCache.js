@@ -31,10 +31,8 @@ export class CookieCache {
             
             // For large data (like collections), use localStorage instead of cookies
             if (serializedData.length > this.maxCookieSize || key.includes('collections_cache')) {
-                console.log(`[CACHE] Using localStorage for large data: ${serializedData.length} bytes`);
                 try {
                     localStorage.setItem(`stac_${key}`, serializedData);
-                    console.log(`[CACHE] Cached data in localStorage for '${key}' (expires: ${expirationDate.toLocaleDateString()})`);
                     return;
                 } catch (localStorageError) {
                     console.warn('[CACHE] localStorage failed, trying cookie fallback:', localStorageError.message);
@@ -44,14 +42,11 @@ export class CookieCache {
             
             // If data is large, try to compress it
             if (serializedData.length > this.compressionThreshold) {
-                console.log(`[CACHE] Data size: ${serializedData.length} bytes, attempting compression...`);
                 serializedData = this.compressData(serializedData);
-                console.log(`[CACHE] Compressed size: ${serializedData.length} bytes`);
             }
 
             // Check if data fits in cookie size limit
             if (serializedData.length > this.maxCookieSize) {
-                console.warn(`[CACHE] Data too large for cookie storage: ${serializedData.length} bytes`);
                 // Split into multiple cookies if needed
                 this.setLargeData(key, serializedData, expirationDate);
                 return;
@@ -60,7 +55,6 @@ export class CookieCache {
             // Set single cookie
             document.cookie = `${key}=${encodeURIComponent(serializedData)}; expires=${expirationDate.toUTCString()}; path=/; SameSite=Lax`;
             
-            console.log(`[CACHE] Cached data for '${key}' (expires: ${expirationDate.toLocaleDateString()})`);
             
         } catch (error) {
             console.error('[CACHE] Error setting cache:', error);
@@ -80,13 +74,9 @@ export class CookieCache {
             if (key.includes('collections_cache')) {
                 try {
                     serializedData = localStorage.getItem(`stac_${key}`);
-                    console.log(`[CACHE DEBUG] localStorage check for 'stac_${key}':`, {
-                        found: !!serializedData,
-                        dataLength: serializedData?.length,
-                        dataPreview: serializedData?.substring(0, 100)
-                    });
                     if (serializedData) {
-                        console.log(`[CACHE] Found data in localStorage for '${key}'`);
+                        const parsedData = JSON.parse(serializedData);
+                        return parsedData;
                     }
                 } catch (localStorageError) {
                     console.warn('[CACHE] localStorage read failed:', localStorageError.message);
@@ -116,12 +106,10 @@ export class CookieCache {
             
             // Check expiration
             if (Date.now() > cacheEntry.expires) {
-                console.log(`[CACHE] Cache expired for '${key}', removing...`);
                 this.remove(key);
                 return null;
             }
 
-            console.log(`[CACHE] Cache hit for '${key}' (age: ${Math.round((Date.now() - cacheEntry.timestamp) / (1000 * 60 * 60))} hours)`);
             return cacheEntry.data;
             
         } catch (error) {
@@ -141,7 +129,6 @@ export class CookieCache {
             if (key.includes('collections_cache')) {
                 try {
                     localStorage.removeItem(`stac_${key}`);
-                    console.log(`[CACHE] Removed localStorage data for '${key}'`);
                 } catch (localStorageError) {
                     console.warn('[CACHE] localStorage remove failed:', localStorageError.message);
                 }
@@ -157,7 +144,6 @@ export class CookieCache {
                 partIndex++;
             }
             
-            console.log(`[CACHE] Removed cache for '${key}'`);
         } catch (error) {
             console.error('[CACHE] Error removing cache:', error);
         }
@@ -187,7 +173,6 @@ export class CookieCache {
             }
             keysToRemove.forEach(key => {
                 localStorage.removeItem(key);
-                console.log(`[CACHE] Removed localStorage item: ${key}`);
             });
             
             // Clear cookies
@@ -198,7 +183,6 @@ export class CookieCache {
                     document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/`;
                 }
             }
-            console.log('[CACHE] Cleared all cache data');
         } catch (error) {
             console.error('[CACHE] Error clearing cache:', error);
         }
@@ -294,7 +278,6 @@ export class CookieCache {
             const metadata = { chunks: chunks.length };
             document.cookie = `${key}=${encodeURIComponent(JSON.stringify(metadata))}; expires=${expirationDate.toUTCString()}; path=/; SameSite=Lax`;
             
-            console.log(`[CACHE] Stored large data in ${chunks.length} chunks for '${key}'`);
             
         } catch (error) {
             console.error('[CACHE] Error storing large data:', error);
@@ -319,7 +302,6 @@ export class CookieCache {
                 const chunkKey = `${key}_part${i}`;
                 const chunk = this.getCookieValue(chunkKey);
                 if (!chunk) {
-                    console.warn(`[CACHE] Missing chunk ${i} for '${key}'`);
                     return null;
                 }
                 reconstructedData += decodeURIComponent(chunk);

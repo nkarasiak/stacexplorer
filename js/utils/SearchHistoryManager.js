@@ -182,7 +182,6 @@ export class SearchHistoryManager {
             if (searchParams.collection) {
                 const collectionSelect = document.getElementById('collection-select');
                 if (collectionSelect) {
-                    console.log('🎯 Restoring collection:', searchParams.collection);
                     collectionSelect.value = searchParams.collection;
                     collectionSelect.dispatchEvent(new Event('change'));
                 } else {
@@ -192,7 +191,6 @@ export class SearchHistoryManager {
                 // Fallback for older format
                 const collectionSelect = document.getElementById('collection-select');
                 if (collectionSelect) {
-                    console.log('🎯 Restoring collection (legacy format):', searchParams.collections[0]);
                     collectionSelect.value = searchParams.collections[0];
                     collectionSelect.dispatchEvent(new Event('change'));
                 }

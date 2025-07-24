@@ -202,19 +202,12 @@ export class CommandPalette extends BaseUIComponent {
         this.previewContainer = paletteContainer.querySelector('.command-palette__preview-content');
         this.backdrop = paletteContainer.querySelector('.command-palette__backdrop');
         
-        console.log('🎯 Palette elements found:', {
-            input: !!this.input,
-            results: !!this.resultsContainer,
-            preview: !!this.previewContainer,
-            backdrop: !!this.backdrop
-        });
         
         // Attach event listeners after elements are created
         this.attachEventListeners();
         
         this.isRendering = false;
         this.hasRendered = true; // Mark as rendered so it won't render again
-        console.log('🎯 Render complete - will not render again');
     }
 
     registerDefaultCommands() {
@@ -250,13 +243,11 @@ export class CommandPalette extends BaseUIComponent {
             category: 'search',
             keywords: ['collection', 'catalog', 'browse'],
             action: () => {
-                console.log('🎯 Run Search command executing...');
                 const searchBtn = document.getElementById('main-search-btn');
                 if (searchBtn) {
                     searchBtn.click();
-                    console.log('🎯 Search button clicked');
                 } else {
-                    console.error('🎯 Search button not found!');
+                    console.error('Search button not found!');
                 }
             }
         });
@@ -268,18 +259,15 @@ export class CommandPalette extends BaseUIComponent {
             category: 'settings',
             keywords: ['config', 'preferences', 'options'],
             action: () => {
-                console.log('🎯 Open Settings command executing...');
                 const settingsBtn = document.getElementById('settings-toggle') || document.querySelector('.settings-toggle');
                 if (settingsBtn) {
                     settingsBtn.click();
-                    console.log('🎯 Settings button clicked');
                 } else {
-                    console.error('🎯 Settings button not found!');
+                    console.error('Settings button not found!');
                     // Alternative: try to open settings modal directly
                     const settingsModal = document.getElementById('settings-modal');
                     if (settingsModal) {
                         settingsModal.style.display = 'flex';
-                        console.log('🎯 Settings modal opened directly');
                     }
                 }
             }
@@ -292,16 +280,14 @@ export class CommandPalette extends BaseUIComponent {
             category: 'settings',
             keywords: ['cache', 'clear', 'reset', 'storage'],
             action: () => {
-                console.log('🎯 Clear Cache command executing...');
                 if (window.stacExplorer && window.stacExplorer.cache && window.stacExplorer.cache.clearAll) {
                     window.stacExplorer.cache.clearAll();
-                    console.log('🎯 Cache cleared successfully');
                     // Show a notification if possible
                     if (window.stacExplorer.notificationService) {
                         window.stacExplorer.notificationService.showNotification('Cache cleared successfully', 'success');
                     }
                 } else {
-                    console.error('🎯 Cache clearing functionality not available');
+                    console.error('Cache clearing functionality not available');
                 }
             }
         });
@@ -313,16 +299,13 @@ export class CommandPalette extends BaseUIComponent {
             category: 'navigation',
             keywords: ['export', 'download', 'save'],
             action: () => {
-                console.log('🎯 Export Data command executing...');
                 // Try to find export functionality in the results panel
                 if (window.stacExplorer && window.stacExplorer.resultsPanel) {
                     // Try to trigger export if available
-                    console.log('🎯 Results panel found, trying to export...');
                     // For now, just log that this would export
-                    console.log('🎯 Export functionality would be triggered here');
                     alert('Export functionality would be implemented here');
                 } else {
-                    console.error('🎯 Results panel not found for export');
+                    console.error('Results panel not found for export');
                     alert('No data available to export');
                 }
             }
@@ -335,13 +318,11 @@ export class CommandPalette extends BaseUIComponent {
             category: 'settings',
             keywords: ['theme', 'dark', 'light', 'appearance'],
             action: () => {
-                console.log('🎯 Toggle Theme command executing...');
                 const themeToggle = document.getElementById('theme-toggle');
                 if (themeToggle) {
                     themeToggle.click();
-                    console.log('🎯 Theme toggle button clicked');
                 } else {
-                    console.error('🎯 Theme toggle button not found!');
+                    console.error('Theme toggle button not found!');
                 }
             }
         });
@@ -353,10 +334,8 @@ export class CommandPalette extends BaseUIComponent {
             category: 'help',
             keywords: ['help', 'docs', 'documentation', 'guide'],
             action: () => {
-                console.log('🎯 Show Help command executing...');
                 // Open help in a new tab
                 window.open('https://github.com/nkarasiak/stacexplorer/blob/main/README.md', '_blank');
-                console.log('🎯 Help documentation opened in new tab');
             }
         });
 
@@ -368,13 +347,11 @@ export class CommandPalette extends BaseUIComponent {
             category: 'search',
             keywords: ['source', 'catalog', 'collection', 'data'],
             action: () => {
-                console.log('🎯 Opening source dropdown...');
                 const sourceElement = document.getElementById('summary-source');
                 if (sourceElement) {
                     sourceElement.click();
-                    console.log('🎯 Source dropdown opened');
                 } else {
-                    console.error('🎯 Source element not found!');
+                    console.error('Source element not found!');
                 }
             }
         });
@@ -386,13 +363,11 @@ export class CommandPalette extends BaseUIComponent {
             category: 'search',
             keywords: ['location', 'area', 'region', 'bbox'],
             action: () => {
-                console.log('🎯 Opening location dropdown...');
                 const locationElement = document.getElementById('summary-location');
                 if (locationElement) {
                     locationElement.click();
-                    console.log('🎯 Location dropdown opened');
                 } else {
-                    console.error('🎯 Location element not found!');
+                    console.error('Location element not found!');
                 }
             }
         });
@@ -404,13 +379,11 @@ export class CommandPalette extends BaseUIComponent {
             category: 'search',
             keywords: ['time', 'date', 'period', 'range'],
             action: () => {
-                console.log('🎯 Opening time dropdown...');
                 const timeElement = document.getElementById('summary-date');
                 if (timeElement) {
                     timeElement.click();
-                    console.log('🎯 Time dropdown opened');
                 } else {
-                    console.error('🎯 Time element not found!');
+                    console.error('Time element not found!');
                 }
             }
         });
@@ -423,7 +396,6 @@ export class CommandPalette extends BaseUIComponent {
             category: 'search',
             keywords: ['anytime', 'no', 'date', 'restriction', 'all'],
             action: () => {
-                console.log('🎯 Setting time to anytime...');
                 const startInput = document.getElementById('date-start');
                 const endInput = document.getElementById('date-end');
                 
@@ -432,9 +404,8 @@ export class CommandPalette extends BaseUIComponent {
                     endInput.value = '';
                     startInput.dispatchEvent(new Event('change'));
                     endInput.dispatchEvent(new Event('change'));
-                    console.log('🎯 Set to anytime (no date restriction)');
                 } else {
-                    console.error('🎯 Date inputs not found!');
+                    console.error('Date inputs not found!');
                 }
             }
         });
@@ -446,7 +417,6 @@ export class CommandPalette extends BaseUIComponent {
             category: 'search',
             keywords: ['last', '30', 'days', 'month', 'past'],
             action: () => {
-                console.log('🎯 Setting time to last 30 days...');
                 const endDate = new Date();
                 const startDate = new Date();
                 startDate.setDate(startDate.getDate() - 30);
@@ -461,9 +431,8 @@ export class CommandPalette extends BaseUIComponent {
                     endInput.value = formatDate(endDate);
                     startInput.dispatchEvent(new Event('change'));
                     endInput.dispatchEvent(new Event('change'));
-                    console.log('🎯 Set dates to last 30 days');
                 } else {
-                    console.error('🎯 Date inputs not found!');
+                    console.error('Date inputs not found!');
                 }
             }
         });
@@ -475,13 +444,11 @@ export class CommandPalette extends BaseUIComponent {
             category: 'search',
             keywords: ['custom', 'range', 'select', 'own', 'dates'],
             action: () => {
-                console.log('🎯 Opening custom date range...');
                 const timeElement = document.getElementById('summary-date');
                 if (timeElement) {
                     timeElement.click();
-                    console.log('🎯 Time dropdown opened for custom range selection');
                 } else {
-                    console.error('🎯 Time element not found!');
+                    console.error('Time element not found!');
                 }
             }
         });
@@ -494,14 +461,12 @@ export class CommandPalette extends BaseUIComponent {
             category: 'search',
             keywords: ['copernicus', 'sentinel', 'esa'],
             action: () => {
-                console.log('🎯 Selecting Copernicus catalog...');
                 const catalogSelect = document.getElementById('catalog-select');
                 if (catalogSelect) {
                     catalogSelect.value = 'copernicus';
                     catalogSelect.dispatchEvent(new Event('change'));
-                    console.log('🎯 Copernicus catalog selected');
                 } else {
-                    console.error('🎯 Catalog select not found!');
+                    console.error('Catalog select not found!');
                 }
             }
         });
@@ -513,14 +478,12 @@ export class CommandPalette extends BaseUIComponent {
             category: 'search',
             keywords: ['element84', 'earth', 'search'],
             action: () => {
-                console.log('🎯 Selecting Element84 catalog...');
                 const catalogSelect = document.getElementById('catalog-select');
                 if (catalogSelect) {
                     catalogSelect.value = 'element84';
                     catalogSelect.dispatchEvent(new Event('change'));
-                    console.log('🎯 Element84 catalog selected');
                 } else {
-                    console.error('🎯 Catalog select not found!');
+                    console.error('Catalog select not found!');
                 }
             }
         });
@@ -532,14 +495,12 @@ export class CommandPalette extends BaseUIComponent {
             category: 'search',
             keywords: ['microsoft', 'planetary', 'computer'],
             action: () => {
-                console.log('🎯 Selecting Planetary Computer catalog...');
                 const catalogSelect = document.getElementById('catalog-select');
                 if (catalogSelect) {
                     catalogSelect.value = 'planetary';
                     catalogSelect.dispatchEvent(new Event('change'));
-                    console.log('🎯 Planetary Computer catalog selected');
                 } else {
-                    console.error('🎯 Catalog select not found!');
+                    console.error('Catalog select not found!');
                 }
             }
         });
@@ -551,14 +512,12 @@ export class CommandPalette extends BaseUIComponent {
             category: 'search',
             keywords: ['planet', 'labs', 'open', 'data'],
             action: () => {
-                console.log('🎯 Selecting Planet Labs catalog...');
                 const catalogSelect = document.getElementById('catalog-select');
                 if (catalogSelect) {
                     catalogSelect.value = 'planetlabs';
                     catalogSelect.dispatchEvent(new Event('change'));
-                    console.log('🎯 Planet Labs catalog selected');
                 } else {
-                    console.error('🎯 Catalog select not found!');
+                    console.error('Catalog select not found!');
                 }
             }
         });
@@ -575,7 +534,6 @@ export class CommandPalette extends BaseUIComponent {
     }
 
     registerCommand(command) {
-        console.log('🎯 Registering command:', command.id, command.title);
         const fullCommand = {
             id: command.id,
             title: command.title,
@@ -590,7 +548,6 @@ export class CommandPalette extends BaseUIComponent {
         };
 
         this.state.commands.set(command.id, fullCommand);
-        console.log('🎯 Command registered. Total commands:', this.state.commands.size);
 
         if (fullCommand.shortcut && this.options.enableKeyboardShortcuts) {
             this.registerShortcut(fullCommand.shortcut, fullCommand.action);
@@ -598,23 +555,18 @@ export class CommandPalette extends BaseUIComponent {
     }
 
     setupKeyboardShortcuts() {
-        console.log('🎯 Setting up keyboard shortcuts...');
         if (!this.options.enableKeyboardShortcuts) {
-            console.log('🎯 Keyboard shortcuts disabled');
             return;
         }
 
         document.addEventListener('keydown', this.handleGlobalKeydown.bind(this));
-        console.log('🎯 Keyboard shortcuts registered');
     }
 
     handleGlobalKeydown(event) {
         const shortcut = this.formatShortcut(event);
-        console.log('🎯 Key pressed:', shortcut, 'Target shortcut:', this.options.shortcuts.toggle);
 
         // Check for toggle shortcut
         if (this.matchesShortcut(shortcut, this.options.shortcuts.toggle)) {
-            console.log('🎯 Toggle shortcut matched! Opening command palette...');
             event.preventDefault();
             this.toggle();
             return;
@@ -658,38 +610,31 @@ export class CommandPalette extends BaseUIComponent {
     }
 
     attachEventListeners() {
-        console.log('🎯 Attaching event listeners to palette elements');
         if (this.input) {
             this.addEventListener(this.input, 'input', this.handleInput.bind(this));
             this.addEventListener(this.input, 'keydown', this.handleInputKeydown.bind(this));
-            console.log('🎯 Input event listeners attached');
         } else {
-            console.error('🎯 Input element not found for event listeners');
+            console.error('Input element not found for event listeners');
         }
         
         if (this.backdrop) {
             this.addEventListener(this.backdrop, 'click', (event) => {
                 // Only close if clicking directly on the backdrop, not on child elements
                 if (event.target === this.backdrop) {
-                    console.log('🎯 Backdrop clicked - closing palette');
                     this.close();
                 } else {
-                    console.log('🎯 Click on child element, not closing');
                 }
             });
-            console.log('🎯 Backdrop event listener attached');
         }
         
         if (this.resultsContainer) {
             this.addEventListener(this.resultsContainer, 'click', this.handleResultClick.bind(this));
             this.addEventListener(this.resultsContainer, 'mouseover', this.handleResultHover.bind(this));
-            console.log('🎯 Results event listeners attached');
         }
     }
 
     handleInput(event) {
         const query = event.target.value;
-        console.log('🎯 Input changed:', query);
         this.state.query = query; // Direct state update to avoid re-render
         this.debounceSearch();
     }
@@ -702,15 +647,12 @@ export class CommandPalette extends BaseUIComponent {
     }
 
     handleResultClick(event) {
-        console.log('🎯 Result clicked:', event.target);
         const resultElement = event.target.closest('.command-palette__result');
         if (!resultElement) {
-            console.log('🎯 No result element found');
             return;
         }
 
         const index = parseInt(resultElement.dataset.index, 10);
-        console.log('🎯 Result index:', index);
         this.state.selectedIndex = index; // Direct state update
         this.executeSelected();
     }
@@ -734,8 +676,6 @@ export class CommandPalette extends BaseUIComponent {
 
     async performSearch() {
         const { query } = this.state;
-        console.log('🎯 performSearch called with query:', query);
-        console.log('🎯 Available commands:', this.state.commands.size);
         
         this.state.loading = true;
         this.toggleLoading(true);
@@ -745,17 +685,14 @@ export class CommandPalette extends BaseUIComponent {
 
             if (query.trim()) {
                 results = this.searchCommands(query);
-                console.log('🎯 Search results for query:', results.length);
             } else {
                 results = this.getRecentCommands();
-                console.log('🎯 Recent commands:', results.length);
                 
                 // If no recent commands, show all commands
                 if (results.length === 0) {
                     results = Array.from(this.state.commands.values())
                         .filter(command => command.enabled)
                         .slice(0, this.options.maxResults);
-                    console.log('🎯 Showing all commands:', results.length);
                 }
             }
 
@@ -1022,26 +959,20 @@ export class CommandPalette extends BaseUIComponent {
     }
 
     executeSelected() {
-        console.log('🎯 executeSelected called');
-        console.log('🎯 Selected index:', this.state.selectedIndex);
-        console.log('🎯 Available results:', this.state.results.length);
         
         const selectedCommand = this.state.results[this.state.selectedIndex];
         if (!selectedCommand) {
-            console.error('🎯 No selected command found!');
+            console.error('No selected command found!');
             return;
         }
 
-        console.log('🎯 Executing command:', selectedCommand.id, selectedCommand.title);
         this.addToHistory(selectedCommand.id);
         
         try {
             if (typeof selectedCommand.action === 'function') {
-                console.log('🎯 Calling command action...');
                 selectedCommand.action();
-                console.log('🎯 Command action completed');
             } else {
-                console.error('🎯 Command action is not a function:', typeof selectedCommand.action);
+                console.error('Command action is not a function:', typeof selectedCommand.action);
             }
             
             this.emit('command-executed', { 
@@ -1049,14 +980,13 @@ export class CommandPalette extends BaseUIComponent {
                 commandData: selectedCommand 
             });
         } catch (error) {
-            console.error('🎯 Command execution error:', error);
+            console.error('Command execution error:', error);
             this.emit('command-error', { 
                 command: selectedCommand.id, 
                 error 
             });
         }
 
-        console.log('🎯 Closing command palette after execution');
         // Add small delay to allow dropdown to establish before closing
         setTimeout(() => {
             this.close();
@@ -1088,29 +1018,24 @@ export class CommandPalette extends BaseUIComponent {
     }
 
     open() {
-        console.log('🎯 CommandPalette.open() called, current state:', this.state.isOpen);
-        console.log('🎯 Palette container exists:', !!this.paletteContainer);
         
         // Check if palette container exists and is actually visible
         if (this.paletteContainer) {
             const isVisible = this.paletteContainer.style.display !== 'none' && 
                              this.paletteContainer.classList.contains('command-palette--open');
-            console.log('🎯 Palette container visibility:', isVisible);
             
             if (this.state.isOpen && isVisible) {
-                console.log('🎯 Palette already open and visible');
                 return;
             }
         }
 
-        console.log('🎯 Opening command palette...');
         // Update state without triggering render to avoid infinite loop
         this.state.isOpen = true;
         this.state.query = '';
         this.state.selectedIndex = 0;
 
         if (!this.paletteContainer) {
-            console.error('🎯 No palette container found!');
+            console.error('No palette container found!');
             return;
         }
 
@@ -1131,52 +1056,31 @@ export class CommandPalette extends BaseUIComponent {
                 this.input.readOnly = false;
                 this.input.tabIndex = 0;
                 
-                console.log('🎯 Input element details:', {
-                    disabled: this.input.disabled,
-                    readOnly: this.input.readOnly,
-                    tabIndex: this.input.tabIndex,
-                    style: this.input.style.cssText,
-                    offsetParent: this.input.offsetParent
-                });
                 
                 // Immediate focus
                 this.input.focus();
-                console.log('🎯 Initial focus attempt - Active element:', document.activeElement?.tagName, document.activeElement?.className);
                 
                 // Focus again after a short delay to ensure animation is complete
                 setTimeout(() => {
                     this.input.focus();
                     this.input.select(); // Also select any existing text
-                    console.log('🎯 Delayed focus with select - Active element:', document.activeElement === this.input ? 'INPUT' : document.activeElement?.tagName);
                 }, 100);
                 
                 // Final focus attempt
                 setTimeout(() => {
                     if (document.activeElement !== this.input) {
                         this.input.focus();
-                        console.log('🎯 Final focus attempt - was not focused, now active element:', document.activeElement?.tagName);
                     } else {
-                        console.log('🎯 Input successfully focused!');
                     }
                 }, 250);
             } else {
-                console.error('🎯 Input element not found for focusing!');
+                console.error('Input element not found for focusing!');
             }
             
-            console.log('🎯 Command palette opened and focused');
-            console.log('🎯 Palette container styles:', {
-                display: this.paletteContainer.style.display,
-                visibility: getComputedStyle(this.paletteContainer).visibility,
-                opacity: getComputedStyle(this.paletteContainer).opacity,
-                zIndex: getComputedStyle(this.paletteContainer).zIndex,
-                position: getComputedStyle(this.paletteContainer).position
-            });
-            console.log('🎯 Palette container classes:', this.paletteContainer.classList.toString());
             
             // Re-enable rendering after a delay
             setTimeout(() => {
                 this.isRendering = false;
-                console.log('🎯 Rendering re-enabled');
             }, 100);
         });
 
@@ -1198,14 +1102,12 @@ export class CommandPalette extends BaseUIComponent {
     }
 
     forceClose() {
-        console.log('🎯 Force closing command palette');
         // Update state without triggering render to avoid infinite loop
         this.state.isOpen = false;
         
         if (this.paletteContainer) {
             this.paletteContainer.classList.remove('command-palette--open');
             this.paletteContainer.style.display = 'none';
-            console.log('🎯 Palette container forced to close');
         }
     }
 

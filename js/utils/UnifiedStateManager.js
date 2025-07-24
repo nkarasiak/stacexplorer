@@ -73,11 +73,9 @@ export class UnifiedStateManager {
      * Initialize the unified state manager
      */
     async initialize() {
-        console.log('[UNIFIED] Initializing Unified State Manager...');
         
         // Listen for browser back/forward navigation
         window.addEventListener('popstate', (event) => {
-            console.log('[NAV] Browser navigation detected, restoring state');
             this.restoreStateFromURL();
         });
         
@@ -94,7 +92,6 @@ export class UnifiedStateManager {
             await this.initFromUrl();
         }
         
-        console.log('[SUCCESS] Unified State Manager initialized');
     }
     
     /**
@@ -133,8 +130,6 @@ export class UnifiedStateManager {
         const params = new URLSearchParams(window.location.search);
         const pathname = window.location.pathname;
         
-        console.log('[UNIFIED] Restoring application state from URL parameters');
-        console.log('[UNIFIED] Current pathname:', pathname);
         this.isRestoringFromUrl = true;
         
         // Note: RESTful URLs removed for GitHub Pages compatibility
@@ -162,11 +157,9 @@ export class UnifiedStateManager {
             
             // Execute search if we have search parameters
             if (this.hasSearchParams(params)) {
-                console.log('[UNIFIED] Executing search with restored parameters...');
                 await this.executeSearchAfterRestore();
             }
             
-            console.log('[SUCCESS] State restoration from URL completed');
             
         } finally {
             this.isRestoringFromUrl = false;
@@ -177,7 +170,6 @@ export class UnifiedStateManager {
      * Ensure regular search interface is shown and visible
      */
     ensureRegularSearchInterface() {
-        console.log('[UNIFIED] Ensuring regular search interface is visible');
         
         // Hide AI Smart Search fullscreen if showing
         const aiSearchContainer = document.querySelector('.ai-smart-search-container');
@@ -223,7 +215,6 @@ export class UnifiedStateManager {
     async restoreCatalogState(params) {
         if (params.has(this.urlKeys.collectionSource)) {
             const collectionSource = params.get(this.urlKeys.collectionSource);
-            console.log(`[UNIFIED] Restoring collection source: ${collectionSource}`);
             
             const catalogSelect = document.getElementById('catalog-select');
             if (catalogSelect) {
@@ -270,7 +261,6 @@ export class UnifiedStateManager {
      * Restore search state from URL parameters
      */
     async restoreSearchState(params) {
-        console.log('[UNIFIED] Restoring search state...');
         
         // Collection selection
         if (params.has(this.urlKeys.collection)) {
@@ -283,7 +273,6 @@ export class UnifiedStateManager {
                 if (collectionOption) {
                     collectionSelect.value = collection;
                     collectionSelect.dispatchEvent(new Event('change'));
-                    console.log(`[SUCCESS] Collection restored: ${collection}`);
                 } else {
                     console.warn(`[WARNING] Collection '${collection}' not found`);
                 }
@@ -301,7 +290,6 @@ export class UnifiedStateManager {
             const dateStartInput = document.getElementById('date-start');
             if (dateStartInput) {
                 dateStartInput.value = params.get(this.urlKeys.dateStart);
-                console.log(`[UNIFIED] Date start restored: ${params.get(this.urlKeys.dateStart)}`);
             }
         }
         
@@ -309,7 +297,6 @@ export class UnifiedStateManager {
             const dateEndInput = document.getElementById('date-end');
             if (dateEndInput) {
                 dateEndInput.value = params.get(this.urlKeys.dateEnd);
-                console.log(`[UNIFIED] Date end restored: ${params.get(this.urlKeys.dateEnd)}`);
             }
         }
         
@@ -319,7 +306,6 @@ export class UnifiedStateManager {
             const bboxInput = document.getElementById('bbox-input');
             if (bboxInput) {
                 bboxInput.value = geometryValue;
-                console.log(`[UNIFIED] WKT geometry restored: ${geometryValue}`);
                 
                 // Trigger geometry processing through existing system
                 const event = new Event('input', { bubbles: true });
@@ -379,17 +365,13 @@ export class UnifiedStateManager {
     parseURLParamsToState(params) {
         const state = {};
         
-        console.log('[URL] Parsing URL params to state');
-        console.log('[URL] Available params:', Array.from(params.entries()));
         
         // Collection parameters
         if (params.has(this.urlKeys.collection)) {
             state.collection = params.get(this.urlKeys.collection);
-            console.log(`[URL] Found collection: ${state.collection}`);
         }
         if (params.has(this.urlKeys.collectionSource)) {
             state.collectionSource = params.get(this.urlKeys.collectionSource);
-            console.log(`[URL] Found collection source: ${state.collectionSource}`);
         }
         
         // Location parameters
@@ -404,7 +386,6 @@ export class UnifiedStateManager {
         // Geometry parameters - prioritize geometry over bbox
         if (params.has(this.urlKeys.geometry)) {
             state.geometry = params.get(this.urlKeys.geometry);
-            console.log('[URL] Found WKT geometry in URL:', state.geometry);
         }
         
         // Date parameters
@@ -477,14 +458,12 @@ export class UnifiedStateManager {
                         // Extract just the date part for form inputs (YYYY-MM-DD)
                         const startDateOnly = state.dateStart.split('T')[0];
                         dateStartInput.value = startDateOnly;
-                        console.log(`[URL] Set date-start input: ${startDateOnly}`);
                     }
                     
                     if (dateEndInput && state.dateEnd) {
                         // Extract just the date part for form inputs (YYYY-MM-DD)
                         const endDateOnly = state.dateEnd.split('T')[0];
                         dateEndInput.value = endDateOnly;
-                        console.log(`[URL] Set date-end input: ${endDateOnly}`);
                     }
                 }
                 
@@ -521,7 +500,6 @@ export class UnifiedStateManager {
                 const [lat, lng] = params.get(this.urlKeys.mapCenter).split(',').map(Number);
                 const zoom = parseFloat(params.get(this.urlKeys.mapZoom));
                 
-                console.log(`[UNIFIED] Restoring map state: center=[${lng}, ${lat}], zoom=${zoom}`);
                 
                 if (this.mapManager && this.mapManager.map) {
                     this.mapManager.map.setCenter([lng, lat]);
@@ -543,7 +521,6 @@ export class UnifiedStateManager {
             this.activeAssetKey = params.get(this.urlKeys.assetKey);
         }
         
-        console.log(`[UNIFIED] Restoring active item: ${this.activeItemId} (asset: ${this.activeAssetKey || 'default'})`);
         
         // Trigger search if we have search parameters
         if (this.hasSearchParams(params)) {
@@ -554,7 +531,6 @@ export class UnifiedStateManager {
                     const activeItem = searchResults.find(item => item.id === this.activeItemId);
                     
                     if (activeItem) {
-                        console.log('[SUCCESS] Found active item in search results');
                         setTimeout(() => {
                             this.displayActiveItem(activeItem);
                         }, 1500);
@@ -694,12 +670,10 @@ export class UnifiedStateManager {
      * Set up listeners for state changes
      */
     setupStateListeners() {
-        console.log('[UNIFIED] Setting up state change listeners');
         
         // Listen for inline dropdown changes
         document.addEventListener('searchParameterChanged', (event) => {
             if (!this.isUpdatingFromURL && !this.isApplyingState) {
-                console.log('[PARAM] Search parameter changed:', event.detail);
                 this.updateURLFromState(event.detail);
             }
         });
@@ -709,7 +683,6 @@ export class UnifiedStateManager {
         // Listen for geometry selection
         document.addEventListener('geometrySelected', (event) => {
             if (!this.isUpdatingFromURL && !this.isApplyingState) {
-                console.log('[MAP] Geometry selected:', event.detail);
                 this.updateURLFromState({
                     type: 'location',
                     locationBbox: event.detail.bbox,
@@ -903,7 +876,6 @@ export class UnifiedStateManager {
             const activeFilters = window.stacExplorer.filterManager.getActiveFilters();
             if (activeFilters.cloud_cover) {
                 params.set(this.urlKeys.cloudCover, activeFilters.cloud_cover.value.toString());
-                console.log('[UNIFIED] Added cloud cover to URL:', activeFilters.cloud_cover.value);
             } else {
                 // Remove cloud cover parameter if filter is not active
                 params.delete(this.urlKeys.cloudCover);
@@ -931,7 +903,6 @@ export class UnifiedStateManager {
         const basePath = window.location.pathname.endsWith('/') ? window.location.pathname : window.location.pathname + '/';
         const newUrl = queryString ? `${basePath}?${queryString}` : basePath;
         
-        console.log('[UNIFIED] Updated URL with query parameters:', newUrl);
         window.history.pushState({}, '', newUrl);
     }
     
@@ -946,7 +917,6 @@ export class UnifiedStateManager {
             const restoredState = this.parseURLParamsToState(urlParams);
             
             if (Object.keys(restoredState).length > 0) {
-                console.log('[UNIFIED] Restoring state from URL:', restoredState);
                 this.currentState = restoredState;
                 this.applyStateToInterfaces(urlParams);
                 
@@ -1007,34 +977,27 @@ export class UnifiedStateManager {
      */
     getCollectionDisplayName(collectionId, source = null) {
         const collections = this.inlineDropdownManager?.aiSearchHelper?.allAvailableCollections;
-        console.log(`[COLLECTION] Getting display name for: ${collectionId} from source: ${source}`);
-        console.log(`[COLLECTION] Available collections:`, collections?.length || 0);
         
         if (collections && collections.length > 0) {
             // Use provided source or fall back to current state source
             const targetSource = source || this.currentState.collectionSource;
-            console.log(`[COLLECTION] Target source: ${targetSource}`);
             
             // First try to find by ID and source
             let collection = null;
             if (targetSource) {
                 collection = collections.find(c => c.id === collectionId && c.source === targetSource);
-                console.log(`[COLLECTION] Found with source:`, collection?.title || 'not found');
             }
             
             // If not found with source, fall back to ID only
             if (!collection) {
                 collection = collections.find(c => c.id === collectionId);
-                console.log(`[COLLECTION] Found without source:`, collection?.title || 'not found');
             }
             
             if (collection) {
                 const displayName = collection.displayTitle || collection.title || collectionId;
-                console.log(`[COLLECTION] Returning display name: ${displayName}`);
                 return displayName;
             }
         }
-        console.log(`[COLLECTION] No collection found, returning ID: ${collectionId}`);
         return collectionId;
     }
     

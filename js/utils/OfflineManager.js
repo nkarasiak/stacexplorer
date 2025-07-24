@@ -9,6 +9,8 @@ export class OfflineManager {
         this.offlineIndicator = null;
         this.offlineOverlay = null;
         
+        console.log('🌐 OfflineManager initialized - Initial status:', this.isOffline ? 'offline' : 'online');
+        
         this.initializeEventListeners();
         this.createOfflineUI();
     }
@@ -36,18 +38,24 @@ export class OfflineManager {
     }
     
     /**
-     * Periodic connectivity check as fallback
+     * Periodic connectivity check as fallback (only when browser thinks we're online)
      */
     startConnectivityCheck() {
         setInterval(async () => {
-            const wasOffline = this.isOffline;
-            this.isOffline = !(await this.checkConnectivity());
-            
-            if (wasOffline !== this.isOffline) {
-                this.updateUI();
-                this.notifyCallbacks(this.isOffline ? 'offline' : 'online');
+            // Only do deep connectivity check if browser thinks we're online
+            // but we might have captive portal or limited connectivity
+            if (navigator.onLine && !this.isOffline) {
+                const hasConnectivity = await this.checkConnectivity();
+                const wasOffline = this.isOffline;
+                this.isOffline = !hasConnectivity;
+                
+                if (wasOffline !== this.isOffline) {
+                    console.log('🔍 Deep connectivity check changed status:', this.isOffline ? 'offline' : 'online');
+                    this.updateUI();
+                    this.notifyCallbacks(this.isOffline ? 'offline' : 'online');
+                }
             }
-        }, 10000); // Check every 10 seconds
+        }, 30000); // Check every 30 seconds (less aggressive)
     }
     
     /**
@@ -55,14 +63,16 @@ export class OfflineManager {
      */
     async checkConnectivity() {
         try {
-            // Use a fast, lightweight endpoint
-            const response = await fetch('https://httpbin.org/status/200', {
-                method: 'GET',
+            // Use a more reliable endpoint with shorter timeout
+            const response = await fetch('https://www.google.com/favicon.ico', {
+                method: 'HEAD', // Even lighter than GET
                 cache: 'no-cache',
-                signal: AbortSignal.timeout(5000) // 5 second timeout
+                mode: 'no-cors', // Avoid CORS issues
+                signal: AbortSignal.timeout(3000) // 3 second timeout
             });
-            return response.ok;
-        } catch {
+            return true; // If we get here, we have connectivity
+        } catch (error) {
+            console.log('🔍 Connectivity check failed:', error.message);
             return false;
         }
     }
@@ -302,6 +312,19 @@ export class OfflineManager {
             this.updateUI();
             this.notifyCallbacks(offline ? 'offline' : 'online');
         }
+    }
+    
+    /**
+     * Debug information about current state
+     */
+    getDebugInfo() {
+        return {
+            isOffline: this.isOffline,
+            navigatorOnLine: navigator.onLine,
+            callbackCount: this.callbacks.size,
+            indicatorVisible: this.offlineIndicator?.classList.contains('show'),
+            timestamp: new Date().toISOString()
+        };
     }
     
     /**

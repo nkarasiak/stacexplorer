@@ -362,6 +362,13 @@ async function initApp() {
         
         
         
+        // Debug offline manager status
+        console.log('🌐 Offline Manager Status at startup:', {
+            isOffline: offlineManager.getOfflineStatus(),
+            navigatorOnLine: navigator.onLine,
+            debugInfo: offlineManager.getDebugInfo()
+        });
+        
         // Expose key objects to the global scope for developer console access
         // Preserve existing window.stacExplorer properties if they exist
         window.stacExplorer = {

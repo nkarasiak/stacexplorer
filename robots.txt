@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://nkarasiak.github.io/stacexplorer/sitemap.xml
+
+# Block test files
+Disallow: /test-offline.html
+Disallow: /validate-build.js
+Disallow: /jsconfig.json

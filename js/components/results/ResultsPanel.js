@@ -111,6 +111,9 @@ export class ResultsPanel {
             }
         });
         
+        // Add escape key handler
+        document.addEventListener('keydown', this.handleEscapeKey);
+        
         // Store modal elements
         this.modal = {
             overlay: modalOverlay,
@@ -383,7 +386,7 @@ export class ResultsPanel {
             if (modal) {
                 modal.remove();
             }
-            document.removeEventListener('keydown', this.handleEscapeKey);
+            document.removeEventListener('keydown', escapeHandler);
             this.currentItem = null;
         };
         
@@ -1118,6 +1121,7 @@ export class ResultsPanel {
      * @returns {HTMLElement} List item element
      */
     createDatasetItem(item) {
+        console.log('🔍 Creating dataset item for:', item.id, 'Collection:', item.collection);
         const li = document.createElement('li');
         li.className = 'dataset-item';
         li.dataset.id = item.id;
@@ -1127,53 +1131,120 @@ export class ResultsPanel {
         let thumbnailUrl = null;
         let hasThumbnail = false;
         
-        // Check various potential thumbnail locations in the STAC item
-        if (item.assets) {
-            // For Planetary Computer items, check rendered_preview first
-            if (item.assets.rendered_preview) {
-                thumbnailUrl = item.assets.rendered_preview.href;
+        // Helper function to check if URL is usable (not S3 scheme)
+        const isUsableUrl = (url) => {
+            return url && !url.startsWith('s3://') && (url.startsWith('http://') || url.startsWith('https://'));
+        };
+        
+        // PRIORITY 1: Check links for thumbnail or preview (more reliable than assets)
+        console.log('🖼️ Checking thumbnail sources for', item.id);
+        console.log('📎 Available links:', item.links?.map(l => `${l.rel}: ${l.href}`) || 'none');
+        console.log('🗂️ Available assets:', Object.keys(item.assets || {}));
+        
+        if (item.links && Array.isArray(item.links)) {
+            const thumbnailLink = item.links.find(link => link.rel === 'thumbnail');
+            const previewLink = item.links.find(link => link.rel === 'preview');
+            
+            if (thumbnailLink && isUsableUrl(thumbnailLink.href)) {
+                thumbnailUrl = thumbnailLink.href;
                 hasThumbnail = true;
-            } else if (item.assets.thumbnail) {
-                thumbnailUrl = item.assets.thumbnail.href;
+                console.log('✅ Using links.thumbnail:', thumbnailUrl);
+            } else if (previewLink && isUsableUrl(previewLink.href)) {
+                thumbnailUrl = previewLink.href;
                 hasThumbnail = true;
-            } else if (item.assets.preview) {
-                thumbnailUrl = item.assets.preview.href;
-                hasThumbnail = true;
-            } else if (item.assets.overview) {
-                thumbnailUrl = item.assets.overview.href;
-                hasThumbnail = true;
+                console.log('✅ Using links.preview:', thumbnailUrl);
             }
         }
         
-        // Generate TiTiler preview for DEM collections that don't have thumbnails
-        if (!hasThumbnail && (item.collection === 'cop-dem-glo-30' || item.collection === 'cop-dem-glo-90')) {
-            thumbnailUrl = this.generateDEMThumbnailUrl(item);
-            hasThumbnail = !!thumbnailUrl;
+        // PRIORITY 2: Check assets only if no usable links found
+        if (!hasThumbnail && item.assets) {
+            
+            // For Planetary Computer items, check rendered_preview first
+            if (item.assets.rendered_preview && isUsableUrl(item.assets.rendered_preview.href)) {
+                thumbnailUrl = item.assets.rendered_preview.href;
+                hasThumbnail = true;
+            } else if (item.assets.thumbnail && isUsableUrl(item.assets.thumbnail.href)) {
+                thumbnailUrl = item.assets.thumbnail.href;
+                hasThumbnail = true;
+            } else if (item.assets.preview && isUsableUrl(item.assets.preview.href)) {
+                thumbnailUrl = item.assets.preview.href;
+                hasThumbnail = true;
+            } else if (item.assets.overview && isUsableUrl(item.assets.overview.href)) {
+                thumbnailUrl = item.assets.overview.href;
+                hasThumbnail = true;
+            }
+            // Add specific checks for Landsat assets
+            else if (item.assets.visual && isUsableUrl(item.assets.visual.href)) {
+                thumbnailUrl = item.assets.visual.href;
+                hasThumbnail = true;
+            } else if (item.assets.true_color && isUsableUrl(item.assets.true_color.href)) {
+                thumbnailUrl = item.assets.true_color.href;
+                hasThumbnail = true;
+            }
+            
+            if (!hasThumbnail) {
+                console.log('🚫 No usable thumbnail found in assets (S3 URLs skipped)');
+            }
         }
         
-        // Get the date from the item
+        // PRIORITY 3: Generate TiTiler preview for collections that don't have thumbnails in links or assets
+        if (!hasThumbnail) {
+            console.log('🔧 No thumbnail found in links or assets, trying TiTiler generation...');
+            if (item.collection === 'cop-dem-glo-30' || item.collection === 'cop-dem-glo-90') {
+                thumbnailUrl = this.generateDEMThumbnailUrl(item);
+                hasThumbnail = !!thumbnailUrl;
+            } else if (item.collection && item.collection.includes('landsat')) {
+                thumbnailUrl = this.generateLandsatThumbnailUrl(item);
+                hasThumbnail = !!thumbnailUrl;
+            }
+        }
+        
+        // Get the date from the item - try multiple date fields
         let itemDate = 'Unknown date';
-        if (item.properties && item.properties.datetime) {
-            itemDate = new Date(item.properties.datetime).toLocaleDateString();
+        if (item.properties) {
+            if (item.properties.datetime) {
+                itemDate = new Date(item.properties.datetime).toLocaleDateString();
+            } else if (item.properties.start_datetime) {
+                itemDate = new Date(item.properties.start_datetime).toLocaleDateString();
+            } else if (item.properties.end_datetime) {
+                itemDate = new Date(item.properties.end_datetime).toLocaleDateString();
+            } else if (item.properties.date) {
+                itemDate = new Date(item.properties.date).toLocaleDateString();
+            }
         } else if (item.date) {
             itemDate = item.date;
+        } else if (item.datetime) {
+            itemDate = new Date(item.datetime).toLocaleDateString();
         }
         
-        // Get cloud cover icon if available
+        // Get cloud cover icon if available - try multiple cloud cover fields
         let cloudIcon = '';
-        if (item.properties && item.properties['eo:cloud_cover'] !== undefined) {
-            const cloudCover = Math.round(item.properties['eo:cloud_cover'],0);
+        let cloudCover = null;
+        if (item.properties) {
+            if (item.properties['eo:cloud_cover'] !== undefined) {
+                cloudCover = item.properties['eo:cloud_cover'];
+            } else if (item.properties.cloud_cover !== undefined) {
+                cloudCover = item.properties.cloud_cover;
+            } else if (item.properties.cloudCover !== undefined) {
+                cloudCover = item.properties.cloudCover;
+            } else if (item.properties['landsat:cloud_cover_land'] !== undefined) {
+                cloudCover = item.properties['landsat:cloud_cover_land'];
+            }
+        }
+        
+        if (cloudCover !== null) {
+            const cloudCoverRounded = Math.round(cloudCover, 0);
                         
-            if (cloudCover > 75) {
-                cloudIcon = ' • ☁️ ' + cloudCover + '%'; // Very cloudy
-            } else if (cloudCover > 50) {
-                cloudIcon = ' • 🌥️ ' + cloudCover + '%'; // Mostly cloudy
-            } else if (cloudCover > 25) {
-                cloudIcon = ' • ⛅ ' + cloudCover + '%'; // Partly cloudy
-            } else if (cloudCover > 5) {
-                cloudIcon = ' • 🌤️ ' + cloudCover + '%'; // Mostly sunny
+            if (cloudCoverRounded > 75) {
+                cloudIcon = ' • ☁️ ' + cloudCoverRounded + '%'; // Very cloudy
+            } else if (cloudCoverRounded > 50) {
+                cloudIcon = ' • 🌥️ ' + cloudCoverRounded + '%'; // Mostly cloudy
+            } else if (cloudCoverRounded > 25) {
+                cloudIcon = ' • ⛅ ' + cloudCoverRounded + '%'; // Partly cloudy
+            } else if (cloudCoverRounded > 5) {
+                cloudIcon = ' • 🌤️ ' + cloudCoverRounded + '%'; // Mostly sunny
             } else {
-                cloudIcon = ' • ☀️ ' + cloudCover + '%'; // Sunny
+                cloudIcon = ' • ☀️ ' + cloudCoverRounded + '%'; // Sunny
             }
         }
         
@@ -1195,6 +1266,15 @@ export class ResultsPanel {
         // Get the description
         const description = item.properties && item.properties.description ? 
             item.properties.description : (item.description || 'No description available');
+            
+        console.log('📋 Item metadata:', {
+            id: item.id,
+            collection: collectionId,
+            date: itemDate,
+            cloudCover: cloudIcon,
+            title: title,
+            hasThumbnail: hasThumbnail
+        });
         
         // Prepare metadata fields
         const metadataFields = [];
@@ -1347,13 +1427,34 @@ export class ResultsPanel {
         // Handle thumbnail error (if exists)
         if (thumbnail) {
             thumbnail.onerror = () => {
-                // Hide the entire thumbnail container on error
-                const thumbnailContainer = element.querySelector('.thumbnail-container');
-                if (thumbnailContainer) {
-                    thumbnailContainer.style.display = 'none';
+                console.log('🚫 Thumbnail failed to load for item:', item.id, '- converting to no-thumbnail layout');
+                
+                // Replace the entire card content with no-thumbnail layout
+                const clickableCard = element.querySelector('.clickable-card');
+                if (clickableCard) {
+                    clickableCard.innerHTML = `
+                        <div class="dataset-info">
+                            <div class="dataset-metadata">
+                                <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
+                            </div>
+                            <div class="thumbnail-overlay">
+                                <button class="info-btn details-btn" title="Show details">
+                                    <i class="material-icons">info</i>
+                                </button>
+                                <button class="info-btn viz-btn" title="High Resolution Preview">
+                                    <i class="material-icons">visibility</i>
+                                </button>
+                            </div>
+                            <div class="dataset-title">${title}</div>
+                        </div>
+                    `;
+                    
+                    // Add the no-thumbnail class
+                    clickableCard.classList.add('no-thumbnail');
+                    
+                    // Re-attach event listeners to the new buttons
+                    this.attachItemEventListeners(element, item);
                 }
-                // Card will still be clickable for geometry display
-                console.log('Thumbnail failed to load for item:', item.id);
             };
         }
         
@@ -1485,6 +1586,58 @@ export class ResultsPanel {
 
         } catch (error) {
             console.error('❌ [DEM-THUMB] Error generating DEM thumbnail:', error);
+            return null;
+        }
+    }
+
+    /**
+     * Generate a thumbnail URL for Landsat items using TiTiler
+     * @param {Object} item - STAC item
+     * @returns {string|null} Thumbnail URL or null if not possible
+     */
+    generateLandsatThumbnailUrl(item) {
+        try {
+            // Check if item has red, green, blue assets for true color composite
+            if (!item.assets) {
+                console.log('🚫 [LANDSAT-THUMB] No assets found for Landsat thumbnail');
+                return null;
+            }
+
+            // Look for common Landsat asset names
+            const redAsset = item.assets.red || item.assets.B04 || item.assets.SR_B4;
+            const greenAsset = item.assets.green || item.assets.B03 || item.assets.SR_B3;
+            const blueAsset = item.assets.blue || item.assets.B02 || item.assets.SR_B2;
+
+            if (!redAsset || !greenAsset || !blueAsset) {
+                console.log('🚫 [LANDSAT-THUMB] Missing RGB assets for Landsat thumbnail');
+                return null;
+            }
+
+            console.log(`🛰️ [LANDSAT-THUMB] Generating thumbnail for: ${item.id}`);
+
+            // Use Element84's TiTiler for Element84 hosted Landsat data
+            const assetUrl = redAsset.href;
+            if (assetUrl && assetUrl.includes('amazonaws.com')) {
+                const bbox = item.bbox || this.extractBboxFromGeometry(item.geometry);
+                if (bbox) {
+                    // Use Element84's TiTiler instance
+                    const params = new URLSearchParams();
+                    params.set('assets', 'red,green,blue');
+                    params.set('width', '256');
+                    params.set('height', '256');
+                    params.set('rescale', '0,30000');
+                    
+                    const tiTilerUrl = `https://titiler.xyz/stac/preview?url=${encodeURIComponent(item.links?.find(l => l.rel === 'self')?.href || '')}&${params.toString()}&bbox=${bbox.join(',')}`;
+                    console.log(`🛰️ [LANDSAT-THUMB] Generated TiTiler preview: ${tiTilerUrl}`);
+                    return tiTilerUrl;
+                }
+            }
+
+            console.log('🚫 [LANDSAT-THUMB] Could not generate thumbnail for Landsat item');
+            return null;
+
+        } catch (error) {
+            console.error('❌ [LANDSAT-THUMB] Error generating Landsat thumbnail:', error);
             return null;
         }
     }

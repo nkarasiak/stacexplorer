@@ -78,7 +78,6 @@ class MapManager {
                 container = container;
             }
 
-            console.log('🗺️ Initializing MapManager with container:', container);
 
             // Detect current theme - check saved preference first, then default to light
             const savedTheme = localStorage.getItem('stac-explorer-theme');
@@ -89,7 +88,6 @@ class MapManager {
                 this.currentTheme = 'light';
             }
             
-            console.log('🗺️ MapManager using theme:', this.currentTheme);
             
             // Get the appropriate map style based on theme
             const styleUrl = this.getMapStyle(this.currentTheme);
@@ -132,7 +130,6 @@ class MapManager {
             }
 
             this.isInitialized = true;
-            console.log('✅ MapManager initialized successfully');
             
             // Trigger custom event for other components
             window.dispatchEvent(new CustomEvent('mapManagerReady', { 
@@ -194,7 +191,6 @@ class MapManager {
         // Listen for themeChange events from UIManager (more reliable)
         document.addEventListener('themeChange', (event) => {
             const newTheme = event.detail.themeMode;
-            console.log(`🎨 MapManager received themeChange event: ${newTheme}`);
             if (newTheme && newTheme !== this.currentTheme) {
                 this.currentTheme = newTheme;
                 this.updateMapTheme(newTheme);
@@ -207,7 +203,6 @@ class MapManager {
                 if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
                     const newTheme = document.documentElement.classList.contains('dark-theme') ? 'dark' : 'light';
                     if (newTheme !== this.currentTheme) {
-                        console.log(`🎨 MapManager detected theme change via MutationObserver: ${newTheme}`);
                         this.currentTheme = newTheme;
                         this.updateMapTheme(newTheme);
                     }
@@ -228,7 +223,6 @@ class MapManager {
     updateMapTheme(theme) {
         if (!this.map) return;
         
-        console.log(`🎨 Updating map theme to: ${theme}`);
         const styleUrl = this.getMapStyle(theme);
         
         // Save current viewport
@@ -269,7 +263,6 @@ class MapManager {
         // Re-add each thumbnail
         thumbnails.forEach((sourceId, itemId) => {
             // This is a simplified re-add, you might need to store more info
-            console.log(`Re-adding thumbnail for item: ${itemId}`);
         });
     }
 
@@ -282,7 +275,6 @@ class MapManager {
         for (const containerId of commonContainerIds) {
             const element = document.getElementById(containerId);
             if (element) {
-                console.log(`🎯 Found map container: ${containerId}`);
                 try {
                     await this.initialize(containerId);
                     return true;
@@ -348,7 +340,6 @@ class MapManager {
             filter: ['==', '$type', 'Point']
         });
 
-        console.log('🎨 Drawing functionality initialized');
     }
 
     /**
@@ -370,8 +361,6 @@ class MapManager {
         // Clear any existing drawing
         this.clearDrawing();
         
-        console.log('🎯 Started drawing bbox mode');
-        
         // Set up drawing event listeners
         this.setupDrawingListeners();
     }
@@ -392,7 +381,6 @@ class MapManager {
         this.map.getCanvas().style.cursor = 'crosshair';
         this.clearDrawing();
         
-        console.log('🎯 Started drawing polygon mode');
         this.setupDrawingListeners();
     }
 
@@ -421,7 +409,6 @@ class MapManager {
                 // First click - set the starting point
                 firstPoint = [e.lngLat.lng, e.lngLat.lat];
                 isDrawing = true;
-                console.log('🎯 First corner set at:', firstPoint);
                 
                 // Add a marker at the first point for visual feedback
                 const marker = {
@@ -442,8 +429,6 @@ class MapManager {
                 const secondPoint = [e.lngLat.lng, e.lngLat.lat];
                 const bbox = this.createBboxFromPoints(firstPoint, secondPoint);
                 
-                console.log('🎯 Second corner set at:', secondPoint);
-                console.log('📦 Bounding box created:', bbox);
                 
                 this.finishDrawing(bbox);
                 
@@ -473,7 +458,6 @@ class MapManager {
             // Cancel drawing on right click
             if (isDrawing) {
                 e.preventDefault();
-                console.log('❌ Drawing cancelled');
                 isDrawing = false;
                 firstPoint = null;
                 this.clearDrawing();
@@ -610,7 +594,6 @@ class MapManager {
             this.drawingCallback(geometry);
         }
         
-        console.log('✅ Drawing completed:', geometry);
     }
 
     /**
@@ -646,7 +629,6 @@ class MapManager {
             this.map.dragPan.enable();
         }
         
-        console.log('🛑 Stopped drawing mode');
     }
 
     /**
@@ -666,7 +648,6 @@ class MapManager {
      */
     async initializeDeckGL() {
         try {
-            console.log('🎨 Initializing Deck.gl integration...');
             
             // Import SimpleDeckGLIntegration dynamically
             const { default: SimpleDeckGLIntegration } = await import('./SimpleDeckGLIntegration.js');
@@ -677,7 +658,6 @@ class MapManager {
             // Initialize
             await this.deckGLIntegration.initialize();
             
-            console.log('✅ Deck.gl integration initialized successfully');
         } catch (error) {
             console.warn('⚠️ Failed to initialize Deck.gl, falling back to MapLibre only:', error);
             this.useDeckGL = false;
@@ -704,7 +684,6 @@ class MapManager {
                 );
                 
                 if (success) {
-                    console.log('✅ Item displayed using Deck.gl acceleration');
                     return;
                 }
             } catch (error) {
@@ -724,7 +703,6 @@ class MapManager {
      */
     async _displayItemOnMapLibre(item, preferredAssetKey = null, preserveViewport = false) {
         try {
-            console.log('Displaying item on map:', item.id);
             
             // Remove any existing layers
             this.removeCurrentLayer();
@@ -745,7 +723,28 @@ class MapManager {
             const loadingIndicator = document.getElementById('loading');
             if (loadingIndicator) loadingIndicator.style.display = 'block';
             
-            // Strongly prioritize preview/thumbnail assets (JPG, PNG, etc.) to avoid CORS issues
+            // Helper function to check if URL is usable (not S3 scheme)
+            const isUsableUrl = (url) => {
+                return url && !url.startsWith('s3://') && (url.startsWith('http://') || url.startsWith('https://'));
+            };
+            
+            // PRIORITY 1: Check links for thumbnail or preview (more reliable than assets)
+            if (item.links && Array.isArray(item.links)) {
+                const thumbnailLink = item.links.find(link => link.rel === 'thumbnail');
+                const previewLink = item.links.find(link => link.rel === 'preview');
+                
+                if (thumbnailLink && isUsableUrl(thumbnailLink.href)) {
+                    console.log('🗺️ Using links.thumbnail for MapLibre display:', thumbnailLink.href);
+                    await this.addAssetOverlay(thumbnailLink, item, 'links.thumbnail');
+                    return;
+                } else if (previewLink && isUsableUrl(previewLink.href)) {
+                    console.log('🗺️ Using links.preview for MapLibre display:', previewLink.href);
+                    await this.addAssetOverlay(previewLink, item, 'links.preview');
+                    return;
+                }
+            }
+            
+            // PRIORITY 2: Strongly prioritize preview/thumbnail assets (JPG, PNG, etc.) to avoid CORS issues
             const previewAssets = ['rendered_preview', 'thumbnail', 'preview', 'overview'];
             
             // For Planetary Computer items, check rendered_preview first (usually works)
@@ -760,7 +759,6 @@ class MapManager {
                     const asset = item.assets[assetKey];
                     // Prefer preview images (JPG/PNG) over anything else
                     if (this.isPreviewAsset(asset)) {
-                        console.log(`Using preview asset: ${assetKey} (${asset.type || 'unknown type'})`);
                         await this.addAssetOverlay(asset, item, assetKey);
                         return;
                     }
@@ -771,7 +769,6 @@ class MapManager {
             if (preferredAssetKey && item.assets && item.assets[preferredAssetKey]) {
                 const asset = item.assets[preferredAssetKey];
                 if (this.isPreviewAsset(asset)) {
-                    console.log(`Using preferred preview asset: ${preferredAssetKey}`);
                     await this.addAssetOverlay(asset, item, preferredAssetKey);
                     return;
                 }
@@ -780,7 +777,6 @@ class MapManager {
             // Try any remaining preview assets, even if they might have CORS issues
             for (const assetKey of previewAssets) {
                 if (item.assets && item.assets[assetKey]) {
-                    console.log(`Trying preview asset (may have CORS): ${assetKey}`);
                     await this.addAssetOverlay(item.assets[assetKey], item, assetKey);
                     return;
                 }
@@ -795,7 +791,6 @@ class MapManager {
             // Last resort: try any visual assets but expect them to fail with CORS
             const visualAssets = this.findVisualAssets(item);
             if (visualAssets.length > 0) {
-                console.log('No preview assets found, trying visual assets (may fail with CORS)');
                 await this.addAssetOverlay(visualAssets[0].asset, item, visualAssets[0].key);
                 return;
             }
@@ -2168,7 +2163,6 @@ let geojson;
 
     async addThumbnailToMap(item, preferredAssetKey = null) {
         try {
-            console.log('Displaying item on map:', item.id);
             
             // Remove any existing layers
             this.removeCurrentLayer();
@@ -2205,11 +2199,34 @@ let geojson;
             // Try to find visual assets
             const visualAssets = this.findVisualAssets(item);
             
+            // Helper function to check if URL is usable (not S3 scheme)
+            const isUsableUrl = (url) => {
+                return url && !url.startsWith('s3://') && (url.startsWith('http://') || url.startsWith('https://'));
+            };
+            
+            // PRIORITY 1: Check links for thumbnail or preview (more reliable than assets)
+            if (item.links && Array.isArray(item.links)) {
+                const thumbnailLink = item.links.find(link => link.rel === 'thumbnail');
+                const previewLink = item.links.find(link => link.rel === 'preview');
+                
+                if (thumbnailLink && isUsableUrl(thumbnailLink.href)) {
+                    console.log('🗺️ Using links.thumbnail for map display:', thumbnailLink.href);
+                    await this.addAssetOverlay(thumbnailLink, item, 'links.thumbnail', useGeometry ? item.geometry : bounds);
+                    return;
+                } else if (previewLink && isUsableUrl(previewLink.href)) {
+                    console.log('🗺️ Using links.preview for map display:', previewLink.href);
+                    await this.addAssetOverlay(previewLink, item, 'links.preview', useGeometry ? item.geometry : bounds);
+                    return;
+                }
+            }
+            
             // If we have a preferred asset key and it exists, use it
             if (preferredAssetKey && item.assets && item.assets[preferredAssetKey]) {
                 await this.addAssetOverlay(item.assets[preferredAssetKey], item, preferredAssetKey, useGeometry ? item.geometry : bounds);
                 return;
             }
+            
+            // PRIORITY 2: Check assets if no usable links found
             
             // If we have visual assets, use the first one
             if (visualAssets.length > 0) {

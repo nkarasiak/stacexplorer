@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STAC Catalog Explorer</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <!-- MapLibre GL CSS -->
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css" />
     <!-- Leaflet CSS for mini maps -->
@@ -365,7 +368,7 @@
 
         .md-card-body {
             background: transparent !important;
-            padding: 20px !important;
+            padding: 0px 16px 0px 16px !important;
         }
 
         /* Glassmorphism for Buttons and Interactive Elements */
@@ -2331,7 +2334,7 @@
     </script>
     
     <!-- Load modules with ES modules -->
-    <script type="module" src="js/app.js"></script>
+    <script type="module" src="/src/main.js"></script>
     
     <!-- Direct fix for the Draw Bounding Box button -->
     <script>

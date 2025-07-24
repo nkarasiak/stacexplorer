@@ -7,10 +7,12 @@ export class CatalogSelector {
      * Create a new CatalogSelector
      * @param {Object} apiClient - STAC API client 
      * @param {Object} notificationService - Notification service
+     * @param {Object} config - Configuration object with stacEndpoints
      */
-    constructor(apiClient, notificationService) {
+    constructor(apiClient, notificationService, config = null) {
         this.apiClient = apiClient;
         this.notificationService = notificationService;
+        this.config = config;
         this.currentCatalog = '';
         
         // Initialize event listeners
@@ -41,8 +43,9 @@ export class CatalogSelector {
     /**
      * Handle changing the STAC catalog
      * @param {string} catalogType - Type of catalog (local, copernicus, custom)
+     * @param {number} retryCount - Internal retry counter to prevent infinite loops
      */
-    async handleCatalogChange(catalogType) {
+    async handleCatalogChange(catalogType, retryCount = 0) {
         try {
             // Show loading indicator
             document.getElementById('loading').style.display = 'flex';
@@ -54,8 +57,20 @@ export class CatalogSelector {
                 return;
             }
             
-            // Get endpoints from config
-            let endpoints = window.stacExplorer.config.stacEndpoints[catalogType];
+            // Get endpoints from config - with defensive checks
+            const config = window.stacExplorer?.config || this.config;
+            if (!config || !config.stacEndpoints) {
+                if (retryCount < 5) {
+                    console.warn(`Config not yet available for ${catalogType}, retrying in 100ms... (attempt ${retryCount + 1}/5)`);
+                    // Retry after a short delay to allow config to be set up
+                    setTimeout(() => this.handleCatalogChange(catalogType, retryCount + 1), 100);
+                    return;
+                } else {
+                    throw new Error('Configuration not available after multiple retries. Please refresh the page.');
+                }
+            }
+            
+            let endpoints = config.stacEndpoints[catalogType];
             
             if (!endpoints) {
                 throw new Error(`Unknown catalog type: ${catalogType}`);

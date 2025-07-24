@@ -59,7 +59,7 @@ async function initApp() {
         const geocodingService = new GeocodingService();
         
         // Initialize catalog selector first to handle default catalog load
-        const catalogSelector = new CatalogSelector(apiClient, notificationService);
+        const catalogSelector = new CatalogSelector(apiClient, notificationService, CONFIG);
         
         // Wait for map to be ready before initializing collection manager
         await mapManager.initialize('map').then(() => {

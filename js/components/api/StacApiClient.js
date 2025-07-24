@@ -2,6 +2,8 @@
  * STACApiClient.js - Client for interacting with STAC APIs
  */
 
+import { offlineManager } from '../../utils/OfflineManager.js';
+
 export class STACApiClient {
     /**
      * Create a new STAC API client
@@ -110,6 +112,11 @@ export class STACApiClient {
      */
     async connectToCustomCatalog(url) {
         try {
+            // Check if offline
+            if (offlineManager.getOfflineStatus()) {
+                console.log('📡 Offline mode - Cannot connect to catalog');
+                throw new Error('Cannot connect to catalog - No internet connection');
+            }
             // Normalize URL: remove trailing slash if present
             const normalizedUrl = url.endsWith('/') ? url.slice(0, -1) : url;
             
@@ -178,6 +185,11 @@ export class STACApiClient {
      */
     async fetchCollections(limit = 1000) {
         try {
+            // Check if offline
+            if (offlineManager.getOfflineStatus()) {
+                console.log('📡 Offline mode - Cannot fetch collections');
+                throw new Error('Cannot fetch collections - No internet connection');
+            }
             // Handle Planet Labs catalog specially
             if (this.planetLabsCatalogData) {
                 return await this.fetchPlanetLabsCollections();
@@ -335,6 +347,11 @@ export class STACApiClient {
      */
     async searchItems(params = {}) {
         try {
+            // Check if offline
+            if (offlineManager.getOfflineStatus()) {
+                console.log('📡 Offline mode - Cannot search items');
+                throw new Error('Cannot search items - No internet connection');
+            }
             // Handle Planet Labs catalog specially - but only if it's currently selected
             if (this.planetLabsCatalogData && this.isCurrentlyPlanetLabs()) {
                 return await this.searchPlanetLabsItems(params);

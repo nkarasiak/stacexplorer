@@ -2,6 +2,8 @@
  * SatelliteAnimation.js - Animated satellite that flies across the screen when no search results are shown
  */
 
+import { offlineManager } from '../../utils/OfflineManager.js';
+
 export class SatelliteAnimation {
     constructor() {
         this.container = null;
@@ -12,8 +14,11 @@ export class SatelliteAnimation {
         this.maxColumns = 5; // Number of columns to animate across
         this.columnWidth = 0;
         this.hasResults = false;
+        this.isOffline = false;
+        this.offlineUnsubscribe = null;
         
         this.init();
+        this.setupOfflineHandling();
     }
     
     /**
@@ -32,6 +37,83 @@ export class SatelliteAnimation {
     }
     
     /**
+     * Setup offline status handling
+     */
+    setupOfflineHandling() {
+        this.isOffline = offlineManager.getOfflineStatus();
+        
+        // Listen for offline/online status changes
+        this.offlineUnsubscribe = offlineManager.onStatusChange((status, isOffline) => {
+            console.log('🛰️ Offline status changed:', status, isOffline);
+            this.isOffline = isOffline;
+            this.updateSatelliteAppearance();
+            
+            // In offline mode, always show satellite animation (no search results possible)
+            if (isOffline) {
+                this.hasResults = false;
+                this.startAnimation();
+            } else {
+                // When back online, check actual results state
+                this.checkResultsAndStart();
+            }
+        });
+        
+        // Initial appearance update
+        this.updateSatelliteAppearance();
+    }
+    
+    /**
+     * Update satellite appearance based on offline status
+     */
+    updateSatelliteAppearance() {
+        if (!this.satellite) return;
+        
+        if (this.isOffline) {
+            this.satellite.classList.add('satellite-offline');
+            this.satellite.title = '📡 Satellite offline - Need internet connection';
+            this.addOfflineMessage();
+        } else {
+            this.satellite.classList.remove('satellite-offline');
+            this.satellite.title = '🛰️ Satellite online';
+            this.removeOfflineMessage();
+        }
+    }
+    
+    /**
+     * Add offline message bubble to satellite
+     */
+    addOfflineMessage() {
+        // Remove existing message if any
+        this.removeOfflineMessage();
+        
+        if (!this.container) return;
+        
+        const message = document.createElement('div');
+        message.className = 'satellite-offline-message';
+        message.id = 'satellite-offline-message';
+        message.innerHTML = '📡 Link offline, please connect';
+        
+        // Position the message above the satellite
+        message.style.top = '-40px';
+        message.style.left = '50%';
+        message.style.transform = 'translateX(-50%)';
+        
+        this.container.appendChild(message);
+        console.log('🛰️ Added offline message bubble to satellite');
+    }
+    
+    /**
+     * Remove offline message bubble from satellite
+     */
+    removeOfflineMessage() {
+        const existingMessage = document.getElementById('satellite-offline-message');
+        if (existingMessage) {
+            existingMessage.remove();
+            console.log('🛰️ Removed offline message bubble from satellite');
+        }
+    }
+    
+    /**
      * Create the satellite DOM elements
      */
     createSatelliteElements() {
@@ -39,6 +121,7 @@ export class SatelliteAnimation {
         this.container = document.createElement('div');
         this.container.className = 'satellite-container';
         this.container.id = 'satellite-container';
+        this.container.style.position = 'relative'; // Needed for message positioning
         
         // Create satellite image
         this.satellite = document.createElement('img');
@@ -51,6 +134,9 @@ export class SatelliteAnimation {
         
         // Add container to body
         document.body.appendChild(this.container);
+        
+        // Update appearance based on offline status
+        this.updateSatelliteAppearance();
         
         console.log('🛰️ Satellite elements created');
     }
@@ -140,8 +226,9 @@ export class SatelliteAnimation {
      * Start the satellite animation
      */
     startAnimation() {
-        if (this.isActive || this.hasResults) {
-            console.log('🛰️ Animation not started - isActive:', this.isActive, 'hasResults:', this.hasResults);
+        // In offline mode, always show animation regardless of results
+        if (this.isActive || (!this.isOffline && this.hasResults)) {
+            console.log('🛰️ Animation not started - isActive:', this.isActive, 'hasResults:', this.hasResults, 'isOffline:', this.isOffline);
             return;
         }
         
@@ -187,7 +274,8 @@ export class SatelliteAnimation {
      * Schedule the next satellite flight
      */
     scheduleNextFlight() {
-        if (!this.isActive || this.hasResults) {
+        // In offline mode, ignore hasResults check
+        if (!this.isActive || (!this.isOffline && this.hasResults)) {
             return;
         }
         
@@ -201,8 +289,9 @@ export class SatelliteAnimation {
      * Execute a single satellite flight
      */
     executeFlight() {
-        if (!this.isActive || this.hasResults) {
-            console.log('🛰️ Flight cancelled - isActive:', this.isActive, 'hasResults:', this.hasResults);
+        // In offline mode, ignore hasResults check
+        if (!this.isActive || (!this.isOffline && this.hasResults)) {
+            console.log('🛰️ Flight cancelled - isActive:', this.isActive, 'hasResults:', this.hasResults, 'isOffline:', this.isOffline);
             return;
         }
         
@@ -253,6 +342,15 @@ export class SatelliteAnimation {
     destroy() {
         console.log('🛰️ Destroying satellite animation');
         this.stopAnimation();
+        
+        // Clean up offline message
+        this.removeOfflineMessage();
+        
+        // Clean up offline event listener
+        if (this.offlineUnsubscribe) {
+            this.offlineUnsubscribe();
+            this.offlineUnsubscribe = null;
+        }
         
         if (this.container && this.container.parentNode) {
             this.container.parentNode.removeChild(this.container);

@@ -34,6 +34,7 @@ import { CONFIG } from './config.js';
 import { cookieCache } from './utils/CookieCache.js';
 import { searchHistoryManager } from './utils/SearchHistoryManager.js';
 import { DateUtils } from './utils/DateUtils.js';
+import { offlineManager } from './utils/OfflineManager.js';
 
 // Export the main initialization function for Vite
 export async function initializeApp() {
@@ -381,6 +382,7 @@ async function initApp() {
             satelliteAnimation,
             interactiveTutorial,
             geocodingService,
+            offlineManager,
             config: CONFIG,
             // Visualization system
             visualizationPanel,

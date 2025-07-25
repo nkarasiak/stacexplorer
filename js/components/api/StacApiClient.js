@@ -323,6 +323,25 @@ export class STACApiClient {
     }
     
     /**
+     * Get current catalog display name
+     * @returns {string} - Display name of current catalog
+     */
+    getCurrentCatalogName() {
+        const catalogSelect = document.getElementById('catalog-select');
+        const selectedCatalog = catalogSelect?.value || '';
+        
+        const catalogNames = {
+            'copernicus': 'Copernicus Data Space',
+            'element84': 'Element84 Earth Search', 
+            'planetary': 'Microsoft Planetary Computer',
+            'planetlabs': 'Planet Labs Open Data',
+            'custom': 'Custom STAC Catalog'
+        };
+        
+        return catalogNames[selectedCatalog] || 'STAC Catalog';
+    }
+
+    /**
      * Check if Planet Labs catalog is currently selected
      * @returns {boolean} - True if Planet Labs catalog is currently active
      */
@@ -333,9 +352,8 @@ export class STACApiClient {
         
         // Check if it's planetlabs or any Planet Labs-related catalog
         const isPlanetLabs = selectedCatalog === 'planetlabs' || 
-                             selectedCatalog.includes('planet') ||
                              // Also check if the current endpoints indicate Planet Labs
-                             (this.endpoints.root && this.endpoints.root.includes('planet'));
+                             (this.endpoints.root && this.endpoints.root.includes('planet.com'));
         
         return isPlanetLabs;
     }
@@ -708,6 +726,7 @@ export class STACApiClient {
                 for (const link of childLinks) {
                     try {
                         const childUrl = new URL(link.href, this.endpoints.root).href;
+                        console.log('🌐 Fetching catalog URL:', childUrl);
                         const response = await fetch(childUrl);
                         
                         if (response.ok) {
@@ -737,6 +756,7 @@ export class STACApiClient {
                 for (const link of childLinks) {
                     try {
                         const childUrl = new URL(link.href, this.endpoints.root).href;
+                        console.log('🌐 Fetching catalog URL (all search):', childUrl);
                         const response = await fetch(childUrl);
                         
                         if (response.ok) {
@@ -750,7 +770,7 @@ export class STACApiClient {
                 }
             }
             
-            console.log(`📋 Found ${items.length} Planet Labs items`);
+            console.log(`📋 Found ${items.length} ${this.getCurrentCatalogName()} items`);
             return items;
             
         } catch (error) {

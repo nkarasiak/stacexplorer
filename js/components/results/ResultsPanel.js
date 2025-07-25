@@ -1136,39 +1136,48 @@ export class ResultsPanel {
             return url && !url.startsWith('s3://') && (url.startsWith('http://') || url.startsWith('https://'));
         };
         
-        // PRIORITY 1: Check links for thumbnail or preview (more reliable than assets)
+        // PRIORITY 1: Check for thumbnail sources with rendered_preview prioritized
         console.log('🖼️ Checking thumbnail sources for', item.id);
         console.log('📎 Available links:', item.links?.map(l => `${l.rel}: ${l.href}`) || 'none');
         console.log('🗂️ Available assets:', Object.keys(item.assets || {}));
         
+        // PRIORITY 1a: Check links.thumbnail first (highest priority)
         if (item.links && Array.isArray(item.links)) {
             const thumbnailLink = item.links.find(link => link.rel === 'thumbnail');
-            const previewLink = item.links.find(link => link.rel === 'preview');
-            
             if (thumbnailLink && isUsableUrl(thumbnailLink.href)) {
                 thumbnailUrl = thumbnailLink.href;
                 hasThumbnail = true;
                 console.log('✅ Using links.thumbnail:', thumbnailUrl);
-            } else if (previewLink && isUsableUrl(previewLink.href)) {
+            }
+        }
+        
+        // PRIORITY 1b: Check assets.rendered_preview (prioritized over links.preview)
+        if (!hasThumbnail && item.assets && item.assets.rendered_preview && isUsableUrl(item.assets.rendered_preview.href)) {
+            thumbnailUrl = item.assets.rendered_preview.href;
+            hasThumbnail = true;
+            console.log('✅ Using assets.rendered_preview:', thumbnailUrl);
+        }
+        
+        // PRIORITY 1c: Check links.preview (after rendered_preview)
+        if (!hasThumbnail && item.links && Array.isArray(item.links)) {
+            const previewLink = item.links.find(link => link.rel === 'preview');
+            if (previewLink && isUsableUrl(previewLink.href)) {
                 thumbnailUrl = previewLink.href;
                 hasThumbnail = true;
                 console.log('✅ Using links.preview:', thumbnailUrl);
             }
         }
         
-        // PRIORITY 2: Check assets only if no usable links found
+        // PRIORITY 2: Check remaining assets only if no thumbnail found yet
         if (!hasThumbnail && item.assets) {
-            
-            // For Planetary Computer items, check rendered_preview first
-            if (item.assets.rendered_preview && isUsableUrl(item.assets.rendered_preview.href)) {
-                thumbnailUrl = item.assets.rendered_preview.href;
-                hasThumbnail = true;
-            } else if (item.assets.thumbnail && isUsableUrl(item.assets.thumbnail.href)) {
+            if (item.assets.thumbnail && isUsableUrl(item.assets.thumbnail.href)) {
                 thumbnailUrl = item.assets.thumbnail.href;
                 hasThumbnail = true;
+                console.log('✅ Using assets.thumbnail:', thumbnailUrl);
             } else if (item.assets.preview && isUsableUrl(item.assets.preview.href)) {
                 thumbnailUrl = item.assets.preview.href;
                 hasThumbnail = true;
+                console.log('✅ Using assets.preview:', thumbnailUrl);
             } else if (item.assets.overview && isUsableUrl(item.assets.overview.href)) {
                 thumbnailUrl = item.assets.overview.href;
                 hasThumbnail = true;
@@ -1338,6 +1347,90 @@ export class ResultsPanel {
             `;
         }
         
+        // Handle thumbnail error (if exists) - must be done before attachItemEventListeners
+        const thumbnail = li.querySelector('.dataset-thumbnail');
+        if (thumbnail) {
+            thumbnail.onerror = () => {
+                console.log('🚫 Thumbnail failed to load for item:', item.id, '- converting to no-thumbnail layout');
+                
+                // Replace the entire card content with no-thumbnail layout
+                const clickableCard = li.querySelector('.clickable-card');
+                if (clickableCard) {
+                    clickableCard.innerHTML = `
+                        <div class="dataset-info">
+                            <div class="dataset-metadata">
+                                <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
+                            </div>
+                            <div class="thumbnail-overlay">
+                                <button class="info-btn details-btn" title="Show details">
+                                    <i class="material-icons">info</i>
+                                </button>
+                                <button class="info-btn viz-btn" title="High Resolution Preview">
+                                    <i class="material-icons">visibility</i>
+                                </button>
+                            </div>
+                            <div class="dataset-title">${title}</div>
+                        </div>
+                    `;
+                    
+                    // Add the no-thumbnail class
+                    clickableCard.classList.add('no-thumbnail');
+                    
+                    // Attach event listeners to the new buttons
+                    const newDetailsBtn = clickableCard.querySelector('.details-btn');
+                    const newVizBtn = clickableCard.querySelector('.viz-btn');
+                    
+                    if (newDetailsBtn) {
+                        newDetailsBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            this.showModal(item);
+                        });
+                    }
+                    
+                    if (newVizBtn) {
+                        newVizBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            this.showVisualizationPanel(item);
+                        });
+                    }
+                    
+                    // Add click handler to the entire card
+                    clickableCard.addEventListener('click', (e) => {
+                        // Don't trigger if clicking on a button
+                        if (e.target.closest('.details-btn') || e.target.closest('.viz-btn')) {
+                            return;
+                        }
+                        
+                        console.log('Card clicked for item:', item.id);
+                        console.log('📋 Item assets:', Object.keys(item.assets || {}));
+                        console.log('📎 Item links:', item.links?.map(l => l.rel) || []);
+                        
+                        // Show loading indicator
+                        document.getElementById('loading').style.display = 'flex';
+                        
+                        // Display item on map using best available preview asset
+                        setTimeout(() => {
+                            this.mapManager.displayItemOnMap(item, null)
+                                .then(() => {
+                                    // Mark the item as active
+                                    document.querySelectorAll('.dataset-item').forEach(el => {
+                                        el.classList.remove('active');
+                                    });
+                                    li.classList.add('active');
+                                    
+                                    // Hide loading indicator
+                                    document.getElementById('loading').style.display = 'none';
+                                })
+                                .catch(error => {
+                                    console.error('❌ Error displaying item on map:', error);
+                                    document.getElementById('loading').style.display = 'none';
+                                });
+                        }, 100);
+                    });
+                }
+            };
+        }
+        
         // Add event listeners after creating the element
         this.attachItemEventListeners(li, item);
         
@@ -1360,9 +1453,9 @@ export class ResultsPanel {
             // Show loading indicator
             document.getElementById('loading').style.display = 'flex';
             
-            // Display item thumbnail on map (reverted back to thumbnail display)
+            // Display item on map using best available preview asset
             setTimeout(() => {
-                this.mapManager.displayItemOnMap(item, 'thumbnail')
+                this.mapManager.displayItemOnMap(item, null)
                     .then(() => {
                         // Mark the item as active
                         document.querySelectorAll('.dataset-item').forEach(el => {
@@ -1424,39 +1517,6 @@ export class ResultsPanel {
             });
         }
         
-        // Handle thumbnail error (if exists)
-        if (thumbnail) {
-            thumbnail.onerror = () => {
-                console.log('🚫 Thumbnail failed to load for item:', item.id, '- converting to no-thumbnail layout');
-                
-                // Replace the entire card content with no-thumbnail layout
-                const clickableCard = element.querySelector('.clickable-card');
-                if (clickableCard) {
-                    clickableCard.innerHTML = `
-                        <div class="dataset-info">
-                            <div class="dataset-metadata">
-                                <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
-                            </div>
-                            <div class="thumbnail-overlay">
-                                <button class="info-btn details-btn" title="Show details">
-                                    <i class="material-icons">info</i>
-                                </button>
-                                <button class="info-btn viz-btn" title="High Resolution Preview">
-                                    <i class="material-icons">visibility</i>
-                                </button>
-                            </div>
-                            <div class="dataset-title">${title}</div>
-                        </div>
-                    `;
-                    
-                    // Add the no-thumbnail class
-                    clickableCard.classList.add('no-thumbnail');
-                    
-                    // Re-attach event listeners to the new buttons
-                    this.attachItemEventListeners(element, item);
-                }
-            };
-        }
         
         // Add event listener to info/details button (stops propagation)
         if (detailsBtn) {

@@ -1516,11 +1516,16 @@ let geojson;
         
         const lowerUrl = url.toLowerCase();
         
+        // Check for CREODIAS OData asset URLs that return quicklook images
+        if (lowerUrl.includes('datahub.creodias.eu') && lowerUrl.includes('$value')) {
+            return true;
+        }
+        
         // Check for common preview/thumbnail indicators in URL
         const previewIndicators = [
             'preview', 'thumbnail', 'thumb', 'overview', 
             '.jpg', '.jpeg', '.png', '.gif', '.webp',
-            'rendered_preview', 'visual'
+            'rendered_preview', 'visual', 'quicklook'
         ];
         
         // Check for preview indicators

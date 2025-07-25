@@ -4615,20 +4615,62 @@
             min-width: 35px;
         }
         
-        /* Dark theme adjustments */
+        /* Light theme adjustments */
+        .light-theme .mini-date-input {
+            background: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            color: #1f2937 !important;
+        }
+        
+        .light-theme .mini-date-input:focus {
+            outline: none !important;
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+            background: #f9fafb !important;
+        }
+        
+        .light-theme .mini-date-input:hover {
+            border-color: #9ca3af !important;
+            background: #f9fafb !important;
+        }
+        
+        /* Light theme adjustments for location input */
+        .light-theme .mini-location-input {
+            background: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            color: #1f2937 !important;
+        }
+        
+        .light-theme .mini-location-input:focus {
+            outline: none !important;
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+            background: #f9fafb !important;
+        }
+        
+        .light-theme .mini-location-input:hover {
+            border-color: #9ca3af !important;
+            background: #f9fafb !important;
+        }
+        
+        .light-theme .mini-location-input::placeholder {
+            color: #6b7280 !important;
+        }
+        
+        /* Dark theme adjustments - only apply when NOT in light theme */
         @media (prefers-color-scheme: dark) {
-            .mini-date-input {
+            body:not(.light-theme) .mini-date-input {
                 background: #1a1a1a;
                 border-color: #404040;
                 color: #ffffff;
             }
             
-            .mini-date-input:focus {
+            body:not(.light-theme) .mini-date-input:focus {
                 border-color: #667eea;
                 background: #252525;
             }
             
-            .mini-date-input:hover {
+            body:not(.light-theme) .mini-date-input:hover {
                 border-color: #555555;
                 background: #252525;
             }

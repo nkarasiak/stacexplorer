@@ -51,10 +51,33 @@ export class CollectionGridSelector {
         
         container.innerHTML = `
             <div class="collection-grid-selector">
-                <!-- Header with search and filters -->
-                <div class="collection-selector-header">
-                    
-                    <div class="collection-controls">
+                
+                <!-- Loading state -->
+                <div class="collection-loading-state" id="collection-loading-state">
+                    <div class="loading-spinner">
+                        <i class="material-icons spinning">refresh</i>
+                    </div>
+                    <p>Loading collections...</p>
+                </div>
+                
+                <!-- Empty state -->
+                <div class="collection-empty-state" id="collection-empty-state" style="display: none;">
+                    <div class="empty-state-icon">
+                        <i class="material-icons">search_off</i>
+                    </div>
+                    <h4>No collections found</h4>
+                    <p>Try adjusting your search or filter criteria</p>
+                </div>
+                
+                <!-- Collections stats with integrated search -->
+                <div class="collection-stats" id="collection-stats" style="display: none;">
+                    <span class="stats-text">
+                        <span id="collection-count">0</span> collections found
+                        <span id="search-results-text" style="display: none;">
+                            for "<span id="search-term-display"></span>"
+                        </span>
+                    </span>
+                    <div class="stats-controls">
                         <div class="collection-search-container">
                             <div class="search-input-wrapper">
                                 <i class="material-icons search-icon">search</i>
@@ -80,43 +103,6 @@ export class CollectionGridSelector {
                             </select>
                         </div>
                         
-                        <div class="collection-view-toggle">
-                            <button class="view-toggle-btn active" data-view="grid" title="Grid View">
-                                <i class="material-icons">grid_view</i>
-                            </button>
-                            <button class="view-toggle-btn" data-view="list" title="List View">
-                                <i class="material-icons">view_list</i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Loading state -->
-                <div class="collection-loading-state" id="collection-loading-state">
-                    <div class="loading-spinner">
-                        <i class="material-icons spinning">refresh</i>
-                    </div>
-                    <p>Loading collections...</p>
-                </div>
-                
-                <!-- Empty state -->
-                <div class="collection-empty-state" id="collection-empty-state" style="display: none;">
-                    <div class="empty-state-icon">
-                        <i class="material-icons">search_off</i>
-                    </div>
-                    <h4>No collections found</h4>
-                    <p>Try adjusting your search or filter criteria</p>
-                </div>
-                
-                <!-- Collections stats -->
-                <div class="collection-stats" id="collection-stats" style="display: none;">
-                    <span class="stats-text">
-                        <span id="collection-count">0</span> collections found
-                        <span id="search-results-text" style="display: none;">
-                            for "<span id="search-term-display"></span>"
-                        </span>
-                    </span>
-                    <div class="stats-actions">
                         <button class="clear-selection-btn" id="clear-selection-btn" style="display: none;">
                             <i class="material-icons">close</i>
                             Clear Selection
@@ -332,35 +318,12 @@ export class CollectionGridSelector {
     getBadges(collection) {
         const badges = [];
         
-        // Source badge
+        // Only include source badge to optimize space
         badges.push({
             text: collection.sourceLabel || collection.source,
             type: 'source',
             color: this.getSourceColor(collection.source)
         });
-        
-        // License badge
-        if (collection.license && collection.license !== 'proprietary') {
-            badges.push({
-                text: collection.license,
-                type: 'license',
-                color: '#10B981'
-            });
-        }
-        
-        // Collection type badges based on keywords or ID
-        const id = collection.id?.toLowerCase() || '';
-        const keywords = (collection.keywords || []).join(' ').toLowerCase();
-        
-        if (id.includes('dem') || keywords.includes('elevation')) {
-            badges.push({ text: 'DEM', type: 'data-type', color: '#8B5CF6' });
-        }
-        if (id.includes('landsat') || keywords.includes('landsat')) {
-            badges.push({ text: 'Landsat', type: 'satellite', color: '#059669' });
-        }
-        if (id.includes('sentinel') || keywords.includes('sentinel')) {
-            badges.push({ text: 'Sentinel', type: 'satellite', color: '#0284C7' });
-        }
         
         return badges;
     }

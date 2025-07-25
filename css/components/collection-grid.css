@@ -61,6 +61,12 @@
     min-width: 250px;
 }
 
+.stats-controls .collection-search-container {
+    flex: 1;
+    min-width: 200px;
+    max-width: 300px;
+}
+
 .search-input-wrapper {
     position: relative;
     display: flex;
@@ -72,6 +78,10 @@
     left: 12px;
     color: rgba(255, 255, 255, 0.7);
     z-index: 2;
+}
+
+.stats-controls .search-icon {
+    color: var(--text-secondary, #6b7280);
 }
 
 .collection-search-input {
@@ -86,8 +96,21 @@
     transition: all 0.3s ease;
 }
 
+.stats-controls .collection-search-input {
+    padding: 8px 35px 8px 35px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    background: var(--background-color, #ffffff);
+    color: var(--text-color, #1f2937);
+    font-size: 0.9rem;
+    backdrop-filter: none;
+}
+
 .collection-search-input::placeholder {
     color: rgba(255, 255, 255, 0.7);
+}
+
+.stats-controls .collection-search-input::placeholder {
+    color: var(--text-secondary, #6b7280);
 }
 
 .collection-search-input:focus {
@@ -95,6 +118,12 @@
     border-color: rgba(255, 255, 255, 0.5);
     background: rgba(255, 255, 255, 0.15);
     box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.stats-controls .collection-search-input:focus {
+    border-color: var(--primary-color, #667eea);
+    background: var(--background-color, #ffffff);
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
 .clear-search-btn {
@@ -109,9 +138,18 @@
     transition: all 0.2s ease;
 }
 
+.stats-controls .clear-search-btn {
+    color: var(--text-secondary, #6b7280);
+}
+
 .clear-search-btn:hover {
     background: rgba(255, 255, 255, 0.1);
     color: white;
+}
+
+.stats-controls .clear-search-btn:hover {
+    background: var(--background-secondary, #f9fafb);
+    color: var(--text-color, #1f2937);
 }
 
 /* Source filter */
@@ -127,10 +165,24 @@
     transition: all 0.3s ease;
 }
 
+.stats-controls .source-filter-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color, #e5e7eb);
+    background: var(--background-color, #ffffff);
+    color: var(--text-color, #1f2937);
+    font-size: 0.9rem;
+    backdrop-filter: none;
+}
+
 .source-filter-select:focus {
     outline: none;
     border-color: rgba(255, 255, 255, 0.5);
     background: rgba(255, 255, 255, 0.15);
+}
+
+.stats-controls .source-filter-select:focus {
+    border-color: var(--primary-color, #667eea);
+    background: var(--background-color, #ffffff);
 }
 
 .source-filter-select option {
@@ -228,6 +280,13 @@
     border-bottom: 1px solid var(--border-color, #e5e7eb);
     font-size: 0.9rem;
     color: var(--text-secondary, #6b7280);
+}
+
+.stats-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .stats-actions {

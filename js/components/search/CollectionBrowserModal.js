@@ -231,31 +231,7 @@ export class CollectionBrowserModal {
                 overflow: visible;
             }
             
-            #modal-collection-grid-container .collection-selector-header {
-                padding: 1rem 1.5rem;
-                background: var(--background-secondary, #f8fafc);
-                color: var(--text-color, #1f2937);
-            }
-            
-            #modal-collection-grid-container .collection-selector-title h3 {
-                color: var(--text-color, #1f2937);
-            }
-            
-            #modal-collection-grid-container .collection-search-input {
-                background: white;
-                color: var(--text-color, #1f2937);
-                border-color: var(--border-color, #d1d5db);
-            }
-            
-            #modal-collection-grid-container .collection-search-input::placeholder {
-                color: var(--text-secondary, #6b7280);
-            }
-            
-            #modal-collection-grid-container .source-filter-select {
-                background: white;
-                color: var(--text-color, #1f2937);
-                border-color: var(--border-color, #d1d5db);
-            }
+            /* Modal collection grid styles - header removed */
             
             #modal-collection-grid-container .collections-grid {
                 overflow-y: auto !important;

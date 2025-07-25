@@ -63,8 +63,7 @@ export class DateDropdownHandler {
                             <input type="text" 
                                    id="ai-date-range-input" 
                                    class="ai-date-input" 
-                                   placeholder="Select date range..."
-                                   readonly>
+                                   placeholder="Select date range or type YYYY-MM-DD to YYYY-MM-DD...">
                         </div>
                     </div>
                     
@@ -96,6 +95,7 @@ export class DateDropdownHandler {
             showMonths: 2,
             static: true,
             position: 'below',
+            allowInput: true,
             onChange: (selectedDates) => {
                 const hasValidRange = selectedDates.length === 2;
                 if (applyBtn) {

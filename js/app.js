@@ -17,6 +17,7 @@ import { GeocodingService } from './utils/GeocodingService.js';
 import { CardSearchPanel } from './components/search/CardSearchPanel.js';
 import { CatalogSelector } from './components/search/CatalogSelector.js';
 import { CollectionManagerEnhanced } from './components/search/CollectionManagerEnhanced.js';
+import { CollectionSelectorIntegration } from './components/search/CollectionSelectorIntegration.js';
 import { SearchForm } from './components/search/SearchForm.js';
 import { FilterManager } from './components/search/FilterManager.js';
 import { ResultsPanel } from './components/results/ResultsPanel.js';
@@ -73,6 +74,9 @@ async function initApp() {
         // Initialize enhanced collection manager 
         const collectionManager = new CollectionManagerEnhanced(apiClient, notificationService, catalogSelector, CONFIG);
         
+        // Delay collection selector integration until after UI components are ready
+        let collectionSelectorIntegration = null;
+        
         // Initialize results panel 
         const resultsPanel = new ResultsPanel(apiClient, mapManager, notificationService);
         
@@ -80,9 +84,10 @@ async function initApp() {
         const filterContainer = document.getElementById('smart-filters-container');
         const filterManager = new FilterManager(filterContainer, notificationService);
         
-        // Make filterManager globally accessible
+        // Make components globally accessible
         if (!window.stacExplorer) window.stacExplorer = {};
         window.stacExplorer.filterManager = filterManager;
+        window.stacExplorer.collectionSelectorIntegration = collectionSelectorIntegration;
         
         // Initialize search form first (needed by search panel)
         const searchForm = new SearchForm(mapManager, null); // Initially null, will be updated below
@@ -104,6 +109,14 @@ async function initApp() {
             collectionManager,
             mapManager,
             notificationService
+        );
+        
+        // Initialize collection selector integration after UI components are ready
+        collectionSelectorIntegration = new CollectionSelectorIntegration(
+            collectionManager, 
+            apiClient, 
+            notificationService, 
+            CONFIG
         );
         
         // Start collection loading after all core components are ready (including dropdown manager)
@@ -381,10 +394,11 @@ async function initApp() {
             searchPanel,
             rasterVisualizationManager,
             visualizationPanel,
+            collectionManager,
+            collectionSelectorIntegration,
             resultsPanel,
             stateManager, // Now the unified state manager
             urlStateManager: stateManager, // Alias for backward compatibility
-            collectionManager,
             filterManager,
             inlineDropdownManager,
             geometrySync,

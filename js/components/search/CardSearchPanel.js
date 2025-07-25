@@ -991,7 +991,7 @@ export class CardSearchPanel {
             summaryDetails.textContent = summary.join(' • ');
             summaryDetails.classList.add('active');
         } else {
-            summaryDetails.textContent = 'Configure your search';
+            summaryDetails.textContent = 'Browse Collections';
             summaryDetails.classList.remove('active');
         }
     }

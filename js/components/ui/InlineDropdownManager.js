@@ -356,193 +356,10 @@ export class InlineDropdownManager {
      * Create a simple collection dropdown with search functionality
      */
     createSimpleCollectionDropdown() {
-        const collections = this.aiSearchHelper.allAvailableCollections || [];
-        const collectionsLoading = !this.collectionsCache && collections.length === 0;
-        
-        // Create the main dropdown container
+        // OLD DROPDOWN DISABLED - Using new modal collection browser instead
+        // Return empty/invisible div to prevent old dropdown from appearing
         const container = document.createElement('div');
-        container.className = 'ai-dropdown-content';
-        
-        // Add header with close button
-        const header = document.createElement('div');
-        header.className = 'ai-dropdown-header';
-        header.innerHTML = `
-            <div class="ai-dropdown-header-content">
-                <i class="material-icons">folder_open</i>
-                <span>Select Collection</span>
-            </div>
-            <button class="ai-dropdown-close" type="button">
-                <i class="material-icons">close</i>
-            </button>
-        `;
-        container.appendChild(header);
-        
-        // Add search section
-        const searchSection = document.createElement('div');
-        searchSection.className = 'ai-search-section';
-        
-        const searchInput = document.createElement('input');
-        searchInput.type = 'text';
-        searchInput.className = 'ai-search-input';
-        searchInput.placeholder = 'Run Search';
-        searchInput.autocomplete = 'off';
-        
-        searchSection.appendChild(searchInput);
-        container.appendChild(searchSection);
-        
-        // Add options section
-        const optionsSection = document.createElement('div');
-        optionsSection.className = 'ai-options-section';
-        
-        // Add "Everything" option
-        const everythingOption = document.createElement('div');
-        everythingOption.className = 'ai-option ai-everything-option';
-        everythingOption.setAttribute('data-type', 'collection');
-        everythingOption.setAttribute('data-value', '');
-        everythingOption.innerHTML = `
-            <i class="material-icons">all_inclusive</i>
-            <div class="ai-option-content">
-                <div class="ai-option-title">Everything</div>
-                <div class="ai-option-subtitle">Search all collections</div>
-            </div>
-        `;
-        optionsSection.appendChild(everythingOption);
-        
-        // Define priority collections with their preferred sources
-        const priorityCollections = [
-            { id: 'sentinel-1-rtc', source: 'planetary', label: '📡 Sentinel-1 RTC (Planetary Computer)' },
-            { id: 'sentinel-2-c1-l2a', source: 'element84', label: '🌍 Sentinel-2 C1 L2A (Element84)' },
-			{ id: 'sentinel-3-olci-1-efr-nrt', source: 'copernicus', label: '🌍 Sentinel-3 OCLI NRT (Element84)' },
-            { id: 'cop-dem-glo-30', source: 'element84', label: '🏔️ Copernicus DEM 30m (Element84)' },
-            
-        ];
-        
-        // Separate priority and regular collections
-        const priorityFound = [];
-        const regularCollections = [];
-        
-        // First, add priority collections in the specified order
-        priorityCollections.forEach(priorityItem => {
-            const collection = collections.find(c => c.id === priorityItem.id);
-            if (collection) {
-                priorityFound.push({
-                    ...collection,
-                    displayLabel: priorityItem.label,
-                    isPriority: true
-                });
-            }
-        });
-        
-        // Then add remaining collections to regular collections
-        collections.forEach(collection => {
-            const isPriority = priorityCollections.some(p => p.id === collection.id);
-            if (!isPriority) {
-                regularCollections.push(collection);
-            }
-        });
-        
-        // Add priority collections first with special styling
-        if (priorityFound.length > 0) {
-            
-            // Add priority header
-            const priorityHeader = document.createElement('div');
-            priorityHeader.className = 'ai-source-group-header ai-priority-header';
-            priorityHeader.innerHTML = '⭐ Recommended Collections';
-            priorityHeader.style.color = '#4ade80';
-            priorityHeader.style.fontWeight = 'bold';
-            optionsSection.appendChild(priorityHeader);
-            
-            // Add priority collections
-            priorityFound.forEach(collection => {
-                const option = document.createElement('div');
-                option.className = 'ai-option ai-priority-option';
-                option.setAttribute('data-type', 'collection');
-                option.setAttribute('data-value', collection.id);
-                option.setAttribute('data-source', collection.source);
-                option.style.backgroundColor = 'rgba(74, 222, 128, 0.1)';
-                option.style.border = '1px solid rgba(74, 222, 128, 0.3)';
-                
-                // Create content structure
-                option.innerHTML = `
-                    <i class="material-icons" style="color: #4ade80;">star</i>
-                    <div class="ai-option-content">
-                        <div class="ai-option-title" style="color: #4ade80; font-weight: bold;">${collection.displayLabel}</div>
-                        <div class="ai-option-subtitle">Best choice for satellite data analysis</div>
-                    </div>
-                `;
-                
-                // Re-ensure data attributes are set after innerHTML (safety check)
-                option.setAttribute('data-source', collection.source);
-                option.setAttribute('data-collection-id', collection.id);
-                
-                optionsSection.appendChild(option);
-            });
-        }
-        
-        // Group regular collections by source
-        const groupedCollections = this.groupCollectionsBySource(regularCollections);
-        
-        // Add regular collections grouped by source
-        Object.keys(groupedCollections).forEach(source => {
-            // Add source header
-            const sourceHeader = document.createElement('div');
-            sourceHeader.className = 'ai-source-group-header';
-            sourceHeader.textContent = this.getSourceLabel(source);
-            optionsSection.appendChild(sourceHeader);
-            
-            // Add collections for this source
-            groupedCollections[source].forEach(collection => {
-                const title = collection.title || collection.id;
-                const sourceLabel = collection.sourceLabel || this.getSourceLabel(collection.source);
-                
-                const option = document.createElement('div');
-                option.className = 'ai-option';
-                option.setAttribute('data-type', 'collection');
-                option.setAttribute('data-value', collection.id);
-                option.setAttribute('data-source', collection.source);
-                
-                option.innerHTML = `
-                    <i class="material-icons">folder</i>
-                    <div class="ai-option-content">
-                        <div class="ai-option-title">${title}</div>
-                        <div class="ai-option-subtitle">${sourceLabel}</div>
-                    </div>
-                `;
-                
-                // Re-ensure data attributes are set after innerHTML (safety check)
-                option.setAttribute('data-source', collection.source);
-                option.setAttribute('data-collection-id', collection.id);
-                
-                optionsSection.appendChild(option);
-            });
-        });
-        
-        // Add loading message if collections are still loading
-        if (collectionsLoading) {
-            const loadingMessage = document.createElement('div');
-            loadingMessage.className = 'ai-loading-collections';
-            loadingMessage.innerHTML = `
-                <div class="ai-loading">
-                    <i class="material-icons spinning">sync</i>
-                    <div>Loading collections...</div>
-                    <div class="ai-loading-subtitle">Please wait while we fetch available collections</div>
-                </div>
-            `;
-            optionsSection.appendChild(loadingMessage);
-        }
-        
-        container.appendChild(optionsSection);
-        
-        // Add search functionality
-        searchInput.addEventListener('input', (e) => {
-            this.filterCollections(e.target.value, container);
-        });
-        
-        // Add keyboard navigation
-        searchInput.addEventListener('keydown', (e) => {
-            this.handleCollectionKeyboardNavigation(e, container);
-        });
-        
+        container.style.display = 'none';
         return container;
     }
     
@@ -1277,7 +1094,7 @@ export class InlineDropdownManager {
             { value: 'anytime', title: 'Anytime', description: 'No date restriction', icon: 'all_inclusive' },
             { value: 'last7days', title: 'Last 7 days', description: 'Past week including today', icon: 'view_week' },
             { value: 'last30days', title: 'Last 30 days', description: 'Past month including today', icon: 'calendar_month' },
-            { value: 'custom', title: 'Custom range', description: 'Select your own dates', icon: 'date_range' }
+            { value: 'custom', title: 'Custom range', description: 'Select dates or type manually (e.g., 2024-12-31 to 2025-01-30)', icon: 'date_range' }
         ];
         
         presets.forEach(preset => {
@@ -1325,8 +1142,7 @@ export class InlineDropdownManager {
                         <input type="text" 
                                id="flatpickr-date-range" 
                                class="ai-flatpickr-input" 
-                               placeholder="Select date range..."
-                               readonly>
+                               placeholder="Select date range or type YYYY-MM-DD to YYYY-MM-DD...">
                     </div>
                 </div>
                 
@@ -1399,9 +1215,13 @@ export class InlineDropdownManager {
             theme: 'dark',
             monthSelectorType: 'dropdown',
             yearSelectorType: 'dropdown',
+            allowInput: true,
             disableMobile: true, // Fix: Prevent mobile layout issues
             // Don't pre-select any dates
             defaultDate: null,
+            onReady: function(selectedDates, dateStr, instance) {
+                instance.input.removeAttribute('readonly');
+            },
             onChange: (selectedDates) => {
                 if (selectedDates.length === 2) {
                     applyBtn.disabled = false;

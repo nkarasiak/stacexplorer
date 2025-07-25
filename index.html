@@ -81,6 +81,8 @@
     <link rel="stylesheet" href="css/map-fix.css">
     <!-- Filter System CSS -->
     <link rel="stylesheet" href="css/filter-system.css">
+    <!-- Collection Grid Selector -->
+    <link rel="stylesheet" href="css/components/collection-grid.css">
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <!-- Flatpickr Dark Theme -->
@@ -195,37 +197,7 @@
             font-size: 16px;
         }
         
-        /* Enhanced Collection Dropdown Styling */
-        #collection-select {
-            height: 200px !important;
-            size: 10 !important;
-        }
-        
-        #collection-select optgroup {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--primary-600, #4f46e5);
-            background-color: var(--surface-secondary, #f8f9fa);
-            padding: 8px 0;
-            margin: 4px 0;
-        }
-        
-        #collection-select optgroup option {
-            font-weight: 400;
-            color: var(--text-color, #333);
-            padding: 6px 16px;
-            background-color: white;
-        }
-        
-        .dark-theme #collection-select optgroup {
-            color: var(--primary-300, #a5b4fc);
-            background-color: var(--surface-tertiary, #2a2a2a);
-        }
-        
-        .dark-theme #collection-select optgroup option {
-            color: #ddd;
-            background-color: var(--surface-primary, #1a1a1a);
-        }
+        /* Old collection select dropdown removed - using beautiful modal now */
         
         /* AI Search Info Styling */
         .ai-search-info {
@@ -1912,7 +1884,7 @@
                             <div id="cloud-cover-controls"></div>
                             <div id="global-summary">
                                 <div class="summary-text">
-                                    <span id="summary-details">Configure your search</span>
+                                    <span id="summary-details">Browse Collections</span>
                                 </div>
                             </div>
                             

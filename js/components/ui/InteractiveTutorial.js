@@ -92,26 +92,30 @@ export class InteractiveTutorial {
                     <div class="tutorial-step">
                         <h3>Choose Your Satellite Data Source</h3>
                         <p>Sentinel-2 provides high-quality optical imagery perfect for viewing your city from space.</p>
-                        <p><strong>Search for "sentinel-2"</strong> in the source dropdown and <strong>select the recommended Sentinel-2 collection</strong>.</p>
+                        <p><strong>Click on the SOURCE card</strong> to open the beautiful collection browser and <strong>select the ⭐ recommended Sentinel-2 collection</strong>.</p>
                         <div class="tutorial-highlight-info" style="margin-top: 12px;">
+                            <div class="info-icon">✨</div>
+                            <span>Look for the yellow "Recommended" collections at the top!</span>
+                        </div>
+                        <div class="tutorial-highlight-info" style="margin-top: 8px;">
                             <div class="info-icon">⏳</div>
                             <span>The "Continue" button will be enabled once you select a collection</span>
                         </div>
                         <div class="tutorial-highlight-info">
                             <div class="info-icon">ℹ️</div>
-                            <span>Sentinel-2 captures images every 5 days with 10-60m resolution</span>
+                            <span>Tip: Use the expand icon to go full-screen for better browsing</span>
                         </div>
                     </div>
                 `,
-                target: '[data-collection="sentinel-2-c1-l2a"]',
+                target: '#summary-source',
                 position: 'right',
                 buttons: [
                     { text: 'Previous', action: 'previous', primary: false },
                     { text: 'Next Step', action: 'next', primary: true, disabled: true }
                 ],
                 action: () => {
-                    // Open the source dropdown
-                    this.openSourceDropdown();
+                    // Open the new collection browser modal
+                    this.openCollectionModal();
                     
                     // Wait for user to select a collection
                     this.waitForCollectionSelection();
@@ -375,18 +379,46 @@ export class InteractiveTutorial {
     }
 
     /**
-     * Open the source dropdown menu for Sentinel-2 selection
+     * Open the new collection browser modal for Sentinel-2 selection
      */
-    openSourceDropdown() {
+    openCollectionModal() {
         setTimeout(() => {
             const summarySource = document.getElementById('summary-source');
             if (summarySource) {
+                // Click the SOURCE card to open the new modal
                 summarySource.click();
-                console.log('🎯 Tutorial: Opened source dropdown for Sentinel-2 selection');
+                console.log('🎯 Tutorial: Opened collection browser modal for Sentinel-2 selection');
+                
+                // Add a small delay and highlight the recommended collections
+                setTimeout(() => {
+                    this.highlightRecommendedCollections();
+                }, 1000);
             } else {
                 console.warn('⚠️ Tutorial: Could not find summary-source element');
             }
         }, 500);
+    }
+    
+    /**
+     * Highlight the recommended collections in the modal
+     */
+    highlightRecommendedCollections() {
+        const priorityCards = document.querySelectorAll('.collection-card.priority-collection');
+        if (priorityCards.length > 0) {
+            console.log('🌟 Tutorial: Highlighting recommended collections');
+            priorityCards.forEach(card => {
+                card.style.animation = 'pulse 2s infinite';
+                card.style.boxShadow = '0 0 20px rgba(251, 191, 36, 0.5)';
+            });
+            
+            // Remove highlight after a few seconds
+            setTimeout(() => {
+                priorityCards.forEach(card => {
+                    card.style.animation = '';
+                    card.style.boxShadow = '';
+                });
+            }, 6000);
+        }
     }
 
     /**

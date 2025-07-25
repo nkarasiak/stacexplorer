@@ -728,7 +728,14 @@ class MapManager {
                 return url && !url.startsWith('s3://') && (url.startsWith('http://') || url.startsWith('https://'));
             };
             
-            // PRIORITY 1: Check links for thumbnail or preview (more reliable than assets)
+            // PRIORITY 1: Check assets.rendered_preview first (highest priority for all catalogs)
+            if (item.assets && item.assets.rendered_preview && isUsableUrl(item.assets.rendered_preview.href)) {
+                console.log('🗺️ Using assets.rendered_preview for MapLibre display:', item.assets.rendered_preview.href);
+                await this.addAssetOverlay(item.assets.rendered_preview, item, 'rendered_preview');
+                return;
+            }
+            
+            // PRIORITY 2: Check links for thumbnail or preview
             if (item.links && Array.isArray(item.links)) {
                 const thumbnailLink = item.links.find(link => link.rel === 'thumbnail');
                 const previewLink = item.links.find(link => link.rel === 'preview');
@@ -744,14 +751,8 @@ class MapManager {
                 }
             }
             
-            // PRIORITY 2: Strongly prioritize preview/thumbnail assets (JPG, PNG, etc.) to avoid CORS issues
-            const previewAssets = ['rendered_preview', 'thumbnail', 'preview', 'overview'];
-            
-            // For Planetary Computer items, check rendered_preview first (usually works)
-            if (item.assets && item.assets.rendered_preview && item.assets.rendered_preview.href.includes('planetarycomputer')) {
-                await this.addAssetOverlay(item.assets.rendered_preview, item, 'rendered_preview');
-                return;
-            }
+            // PRIORITY 3: Check remaining preview/thumbnail assets
+            const previewAssets = ['thumbnail', 'preview', 'overview'];
             
             // Try all preview assets first (these are usually JPG/PNG and work better)
             for (const assetKey of previewAssets) {

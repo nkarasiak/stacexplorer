@@ -43,9 +43,6 @@ export class InlineDropdownManager {
             createCollectionDropdown() {
                 return this.createSimpleCollectionDropdown();
             },
-            createLocationDropdown() {
-                return this.createSimpleLocationDropdown();
-            },
             createDateDropdown() {
                 return this.createSimpleDateDropdown();
             },
@@ -144,7 +141,6 @@ export class InlineDropdownManager {
         
         // Bind methods to maintain proper context
         this.aiSearchHelper.createCollectionDropdown = this.createSimpleCollectionDropdown.bind(this);
-        this.aiSearchHelper.createLocationDropdown = this.createSimpleLocationDropdown.bind(this);
         this.aiSearchHelper.createDateDropdown = this.createSimpleDateDropdown.bind(this);
         this.aiSearchHelper.showCollectionDetails = this.showCollectionDetails.bind(this);
         this.aiSearchHelper.parseGeometry = this.aiSearchHelper.parseGeometry.bind(this.aiSearchHelper);
@@ -390,678 +386,15 @@ export class InlineDropdownManager {
         return labels[source] || source;
     }
     
-    /**
-     * Create a simple location dropdown
-     */
-    createSimpleLocationDropdown() {
-        // Create the main dropdown container
-        const container = document.createElement('div');
-        container.className = 'ai-dropdown-content';
-        
-        // Add header with close button
-        const header = document.createElement('div');
-        header.className = 'ai-dropdown-header';
-        header.innerHTML = `
-            <div class="ai-dropdown-header-content">
-                <i class="material-icons">location_on</i>
-                <span>Select Location</span>
-            </div>
-            <button class="ai-dropdown-close" type="button">
-                <i class="material-icons">close</i>
-            </button>
-        `;
-        container.appendChild(header);
-        
-        // Add search section with advanced geocoding
-        const searchSection = document.createElement('div');
-        searchSection.className = 'ai-search-section';
-        
-        const searchInput = document.createElement('input');
-        searchInput.type = 'text';
-        searchInput.className = 'ai-location-search-input';
-        searchInput.placeholder = 'Search places...';
-        searchInput.autocomplete = 'off';
-        
-        // Create results container
-        const resultsContainer = document.createElement('div');
-        resultsContainer.className = 'ai-location-search-results';
-        resultsContainer.style.display = 'none';
-        
-        searchSection.appendChild(searchInput);
-        searchSection.appendChild(resultsContainer);
-        container.appendChild(searchSection);
-        
-        // Set up advanced location search using the same GeocodingService as main interface
-        this.setupAdvancedLocationSearch(searchInput, resultsContainer);
-        
-        // Add options section
-        const optionsSection = document.createElement('div');
-        optionsSection.className = 'ai-options-section';
-        
-        // Add "Everywhere" option
-        const everywhereOption = document.createElement('div');
-        everywhereOption.className = 'ai-option ai-everything-option';
-        everywhereOption.setAttribute('data-type', 'location');
-        everywhereOption.setAttribute('data-value', 'everywhere');
-        everywhereOption.innerHTML = `
-            <i class="material-icons">public</i>
-            <div class="ai-option-content">
-                <div class="ai-option-title">🌍 Worldwide</div>
-                <div class="ai-option-subtitle">Search globally without location limits</div>
-            </div>
-        `;
-        optionsSection.appendChild(everywhereOption);
-        
-        // Add "Draw on map" option
-        const drawOption = document.createElement('div');
-        drawOption.className = 'ai-option';
-        drawOption.setAttribute('data-type', 'location');
-        drawOption.setAttribute('data-value', 'draw');
-        drawOption.innerHTML = `
-            <i class="material-icons">edit_location</i>
-            <div class="ai-option-content">
-                <div class="ai-option-title">🖊️ Draw on Map</div>
-                <div class="ai-option-subtitle">Draw a bounding box or area on the map</div>
-            </div>
-        `;
-        optionsSection.appendChild(drawOption);
-        
-        // Add "Paste geometry" option
-        const pasteOption = document.createElement('div');
-        pasteOption.className = 'ai-option';
-        pasteOption.setAttribute('data-type', 'location');
-        pasteOption.setAttribute('data-value', 'paste');
-        pasteOption.innerHTML = `
-            <i class="material-icons">content_paste</i>
-            <div class="ai-option-content">
-                <div class="ai-option-title">📋 Paste Geometry</div>
-                <div class="ai-option-subtitle">Paste WKT or GeoJSON geometry from clipboard</div>
-            </div>
-        `;
-        optionsSection.appendChild(pasteOption);
-        
-        container.appendChild(optionsSection);
-        
-        return container;
-    }
     
-    /**
-     * Set up advanced location search using GeocodingService (same as main interface)
-     * @param {HTMLElement} searchInput - Search input element
-     * @param {HTMLElement} resultsContainer - Results container element
-     */
-    setupAdvancedLocationSearch(searchInput, resultsContainer) {
-        let debounceTimer;
-        
-        // Input event handler with debouncing
-        searchInput.addEventListener('input', (e) => {
-            e.stopPropagation();
-            const query = e.target.value.trim();
-            
-            // Clear previous timer
-            if (debounceTimer) {
-                clearTimeout(debounceTimer);
-            }
-            
-            if (query.length < 2) {
-                resultsContainer.style.display = 'none';
-                resultsContainer.innerHTML = '';
-                return;
-            }
-            
-            // Debounced search
-            debounceTimer = setTimeout(() => {
-                this.performAdvancedLocationSearch(query, resultsContainer);
-            }, 300);
-        });
-        
-        // Focus event handler
-        searchInput.addEventListener('focus', (e) => {
-            e.stopPropagation();
-            if (searchInput.value.trim().length >= 2) {
-                resultsContainer.style.display = 'block';
-            }
-        });
-        
-        // Click event handler to prevent dropdown closure
-        searchInput.addEventListener('click', (e) => {
-            e.stopPropagation();
-        });
-    }
     
-    /**
-     * Perform advanced location search using GeocodingService
-     * @param {string} query - Search query
-     * @param {HTMLElement} resultsContainer - Results container
-     */
-    async performAdvancedLocationSearch(query, resultsContainer) {
-        try {
-            // Show loading state
-            resultsContainer.innerHTML = '<div class="ai-location-loading">🔍 Searching locations...</div>';
-            resultsContainer.style.display = 'block';
-            
-            // Use the same GeocodingService as the main interface
-            const geocodingService = this.aiSearchHelper.geocodingService || defaultGeocodingService;
-            
-            geocodingService.searchLocations(query, (results, error) => {
-                if (error) {
-                    console.error('Dropdown location search error:', error);
-                    resultsContainer.innerHTML = '<div class="ai-location-error">Search temporarily unavailable</div>';
-                    return;
-                }
-                
-                this.displayAdvancedLocationResults(results, resultsContainer, query);
-            });
-            
-        } catch (error) {
-            console.error('Location search error:', error);
-            resultsContainer.innerHTML = '<div class="ai-location-error">Search temporarily unavailable</div>';
-        }
-    }
     
-    /**
-     * Display advanced location search results
-     * @param {Array} results - Search results from GeocodingService
-     * @param {HTMLElement} resultsContainer - Results container
-     * @param {string} query - Original search query
-     */
-    displayAdvancedLocationResults(results, resultsContainer, query) {
-        if (results.length === 0) {
-            resultsContainer.innerHTML = '<div class="ai-location-no-results">No locations found</div>';
-            resultsContainer.style.display = 'block';
-            return;
-        }
-        
-        // Sort by relevance score (higher is better)
-        const sortedResults = results.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
-        
-        // Create result items
-        const resultItems = sortedResults.map(result => {
-            const resultItem = document.createElement('div');
-            resultItem.className = 'ai-location-result-item';
-            resultItem.setAttribute('tabindex', '0');
-            
-            // Get emoji for location type
-            const emoji = this.getLocationEmoji(result.category, result.type, result.class);
-            
-            // Format display name
-            const formattedName = result.formattedName || result.displayName;
-            const shortName = result.shortName || result.name;
-            
-            resultItem.innerHTML = `
-                <div class="ai-location-result-content">
-                    <div class="ai-location-info">
-                        <div class="ai-location-name">${emoji} ${formattedName}</div>
-                    </div>
-                </div>
-            `;
-            
-            // Store result data
-            resultItem.dataset.lat = result.lat;
-            resultItem.dataset.lon = result.lon;
-            resultItem.dataset.name = shortName;
-            resultItem.dataset.formattedName = formattedName;
-            if (result.bbox) {
-                resultItem.dataset.bbox = result.bbox.join(',');
-            }
-            
-            // Add hover functionality to show bbox on map
-            resultItem.addEventListener('mouseenter', (e) => {
-                this.showLocationPreviewOnMap(result);
-            });
-            
-            resultItem.addEventListener('mouseleave', (e) => {
-                this.hideLocationPreviewOnMap();
-            });
-            
-            // Add click handler for selection and zoom to bbox
-            resultItem.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.selectAndZoomToLocation(result, query);
-            });
-            
-            // Add keyboard support
-            resultItem.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    resultItem.click();
-                }
-            });
-            
-            return resultItem;
-        });
-        
-        // Clear container and add results
-        resultsContainer.innerHTML = '';
-        resultItems.forEach(item => resultsContainer.appendChild(item));
-        resultsContainer.style.display = 'block';
-    }
     
-    /**
-     * Show location preview on map (hover effect)
-     * @param {Object} result - Location result to preview
-     */
-    showLocationPreviewOnMap(result) {
-        if (!this.mapManager || !this.mapManager.map) return;
-        
-        const map = this.mapManager.map;
-        
-        // Remove any existing preview layer
-        this.hideLocationPreviewOnMap();
-        
-        // If location has bbox, show it
-        if (result.bbox && result.bbox.length === 4) {
-            const [west, south, east, north] = result.bbox;
-            
-            // Create preview geometry
-            const previewGeometry = {
-                type: 'Feature',
-                properties: {
-                    name: result.shortName || result.name,
-                    preview: true
-                },
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [[
-                        [west, south],
-                        [east, south],
-                        [east, north],
-                        [west, north],
-                        [west, south]
-                    ]]
-                }
-            };
-            
-            // Add preview source and layer
-            if (!map.getSource('location-preview')) {
-                map.addSource('location-preview', {
-                    type: 'geojson',
-                    data: {
-                        type: 'FeatureCollection',
-                        features: []
-                    }
-                });
-                
-                // Add fill layer
-                map.addLayer({
-                    id: 'location-preview-fill',
-                    type: 'fill',
-                    source: 'location-preview',
-                    paint: {
-                        'fill-color': '#667eea',
-                        'fill-opacity': 0.2
-                    }
-                });
-                
-                // Add outline layer
-                map.addLayer({
-                    id: 'location-preview-outline',
-                    type: 'line',
-                    source: 'location-preview',
-                    paint: {
-                        'line-color': '#667eea',
-                        'line-width': 2,
-                        'line-opacity': 0.8
-                    }
-                });
-            }
-            
-            // Update preview data
-            map.getSource('location-preview').setData({
-                type: 'FeatureCollection',
-                features: [previewGeometry]
-            });
-            
-            // Fit map to bbox with padding
-            map.fitBounds([[west, south], [east, north]], {
-                padding: 50,
-                duration: 500
-            });
-        } else if (result.lat && result.lon) {
-            // For point locations, show a marker
-            const previewGeometry = {
-                type: 'Feature',
-                properties: {
-                    name: result.shortName || result.name,
-                    preview: true
-                },
-                geometry: {
-                    type: 'Point',
-                    coordinates: [result.lon, result.lat]
-                }
-            };
-            
-            // Add preview source and layer if not exists
-            if (!map.getSource('location-preview')) {
-                map.addSource('location-preview', {
-                    type: 'geojson',
-                    data: {
-                        type: 'FeatureCollection',
-                        features: []
-                    }
-                });
-                
-                // Add point layer
-                map.addLayer({
-                    id: 'location-preview-point',
-                    type: 'circle',
-                    source: 'location-preview',
-                    paint: {
-                        'circle-color': '#667eea',
-                        'circle-radius': 8,
-                        'circle-stroke-color': '#ffffff',
-                        'circle-stroke-width': 2,
-                        'circle-opacity': 0.8
-                    }
-                });
-            }
-            
-            // Update preview data
-            map.getSource('location-preview').setData({
-                type: 'FeatureCollection',
-                features: [previewGeometry]
-            });
-            
-            // Center map on point
-            map.easeTo({
-                center: [result.lon, result.lat],
-                zoom: Math.max(map.getZoom(), 10),
-                duration: 500
-            });
-        }
-    }
     
-    /**
-     * Hide location preview on map
-     */
-    hideLocationPreviewOnMap() {
-        if (!this.mapManager || !this.mapManager.map) return;
-        
-        const map = this.mapManager.map;
-        
-        // Remove preview layers and source
-        if (map.getLayer('location-preview-fill')) {
-            map.removeLayer('location-preview-fill');
-        }
-        if (map.getLayer('location-preview-outline')) {
-            map.removeLayer('location-preview-outline');
-        }
-        if (map.getLayer('location-preview-point')) {
-            map.removeLayer('location-preview-point');
-        }
-        if (map.getSource('location-preview')) {
-            map.removeSource('location-preview');
-        }
-    }
     
-    /**
-     * Select location and zoom to its geometry (click effect)
-     * @param {Object} result - Selected location result
-     * @param {string} query - Original search query
-     */
-    selectAndZoomToLocation(result, query) {
-        
-        // Update the AI search helper state
-        this.aiSearchHelper.selectedLocation = 'custom';
-        this.aiSearchHelper.selectedLocationResult = result;
-        
-        // Update search summary display
-        const locationText = `🌍 ${result.shortName || result.name}`;
-        this.updateSearchSummary('location', locationText);
-        
-        // Update the bbox input field if bbox is available
-        const bboxInput = document.getElementById('bbox-input');
-        if (bboxInput && result.bbox && Array.isArray(result.bbox) && result.bbox.length === 4) {
-            bboxInput.value = result.bbox.join(',');
-            bboxInput.dispatchEvent(new Event('change'));
-        }
-        
-        // Close the dropdown
-        this.closeCurrentDropdown();
-        
-        // Hide preview and add permanent location layer
-        this.hideLocationPreviewOnMap();
-        this.addPermanentLocationLayer(result);
-        
-        // Show notification
-        if (this.notificationService) {
-            this.notificationService.showNotification(
-                `Location selected: ${result.shortName || result.name}`,
-                'success'
-            );
-        }
-        
-        // Dispatch location selected event for tutorial system
-        document.dispatchEvent(new CustomEvent('location-selected', {
-            detail: { 
-                location: result,
-                locationName: result.shortName || result.name,
-                query: query
-            }
-        }));
-    }
     
-    /**
-     * Add permanent location layer to map after selection
-     * @param {Object} result - Selected location result
-     */
-    addPermanentLocationLayer(result) {
-        if (!this.mapManager || !this.mapManager.map) return;
-        
-        const map = this.mapManager.map;
-        
-        // Remove any existing location layer
-        this.removePermanentLocationLayer();
-        
-        // If location has bbox, show it permanently
-        if (result.bbox && result.bbox.length === 4) {
-            const [west, south, east, north] = result.bbox;
-            
-            // Create location geometry
-            const locationGeometry = {
-                type: 'Feature',
-                properties: {
-                    name: result.shortName || result.name,
-                    selected: true
-                },
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [[
-                        [west, south],
-                        [east, south],
-                        [east, north],
-                        [west, north],
-                        [west, south]
-                    ]]
-                }
-            };
-            
-            // Add location source and layer
-            map.addSource('selected-location', {
-                type: 'geojson',
-                data: {
-                    type: 'FeatureCollection',
-                    features: [locationGeometry]
-                }
-            });
-            
-            // Add fill layer
-            map.addLayer({
-                id: 'selected-location-fill',
-                type: 'fill',
-                source: 'selected-location',
-                paint: {
-                    'fill-color': '#ff6b6b',
-                    'fill-opacity': 0.15
-                }
-            });
-            
-            // Add outline layer
-            map.addLayer({
-                id: 'selected-location-outline',
-                type: 'line',
-                source: 'selected-location',
-                paint: {
-                    'line-color': '#ff6b6b',
-                    'line-width': 2,
-                    'line-opacity': 1
-                }
-            });
-            
-            // Fit map to bbox with padding
-            map.fitBounds([[west, south], [east, north]], {
-                padding: 100,
-                duration: 1000
-            });
-        } else if (result.lat && result.lon) {
-            // For point locations, show a permanent marker
-            const locationGeometry = {
-                type: 'Feature',
-                properties: {
-                    name: result.shortName || result.name,
-                    selected: true
-                },
-                geometry: {
-                    type: 'Point',
-                    coordinates: [result.lon, result.lat]
-                }
-            };
-            
-            // Add location source and layer
-            map.addSource('selected-location', {
-                type: 'geojson',
-                data: {
-                    type: 'FeatureCollection',
-                    features: [locationGeometry]
-                }
-            });
-            
-            // Add point layer
-            map.addLayer({
-                id: 'selected-location-point',
-                type: 'circle',
-                source: 'selected-location',
-                paint: {
-                    'circle-color': '#ff6b6b',
-                    'circle-radius': 10,
-                    'circle-stroke-color': '#ffffff',
-                    'circle-stroke-width': 3,
-                    'circle-opacity': 0.9
-                }
-            });
-            
-            // Center map on point
-            map.easeTo({
-                center: [result.lon, result.lat],
-                zoom: Math.max(map.getZoom(), 12),
-                duration: 1000
-            });
-        }
-    }
     
-    /**
-     * Remove permanent location layer from map
-     */
-    removePermanentLocationLayer() {
-        if (!this.mapManager || !this.mapManager.map) return;
-        
-        const map = this.mapManager.map;
-        
-        // Remove location layers and source
-        if (map.getLayer('selected-location-fill')) {
-            map.removeLayer('selected-location-fill');
-        }
-        if (map.getLayer('selected-location-outline')) {
-            map.removeLayer('selected-location-outline');
-        }
-        if (map.getLayer('selected-location-point')) {
-            map.removeLayer('selected-location-point');
-        }
-        if (map.getSource('selected-location')) {
-            map.removeSource('selected-location');
-        }
-    }
 
-    /**
-     * Handle location selection from dropdown (deprecated - use selectAndZoomToLocation)
-     * @param {Object} result - Selected location result
-     * @param {string} query - Original search query
-     */
-    selectDropdownLocation(result, query) {
-        // Redirect to the new enhanced method
-        this.selectAndZoomToLocation(result, query);
-    }
-
-    /**
-     * Get appropriate emoji for location type
-     * @param {string} category - Location category
-     * @param {string} type - Location type
-     * @param {string} className - Location class
-     * @returns {string} Emoji representing the location type
-     */
-    getLocationEmoji(category, type, className) {
-        // Country emojis
-        if (category === 'country' || type === 'country') {
-            return '🌍';
-        }
-        
-        // State/Province emojis
-        if (category === 'state' || type === 'state') {
-            return '🗺️';
-        }
-        
-        // City and town emojis
-        if (category === 'city' || type === 'city') {
-            return '🏙️';
-        }
-        if (category === 'town' || type === 'town') {
-            return '🏘️';
-        }
-        if (category === 'village' || type === 'village') {
-            return '🏡';
-        }
-        if (category === 'hamlet' || type === 'hamlet') {
-            return '🏠';
-        }
-        
-        // Administrative areas
-        if (category === 'administrative' || className === 'boundary') {
-            return '📍';
-        }
-        
-        // Natural features
-        if (category === 'natural' || className === 'natural') {
-            if (type === 'water' || type === 'bay' || type === 'lake') {
-                return '🌊';
-            }
-            if (type === 'mountain' || type === 'peak') {
-                return '🏔️';
-            }
-            if (type === 'forest' || type === 'wood') {
-                return '🌲';
-            }
-            return '🌿';
-        }
-        
-        // Neighborhoods and suburbs
-        if (category === 'suburb' || category === 'neighborhood') {
-            return '🏢';
-        }
-        
-        // Islands
-        if (type === 'island') {
-            return '🏝️';
-        }
-        
-        // Airports
-        if (type === 'aerodrome' || className === 'aeroway') {
-            return '✈️';
-        }
-        
-        // Default location pin
-        return '📍';
-    }
     
     /**
      * Create a simple date dropdown
@@ -1710,15 +1043,16 @@ export class InlineDropdownManager {
                         console.warn('Failed to load collections in background:', error);
                     });
                     break;
-                case 'location':
-                    // Location dropdown doesn't need to wait for collections
-                    dropdownContent = this.aiSearchHelper.createLocationDropdown();
-                    break; 
+ 
                 case 'date':
                     // Date dropdown doesn't need to wait for collections
                     dropdownContent = this.aiSearchHelper.createDateDropdown();
                     break;
                 default:
+                    // Silently ignore location fields (dropdown disabled)
+                    if (fieldType === 'location') {
+                        return;
+                    }
                     console.warn(`Unknown field type: ${fieldType}`);
                     throw new Error(`Unknown field type: ${fieldType}`);
             }
@@ -1748,11 +1082,7 @@ export class InlineDropdownManager {
             
             
             // Dispatch dropdown opened events for tutorial system
-            if (fieldType === 'location') {
-                document.dispatchEvent(new CustomEvent('location-dropdown-opened', {
-                    detail: { triggerElement, fieldType }
-                }));
-            } else if (fieldType === 'date') {
+            if (fieldType === 'date') {
                 document.dispatchEvent(new CustomEvent('date-dropdown-opened', {
                     detail: { triggerElement, fieldType }
                 }));
@@ -1789,8 +1119,7 @@ export class InlineDropdownManager {
                 <div class="ai-dropdown-header">
                     <div class="ai-dropdown-header-content">
                         <i class="material-icons">${
-                            fieldType === 'collection' ? 'dataset' :
-                            fieldType === 'location' ? 'place' : 'event'
+                            fieldType === 'collection' ? 'dataset' : 'event'
                         }</i>
                         <span>Loading ${fieldType}...</span>
                     </div>
@@ -1853,9 +1182,7 @@ export class InlineDropdownManager {
         let searchInput = null;
         
         // Try to find the specific search input based on field type
-        if (fieldType === 'location') {
-            searchInput = this.currentDropdown.querySelector('.ai-location-search-input');
-        } else if (fieldType === 'collection') {
+        if (fieldType === 'collection') {
             searchInput = this.currentDropdown.querySelector('.ai-search-input');
         }
         
@@ -1922,9 +1249,7 @@ export class InlineDropdownManager {
         let searchInput = null;
         
         // Try to find the specific search input based on field type
-        if (fieldType === 'location') {
-            searchInput = dropdown.querySelector('.ai-location-search-input');
-        } else if (fieldType === 'date') {
+        if (fieldType === 'date') {
             searchInput = dropdown.querySelector('input, button, [tabindex]');
         }
         
@@ -1960,9 +1285,7 @@ export class InlineDropdownManager {
         let searchInput = null;
         
         // Try to find the specific search input based on field type
-        if (fieldType === 'location') {
-            searchInput = this.currentDropdown.querySelector('.ai-location-search-input');
-        } else if (fieldType === 'collection') {
+        if (fieldType === 'collection') {
             searchInput = this.currentDropdown.querySelector('.ai-search-input');
         }
         
@@ -2251,9 +1574,6 @@ export class InlineDropdownManager {
                 searchInput.addEventListener('input', (e) => {
                     this.filterCollections(e.target.value, dropdown);
                 });
-            } else if (fieldType === 'location') {
-                // Location search is now handled by setupAdvancedLocationSearch in createSimpleLocationDropdown
-                // No additional event handlers needed here
             }
         }
         
@@ -2280,19 +1600,6 @@ export class InlineDropdownManager {
         switch (fieldType) {
             case 'collection':
                 this.handleCollectionSelection(value, option);
-                break;
-            case 'location':
-                switch (value) {
-                    case 'everywhere':
-                        this.handleLocationSelection('everywhere', '🌍 Worldwide');
-                        break;
-                    case 'draw':
-                        this.handleDrawLocation();
-                        return; // Don't close dropdown immediately
-                    case 'paste':
-                        this.handlePasteGeometry();
-                        return; // Don't close dropdown immediately
-                }
                 break;
             case 'date':
                 this.handleDateSelection(value);
@@ -2426,46 +1733,6 @@ export class InlineDropdownManager {
         );
     }
     
-    /**
-     * Handle location selection
-     * @param {string} location - Location value
-     * @param {string} displayText - Display text
-     */
-    handleLocationSelection(location, displayText) {
-        // Update the search summary display
-        this.updateSearchSummary('location', displayText);
-        
-        // If location is a bbox array, store it directly
-        if (Array.isArray(location) && location.length === 4) {
-            this.aiSearchHelper.selectedLocation = location;
-        } else {
-            // Otherwise, store the display text
-            this.aiSearchHelper.selectedLocation = displayText;
-        }
-        
-        // Update the bbox input
-        const bboxInput = document.getElementById('bbox-input');
-        if (bboxInput && Array.isArray(location) && location.length === 4) {
-            bboxInput.value = location.join(',');
-            bboxInput.dispatchEvent(new Event('change'));
-        }
-        
-        // Close the dropdown after selection
-        this.closeCurrentDropdown();
-        
-        // Show success notification
-        this.notificationService.showNotification(`📍 Location selected: ${displayText}`, 'success');
-        
-        // Dispatch location selected event for tutorial system
-        document.dispatchEvent(new CustomEvent('location-selected', {
-            detail: { 
-                location: location,
-                locationName: displayText,
-                displayText: displayText
-            }
-        }));
-        
-    }
     
     /**
      * Handle date selection
@@ -3011,115 +2278,6 @@ export class InlineDropdownManager {
         }
     }
     
-    /**
-     * OLD: Search locations in dropdown - REPLACED by setupAdvancedLocationSearch
-     * @param {string} query - Search query
-     * @param {HTMLElement} dropdown - Dropdown container
-     * @deprecated Use setupAdvancedLocationSearch instead
-     */
-    searchLocations_OLD_UNUSED(query, dropdown) {
-        const resultsContainer = dropdown.querySelector('.ai-location-search-results');
-        if (!resultsContainer) {
-            console.error('❌ Location results container not found in dropdown');
-            return;
-        }
-
-        if (!query || query.length < 2) {
-            resultsContainer.innerHTML = '';
-            resultsContainer.style.display = 'none';
-            return;
-        }
-        
-        resultsContainer.innerHTML = '<div class="ai-location-loading"><i class="material-icons spinning">refresh</i> Searching...</div>';
-        resultsContainer.style.display = 'block';
-        
-        // Use the geocoding service to search for locations
-        this.aiSearchHelper.geocodingService.geocodeLocation(query).then(results => {
-            if (!results || results.length === 0) {
-                resultsContainer.innerHTML = '<div class="ai-no-results"><i class="material-icons">search_off</i><p>No locations found</p></div>';
-                return;
-            }
-            
-            // Clear previous results
-            resultsContainer.innerHTML = '';
-            
-            // Add each result with proper click handling
-            results.slice(0, 6).forEach((result, index) => {
-                const resultItem = document.createElement('div');
-                resultItem.className = 'ai-location-result-item';
-                resultItem.setAttribute('role', 'option');
-                resultItem.setAttribute('tabindex', '0');
-                resultItem.dataset.index = index;
-
-                // Extract location data
-                const locationName = result.shortName || result.name || result.display_name;
-                const displayName = result.formattedName || result.display_name || locationName;
-                
-                // Extract country from address if available
-                const country = result.address?.country || '';
-                
-                // Get appropriate emoji for location type
-                const emoji = this.getLocationEmoji(result.category, result.type, result.class);
-                
-                // Format display with emoji, name, and country
-                const formattedName = locationName || result.name || 'Unknown Location';
-                const locationDisplay = country ? `${emoji} ${formattedName}, ${country}` : `${emoji} ${formattedName}`;
-                
-                // Set data attributes for enhanced handling
-                if (result.bbox) {
-                    resultItem.dataset.bbox = result.bbox.join(',');
-                }
-                resultItem.dataset.name = displayName;
-                resultItem.dataset.shortName = locationName;
-                if (result.lat && result.lon) {
-                    resultItem.dataset.lat = result.lat;
-                    resultItem.dataset.lon = result.lon;
-                }
-                resultItem.dataset.category = result.category || 'location';
-                
-                resultItem.innerHTML = `
-                    <div class="ai-location-result-content">
-                        <div class="ai-location-info">
-                            <div class="ai-location-name">${locationDisplay}</div>
-                        </div>
-                    </div>
-                `;
-
-                // Add comprehensive click handler
-                resultItem.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    
-                    this.handleLocationSelectionEnhanced(resultItem, query);
-                });
-
-                // Add keyboard navigation
-                resultItem.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        resultItem.click();
-                    }
-                });
-
-                // Add hover effects
-                resultItem.addEventListener('mouseenter', () => {
-                    resultItem.classList.add('hovered');
-                });
-
-                resultItem.addEventListener('mouseleave', () => {
-                    resultItem.classList.remove('hovered');
-                });
-
-                resultsContainer.appendChild(resultItem);
-            });
-            
-            
-        }).catch(error => {
-            console.error('❌ Error searching locations in inline dropdown:', error);
-            resultsContainer.innerHTML = '<div class="ai-error"><i class="material-icons">error</i><p>Search error</p></div>';
-        });
-    }
     
     /**
      * Update search summary display and emit URL state event
@@ -3132,9 +2290,6 @@ export class InlineDropdownManager {
         switch (fieldType) {
             case 'collection':
                 summaryElement = document.querySelector('[data-field="collection"] .search-summary-value');
-                break;
-            case 'location':
-                summaryElement = document.querySelector('[data-field="location"] .search-summary-value');  
                 break;
             case 'date':
                 summaryElement = document.querySelector('[data-field="date"] .search-summary-value');
@@ -3563,262 +2718,8 @@ export class InlineDropdownManager {
         }
     }
     
-    /**
-     * Handle enhanced location selection with map display and zoom (same as fullscreen AI search)
-     * @param {HTMLElement} resultElement - Selected location result element
-     * @param {string} originalQuery - Original search query
-     */
-    handleLocationSelectionEnhanced(resultElement, originalQuery) {
-        try {
-            const bbox = resultElement.dataset.bbox;
-            const name = resultElement.dataset.name;
-            const shortName = resultElement.dataset.shortName;
-            const lat = parseFloat(resultElement.dataset.lat);
-            const lon = parseFloat(resultElement.dataset.lon);
-            const category = resultElement.dataset.category;
-            
-            
-            // Store the location with complete information
-            let locationBbox;
-            if (bbox) {
-                locationBbox = bbox.split(',').map(Number);
-            } else {
-                // Fallback: create a small bbox around the point
-                const offset = 0.01; // ~1km
-                locationBbox = [lon - offset, lat - offset, lon + offset, lat + offset];
-            }
-            
-            // Create GeoJSON geometry for the location
-            const [west, south, east, north] = locationBbox;
-            const locationGeometry = {
-                type: 'Feature',
-                properties: {
-                    name: name,
-                    category: category,
-                    query: originalQuery,
-                    type: 'location_geometry'
-                },
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [[
-                        [west, south],
-                        [east, south], 
-                        [east, north],
-                        [west, north],
-                        [west, south]
-                    ]]
-                }
-            };
-            
-            // Store the location with complete information
-            this.aiSearchHelper.selectedLocation = locationBbox;
-            this.aiSearchHelper.selectedLocationResult = {
-                formattedName: name,
-                shortName: shortName,
-                bbox: locationBbox,
-                coordinates: [lon, lat],
-                category: 'searched',
-                originalQuery: originalQuery,
-                searchQuery: originalQuery, // For URL state
-                geojson: locationGeometry,
-                wkt: this.geojsonToWKT(locationGeometry.geometry)
-            };
-            
-            // Update the display
-            this.updateSearchSummary('location', (shortName || name).toUpperCase());
-            
-            // Update the bbox-input field for SearchForm compatibility
-            const bboxInput = document.getElementById('bbox-input');
-            if (bboxInput) {
-                bboxInput.value = locationBbox.join(',');
-            }
-            
-            // Display location on map and zoom to it
-            this.displayLocationOnMap(locationBbox, name, category, locationGeometry);
-            
-            // Close dropdown
-            this.closeCurrentDropdown();
-            
-            // Show success notification
-            this.notificationService.showNotification(
-                `[LOCATION] Selected: ${shortName || name}`, 
-                'success'
-            );
-            
-            // Emit state change event to ensure all components are updated
-            this.emitStateChangeEvent();
-            
-            // Dispatch location selected event for tutorial system
-            document.dispatchEvent(new CustomEvent('location-selected', {
-                detail: { 
-                    location: resultElement.dataset,
-                    locationName: shortName || name,
-                    originalQuery: originalQuery,
-                    bbox: bbox
-                }
-            }));
-            
-            
-        } catch (error) {
-            console.error('[ERROR] Error in enhanced location selection:', error);
-            this.notificationService.showNotification('Error selecting location', 'error');
-        }
-    }
     
-    /**
-     * Display location on map with geometry and zoom (same behavior as fullscreen AI search)
-     * @param {Array} bbox - Bounding box [west, south, east, north]
-     * @param {string} name - Location name
-     * @param {string} category - Location category
-     * @param {Object} locationGeometry - GeoJSON geometry
-     */
-    displayLocationOnMap(bbox, name, category, locationGeometry) {
-        if (!this.mapManager || !bbox || bbox.length !== 4) {
-            console.warn('[WARN] Cannot display location: missing mapManager or invalid bbox');
-            return;
-        }
-        
-        try {
-            
-            // Clear any previous location geometry first
-            this.clearPreviousLocationGeometry();
-            
-            // Generate unique layer ID
-            const layerId = `inline-location-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            this.currentLocationLayerId = layerId;
-            
-            // Use MapManager's addBeautifulGeometryLayer method directly
-            if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
-                this.mapManager.addBeautifulGeometryLayer(locationGeometry, layerId);
-            } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
-                this.mapManager.addGeoJsonLayer(locationGeometry, layerId);
-            } else {
-                // Fallback: add directly to map
-                const map = this.mapManager.map || this.mapManager.getMap();
-                if (map) {
-                    // Add source
-                    map.addSource(layerId, {
-                        type: 'geojson',
-                        data: locationGeometry
-                    });
-                    
-                    // Add fill layer
-                    map.addLayer({
-                        id: `${layerId}-fill`,
-                        type: 'fill',
-                        source: layerId,
-                        paint: {
-                            'fill-color': '#2196F3',
-                            'fill-opacity': 0.2
-                        }
-                    });
-                    
-                    // Add stroke layer
-                    map.addLayer({
-                        id: `${layerId}-stroke`,
-                        type: 'line',
-                        source: layerId,
-                        paint: {
-                            'line-color': '#2196F3',
-                            'line-width': 2
-                        }
-                    });
-                    
-                }
-            }
-            
-            // Zoom to the location bounds using MapManager method
-            if (typeof this.mapManager.fitToBounds === 'function') {
-                this.mapManager.fitToBounds(bbox);
-            } else if (typeof this.mapManager.fitMapToBbox === 'function') {
-                this.mapManager.fitMapToBbox(bbox);
-            } else {
-                // Fallback: fit bounds directly
-                const map = this.mapManager.map || this.mapManager.getMap();
-                if (map) {
-                    const [west, south, east, north] = bbox;
-                    map.fitBounds([[west, south], [east, north]], { 
-                        padding: 50, 
-                        maxZoom: 16,
-                        duration: 1000 
-                    });
-                }
-            }
-            
-            // Store the current layer for later cleanup
-            this.currentLocationLayerId = layerId;
-            
-            
-        } catch (mapError) {
-            console.error('[ERROR] Error displaying location on map:', mapError);
-            // Continue anyway - the location is still stored for search
-        }
-    }
     
-    /**
-     * Clear previous location geometry from the map
-     */
-    clearPreviousLocationGeometry() {
-        if (!this.mapManager) {
-            return;
-        }
-        
-        try {
-            
-            // Use MapManager's built-in cleanup method
-            if (typeof this.mapManager.removeCurrentLayer === 'function') {
-                this.mapManager.removeCurrentLayer();
-            } else if (typeof this.mapManager.clearAllThumbnails === 'function') {
-                this.mapManager.clearAllThumbnails();
-            }
-            
-            // Also clear any layers with our tracked ID if we have one
-            if (this.currentLocationLayerId) {
-                const map = this.mapManager.map || this.mapManager.getMap();
-                if (map) {
-                    // Find and remove all layers with this source ID or containing this ID
-                    const layersToRemove = [];
-                    
-                    if (map.getStyle && map.getStyle()) {
-                        const layers = map.getStyle().layers || [];
-                        layers.forEach(layer => {
-                            // Check if layer source matches or layer ID contains our ID
-                            if (layer.source === this.currentLocationLayerId || 
-                                layer.id.includes(this.currentLocationLayerId)) {
-                                layersToRemove.push(layer.id);
-                            }
-                        });
-                    }
-                    
-                    // Remove each found layer
-                    layersToRemove.forEach(layerId => {
-                        try {
-                            if (map.getLayer(layerId)) {
-                                map.removeLayer(layerId);
-                            }
-                        } catch (layerError) {
-                            console.warn(`[WARN] Could not remove layer ${layerId}:`, layerError);
-                        }
-                    });
-                    
-                    // Remove the source
-                    try {
-                        if (map.getSource(this.currentLocationLayerId)) {
-                            map.removeSource(this.currentLocationLayerId);
-                        }
-                    } catch (sourceError) {
-                        console.warn(`[WARN] Could not remove source:`, sourceError);
-                    }
-                }
-            }
-            
-            this.currentLocationLayerId = null;
-            
-        } catch (error) {
-            console.warn('[WARN] Error clearing previous location geometry:', error);
-            this.currentLocationLayerId = null;
-        }
-    }
     
     /**
      * Convert GeoJSON geometry to WKT format

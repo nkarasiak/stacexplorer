@@ -1818,7 +1818,11 @@
                                         </div>
                                         <div class="search-summary-content">
                                             <div class="search-summary-label">LOCATION:</div>
-                                            <div class="search-summary-value">Worldwide</div>
+                                            <div class="search-summary-value">
+                                                <div class="mini-location-input-container">
+                                                    <input type="text" id="summary-location-input" class="mini-location-input" placeholder="Search city/country..." value="">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="location-tools-inline">
@@ -3646,6 +3650,302 @@
                 
                 console.log('✅ Fixed scrolling and modal issues');
             }, 2000);
+            
+            // Initialize mini location input functionality
+            const initializeLocationInput = () => {
+                const locationInput = document.getElementById('summary-location-input');
+                if (!locationInput) return;
+                
+                let searchTimeout = null;
+                let currentRequest = null;
+                
+                // Function to handle location search with geocoding service
+                const handleLocationSearch = async (query) => {
+                    if (!query || query.length < 2) {
+                        console.log('🔍 Query too short or empty:', query);
+                        return;
+                    }
+                    
+                    console.log('🔍 Searching for location:', query);
+                    
+                    try {
+                        // Check if geocoding service is available
+                        console.log('🔍 Checking geocoding service availability...');
+                        console.log('window.geocodingService:', !!window.geocodingService);
+                        console.log('window.initializeGeocodingService:', !!window.initializeGeocodingService);
+                        
+                        // Wait for geocoding service to be available
+                        if (!window.geocodingService && window.initializeGeocodingService) {
+                            console.log('🔄 Initializing geocoding service...');
+                            await window.initializeGeocodingService();
+                        }
+                        
+                        const service = window.geocodingService;
+                        if (!service) {
+                            console.warn('⚠️ Geocoding service not available after initialization attempt');
+                            console.log('Service object:', service);
+                            return;
+                        }
+                        
+                        console.log('✅ Geocoding service available:', service);
+                        console.log('Service methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(service)));
+                        
+                        // Use the geocoding service to search
+                        console.log('🔍 Calling service.searchLocations with query:', query);
+                        service.searchLocations(query, (results, error) => {
+                            console.log('🔍 Geocoding callback received:', { results, error });
+                            
+                            if (error) {
+                                console.error('❌ Location search error:', error);
+                                hideLocationResults();
+                                return;
+                            }
+                            
+                            if (results && results.length > 0) {
+                                console.log('📍 Found', results.length, 'location results:', results);
+                                showLocationResults(results);
+                            } else {
+                                console.log('📍 No location results found');
+                                hideLocationResults();
+                            }
+                        });
+                        
+                    } catch (error) {
+                        console.error('Error in location search:', error);
+                    }
+                };
+                
+                // Function to show location results in a dropdown
+                const showLocationResults = (results) => {
+                    console.log('🎯 Showing location results dropdown with', results.length, 'results');
+                    hideLocationResults(); // Clear any existing dropdown
+                    
+                    const dropdown = document.createElement('div');
+                    dropdown.id = 'location-results-dropdown';
+                    dropdown.className = 'location-results-dropdown';
+                    
+                    // Debug styling to make it very visible
+                    dropdown.style.cssText = `
+                        background: #2a2a2a;
+                        border: 2px solid #667eea;
+                        border-radius: 6px;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+                        max-height: 200px;
+                        overflow-y: auto;
+                        display: block !important;
+                    `;
+                    
+                    results.slice(0, 5).forEach((result, index) => {
+                        const item = document.createElement('div');
+                        item.className = 'location-result-item';
+                        item.style.cssText = `
+                            padding: 12px;
+                            cursor: pointer;
+                            border-bottom: 1px solid #404040;
+                            background: #2a2a2a;
+                            color: white;
+                        `;
+                        item.innerHTML = `
+                            <div style="font-size: 13px; font-weight: 500; color: #ffffff;">${result.shortName || result.name || result.display_name}</div>
+                            <div style="font-size: 11px; color: #aaaaaa; margin-top: 2px;">${result.type || 'Location'}</div>
+                        `;
+                        
+                        item.addEventListener('click', () => {
+                            console.log('🎯 Location result clicked:', result);
+                            selectLocationResult(result);
+                            hideLocationResults();
+                        });
+                        
+                        item.addEventListener('mouseenter', () => {
+                            item.style.background = '#333333';
+                            // Show location preview on map
+                            showLocationPreview(result);
+                        });
+                        
+                        item.addEventListener('mouseleave', () => {
+                            item.style.background = '#2a2a2a';
+                            // Clear location preview
+                            clearLocationPreview();
+                        });
+                        
+                        dropdown.appendChild(item);
+                    });
+                    
+                    // Position dropdown below the input - use document.body to avoid container clipping
+                    const rect = locationInput.getBoundingClientRect();
+                    dropdown.style.position = 'fixed';
+                    dropdown.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+                    dropdown.style.left = rect.left + 'px';
+                    dropdown.style.width = rect.width + 'px';
+                    dropdown.style.zIndex = '9999';
+                    
+                    document.body.appendChild(dropdown);
+                    
+                    console.log('✅ Dropdown added to document.body, position:', {
+                        top: dropdown.style.top,
+                        left: dropdown.style.left,
+                        width: dropdown.style.width
+                    });
+                };
+                
+                // Function to hide location results dropdown
+                const hideLocationResults = () => {
+                    const existing = document.getElementById('location-results-dropdown');
+                    if (existing) {
+                        existing.remove();
+                    }
+                };
+                
+                // Function to select a location result
+                const selectLocationResult = (result) => {
+                    const displayName = result.shortName || result.name || result.display_name;
+                    
+                    // Update the bbox input if bbox is available
+                    if (result.bbox && Array.isArray(result.bbox) && result.bbox.length === 4) {
+                        const bboxInput = document.getElementById('bbox-input');
+                        if (bboxInput) {
+                            bboxInput.value = result.bbox.join(',');
+                            bboxInput.dispatchEvent(new Event('change'));
+                        }
+                    }
+                    
+                    // Update the location input value
+                    locationInput.value = displayName;
+                    
+                    // Trigger search parameter change event
+                    document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                        detail: {
+                            type: 'location',
+                            location: result.bbox || [result.lon, result.lat],
+                            locationName: displayName
+                        }
+                    }));
+                    
+                    console.log('✅ Location selected:', displayName);
+                };
+                
+                // Function to show location preview on map
+                const showLocationPreview = (result) => {
+                    try {
+                        // Get the map manager from the global scope
+                        const mapManager = window.stacExplorer?.mapManager;
+                        if (!mapManager) {
+                            console.warn('Map manager not available for location preview');
+                            return;
+                        }
+                        
+                        let bbox = null;
+                        
+                        // Get bounding box from result
+                        if (result.bbox && Array.isArray(result.bbox) && result.bbox.length === 4) {
+                            bbox = result.bbox;
+                        } else if (result.lon && result.lat) {
+                            // Create a small bbox around the point
+                            const margin = 0.1; // ~11km at equator
+                            bbox = [
+                                parseFloat(result.lon) - margin,
+                                parseFloat(result.lat) - margin,
+                                parseFloat(result.lon) + margin,
+                                parseFloat(result.lat) + margin
+                            ];
+                        }
+                        
+                        if (bbox && bbox.length === 4) {
+                            console.log('🗺️ Showing location preview on map:', result.display_name || result.name, bbox);
+                            
+                            // Use displayBboxOnMap to show the location with zoom
+                            const locationName = result.display_name || result.name || 'Location Preview';
+                            mapManager.displayBboxOnMap(bbox, locationName);
+                        }
+                    } catch (error) {
+                        console.error('Error showing location preview:', error);
+                    }
+                };
+                
+                // Function to clear location preview from map
+                const clearLocationPreview = () => {
+                    try {
+                        const mapManager = window.stacExplorer?.mapManager;
+                        if (!mapManager) return;
+                        
+                        console.log('🗺️ Clearing location preview from map');
+                        
+                        // Clear the search bbox (which is used for location display)
+                        if (typeof mapManager.clearSearchBbox === 'function') {
+                            mapManager.clearSearchBbox();
+                        }
+                    } catch (error) {
+                        console.error('Error clearing location preview:', error);
+                    }
+                };
+                
+                // Add input event listener with debouncing
+                locationInput.addEventListener('input', (e) => {
+                    const query = e.target.value.trim();
+                    
+                    // Clear previous timeout
+                    if (searchTimeout) {
+                        clearTimeout(searchTimeout);
+                    }
+                    
+                    // Set new timeout for debounced search
+                    searchTimeout = setTimeout(() => {
+                        handleLocationSearch(query);
+                    }, 500);
+                });
+                
+                // Add enter key handler for immediate search
+                locationInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const query = e.target.value.trim();
+                        if (query) {
+                            // Clear timeout and search immediately
+                            if (searchTimeout) {
+                                clearTimeout(searchTimeout);
+                            }
+                            handleLocationSearch(query);
+                        }
+                    } else if (e.key === 'Escape') {
+                        hideLocationResults();
+                    }
+                });
+                
+                // Hide dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    const dropdown = document.getElementById('location-results-dropdown');
+                    if (dropdown && !locationInput.contains(e.target) && !dropdown.contains(e.target)) {
+                        hideLocationResults();
+                    }
+                });
+                
+                console.log('✅ Mini location input initialized');
+            };
+            
+            // Initialize location input
+            initializeLocationInput();
+            setTimeout(initializeLocationInput, 100);
+            setTimeout(initializeLocationInput, 500);
+            
+            // Disable click handler on LOCATION element to prevent old dropdown
+            const locationElement = document.getElementById('summary-location');
+            if (locationElement) {
+                locationElement.addEventListener('click', (e) => {
+                    // Allow clicks to reach the input field
+                    if (e.target.id === 'summary-location-input') {
+                        return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('LOCATION click disabled - using inline location input');
+                    // Focus the input instead
+                    const locationInput = document.getElementById('summary-location-input');
+                    if (locationInput) {
+                        locationInput.focus();
+                    }
+                });
+                console.log('✅ Disabled LOCATION element dropdown');
+            }
         });
     </script>
     <!-- Leaflet JavaScript for mini maps -->
@@ -4197,6 +4497,89 @@
             font-size: 11px;
             font-weight: 500;
             padding: 0 2px;
+        }
+
+        /* Mini Location Input Styling (matching mini date inputs) */
+        .mini-location-input-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        
+        .mini-location-input {
+            background: var(--surface-elevated, #2a2a2a);
+            border: 1px solid var(--border-color, #404040);
+            border-radius: 6px;
+            color: var(--text-primary, #ffffff);
+            font-size: 11px;
+            padding: 2px 6px;
+            width: 140px;
+            min-width: 140px;
+            height: 28px;
+            transition: all 0.2s ease;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        
+        .mini-location-input:focus {
+            outline: none;
+            border-color: var(--accent-color, #667eea);
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            background: var(--surface-elevated-hover, #333333);
+        }
+        
+        .mini-location-input:hover {
+            border-color: var(--border-hover, #555555);
+            background: var(--surface-elevated-hover, #333333);
+        }
+        
+        .mini-location-input::placeholder {
+            color: var(--text-secondary, #aaaaaa);
+            font-size: 11px;
+        }
+
+        /* Location Results Dropdown */
+        .location-results-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--surface-elevated, #2a2a2a);
+            border: 1px solid var(--border-color, #404040);
+            border-radius: 6px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 2px;
+        }
+        
+        .location-result-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color, #404040);
+            transition: background-color 0.2s ease;
+        }
+        
+        .location-result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .location-result-item:hover {
+            background: var(--surface-elevated-hover, #333333);
+        }
+        
+        .location-result-name {
+            font-size: 12px;
+            color: var(--text-primary, #ffffff);
+            font-weight: 500;
+        }
+        
+        .location-result-type {
+            font-size: 10px;
+            color: var(--text-secondary, #aaaaaa);
+            margin-top: 2px;
         }
         
         /* Hide/minimize calendar icon to save space */

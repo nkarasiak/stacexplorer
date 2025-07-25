@@ -60,6 +60,17 @@ async function initApp() {
         // Initialize GeocodingService for tutorial
         const geocodingService = new GeocodingService();
         
+        // Make geocoding service available globally for location search
+        window.geocodingService = geocodingService;
+        
+        // Add initialization function for location search
+        window.initializeGeocodingService = async () => {
+            if (!window.geocodingService) {
+                window.geocodingService = new GeocodingService();
+            }
+            return window.geocodingService;
+        };
+        
         // Initialize catalog selector first to handle default catalog load
         const catalogSelector = new CatalogSelector(apiClient, notificationService, CONFIG);
         

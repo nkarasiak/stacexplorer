@@ -1363,8 +1363,9 @@ export class InlineDropdownManager {
      * Open a standalone Flatpickr calendar for custom date selection
      */
     openFlatpickrCalendar() {
-        // Close current dropdown first
-        this.closeCurrentDropdown();
+        // DISABLED - Old flatpickr calendar system disabled in favor of inline date inputs
+        console.log('🚫 Old Flatpickr calendar disabled - using inline date inputs');
+        return;
         
         // Create a temporary input for Flatpickr
         const tempInput = document.createElement('input');
@@ -1884,6 +1885,12 @@ export class InlineDropdownManager {
      * @param {HTMLElement} triggerElement - Trigger element
      */
     showDirectDropdown(dropdownContent, fieldType, triggerElement) {
+        // BLOCK date dropdowns - using new inline date input system
+        if (fieldType === 'date') {
+            console.log('🚫 Blocked old date dropdown - using inline date inputs');
+            return;
+        }
+        
         // Create dropdown container
         const dropdown = document.createElement('div');
         dropdown.className = 'inline-dropdown-container';
@@ -2465,9 +2472,9 @@ export class InlineDropdownManager {
      * @param {string} dateType - Date type
      */
     handleDateSelection(dateType) {
-        
-        let dateRange;
-        let displayText;
+        // DISABLED - Old date selection system disabled in favor of inline date inputs
+        console.log('🚫 Old date selection disabled - using inline date inputs for:', dateType);
+        return;
         
         switch (dateType) {
             case 'anytime':
@@ -3135,7 +3142,35 @@ export class InlineDropdownManager {
         }
         
         if (summaryElement) {
-            summaryElement.textContent = value;
+            // Special handling for date field to preserve input elements
+            if (fieldType === 'date') {
+                // Check if we have mini date inputs
+                if (summaryElement.querySelector('.mini-date-inputs')) {
+                    // NEVER replace mini date inputs with text - they are the new system
+                    console.log('🚫 BLOCKED: Attempt to replace mini date inputs with text:', value);
+                    return; // Exit early to preserve the date inputs
+                } else {
+                    // If no mini date inputs exist, restore them instead of setting text
+                    console.log('🔄 Restoring mini date inputs instead of setting text:', value);
+                    const today = new Date();
+                    const oneMonthAgo = new Date(today);
+                    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                    const todayStr = today.toISOString().split('T')[0];
+                    const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
+                    
+                    summaryElement.innerHTML = `
+                        <div class="mini-date-inputs" id="mini-date-container">
+                            <input type="date" id="summary-start-date" class="mini-date-input" value="${oneMonthAgoStr}" max="${todayStr}">
+                            <span class="date-separator">to</span>
+                            <input type="date" id="summary-end-date" class="mini-date-input" value="${todayStr}" max="${todayStr}">
+                        </div>
+                    `;
+                    console.log('✅ Mini date inputs restored');
+                    return;
+                }
+            } else {
+                summaryElement.textContent = value;
+            }
             
             // Add brief highlight animation
             summaryElement.style.animation = 'highlight 0.5s ease-in-out';

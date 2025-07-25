@@ -1838,7 +1838,60 @@
                                         </div>
                                         <div class="search-summary-content">
                                             <div class="search-summary-label">TIME:</div>
-                                            <div class="search-summary-value">Anytime</div>
+                                            <div class="search-summary-value">
+                                                <div class="mini-date-inputs" id="mini-date-container">
+                                                    <input type="date" id="summary-start-date" class="mini-date-input" value="">
+                                                    <span class="date-separator">to</span>
+                                                    <input type="date" id="summary-end-date" class="mini-date-input" value="">
+                                                </div>
+                                                <script>
+                                                    // Immediate date initialization and protection
+                                                    (function() {
+                                                        const today = new Date();
+                                                        const oneMonthAgo = new Date(today);
+                                                        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                                                        
+                                                        const todayStr = today.toISOString().split('T')[0];
+                                                        const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
+                                                        
+                                                        console.log('🔧 Immediate date setup:', oneMonthAgoStr, 'to', todayStr);
+                                                        
+                                                        const startInput = document.getElementById('summary-start-date');
+                                                        const endInput = document.getElementById('summary-end-date');
+                                                        
+                                                        if (startInput && endInput) {
+                                                            startInput.value = oneMonthAgoStr;
+                                                            endInput.value = todayStr;
+                                                            startInput.max = todayStr;
+                                                            endInput.max = todayStr;
+                                                            console.log('✅ Immediate date values set');
+                                                        }
+                                                        
+                                                        // Add mutation observer to restore date inputs if they get replaced
+                                                        const summaryValueDiv = document.querySelector('[data-field="date"] .search-summary-value');
+                                                        if (summaryValueDiv) {
+                                                            const observer = new MutationObserver((mutations) => {
+                                                                mutations.forEach((mutation) => {
+                                                                    if (mutation.type === 'childList' && !summaryValueDiv.querySelector('.mini-date-inputs')) {
+                                                                        console.log('🚨 Date inputs were replaced! Restoring...');
+                                                                        // Restore the mini date inputs
+                                                                        summaryValueDiv.innerHTML = `
+                                                                            <div class="mini-date-inputs" id="mini-date-container">
+                                                                                <input type="date" id="summary-start-date" class="mini-date-input" value="${oneMonthAgoStr}" max="${todayStr}">
+                                                                                <span class="date-separator">to</span>
+                                                                                <input type="date" id="summary-end-date" class="mini-date-input" value="${todayStr}" max="${todayStr}">
+                                                                            </div>
+                                                                        `;
+                                                                        console.log('✅ Date inputs restored');
+                                                                    }
+                                                                });
+                                                            });
+                                                            observer.observe(summaryValueDiv, { childList: true, subtree: true });
+                                                            console.log('🛡️ Date input protection observer started');
+                                                        }
+                                                    })();
+                                                </script>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="time-presets-mini">
@@ -1879,7 +1932,6 @@
                             </div>
                             <div id="source-card"></div>
                             <div id="dataset-card"></div>
-                            <div id="time-card"></div>
                             <div id="quality-card"></div>
                             <div id="cloud-cover-controls"></div>
                             <div id="global-summary">
@@ -2431,19 +2483,7 @@
                     console.error('Could not find the criteria-draw-bbox-btn element');
                 }
                 
-                // Also set up the preset 2024 button
-                const preset2024Btn = document.getElementById('preset-2024');
-                if (preset2024Btn) {
-                    preset2024Btn.addEventListener('click', function() {
-                        console.log('2024 preset clicked (hidden)');
-                        document.getElementById('date-start').value = '2024-01-01';
-                        document.getElementById('date-end').value = '2024-12-31';
-                        // Trigger change events
-                        document.getElementById('date-start').dispatchEvent(new Event('change'));
-                        document.getElementById('date-end').dispatchEvent(new Event('change'));
-                    });
-                    console.log('2024 preset button initialized (hidden)');
-                }
+                // Note: Preset button handlers are now initialized in the main DOMContentLoaded section
                 
                 // Set up collection info button
                 const collectionInfoBtn = document.getElementById('collection-info-btn');
@@ -2456,7 +2496,7 @@
                 }
 
                 // Set up visible date preset buttons
-                setupDatePresetButtons();
+                // setupDatePresetButtons(); // Disabled - using new inline date input system
                 
                 // Set up source preset buttons
                 setupSourcePresetButtons();
@@ -2467,41 +2507,12 @@
             }, 1000); // Wait 1 second to ensure everything is loaded
         });
 
-        // Enhanced Date Preset Button Setup
+        // OLD Date Preset Button Setup - DISABLED
+        // This function is disabled in favor of the new inline date input system
         function setupDatePresetButtons() {
-            const presetButtons = document.querySelectorAll('.preset-mini-btn');
-            
-            presetButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Prevent triggering the parent click
-                    
-                    const days = this.getAttribute('data-days');
-                    const year = this.getAttribute('data-year');
-                    
-                    // Remove active class from all preset buttons
-                    presetButtons.forEach(btn => btn.classList.remove('active'));
-                    // Add active class to clicked button
-                    this.classList.add('active');
-                    
-                    if (days) {
-                        setDateRange(parseInt(days));
-                        console.log(`✅ Date preset: Last ${days} days`);
-                    } else if (year) {
-                        if (year === 'current') {
-                            setYearRange(new Date().getFullYear());
-                            console.log(`✅ Date preset: Current year (${new Date().getFullYear()})`);
-                        } else {
-                            setYearRange(parseInt(year));
-                            console.log(`✅ Date preset: Year ${year}`);
-                        }
-                    }
-                    
-                    // Update the search summary display
-                    updateSearchSummaryDisplay();
-                });
-            });
-            
-            console.log('✅ Date preset mini buttons initialized');
+            console.log('⚠️ Old preset button setup disabled - using new inline date input system');
+            // Old preset button handlers are disabled
+            // New handlers are initialized in the DOMContentLoaded section below
         }
 
         // Source Preset Button Setup
@@ -2598,27 +2609,63 @@
             const startDateStr = startDate.toISOString().split('T')[0];
             const endDateStr = today.toISOString().split('T')[0];
             
-            // Set the hidden form inputs
-            document.getElementById('date-start').value = startDateStr;
-            document.getElementById('date-end').value = endDateStr;
+            // Update mini date inputs (new system)
+            const summaryStartInput = document.getElementById('summary-start-date');
+            const summaryEndInput = document.getElementById('summary-end-date');
+            if (summaryStartInput) summaryStartInput.value = startDateStr;
+            if (summaryEndInput) summaryEndInput.value = endDateStr;
             
-            // Trigger change events to notify other components
-            document.getElementById('date-start').dispatchEvent(new Event('change'));
-            document.getElementById('date-end').dispatchEvent(new Event('change'));
+            // Update hidden form inputs (for compatibility)
+            const formStartInput = document.getElementById('date-start');
+            const formEndInput = document.getElementById('date-end');
+            if (formStartInput) formStartInput.value = startDateStr;
+            if (formEndInput) formEndInput.value = endDateStr;
+            
+            // Trigger search parameter change event
+            document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                detail: {
+                    type: 'date',
+                    dateType: 'custom',
+                    dateStart: startDateStr,
+                    dateEnd: endDateStr
+                }
+            }));
         }
 
         // Set date range for a specific year
         function setYearRange(year) {
             const startDateStr = `${year}-01-01`;
-            const endDateStr = `${year}-12-31`;
+            let endDateStr;
             
-            // Set the hidden form inputs
-            document.getElementById('date-start').value = startDateStr;
-            document.getElementById('date-end').value = endDateStr;
+            // If it's the current year, use today's date as end date
+            const currentYear = new Date().getFullYear();
+            if (year === currentYear) {
+                endDateStr = new Date().toISOString().split('T')[0];
+            } else {
+                endDateStr = `${year}-12-31`;
+            }
             
-            // Trigger change events to notify other components
-            document.getElementById('date-start').dispatchEvent(new Event('change'));
-            document.getElementById('date-end').dispatchEvent(new Event('change'));
+            // Update mini date inputs (new system)
+            const summaryStartInput = document.getElementById('summary-start-date');
+            const summaryEndInput = document.getElementById('summary-end-date');
+            if (summaryStartInput) summaryStartInput.value = startDateStr;
+            if (summaryEndInput) summaryEndInput.value = endDateStr;
+            
+            // Update hidden form inputs (for compatibility)
+            const formStartInput = document.getElementById('date-start');
+            const formEndInput = document.getElementById('date-end');
+            if (formStartInput) formStartInput.value = startDateStr;
+            if (formEndInput) formEndInput.value = endDateStr;
+            
+            // Trigger search parameter change event
+            document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                detail: {
+                    type: 'date',
+                    dateType: 'custom',
+                    dateStart: startDateStr,
+                    dateEnd: endDateStr
+                }
+            }));
         }
 
         // Update the search summary display with current date selection
@@ -3338,6 +3385,252 @@
             // Ensure body doesn't have modal-open class
             document.body.classList.remove('modal-open');
             
+            // Initialize date input handlers with retry logic
+            const initializeDateInputs = () => {
+                const startDateInput = document.getElementById('summary-start-date');
+                const endDateInput = document.getElementById('summary-end-date');
+                
+                if (!startDateInput || !endDateInput) {
+                    // Try again in 100ms if inputs don't exist yet
+                    setTimeout(initializeDateInputs, 100);
+                    return;
+                }
+                
+                // Initialize with default values (today and one month ago)
+                const today = new Date();
+                const oneMonthAgo = new Date(today);
+                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                
+                const todayStr = today.toISOString().split('T')[0];
+                const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
+                
+                console.log('📅 Setting initial dates:', oneMonthAgoStr, 'to', todayStr);
+                
+                startDateInput.value = oneMonthAgoStr;
+                endDateInput.value = todayStr;
+                startDateInput.max = todayStr;
+                endDateInput.max = todayStr;
+                
+                // Also update the form inputs immediately
+                const formStartInput = document.getElementById('date-start');
+                const formEndInput = document.getElementById('date-end');
+                if (formStartInput) formStartInput.value = oneMonthAgoStr;
+                if (formEndInput) formEndInput.value = todayStr;
+                
+                const updateDateInputs = () => {
+                    // Update form inputs when summary date inputs change
+                    const formStartInput = document.getElementById('date-start');
+                    const formEndInput = document.getElementById('date-end');
+                    
+                    if (formStartInput && formEndInput) {
+                        formStartInput.value = startDateInput.value;
+                        formEndInput.value = endDateInput.value;
+                        
+                        // Trigger search parameter change event
+                        document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                            detail: {
+                                type: 'date',
+                                dateType: 'custom',
+                                dateStart: startDateInput.value,
+                                dateEnd: endDateInput.value
+                            }
+                        }));
+                    }
+                };
+                
+                // Update end date min when start date changes
+                startDateInput.addEventListener('change', () => {
+                    endDateInput.min = startDateInput.value;
+                    updateDateInputs();
+                });
+                
+                endDateInput.addEventListener('change', updateDateInputs);
+                
+                console.log('✅ Date inputs initialized with values');
+            };
+            
+            // FORCE RESTORE mini date inputs - replace any text that's there
+            const forceRestoreDateInputs = () => {
+                const summaryValueDiv = document.querySelector('[data-field="date"] .search-summary-value');
+                if (summaryValueDiv) {
+                    const today = new Date();
+                    const oneMonthAgo = new Date(today);
+                    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                    const todayStr = today.toISOString().split('T')[0];
+                    const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
+                    
+                    console.log('💪 FORCING restoration of mini date inputs');
+                    summaryValueDiv.innerHTML = `
+                        <div class="mini-date-inputs" id="mini-date-container">
+                            <input type="date" id="summary-start-date" class="mini-date-input" value="${oneMonthAgoStr}" max="${todayStr}">
+                            <span class="date-separator">to</span>
+                            <input type="date" id="summary-end-date" class="mini-date-input" value="${todayStr}" max="${todayStr}">
+                        </div>
+                    `;
+                    console.log('✅ FORCED mini date inputs restored');
+                }
+            };
+            
+            // Force restore immediately and repeatedly
+            forceRestoreDateInputs();
+            setTimeout(forceRestoreDateInputs, 10);
+            setTimeout(forceRestoreDateInputs, 100);
+            setTimeout(forceRestoreDateInputs, 500);
+            setTimeout(forceRestoreDateInputs, 1000);
+            
+            // Set up continuous monitoring every 2 seconds
+            setInterval(() => {
+                const summaryValueDiv = document.querySelector('[data-field="date"] .search-summary-value');
+                if (summaryValueDiv && !summaryValueDiv.querySelector('.mini-date-inputs')) {
+                    console.log('🔄 Continuous monitor: Restoring mini date inputs');
+                    forceRestoreDateInputs();
+                }
+            }, 2000);
+            
+            // Start initialization immediately and also run it multiple times to ensure it works
+            initializeDateInputs();
+            
+            // Also try again after a short delay to ensure DOM is ready
+            setTimeout(initializeDateInputs, 50);
+            setTimeout(initializeDateInputs, 200);
+            setTimeout(initializeDateInputs, 500);
+            
+            // Disable click handler on TIME button to prevent old dropdown
+            const timeButton = document.getElementById('summary-date');
+            if (timeButton) {
+                timeButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('TIME click disabled - using inline date inputs');
+                });
+                console.log('✅ Disabled TIME button dropdown');
+            }
+            
+            // Initialize preset button handlers
+            const initializePresetButtons = () => {
+                console.log('🔄 Starting preset button initialization...');
+                // Helper function to update both summary and form inputs
+                const updateDateInputs = (startDate, endDate) => {
+                    // Update summary date inputs
+                    const summaryStartInput = document.getElementById('summary-start-date');
+                    const summaryEndInput = document.getElementById('summary-end-date');
+                    const formStartInput = document.getElementById('date-start');
+                    const formEndInput = document.getElementById('date-end');
+                    
+                    if (summaryStartInput) summaryStartInput.value = startDate;
+                    if (summaryEndInput) summaryEndInput.value = endDate;
+                    if (formStartInput) formStartInput.value = startDate;
+                    if (formEndInput) formEndInput.value = endDate;
+                    
+                    // Trigger search parameter change event
+                    document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                        detail: {
+                            type: 'date',
+                            dateType: 'custom',
+                            dateStart: startDate,
+                            dateEnd: endDate
+                        }
+                    }));
+                };
+                
+                // 7D button
+                const preset7DBtn = document.getElementById('preset-last-7-days');
+                console.log('7D button found:', preset7DBtn);
+                if (preset7DBtn) {
+                    preset7DBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Remove active class from all preset buttons
+                        document.querySelectorAll('.preset-mini-btn').forEach(btn => btn.classList.remove('active'));
+                        preset7DBtn.classList.add('active');
+                        
+                        const today = new Date();
+                        const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                        const startDate = new Date(endDate);
+                        startDate.setDate(startDate.getDate() - 7);
+                        
+                        updateDateInputs(
+                            startDate.toISOString().split('T')[0],
+                            endDate.toISOString().split('T')[0]
+                        );
+                        
+                        console.log('✅ 7D preset applied');
+                    });
+                }
+                
+                // 30D button
+                const preset30DBtn = document.getElementById('preset-last-30-days');
+                console.log('30D button found:', preset30DBtn);
+                if (preset30DBtn) {
+                    preset30DBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Remove active class from all preset buttons
+                        document.querySelectorAll('.preset-mini-btn').forEach(btn => btn.classList.remove('active'));
+                        preset30DBtn.classList.add('active');
+                        
+                        const today = new Date();
+                        const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                        const startDate = new Date(endDate);
+                        startDate.setDate(startDate.getDate() - 30);
+                        
+                        updateDateInputs(
+                            startDate.toISOString().split('T')[0],
+                            endDate.toISOString().split('T')[0]
+                        );
+                        
+                        console.log('✅ 30D preset applied');
+                    });
+                }
+                
+                // 2025 button
+                const preset2025Btn = document.getElementById('preset-this-year');
+                if (preset2025Btn) {
+                    preset2025Btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Remove active class from all preset buttons
+                        document.querySelectorAll('.preset-mini-btn').forEach(btn => btn.classList.remove('active'));
+                        preset2025Btn.classList.add('active');
+                        
+                        const today = new Date();
+                        updateDateInputs(
+                            `${today.getFullYear()}-01-01`,
+                            today.toISOString().split('T')[0]
+                        );
+                        
+                        console.log('✅ 2025 preset applied');
+                    });
+                }
+                
+                // 2024 button
+                const preset2024Btn = document.getElementById('preset-2024');
+                if (preset2024Btn) {
+                    preset2024Btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Remove active class from all preset buttons
+                        document.querySelectorAll('.preset-mini-btn').forEach(btn => btn.classList.remove('active'));
+                        preset2024Btn.classList.add('active');
+                        
+                        updateDateInputs('2024-01-01', '2024-12-31');
+                        
+                        console.log('✅ 2024 preset applied');
+                    });
+                }
+                
+                console.log('✅ Initialized preset button handlers');
+            };
+            
+            // Initialize preset buttons immediately and with delays
+            initializePresetButtons();
+            setTimeout(initializePresetButtons, 100);
+            setTimeout(initializePresetButtons, 500);
+            
             // Additional check to prevent scrolling issues
             setTimeout(() => {
                 const modal = document.querySelector('.collection-details-modal-overlay');
@@ -3860,6 +4153,102 @@
         .theme-selector option {
             background: var(--surface-elevated, #1a1a1a);
             color: var(--text-primary, #ffffff);
+        }
+        
+        /* Mini Date Inputs Styling */
+        .mini-date-inputs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+        }
+        
+        .mini-date-input {
+            background: var(--surface-elevated, #2a2a2a);
+            border: 1px solid var(--border-color, #404040);
+            border-radius: 6px;
+            color: var(--text-primary, #ffffff);
+            font-size: 11px;
+            padding: 2px 4px;
+            width: 70px;
+            min-width: 70px;
+            height: 28px;
+            transition: all 0.2s ease;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        
+        .mini-date-input:focus {
+            outline: none;
+            border-color: var(--accent-color, #667eea);
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            background: var(--surface-elevated-hover, #333333);
+        }
+        
+        .mini-date-input:hover {
+            border-color: var(--border-hover, #555555);
+            background: var(--surface-elevated-hover, #333333);
+        }
+        
+        .date-separator {
+            color: var(--text-secondary, #aaaaaa);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 0 2px;
+        }
+        
+        /* Hide/minimize calendar icon to save space */
+        .mini-date-input::-webkit-calendar-picker-indicator {
+            display: none;
+        }
+        
+        /* Fix date input internal layout and text */
+        .mini-date-input::-webkit-datetime-edit-fields-wrapper {
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mini-date-input::-webkit-datetime-edit {
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mini-date-input::-webkit-datetime-edit-text {
+            color: var(--text-secondary, #888888);
+            padding: 0 1px;
+        }
+        
+        .mini-date-input::-webkit-datetime-edit-month-field,
+        .mini-date-input::-webkit-datetime-edit-day-field,
+        .mini-date-input::-webkit-datetime-edit-year-field {
+            color: var(--text-primary, #ffffff);
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mini-date-input::-webkit-datetime-edit-year-field {
+            min-width: 35px;
+        }
+        
+        /* Dark theme adjustments */
+        @media (prefers-color-scheme: dark) {
+            .mini-date-input {
+                background: #1a1a1a;
+                border-color: #404040;
+                color: #ffffff;
+            }
+            
+            .mini-date-input:focus {
+                border-color: #667eea;
+                background: #252525;
+            }
+            
+            .mini-date-input:hover {
+                border-color: #555555;
+                background: #252525;
+            }
         }
     </style>
 

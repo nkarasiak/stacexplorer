@@ -1859,7 +1859,6 @@
                                                         const todayStr = today.toISOString().split('T')[0];
                                                         const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
                                                         
-                                                        console.log('🔧 Immediate date setup:', oneMonthAgoStr, 'to', todayStr);
                                                         
                                                         const startInput = document.getElementById('summary-start-date');
                                                         const endInput = document.getElementById('summary-end-date');
@@ -1869,7 +1868,6 @@
                                                             endInput.value = todayStr;
                                                             startInput.max = todayStr;
                                                             endInput.max = todayStr;
-                                                            console.log('✅ Immediate date values set');
                                                         }
                                                         
                                                         // Add mutation observer to restore date inputs if they get replaced
@@ -1878,7 +1876,6 @@
                                                             const observer = new MutationObserver((mutations) => {
                                                                 mutations.forEach((mutation) => {
                                                                     if (mutation.type === 'childList' && !summaryValueDiv.querySelector('.mini-date-inputs')) {
-                                                                        console.log('🚨 Date inputs were replaced! Restoring...');
                                                                         // Restore the mini date inputs
                                                                         summaryValueDiv.innerHTML = `
                                                                             <div class="mini-date-inputs" id="mini-date-container">
@@ -1887,12 +1884,10 @@
                                                                                 <input type="date" id="summary-end-date" class="mini-date-input" value="${todayStr}" max="${todayStr}">
                                                                             </div>
                                                                         `;
-                                                                        console.log('✅ Date inputs restored');
                                                                     }
                                                                 });
                                                             });
                                                             observer.observe(summaryValueDiv, { childList: true, subtree: true });
-                                                            console.log('🛡️ Date input protection observer started');
                                                         }
                                                     })();
                                                 </script>
@@ -2074,7 +2069,6 @@
                     // On desktop, check sidebar state
                     const isHidden = this.sidebar.classList.contains('hidden');
                     toggleIcon.textContent = isHidden ? 'chevron_right' : 'chevron_left';
-                    console.log(`🔧 Set initial desktop toggle icon: ${toggleIcon.textContent} (sidebar hidden: ${isHidden})`);
                 }
             }
             
@@ -2118,9 +2112,6 @@
                     
                     sidebarHeader.appendChild(this.mobileCloseBtn);
                     
-                    console.log('Mobile close button created:', this.mobileCloseBtn);
-                    console.log('Sidebar header children:', sidebarHeader.children);
-                    console.log('Close button position:', this.mobileCloseBtn.getBoundingClientRect());
                 } else {
                     console.error('Sidebar header not found!');
                 }
@@ -2222,8 +2213,6 @@
             openSidebar() {
                 if (this.isDesktop) return;
                 
-                console.log('Opening sidebar...');
-                console.log('Close button exists:', !!this.mobileCloseBtn);
                 
                 this.isOpen = true;
                 this.sidebar.classList.add('mobile-open');
@@ -2232,13 +2221,10 @@
                 
                 // Hide hamburger menu when sidebar is open
                 this.mobileMenuBtn.style.display = 'none';
-                console.log('Hamburger hidden');
                 
                 // Show mobile close button when sidebar is open
                 if (this.mobileCloseBtn) {
                     this.mobileCloseBtn.style.display = 'flex';
-                    console.log('Close button shown, display:', this.mobileCloseBtn.style.display);
-                    console.log('Close button computed style:', window.getComputedStyle(this.mobileCloseBtn).display);
                 } else {
                     console.error('No close button to show!');
                 }
@@ -2246,7 +2232,6 @@
                 // Update ARIA attributes
                 this.sidebar.setAttribute('aria-hidden', 'false');
                 
-                console.log('Sidebar opened, close button should be visible:', this.mobileCloseBtn);
                 
                 // Focus first focusable element in sidebar
                 setTimeout(() => {
@@ -2280,7 +2265,6 @@
                 // Update ARIA attributes
                 this.sidebar.setAttribute('aria-hidden', 'true');
                 
-                console.log('Sidebar closed, hamburger should be visible');
                 
                 // Return focus to menu button
                 this.mobileMenuBtn.focus();
@@ -2289,39 +2273,30 @@
             toggleDesktopSidebar() {
                 if (!this.isDesktop) return;
                 
-                console.log('🔄 Toggle clicked! Current classes:', this.sidebar.className);
-                console.log('🔄 Current computed width:', window.getComputedStyle(this.sidebar).width);
                 
                 const isCurrentlyHidden = this.sidebar.classList.contains('hidden');
-                console.log('🔄 Is currently hidden?', isCurrentlyHidden);
                 
                 if (isCurrentlyHidden) {
                     // Show the sidebar
-                    console.log('🔄 Showing sidebar...');
                     this.sidebar.classList.remove('hidden');
                     // Update toggle button icon to show it can hide
                     const toggleIcon = this.sidebarToggle.querySelector('i');
                     if (toggleIcon) {
                         toggleIcon.textContent = 'chevron_left';
                     }
-                    console.log('🔄 After show - classes:', this.sidebar.className);
                     
                 } else {
                     // Hide the sidebar
-                    console.log('🔄 Hiding sidebar...');
                     this.sidebar.classList.add('hidden');
                     // Update toggle button icon to show it can show
                     const toggleIcon = this.sidebarToggle.querySelector('i');
                     if (toggleIcon) {
                         toggleIcon.textContent = 'chevron_right';
                     }
-                    console.log('🔄 After hide - classes:', this.sidebar.className);
                 }
                 
                 // Force a recompute
                 setTimeout(() => {
-                    console.log('🔄 New computed width:', window.getComputedStyle(this.sidebar).width);
-                    console.log('🔄 New computed transform:', window.getComputedStyle(this.sidebar).transform);
                 }, 100);
             }
             
@@ -2396,7 +2371,6 @@
                 // Hide mobile toggle on the landing page (no parameters)
                 const shouldShow = hasSearchParams || hasHash;
                 
-                console.log(`Mobile toggle visibility: ${shouldShow ? 'visible' : 'hidden'} (params: ${hasSearchParams}, hash: ${hasHash})`);
                 
                 return shouldShow;
             }
@@ -2426,7 +2400,6 @@
             // Export to global scope for debugging and external access
             window.mobileSidebarManager = mobileSidebarManager;
             
-            console.log('Mobile sidebar manager initialized');
         });
         
         // Logo click handler - return to homepage
@@ -2442,7 +2415,6 @@
                     window.location.href = baseUrl;
                 });
                 
-                console.log('🏠 Logo click handler initialized');
             }
         });
     </script>
@@ -2466,10 +2438,8 @@
                     
                     // Add a new event listener
                     newBtn.addEventListener('click', function() {
-                        console.log('Criteria Draw Bbox button clicked (hidden)');
                         
                         if (window.stacExplorer && window.stacExplorer.mapManager) {
-                            console.log('Starting drawing mode...');
                             
                             // Access the map manager directly
                             const mapManager = window.stacExplorer.mapManager;
@@ -2477,13 +2447,11 @@
                             // Start drawing mode
                             mapManager.startDrawingBbox();
                             
-                            console.log('Drawing mode activated');
                         } else {
                             console.error('Map manager not available');
                         }
                     });
                     
-                    console.log('Draw Bounding Box button initialized (hidden)');
                 } else {
                     console.error('Could not find the criteria-draw-bbox-btn element');
                 }
@@ -2494,10 +2462,8 @@
                 const collectionInfoBtn = document.getElementById('collection-info-btn');
                 if (collectionInfoBtn) {
                     collectionInfoBtn.addEventListener('click', function() {
-                        console.log('Collection info button clicked (hidden)');
                         // This can be a no-op since the inline AI search handles collection details
                     });
-                    console.log('Collection info button initialized (hidden)');
                 }
 
                 // Set up visible date preset buttons
@@ -2515,7 +2481,6 @@
         // OLD Date Preset Button Setup - DISABLED
         // This function is disabled in favor of the new inline date input system
         function setupDatePresetButtons() {
-            console.log('⚠️ Old preset button setup disabled - using new inline date input system');
             // Old preset button handlers are disabled
             // New handlers are initialized in the DOMContentLoaded section below
         }
@@ -2538,7 +2503,6 @@
                             // Trigger the dropdown by simulating a click on the source card
                             summarySource.click();
                         }
-                        console.log('✅ Opened source dropdown for more collections');
                         return;
                     }
                     
@@ -2558,12 +2522,10 @@
                         // Update the search summary display
                         updateSourceSummaryDisplay(this.textContent, this.title);
                         
-                        console.log(`✅ Source preset selected: ${this.title} (${collection})`);
                     }
                 });
             });
             
-            console.log('✅ Source preset mini buttons initialized');
         }
 
         // Set selected collection in hidden form
@@ -2720,7 +2682,6 @@
             if (inlineDrawBtn && hiddenDrawBtn) {
                 inlineDrawBtn.addEventListener('click', function(e) {
                     e.stopPropagation(); // Prevent triggering the parent card click
-                    console.log('✅ Inline Draw Area button clicked');
                     
                     // Trigger the hidden button's functionality
                     hiddenDrawBtn.click();
@@ -2733,7 +2694,6 @@
                         this.style.color = '';
                     }, 2000);
                 });
-                console.log('✅ Inline draw area button connected');
             }
             
             // Inline from view button in location card
@@ -2742,7 +2702,6 @@
             if (inlineFromViewBtn) {
                 inlineFromViewBtn.addEventListener('click', function(e) {
                     e.stopPropagation(); // Prevent triggering the parent card click
-                    console.log('✅ From View button clicked');
                     
                     // Get current map bounds
                     if (window.stacExplorer && window.stacExplorer.mapManager && window.stacExplorer.mapManager.map) {
@@ -2768,7 +2727,6 @@
                             // Trigger input event to notify other components
                             bboxInput.dispatchEvent(new Event('input', { bubbles: true }));
                             
-                            console.log('📍 Set bbox from current view:', bboxString);
                             
                             // Show success notification if available
                             if (window.stacExplorer && window.stacExplorer.notificationService) {
@@ -2799,7 +2757,6 @@
                         }
                     }
                 });
-                console.log('✅ From View button connected');
             }
         }
         
@@ -2820,7 +2777,6 @@
             summaryItems.forEach(item => {
                 item.addEventListener('click', function() {
                     const field = this.getAttribute('data-field');
-                    console.log(`✅ Search summary ${field} clicked`);
                     
                     if (field === 'collection') {
                         // Trigger the source dropdown from the inline dropdown system
@@ -2846,7 +2802,6 @@
                 // Import the beautiful GeocodingService
                 const { defaultGeocodingService } = await import('./js/utils/GeocodingService.js');
                 geocodingService = defaultGeocodingService;
-                console.log('✅ Beautiful GeocodingService loaded');
                 
                 // Initialize map preview functionality
                 initializeMapPreview();
@@ -2862,9 +2817,7 @@
             setTimeout(() => {
                 if (window.stacExplorer && window.stacExplorer.mapManager && window.stacExplorer.mapManager.map) {
                     mapPreviewHandler = new LocationMapPreview(window.stacExplorer.mapManager.map);
-                    console.log('✅ Map preview handler initialized');
                 } else {
-                    console.log('⏳ Map not ready, retrying map preview init...');
                     initializeMapPreview(); // Retry
                 }
             }, 1000);
@@ -2891,7 +2844,6 @@
                         pitch: this.map.getPitch()
                     };
                     this.hasStoredOriginalView = true;
-                    console.log('🗺️ Original map view stored for search session');
                 }
             }
 
@@ -2899,7 +2851,6 @@
             resetStoredView() {
                 this.originalView = null;
                 this.hasStoredOriginalView = false;
-                console.log('🗺️ Original map view reset');
             }
 
             // Show location preview on map
@@ -2920,7 +2871,6 @@
                 // Zoom to location
                 this.zoomToLocation(result);
                 
-                console.log(`🗺️ Showing preview for: ${result.name || result.shortName}`);
             }
 
             // Hide location preview
@@ -2944,7 +2894,6 @@
                     });
                 }
                 
-                console.log('🗺️ Preview hidden, map restored');
             }
 
             // Create GeoJSON from location result
@@ -3290,7 +3239,6 @@
             const bboxStr = suggestionElement.getAttribute('data-bbox');
             const category = suggestionElement.getAttribute('data-category');
             
-            console.log(`✅ Selected beautiful location: ${name} (${lat}, ${lon}) [${category}]`);
             
             let bbox;
             if (bboxStr && bboxStr !== '') {
@@ -3360,7 +3308,6 @@
             const lon = parseFloat(suggestionElement.getAttribute('data-lon'));
             const name = suggestionElement.getAttribute('data-name');
             
-            console.log(`✅ Selected location: ${name} (${lat}, ${lon})`);
             
             // Create a bounding box around the location (roughly 0.1 degree buffer)
             const buffer = 0.1;
@@ -3450,7 +3397,6 @@
             if (modalOverlay) {
                 modalOverlay.style.display = 'none';
                 modalOverlay.classList.remove('active');
-                console.log('✅ Hidden collection details modal overlay');
             }
             
             // Ensure body doesn't have modal-open class
@@ -3475,7 +3421,6 @@
                 const todayStr = today.toISOString().split('T')[0];
                 const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
                 
-                console.log('📅 Setting initial dates:', oneMonthAgoStr, 'to', todayStr);
                 
                 startDateInput.value = oneMonthAgoStr;
                 endDateInput.value = todayStr;
@@ -3517,7 +3462,6 @@
                 
                 endDateInput.addEventListener('change', updateDateInputs);
                 
-                console.log('✅ Date inputs initialized with values');
             };
             
             // FORCE RESTORE mini date inputs - replace any text that's there
@@ -3530,7 +3474,6 @@
                     const todayStr = today.toISOString().split('T')[0];
                     const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
                     
-                    console.log('💪 FORCING restoration of mini date inputs');
                     summaryValueDiv.innerHTML = `
                         <div class="mini-date-inputs" id="mini-date-container">
                             <input type="date" id="summary-start-date" class="mini-date-input" value="${oneMonthAgoStr}" max="${todayStr}">
@@ -3538,7 +3481,6 @@
                             <input type="date" id="summary-end-date" class="mini-date-input" value="${todayStr}" max="${todayStr}">
                         </div>
                     `;
-                    console.log('✅ FORCED mini date inputs restored');
                 }
             };
             
@@ -3553,7 +3495,6 @@
             setInterval(() => {
                 const summaryValueDiv = document.querySelector('[data-field="date"] .search-summary-value');
                 if (summaryValueDiv && !summaryValueDiv.querySelector('.mini-date-inputs')) {
-                    console.log('🔄 Continuous monitor: Restoring mini date inputs');
                     forceRestoreDateInputs();
                 }
             }, 2000);
@@ -3572,14 +3513,11 @@
                 timeButton.addEventListener('click', (e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('TIME click disabled - using inline date inputs');
                 });
-                console.log('✅ Disabled TIME button dropdown');
             }
             
             // Initialize preset button handlers
             const initializePresetButtons = () => {
-                console.log('🔄 Starting preset button initialization...');
                 // Helper function to update both summary and form inputs
                 const updateDateInputs = (startDate, endDate) => {
                     // Update summary date inputs
@@ -3606,7 +3544,6 @@
                 
                 // 7D button
                 const preset7DBtn = document.getElementById('preset-last-7-days');
-                console.log('7D button found:', preset7DBtn);
                 if (preset7DBtn) {
                     preset7DBtn.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -3626,13 +3563,11 @@
                             endDate.toISOString().split('T')[0]
                         );
                         
-                        console.log('✅ 7D preset applied');
                     });
                 }
                 
                 // 30D button
                 const preset30DBtn = document.getElementById('preset-last-30-days');
-                console.log('30D button found:', preset30DBtn);
                 if (preset30DBtn) {
                     preset30DBtn.addEventListener('click', (e) => {
                         e.preventDefault();
@@ -3652,7 +3587,6 @@
                             endDate.toISOString().split('T')[0]
                         );
                         
-                        console.log('✅ 30D preset applied');
                     });
                 }
                 
@@ -3673,7 +3607,6 @@
                             today.toISOString().split('T')[0]
                         );
                         
-                        console.log('✅ 2025 preset applied');
                     });
                 }
                 
@@ -3690,11 +3623,9 @@
                         
                         updateDateInputs('2024-01-01', '2024-12-31');
                         
-                        console.log('✅ 2024 preset applied');
                     });
                 }
                 
-                console.log('✅ Initialized preset button handlers');
             };
             
             // Initialize preset buttons immediately and with delays
@@ -3715,7 +3646,6 @@
                 document.body.style.overflow = 'hidden';
                 document.body.style.height = '100vh';
                 
-                console.log('✅ Fixed scrolling and modal issues');
             }, 2000);
             
             // Initialize mini location input functionality
@@ -3729,38 +3659,27 @@
                 // Function to handle location search with geocoding service
                 const handleLocationSearch = async (query) => {
                     if (!query || query.length < 2) {
-                        console.log('🔍 Query too short or empty:', query);
                         return;
                     }
                     
-                    console.log('🔍 Searching for location:', query);
                     
                     try {
                         // Check if geocoding service is available
-                        console.log('🔍 Checking geocoding service availability...');
-                        console.log('window.geocodingService:', !!window.geocodingService);
-                        console.log('window.initializeGeocodingService:', !!window.initializeGeocodingService);
                         
                         // Wait for geocoding service to be available
                         if (!window.geocodingService && window.initializeGeocodingService) {
-                            console.log('🔄 Initializing geocoding service...');
                             await window.initializeGeocodingService();
                         }
                         
                         const service = window.geocodingService;
                         if (!service) {
                             console.warn('⚠️ Geocoding service not available after initialization attempt');
-                            console.log('Service object:', service);
                             return;
                         }
                         
-                        console.log('✅ Geocoding service available:', service);
-                        console.log('Service methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(service)));
                         
                         // Use the geocoding service to search
-                        console.log('🔍 Calling service.searchLocations with query:', query);
                         service.searchLocations(query, (results, error) => {
-                            console.log('🔍 Geocoding callback received:', { results, error });
                             
                             if (error) {
                                 console.error('❌ Location search error:', error);
@@ -3769,10 +3688,8 @@
                             }
                             
                             if (results && results.length > 0) {
-                                console.log('📍 Found', results.length, 'location results:', results);
                                 showLocationResults(results);
                             } else {
-                                console.log('📍 No location results found');
                                 hideLocationResults();
                             }
                         });
@@ -3784,7 +3701,6 @@
                 
                 // Function to show location results in a dropdown
                 const showLocationResults = (results) => {
-                    console.log('🎯 Showing location results dropdown with', results.length, 'results');
                     hideLocationResults(); // Clear any existing dropdown
                     
                     const dropdown = document.createElement('div');
@@ -3818,7 +3734,6 @@
                         `;
                         
                         item.addEventListener('click', () => {
-                            console.log('🎯 Location result clicked:', result);
                             selectLocationResult(result);
                             hideLocationResults();
                         });
@@ -3848,7 +3763,6 @@
                     
                     document.body.appendChild(dropdown);
                     
-                    console.log('✅ Dropdown added to document.body, position:', {
                         top: dropdown.style.top,
                         left: dropdown.style.left,
                         width: dropdown.style.width
@@ -3888,7 +3802,6 @@
                         }
                     }));
                     
-                    console.log('✅ Location selected:', displayName);
                 };
                 
                 // Function to show location preview on map
@@ -3918,7 +3831,6 @@
                         }
                         
                         if (bbox && bbox.length === 4) {
-                            console.log('🗺️ Showing location preview on map:', result.display_name || result.name, bbox);
                             
                             // Use displayBboxOnMap to show the location with zoom
                             const locationName = result.display_name || result.name || 'Location Preview';
@@ -3935,7 +3847,6 @@
                         const mapManager = window.stacExplorer?.mapManager;
                         if (!mapManager) return;
                         
-                        console.log('🗺️ Clearing location preview from map');
                         
                         // Clear the search bbox (which is used for location display)
                         if (typeof mapManager.clearSearchBbox === 'function') {
@@ -3986,7 +3897,6 @@
                     }
                 });
                 
-                console.log('✅ Mini location input initialized');
             };
             
             // Initialize location input
@@ -4004,14 +3914,12 @@
                     }
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('LOCATION click disabled - using inline location input');
                     // Focus the input instead
                     const locationInput = document.getElementById('summary-location-input');
                     if (locationInput) {
                         locationInput.focus();
                     }
                 });
-                console.log('✅ Disabled LOCATION element dropdown');
             }
         });
     </script>
@@ -4029,7 +3937,6 @@
             const action = urlParams.get('action');
             
             if (collectionId && action === 'details') {
-                console.log('🔗 Handling shared collection URL:', collectionId, source);
                 
                 // Wait for app to initialize, then trigger collection details
                 setTimeout(() => {

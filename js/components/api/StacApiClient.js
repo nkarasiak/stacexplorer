@@ -31,7 +31,6 @@ export class STACApiClient {
     async fetchWithRetry(url, options = {}, retries = 3, delay = 1000) {
         for (let attempt = 1; attempt <= retries; attempt++) {
             try {
-                console.log(`🌐 API Request attempt ${attempt}/${retries} to: ${url}`);
                 
                 // Add timeout to prevent hanging requests
                 const controller = new AbortController();
@@ -68,7 +67,6 @@ export class STACApiClient {
                 
                 // Wait before retry with exponential backoff
                 const waitTime = delay * Math.pow(2, attempt - 1);
-                console.log(`⏳ Waiting ${waitTime}ms before retry...`);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
             }
         }
@@ -114,7 +112,6 @@ export class STACApiClient {
         try {
             // Check if offline
             if (offlineManager.getOfflineStatus()) {
-                console.log('📡 Offline mode - Cannot connect to catalog');
                 throw new Error('Cannot connect to catalog - No internet connection');
             }
             // Normalize URL: remove trailing slash if present
@@ -187,7 +184,6 @@ export class STACApiClient {
         try {
             // Check if offline
             if (offlineManager.getOfflineStatus()) {
-                console.log('📡 Offline mode - Cannot fetch collections');
                 throw new Error('Cannot fetch collections - No internet connection');
             }
             // Handle Planet Labs catalog specially
@@ -203,7 +199,6 @@ export class STACApiClient {
             const url = new URL(this.endpoints.collections);
             url.searchParams.append('limit', limit.toString());
             
-            console.log(`📡 Fetching collections from: ${url.toString()}`);
             
             // Use proxy for external URLs
             const proxyUrl = this.getProxyUrl(url.toString());
@@ -227,7 +222,6 @@ export class STACApiClient {
                 collections = [data];
             }
             
-            console.log(`📋 Fetched ${collections.length} collections from ${this.endpoints.collections}`);
             return collections;
             
         } catch (error) {
@@ -242,7 +236,6 @@ export class STACApiClient {
      */
     async fetchPlanetLabsCollections() {
         try {
-            console.log('📡 Fetching Planet Labs collections from catalog structure...');
             
             const collections = [];
             
@@ -251,7 +244,6 @@ export class STACApiClient {
                 link.rel === 'child' || link.rel === 'catalog'
             );
             
-            console.log(`Found ${childLinks.length} child catalogs/collections`);
             
             // Fetch each child to see if it's a collection or contains collections
             for (const link of childLinks) {
@@ -288,7 +280,6 @@ export class STACApiClient {
                 }
             }
             
-            console.log(`📋 Fetched ${collections.length} Planet Labs collections`);
             return collections;
             
         } catch (error) {
@@ -367,7 +358,6 @@ export class STACApiClient {
         try {
             // Check if offline
             if (offlineManager.getOfflineStatus()) {
-                console.log('📡 Offline mode - Cannot search items');
                 throw new Error('Cannot search items - No internet connection');
             }
             // Handle Planet Labs catalog specially - but only if it's currently selected
@@ -379,8 +369,6 @@ export class STACApiClient {
                 return [];
             }
             
-            console.log('Making search request to:', this.endpoints.search);
-            console.log('Request params:', JSON.stringify(params, null, 2));
             
             const response = await this.fetchWithRetry(this.endpoints.search, {
                 method: 'POST',
@@ -411,12 +399,10 @@ export class STACApiClient {
             }
             
             if (features.length > 0) {
-                console.log(`🔍 Search returned ${features.length} items`);
                 const sampleCloudCover = features.slice(0, 3).map(item => ({
                     id: item.id,
                     cloudCover: item.properties?.['eo:cloud_cover']
                 }));
-                console.log('🌥️ Sample cloud cover values from first 3 items:', sampleCloudCover);
                 
                 // Check if we have cloud cover filter in the search params
                 if (params['eo:cloud_cover']) {
@@ -434,7 +420,6 @@ export class STACApiClient {
                             }))
                         );
                     } else {
-                        console.log(`✅ All returned items respect cloud cover filter (<=${filterValue}%)`);
                     }
                 }
             }
@@ -555,7 +540,6 @@ export class STACApiClient {
      */
     async getPresignedUrl(url) {
         try {
-            console.log(`🔗 [PRESIGN-API] Attempting to presign: ${url}`);
             
             // Extract collection from URL to determine the correct SAS token endpoint
             const collection = this.extractCollectionFromUrl(url);
@@ -564,23 +548,18 @@ export class STACApiClient {
                 return url;
             }
             
-            console.log(`🔗 [PRESIGN-API] Extracted collection: ${collection}`);
             
             // Use the correct SAS token endpoint for the specific collection
             const tokenEndpoint = `https://planetarycomputer.microsoft.com/api/sas/v1/token/${collection}`;
-            console.log(`🔗 [PRESIGN-API] Requesting SAS token from: ${tokenEndpoint}`);
             
             const tokenResponse = await fetch(tokenEndpoint);
             
-            console.log(`🔗 [PRESIGN-API] Response status: ${tokenResponse.status}`);
             
             if (tokenResponse.ok) {
                 const tokenData = await tokenResponse.json();
-                console.log(`🔗 [PRESIGN-API] Got SAS token:`, tokenData);
                 
                 if (tokenData.token) {
                     const presignedUrl = `${url}?${tokenData.token}`;
-                    console.log(`🔗 [PRESIGN-API] Created presigned URL:`, presignedUrl);
                     return presignedUrl;
                 }
             } else {
@@ -597,7 +576,6 @@ export class STACApiClient {
         }
         
         // Fallback to original URL if presigning fails
-        console.log(`🔗 [PRESIGN-API] Using fallback URL: ${url}`);
         return url;
     }
     
@@ -607,10 +585,8 @@ export class STACApiClient {
      * @returns {Promise<Object>} - STAC item with presigned asset URLs
      */
     async createPresignedSTACItem(stacItem) {
-        console.log('🔗 [PRESIGN-STAC] Creating presigned STAC item for multiband operations');
         
         if (!stacItem || !stacItem.assets) {
-            console.log('🔗 [PRESIGN-STAC] No assets to presign, returning original item');
             return stacItem;
         }
 
@@ -627,18 +603,15 @@ export class STACApiClient {
         }
         
         if (!needsPresigning) {
-            console.log('🔗 [PRESIGN-STAC] No assets need presigning, returning original item');
             return presignedItem;
         }
         
-        console.log(`🔗 [PRESIGN-STAC] Presigning ${Object.keys(presignedItem.assets).length} assets`);
         
         // Presign each asset that needs it
         await Promise.all(Object.keys(presignedItem.assets).map(async assetKey => {
             const asset = presignedItem.assets[assetKey];
             
             if (asset.href && this.needsPlanetaryComputerPresigning(asset.href)) {
-                console.log(`🔗 [PRESIGN-STAC] Presigning asset: ${assetKey}`);
                 const originalUrl = asset.href;
                 
                 if (asset.href.includes('planetarycomputer')) {
@@ -652,13 +625,10 @@ export class STACApiClient {
                     asset.href = await this.getPresignedUrl(asset.href);
                 }
                 
-                console.log(`🔗 [PRESIGN-STAC] Asset ${assetKey}: ${originalUrl.substring(0, 50)}... → ${asset.href.substring(0, 50)}...`);
             } else {
-                console.log(`🔗 [PRESIGN-STAC] Asset ${assetKey} doesn't need presigning`);
             }
         }));
         
-        console.log('🔗 [PRESIGN-STAC] Presigned STAC item created successfully');
         return presignedItem;
     }
 
@@ -712,7 +682,6 @@ export class STACApiClient {
      */
     async searchPlanetLabsItems(params = {}) {
         try {
-            console.log('🪐 Searching Planet Labs catalog items...', params);
             
             const items = [];
             const selectedCollection = params.collections?.[0];
@@ -726,7 +695,6 @@ export class STACApiClient {
                 for (const link of childLinks) {
                     try {
                         const childUrl = new URL(link.href, this.endpoints.root).href;
-                        console.log('🌐 Fetching catalog URL:', childUrl);
                         const response = await fetch(childUrl);
                         
                         if (response.ok) {
@@ -734,7 +702,6 @@ export class STACApiClient {
                             
                             // Check if this is the collection we're looking for
                             if (childData.id === selectedCollection || link.title?.includes(selectedCollection)) {
-                                console.log(`📂 Found matching collection: ${childData.id || link.title}`);
                                 
                                 // Get items from this collection/catalog
                                 const collectionItems = await this.fetchItemsFromCatalog(childData, childUrl);
@@ -748,7 +715,6 @@ export class STACApiClient {
                 }
             } else {
                 // No specific collection - search all catalogs (limited results)
-                console.log('🔍 Searching all Planet Labs catalogs...');
                 const childLinks = this.planetLabsCatalogData.links.filter(link => 
                     link.rel === 'child' || link.rel === 'catalog'
                 ).slice(0, 3); // Limit to first 3 catalogs to avoid too many requests
@@ -756,7 +722,6 @@ export class STACApiClient {
                 for (const link of childLinks) {
                     try {
                         const childUrl = new URL(link.href, this.endpoints.root).href;
-                        console.log('🌐 Fetching catalog URL (all search):', childUrl);
                         const response = await fetch(childUrl);
                         
                         if (response.ok) {
@@ -770,7 +735,6 @@ export class STACApiClient {
                 }
             }
             
-            console.log(`📋 Found ${items.length} ${this.getCurrentCatalogName()} items`);
             return items;
             
         } catch (error) {
@@ -795,7 +759,6 @@ export class STACApiClient {
                 link.rel === 'item'
             ).slice(0, limit) || [];
             
-            console.log(`📄 Found ${itemLinks.length} item links in catalog`);
             
             for (const itemLink of itemLinks) {
                 try {

@@ -72,7 +72,6 @@ export class DropdownUIManager {
             dropdown.style.overflow = 'visible';
             dropdown.style.pointerEvents = 'auto';
             
-            console.log(`✅ Dropdown positioned using ${position.strategy} strategy`);
             
         } catch (error) {
             console.error('❌ Error positioning dropdown:', error);

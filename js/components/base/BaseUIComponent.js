@@ -460,9 +460,9 @@ export class BaseUIComponent {
         if (this.options.debug) {
             const prefix = `[${this.constructor.name}:${this.componentId}]`;
             if (data) {
-                console.log(prefix, message, data);
+                // Debug logging removed
             } else {
-                console.log(prefix, message);
+                // Debug logging removed
             }
         }
     }

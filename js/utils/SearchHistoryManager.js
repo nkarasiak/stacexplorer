@@ -14,7 +14,6 @@ export class SearchHistoryManager {
      * Initialize the search history manager
      */
     init() {
-        console.log('🕒 Initializing Search History Manager');
         
         // Listen for search events to save to history
         document.addEventListener('searchExecuted', (event) => {
@@ -36,19 +35,16 @@ export class SearchHistoryManager {
      */
     saveSearchToHistory(searchParams) {
         if (!searchParams || this.isEmpty(searchParams)) {
-            console.log('🕒 Skipping empty search - not saving to history');
             return;
         }
         
-        console.log('📝 Raw search params before sanitization:', searchParams);
-        console.log('📝 Collection info:', {
+        console.log('Saving search to history:', {
             collection: searchParams.collection,
             collections: searchParams.collections,
             collectionTitle: searchParams.collectionTitle
         });
         
         const sanitizedParams = this.sanitizeSearchParams(searchParams);
-        console.log('🧹 Sanitized search params:', sanitizedParams);
         
         const searchEntry = {
             id: this.generateSearchId(),
@@ -58,7 +54,6 @@ export class SearchHistoryManager {
             resultCount: searchParams.resultCount || 0
         };
         
-        console.log('🕒 Saving search to history:', searchEntry);
         
         let history = this.getHistory();
         
@@ -76,7 +71,6 @@ export class SearchHistoryManager {
         // Save to localStorage
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(history));
-            console.log('✅ Search saved to history successfully');
         } catch (error) {
             console.error('❌ Failed to save search history:', error);
         }
@@ -115,7 +109,6 @@ export class SearchHistoryManager {
     clearHistory() {
         try {
             localStorage.removeItem(this.storageKey);
-            console.log('🗑️ Search history cleared');
             
             // Dispatch event to update UI
             document.dispatchEvent(new CustomEvent('searchHistoryCleared'));
@@ -134,7 +127,6 @@ export class SearchHistoryManager {
         
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(history));
-            console.log('🗑️ Search removed from history:', searchId);
             
             // Dispatch event to update UI
             document.dispatchEvent(new CustomEvent('searchHistoryUpdated'));
@@ -156,7 +148,6 @@ export class SearchHistoryManager {
             return;
         }
         
-        console.log('🔄 Re-executing search from history:', searchEntry);
         
         // Dispatch event to re-execute the search
         document.dispatchEvent(new CustomEvent('reExecuteSearch', {
@@ -170,10 +161,8 @@ export class SearchHistoryManager {
      */
     restoreSearchFromHistory(searchParams) {
         try {
-            console.log('🔄 Restoring search from history:', searchParams);
             
             // Restore collection selection
-            console.log('🔄 Looking for collection in params:', {
                 collection: searchParams.collection,
                 collections: searchParams.collections,
                 allParams: Object.keys(searchParams)
@@ -246,7 +235,6 @@ export class SearchHistoryManager {
                 
                 // Also restore FilterManager cloud cover filter if available
                 if (window.stacExplorer?.filterManager) {
-                    console.log('☁️ Restoring cloud cover filter:', searchParams.cloudCover);
                     setTimeout(() => {
                         this.restoreFilterManagerCloudCover(searchParams.cloudCover);
                     }, 100); // Small delay to ensure filters are loaded
@@ -296,7 +284,6 @@ export class SearchHistoryManager {
                 }
             }, 500);
             
-            console.log('✅ Search parameters restored from history');
             
         } catch (error) {
             console.error('❌ Failed to restore search from history:', error);
@@ -429,14 +416,12 @@ export class SearchHistoryManager {
             const cloudCoverFilter = searchParams.query['eo:cloud_cover'];
             if (cloudCoverFilter && cloudCoverFilter.lte !== undefined) {
                 sanitized.cloudCover = cloudCoverFilter.lte;
-                console.log('☁️ Extracted cloud cover from query:', sanitized.cloudCover);
             }
         }
         
         // Normalize collections format - convert collections array to single collection
         if (sanitized.collections && Array.isArray(sanitized.collections) && sanitized.collections.length > 0) {
             sanitized.collection = sanitized.collections[0];
-            console.log('🔄 Normalized collections array to single collection:', sanitized.collection);
         }
         
         return sanitized;
@@ -493,7 +478,6 @@ export class SearchHistoryManager {
             // Update filter badge
             filterManager.updateFilterBadge();
             
-            console.log('✅ Successfully restored FilterManager cloud cover:', cloudCoverValue);
         } else {
             console.warn('⚠️ Missing cloud cover filter UI elements');
         }
@@ -551,7 +535,6 @@ export class SearchHistoryManager {
         if (history.length !== originalLength) {
             try {
                 localStorage.setItem(this.storageKey, JSON.stringify(history));
-                console.log(`🧹 Cleaned up ${originalLength - history.length} old search entries`);
             } catch (error) {
                 console.error('❌ Failed to cleanup old entries:', error);
             }

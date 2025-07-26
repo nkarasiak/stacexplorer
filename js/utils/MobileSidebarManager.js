@@ -461,7 +461,6 @@ export class MobileSidebarManager {
         // This was previously hiding the toggle on the root page, which was wrong
         const shouldShow = true;
         
-        console.log(`Mobile toggle visibility: always visible for better UX`);
         
         return shouldShow;
     }

@@ -229,8 +229,6 @@ export class STACApiClient {
             // Validate and sanitize parameters
             const sanitizedParams = this.#sanitizeSearchParams(params);
             
-            console.log('Making search request to:', this.endpoints.search);
-            console.log('Request params:', JSON.stringify(sanitizedParams, null, 2));
             
             const response = await this.#fetchWithRetry(this.endpoints.search, {
                 method: 'POST',

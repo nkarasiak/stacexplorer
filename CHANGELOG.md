@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2025-07-26
+
+### 🆕 Added
+- **Grid Collection Browser**: Enhanced collection browsing with grid-based modal layout for better visual organization
+- **Collection Manager Enhancements**: Improved collection management with enhanced UI and better user experience
+- **Inline Dropdown Improvements**: Enhanced dropdown functionality with better styling and behavior
+
+### 🔧 Improved
+- **Browse Collections Modal**: Optimized modal space utilization and improved preset button functionality
+- **Search Interface**: Enhanced collection browser modal with improved layout and navigation
+- **Collection Grid Selector**: Better grid-based selection interface for collections
+
+### 🐛 Fixed
+- **Calendar Display**: Fixed calendar and location inputs to display correctly in light theme
+- **Tutorial System**: Disabled tutorial functionality and removed tutorial button for cleaner interface
+- **Location Search**: Fixed location search dropdown and map preview functionality
+- **Date Input System**: Replaced date dropdown with improved inline mini date input system
+
+### 🛠️ Technical
+- **Modal Space Optimization**: Better space utilization in Browse Collections modal
+- **Theme Consistency**: Improved light theme compatibility across input components
+- **Collection Browser**: Enhanced grid-based collection browsing with modal interface
+- **Input System Modernization**: Updated date input system with inline mini date picker
+
 ## [2.8.0] - 2025-07-24
 
 ### 🛰️ Enhanced

@@ -237,17 +237,24 @@ export class CommandPalette extends BaseUIComponent {
 
         // Default STAC Explorer commands
         this.registerCommand({
-            id: 'search-collections',
-            title: 'Run Search',
-            description: 'Search through STAC collections',
+            id: 'run-search',
+            title: 'Execute Search',
+            description: 'Run search with current parameters',
             category: 'search',
-            keywords: ['collection', 'catalog', 'browse'],
+            keywords: ['search', 'run', 'execute', 'go', 'find'],
             action: () => {
-                const searchBtn = document.getElementById('main-search-btn');
+                const searchBtn = document.getElementById('main-search-btn') ||
+                                 document.querySelector('.search-button') ||
+                                 document.querySelector('[data-action="search"]');
                 if (searchBtn) {
                     searchBtn.click();
                 } else {
                     console.error('Search button not found!');
+                    // Try alternative search trigger
+                    const searchForm = document.getElementById('search-form');
+                    if (searchForm) {
+                        searchForm.dispatchEvent(new Event('submit'));
+                    }
                 }
             }
         });
@@ -275,38 +282,124 @@ export class CommandPalette extends BaseUIComponent {
 
         this.registerCommand({
             id: 'clear-cache',
-            title: 'Clear Cache',
-            description: 'Clear all cached data',
+            title: 'Clear Browser Cache',
+            description: 'Clear all cached data and reload',
             category: 'settings',
-            keywords: ['cache', 'clear', 'reset', 'storage'],
+            keywords: ['cache', 'clear', 'reset', 'storage', 'refresh'],
             action: () => {
-                if (window.stacExplorer && window.stacExplorer.cache && window.stacExplorer.cache.clearAll) {
-                    window.stacExplorer.cache.clearAll();
-                    // Show a notification if possible
-                    if (window.stacExplorer.notificationService) {
-                        window.stacExplorer.notificationService.showNotification('Cache cleared successfully', 'success');
+                if (confirm('This will clear all cached data and reload the page. Continue?')) {
+                    // Clear localStorage
+                    localStorage.clear();
+                    // Clear sessionStorage
+                    sessionStorage.clear();
+                    // Clear any caches if available
+                    if ('caches' in window) {
+                        caches.keys().then(names => {
+                            names.forEach(name => caches.delete(name));
+                        }).then(() => {
+                            window.location.reload(true);
+                        });
+                    } else {
+                        window.location.reload(true);
                     }
-                } else {
-                    console.error('Cache clearing functionality not available');
+                }
+            }
+        });
+
+        this.registerCommand({
+            id: 'reset-search',
+            title: 'Reset Search',
+            description: 'Clear all search parameters',
+            category: 'search',
+            keywords: ['reset', 'clear', 'search', 'parameters'],
+            action: () => {
+                // Clear location
+                const locationInput = document.getElementById('summary-location-input');
+                if (locationInput) {
+                    locationInput.value = '';
+                    locationInput.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                
+                // Clear dates
+                const startInput = document.getElementById('date-start');
+                const endInput = document.getElementById('date-end');
+                if (startInput && endInput) {
+                    startInput.value = '';
+                    endInput.value = '';
+                    startInput.dispatchEvent(new Event('change'));
+                    endInput.dispatchEvent(new Event('change'));
+                }
+                
+                // Clear any additional filters
+                if (window.clearLocationPreview) {
+                    window.clearLocationPreview();
+                }
+                if (window.updateSearchSummaryDisplay) {
+                    window.updateSearchSummaryDisplay();
                 }
             }
         });
 
         this.registerCommand({
             id: 'export-data',
-            title: 'Export Data',
-            description: 'Export current search results',
+            title: 'Export Search Results',
+            description: 'Export current search results as GeoJSON',
             category: 'navigation',
-            keywords: ['export', 'download', 'save'],
+            keywords: ['export', 'download', 'save', 'geojson'],
             action: () => {
-                // Try to find export functionality in the results panel
-                if (window.stacExplorer && window.stacExplorer.resultsPanel) {
-                    // Try to trigger export if available
-                    // For now, just log that this would export
-                    alert('Export functionality would be implemented here');
+                // Try to find export button
+                const exportButton = document.querySelector('[data-action="export"]') || 
+                                   document.querySelector('.export-button') ||
+                                   document.getElementById('export-results');
+                if (exportButton) {
+                    exportButton.click();
                 } else {
-                    console.error('Results panel not found for export');
-                    alert('No data available to export');
+                    console.error('Export button not found');
+                    alert('Export functionality not available');
+                }
+            }
+        });
+
+        this.registerCommand({
+            id: 'view-results',
+            title: 'View Search Results',
+            description: 'Open or focus the results panel',
+            category: 'navigation',
+            keywords: ['results', 'view', 'panel', 'data'],
+            action: () => {
+                const resultsPanel = document.getElementById('results-panel') ||
+                                   document.querySelector('.results-panel') ||
+                                   document.querySelector('#search-results');
+                if (resultsPanel) {
+                    resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // If it's collapsible, expand it
+                    if (resultsPanel.classList.contains('collapsed')) {
+                        resultsPanel.classList.remove('collapsed');
+                    }
+                } else {
+                    console.error('Results panel not found');
+                }
+            }
+        });
+
+        this.registerCommand({
+            id: 'open-map',
+            title: 'Focus Map View',
+            description: 'Switch to or focus the map view',
+            category: 'navigation',
+            keywords: ['map', 'view', 'focus', 'geography'],
+            action: () => {
+                const mapContainer = document.getElementById('map') ||
+                                   document.querySelector('.map-container') ||
+                                   document.querySelector('#mapContainer');
+                if (mapContainer) {
+                    mapContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Try to focus the map if it has a focus method
+                    if (window.map && window.map.getContainer) {
+                        window.map.getContainer().focus();
+                    }
+                } else {
+                    console.error('Map container not found');
                 }
             }
         });
@@ -329,20 +422,91 @@ export class CommandPalette extends BaseUIComponent {
 
         this.registerCommand({
             id: 'show-help',
-            title: 'Show Help',
-            description: 'Open help documentation',
+            title: 'Show Help & Documentation',
+            description: 'Open help documentation in new tab',
             category: 'help',
-            keywords: ['help', 'docs', 'documentation', 'guide'],
+            keywords: ['help', 'docs', 'documentation', 'guide', 'readme'],
             action: () => {
-                // Open help in a new tab
                 window.open('https://github.com/nkarasiak/stacexplorer/blob/main/README.md', '_blank');
             }
         });
 
-        // Dropdown interaction commands
         this.registerCommand({
-            id: 'open-source-dropdown',
-            title: 'Select Collection',
+            id: 'show-shortcuts',
+            title: 'Keyboard Shortcuts',
+            description: 'Show available keyboard shortcuts',
+            category: 'help',
+            keywords: ['shortcuts', 'keyboard', 'hotkeys', 'commands'],
+            action: () => {
+                const shortcutsInfo = `
+Keyboard Shortcuts:
+
+🔍 Search:
+• Shift + / : Open Command Palette
+• Escape : Close Command Palette
+• ↑↓ : Navigate results
+• Enter : Execute command
+
+📍 Navigation:
+• Focus location search
+• Set date ranges
+• Browse collections
+• View results
+
+⚙️ Settings:
+• Toggle theme
+• Clear cache
+• Reset search
+                `;
+                alert(shortcutsInfo);
+            }
+        });
+
+        this.registerCommand({
+            id: 'about-stac-explorer',
+            title: 'About STAC Explorer',
+            description: 'Information about this application',
+            category: 'help',
+            keywords: ['about', 'info', 'version', 'stac', 'explorer'],
+            action: () => {
+                const aboutInfo = `
+STAC Explorer v2.9.1
+
+A modern STAC Catalog Explorer with enhanced development workflow.
+
+• 🌍 Search geospatial data catalogs
+• 📍 Interactive location search
+• 📅 Flexible date range selection
+• 🗂️ Browse multiple data sources
+• 🎨 Dark/Light theme support
+
+Built with modern web technologies for exploring STAC-compliant data catalogs.
+                `;
+                alert(aboutInfo);
+            }
+        });
+
+        // Modern UI interaction commands
+        this.registerCommand({
+            id: 'focus-location-search',
+            title: 'Search Location',
+            description: 'Focus location search input',
+            category: 'search',
+            keywords: ['location', 'area', 'region', 'place', 'city', 'country'],
+            action: () => {
+                const locationInput = document.getElementById('summary-location-input');
+                if (locationInput) {
+                    locationInput.focus();
+                    locationInput.select();
+                } else {
+                    console.error('Location input not found!');
+                }
+            }
+        });
+
+        this.registerCommand({
+            id: 'open-source-selector',
+            title: 'Select Data Source',
             description: 'Open source/catalog selection',
             category: 'search',
             keywords: ['source', 'catalog', 'collection', 'data'],
@@ -357,44 +521,44 @@ export class CommandPalette extends BaseUIComponent {
         });
 
         this.registerCommand({
-            id: 'open-location-dropdown',
-            title: 'Select Location',
-            description: 'Open location selection',
+            id: 'focus-start-date',
+            title: 'Set Start Date',
+            description: 'Focus start date input',
             category: 'search',
-            keywords: ['location', 'area', 'region', 'bbox'],
+            keywords: ['start', 'date', 'from', 'beginning'],
             action: () => {
-                const locationElement = document.getElementById('summary-location');
-                if (locationElement) {
-                    locationElement.click();
+                const startDateInput = document.getElementById('date-start');
+                if (startDateInput) {
+                    startDateInput.focus();
                 } else {
-                    console.error('Location element not found!');
+                    console.error('Start date input not found!');
                 }
             }
         });
 
         this.registerCommand({
-            id: 'open-time-dropdown',
-            title: 'Select Time Range',
-            description: 'Open time range selection',
+            id: 'focus-end-date',
+            title: 'Set End Date',
+            description: 'Focus end date input',
             category: 'search',
-            keywords: ['time', 'date', 'period', 'range'],
+            keywords: ['end', 'date', 'to', 'until'],
             action: () => {
-                const timeElement = document.getElementById('summary-date');
-                if (timeElement) {
-                    timeElement.click();
+                const endDateInput = document.getElementById('date-end');
+                if (endDateInput) {
+                    endDateInput.focus();
                 } else {
-                    console.error('Time element not found!');
+                    console.error('End date input not found!');
                 }
             }
         });
 
-        // Time preset commands based on actual dropdown options
+        // Time preset commands with modern date handling
         this.registerCommand({
-            id: 'set-anytime',
-            title: 'Anytime',
-            description: 'No date restriction',
+            id: 'clear-dates',
+            title: 'Clear Date Range',
+            description: 'Remove all date restrictions',
             category: 'search',
-            keywords: ['anytime', 'no', 'date', 'restriction', 'all'],
+            keywords: ['clear', 'anytime', 'no', 'date', 'restriction', 'all', 'remove'],
             action: () => {
                 const startInput = document.getElementById('date-start');
                 const endInput = document.getElementById('date-end');
@@ -404,6 +568,11 @@ export class CommandPalette extends BaseUIComponent {
                     endInput.value = '';
                     startInput.dispatchEvent(new Event('change'));
                     endInput.dispatchEvent(new Event('change'));
+                    // Update search summary display
+                    const summaryDateElement = document.querySelector('#summary-date .search-summary-value');
+                    if (summaryDateElement) {
+                        summaryDateElement.textContent = 'Anytime';
+                    }
                 } else {
                     console.error('Date inputs not found!');
                 }
@@ -413,9 +582,9 @@ export class CommandPalette extends BaseUIComponent {
         this.registerCommand({
             id: 'set-last-30-days',
             title: 'Last 30 Days',
-            description: 'Past month including today',
+            description: 'Set date range to past month',
             category: 'search',
-            keywords: ['last', '30', 'days', 'month', 'past'],
+            keywords: ['last', '30', 'days', 'month', 'past', 'recent'],
             action: () => {
                 const endDate = new Date();
                 const startDate = new Date();
@@ -431,6 +600,10 @@ export class CommandPalette extends BaseUIComponent {
                     endInput.value = formatDate(endDate);
                     startInput.dispatchEvent(new Event('change'));
                     endInput.dispatchEvent(new Event('change'));
+                    // Trigger the search summary update
+                    if (window.updateSearchSummaryDisplay) {
+                        window.updateSearchSummaryDisplay();
+                    }
                 } else {
                     console.error('Date inputs not found!');
                 }
@@ -438,86 +611,192 @@ export class CommandPalette extends BaseUIComponent {
         });
 
         this.registerCommand({
-            id: 'set-custom-range',
-            title: 'Custom Date Range',
-            description: 'Select your own dates',
+            id: 'set-last-year',
+            title: 'Last Year',
+            description: 'Set date range to past year',
             category: 'search',
-            keywords: ['custom', 'range', 'select', 'own', 'dates'],
+            keywords: ['last', 'year', '365', 'days', 'annual'],
             action: () => {
-                const timeElement = document.getElementById('summary-date');
-                if (timeElement) {
-                    timeElement.click();
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setFullYear(startDate.getFullYear() - 1);
+                
+                const formatDate = (date) => date.toISOString().split('T')[0];
+                
+                const startInput = document.getElementById('date-start');
+                const endInput = document.getElementById('date-end');
+                
+                if (startInput && endInput) {
+                    startInput.value = formatDate(startDate);
+                    endInput.value = formatDate(endDate);
+                    startInput.dispatchEvent(new Event('change'));
+                    endInput.dispatchEvent(new Event('change'));
+                    if (window.updateSearchSummaryDisplay) {
+                        window.updateSearchSummaryDisplay();
+                    }
                 } else {
-                    console.error('Time element not found!');
-                }
-            }
-        });
-
-        // Quick catalog selection commands
-        this.registerCommand({
-            id: 'select-copernicus',
-            title: 'Copernicus Data Space',
-            description: 'Select Copernicus as data source',
-            category: 'search',
-            keywords: ['copernicus', 'sentinel', 'esa'],
-            action: () => {
-                const catalogSelect = document.getElementById('catalog-select');
-                if (catalogSelect) {
-                    catalogSelect.value = 'copernicus';
-                    catalogSelect.dispatchEvent(new Event('change'));
-                } else {
-                    console.error('Catalog select not found!');
-                }
-            }
-        });
-
-        this.registerCommand({
-            id: 'select-element84',
-            title: 'Element84 Earth Search',
-            description: 'Select Element84 as data source',
-            category: 'search',
-            keywords: ['element84', 'earth', 'search'],
-            action: () => {
-                const catalogSelect = document.getElementById('catalog-select');
-                if (catalogSelect) {
-                    catalogSelect.value = 'element84';
-                    catalogSelect.dispatchEvent(new Event('change'));
-                } else {
-                    console.error('Catalog select not found!');
+                    console.error('Date inputs not found!');
                 }
             }
         });
 
         this.registerCommand({
-            id: 'select-planetary',
-            title: 'Microsoft Planetary Computer',
-            description: 'Select Microsoft Planetary Computer as data source',
+            id: 'set-this-year',
+            title: 'This Year',
+            description: 'Set date range to current year',
             category: 'search',
-            keywords: ['microsoft', 'planetary', 'computer'],
+            keywords: ['this', 'year', 'current', '2025'],
             action: () => {
-                const catalogSelect = document.getElementById('catalog-select');
-                if (catalogSelect) {
-                    catalogSelect.value = 'planetary';
-                    catalogSelect.dispatchEvent(new Event('change'));
+                const now = new Date();
+                const startDate = new Date(now.getFullYear(), 0, 1); // January 1st
+                const endDate = new Date();
+                
+                const formatDate = (date) => date.toISOString().split('T')[0];
+                
+                const startInput = document.getElementById('date-start');
+                const endInput = document.getElementById('date-end');
+                
+                if (startInput && endInput) {
+                    startInput.value = formatDate(startDate);
+                    endInput.value = formatDate(endDate);
+                    startInput.dispatchEvent(new Event('change'));
+                    endInput.dispatchEvent(new Event('change'));
+                    if (window.updateSearchSummaryDisplay) {
+                        window.updateSearchSummaryDisplay();
+                    }
                 } else {
-                    console.error('Catalog select not found!');
+                    console.error('Date inputs not found!');
+                }
+            }
+        });
+
+        // Location preset commands
+        this.registerCommand({
+            id: 'search-paris',
+            title: 'Search Paris',
+            description: 'Set location to Paris, France',
+            category: 'search',
+            keywords: ['paris', 'france', 'city'],
+            action: () => {
+                const locationInput = document.getElementById('summary-location-input');
+                if (locationInput) {
+                    locationInput.value = 'Paris, France';
+                    locationInput.focus();
+                    locationInput.dispatchEvent(new Event('input', { bubbles: true }));
+                } else {
+                    console.error('Location input not found!');
                 }
             }
         });
 
         this.registerCommand({
-            id: 'select-planetlabs',
-            title: 'Planet Labs Open Data',
-            description: 'Select Planet Labs as data source',
+            id: 'search-london',
+            title: 'Search London',
+            description: 'Set location to London, UK',
             category: 'search',
-            keywords: ['planet', 'labs', 'open', 'data'],
+            keywords: ['london', 'uk', 'england', 'britain'],
             action: () => {
-                const catalogSelect = document.getElementById('catalog-select');
-                if (catalogSelect) {
-                    catalogSelect.value = 'planetlabs';
-                    catalogSelect.dispatchEvent(new Event('change'));
+                const locationInput = document.getElementById('summary-location-input');
+                if (locationInput) {
+                    locationInput.value = 'London, UK';
+                    locationInput.focus();
+                    locationInput.dispatchEvent(new Event('input', { bubbles: true }));
                 } else {
-                    console.error('Catalog select not found!');
+                    console.error('Location input not found!');
+                }
+            }
+        });
+
+        this.registerCommand({
+            id: 'search-new-york',
+            title: 'Search New York',
+            description: 'Set location to New York, USA',
+            category: 'search',
+            keywords: ['new', 'york', 'usa', 'america', 'nyc'],
+            action: () => {
+                const locationInput = document.getElementById('summary-location-input');
+                if (locationInput) {
+                    locationInput.value = 'New York, USA';
+                    locationInput.focus();
+                    locationInput.dispatchEvent(new Event('input', { bubbles: true }));
+                } else {
+                    console.error('Location input not found!');
+                }
+            }
+        });
+
+        this.registerCommand({
+            id: 'clear-location',
+            title: 'Clear Location',
+            description: 'Remove location filter',
+            category: 'search',
+            keywords: ['clear', 'remove', 'location', 'anywhere'],
+            action: () => {
+                const locationInput = document.getElementById('summary-location-input');
+                if (locationInput) {
+                    locationInput.value = '';
+                    locationInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    // Clear any stored location data
+                    if (window.clearLocationPreview) {
+                        window.clearLocationPreview();
+                    }
+                } else {
+                    console.error('Location input not found!');
+                }
+            }
+        });
+
+        // Quick catalog selection commands (updated for modern source selection)
+        this.registerCommand({
+            id: 'browse-collections',
+            title: 'Browse Collections',
+            description: 'Open collection browser modal',
+            category: 'search',
+            keywords: ['browse', 'collections', 'catalog', 'modal'],
+            action: () => {
+                // Try to trigger collection browser
+                const browseButton = document.querySelector('[data-action="browse-collections"]');
+                if (browseButton) {
+                    browseButton.click();
+                } else {
+                    // Fallback to source element click
+                    const sourceElement = document.getElementById('summary-source');
+                    if (sourceElement) {
+                        sourceElement.click();
+                    } else {
+                        console.error('Collection browser not found!');
+                    }
+                }
+            }
+        });
+
+        this.registerCommand({
+            id: 'focus-collection-search',
+            title: 'Focus Collection Search',
+            description: 'Focus search field in collection browser',
+            category: 'search',
+            keywords: ['focus', 'search', 'collection', 'find', 'filter'],
+            action: () => {
+                // Try to focus search in open modal
+                const searchInput = document.querySelector('#collection-search');
+                if (searchInput && searchInput.offsetParent !== null) {
+                    // Input exists and is visible
+                    searchInput.focus();
+                } else {
+                    // Open collection browser first, then focus
+                    const sourceElement = document.getElementById('summary-source');
+                    if (sourceElement) {
+                        sourceElement.click();
+                        // Focus after modal opens
+                        setTimeout(() => {
+                            const searchInput = document.querySelector('#collection-search');
+                            if (searchInput) {
+                                searchInput.focus();
+                            }
+                        }, 500);
+                    } else {
+                        console.error('Collection browser not found!');
+                    }
                 }
             }
         });
@@ -563,36 +842,55 @@ export class CommandPalette extends BaseUIComponent {
     }
 
     handleGlobalKeydown(event) {
-        const shortcut = this.formatShortcut(event);
-
-        // Check for toggle shortcut
-        if (this.matchesShortcut(shortcut, this.options.shortcuts.toggle)) {
-            event.preventDefault();
-            this.toggle();
+        // Safety check to ensure we have a valid event
+        if (!event) {
+            console.warn('Invalid event in handleGlobalKeydown');
             return;
         }
 
-        // Handle shortcuts when palette is open
-        if (this.state.isOpen) {
-            this.handlePaletteKeydown(event);
+        try {
+            const shortcut = this.formatShortcut(event);
+
+            // Check for toggle shortcut
+            if (this.matchesShortcut(shortcut, this.options.shortcuts.toggle)) {
+                event.preventDefault();
+                this.toggle();
+                return;
+            }
+
+            // Handle shortcuts when palette is open
+            if (this.state.isOpen) {
+                this.handlePaletteKeydown(event);
+            }
+        } catch (error) {
+            console.error('Error in handleGlobalKeydown:', error);
         }
     }
 
     handlePaletteKeydown(event) {
-        const shortcut = this.formatShortcut(event);
+        if (!event) {
+            console.warn('Invalid event in handlePaletteKeydown');
+            return;
+        }
 
-        if (this.matchesShortcut(shortcut, this.options.shortcuts.close)) {
-            event.preventDefault();
-            this.close();
-        } else if (this.matchesShortcut(shortcut, this.options.shortcuts.execute)) {
-            event.preventDefault();
-            this.executeSelected();
-        } else if (this.matchesShortcut(shortcut, this.options.shortcuts.nextResult)) {
-            event.preventDefault();
-            this.selectNext();
-        } else if (this.matchesShortcut(shortcut, this.options.shortcuts.prevResult)) {
-            event.preventDefault();
-            this.selectPrevious();
+        try {
+            const shortcut = this.formatShortcut(event);
+
+            if (this.matchesShortcut(shortcut, this.options.shortcuts.close)) {
+                event.preventDefault();
+                this.close();
+            } else if (this.matchesShortcut(shortcut, this.options.shortcuts.execute)) {
+                event.preventDefault();
+                this.executeSelected();
+            } else if (this.matchesShortcut(shortcut, this.options.shortcuts.nextResult)) {
+                event.preventDefault();
+                this.selectNext();
+            } else if (this.matchesShortcut(shortcut, this.options.shortcuts.prevResult)) {
+                event.preventDefault();
+                this.selectPrevious();
+            }
+        } catch (error) {
+            console.error('Error in handlePaletteKeydown:', error);
         }
     }
 
@@ -601,7 +899,16 @@ export class CommandPalette extends BaseUIComponent {
         if (event.metaKey || event.ctrlKey) parts.push(event.metaKey ? 'cmd' : 'ctrl');
         if (event.altKey) parts.push('alt');
         if (event.shiftKey) parts.push('shift');
-        parts.push(event.key.toLowerCase());
+        
+        // Safety check for event.key
+        if (event.key) {
+            parts.push(event.key.toLowerCase());
+        } else {
+            // Fallback for when event.key is undefined
+            console.warn('Event key is undefined, using keyCode fallback');
+            parts.push(String.fromCharCode(event.keyCode || event.which || 0).toLowerCase());
+        }
+        
         return parts.join('+');
     }
 

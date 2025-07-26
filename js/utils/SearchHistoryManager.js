@@ -163,10 +163,6 @@ export class SearchHistoryManager {
         try {
             
             // Restore collection selection
-                collection: searchParams.collection,
-                collections: searchParams.collections,
-                allParams: Object.keys(searchParams)
-            });
             
             if (searchParams.collection) {
                 const collectionSelect = document.getElementById('collection-select');

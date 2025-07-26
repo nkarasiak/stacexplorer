@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.4] - 2025-07-26
+
+### 🐛 Fixed
+- **Satellite Animation Visibility**: Fixed satellite animation z-index to ensure proper visibility above basemap
+- **Z-Index Layering**: Corrected satellite container z-index from 9999 to 600 for proper UI element hierarchy
+
+### 🔧 Improved
+- **Animation Positioning**: Enhanced satellite animation layering to maintain visibility while respecting UI element priority
+
 ## [2.9.3] - 2025-07-26
 
 ### 🐛 Fixed

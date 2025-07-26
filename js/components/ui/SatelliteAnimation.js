@@ -363,7 +363,7 @@ export class SatelliteAnimation {
             width: 100px !important;
             height: 100px !important;
             opacity: 1 !important;
-            z-index: 99999 !important;
+            z-index: 100 !important;
             position: fixed !important;
             top: 50% !important;
             left: 50% !important;

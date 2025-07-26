@@ -667,7 +667,67 @@
     transform: translateY(-1px);
 }
 
+/* Light theme support */
+[data-theme="light"] .collection-grid-selector,
+.light-theme .collection-grid-selector,
+html.light-theme .collection-grid-selector {
+    background: var(--background-color, #ffffff);
+    border-color: var(--border-color, #e5e7eb);
+    color: var(--text-color, #1f2937);
+}
+
+[data-theme="light"] .collection-card,
+.light-theme .collection-card,
+html.light-theme .collection-card {
+    background: var(--background-color, #ffffff);
+    border-color: var(--border-color, #e5e7eb);
+    color: var(--text-color, #1f2937);
+}
+
+[data-theme="light"] .collection-card-title,
+.light-theme .collection-card-title,
+html.light-theme .collection-card-title {
+    color: var(--text-color, #1f2937);
+}
+
+[data-theme="light"] .collection-card.priority-collection .collection-card-title,
+.light-theme .collection-card.priority-collection .collection-card-title,
+html.light-theme .collection-card.priority-collection .collection-card-title {
+    color: var(--text-color, #1f2937) !important;
+}
+
+[data-theme="light"] .collection-card-description,
+.light-theme .collection-card-description,
+html.light-theme .collection-card-description {
+    color: var(--text-secondary, #6b7280);
+}
+
+[data-theme="light"] .collection-card-meta,
+.light-theme .collection-card-meta,
+html.light-theme .collection-card-meta {
+    color: var(--text-secondary, #6b7280);
+}
+
+[data-theme="light"] .collection-stats,
+.light-theme .collection-stats,
+html.light-theme .collection-stats {
+    background: var(--background-secondary, #f9fafb);
+    border-color: var(--border-color, #e5e7eb);
+    color: var(--text-secondary, #6b7280);
+}
+
+[data-theme="light"] .collection-search-input:focus,
+[data-theme="light"] .source-filter-select:focus,
+.light-theme .collection-search-input:focus,
+.light-theme .source-filter-select:focus,
+html.light-theme .collection-search-input:focus,
+html.light-theme .source-filter-select:focus {
+    outline: 2px solid var(--primary-color, #667eea);
+    outline-offset: 2px;
+}
+
 /* Dark mode support */
+[data-theme="dark"] .collection-grid-selector,
 @media (prefers-color-scheme: dark) {
     .collection-grid-selector {
         background: var(--background-dark, #1f2937);

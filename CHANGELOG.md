@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.3] - 2025-07-26
+
+### 🐛 Fixed
+- **Light Theme Compatibility**: Fixed Browse Collections modal and grid to properly support light theme
+- **Satellite Animation Z-Index**: Corrected satellite animation positioning to stay above basemap but below UI elements
+- **Theme Styling**: Added comprehensive light theme support for collection cards, headers, and focus states
+
+### 🔧 Improved
+- **Theme Consistency**: Enhanced theme switching with proper CSS variable usage across collection components
+- **Modal Header Theming**: Dynamic header colors that adapt to light/dark themes
+- **Focus Indicators**: Improved focus outline colors for better accessibility in light theme
+
 ## [2.9.2] - 2025-07-26
 
 ### 🆕 Added

@@ -128,6 +128,7 @@ export class CollectionBrowserModal {
                 transform: scale(0.95);
                 transition: transform 0.3s ease;
                 overflow: hidden;
+                color: var(--text-color, #1f2937);
             }
             
             .collection-browser-modal-overlay.open .collection-browser-modal-dialog {
@@ -137,8 +138,8 @@ export class CollectionBrowserModal {
             /* Header */
             .collection-browser-modal-header {
                 padding: 0.75rem 1rem;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                color: white;
+                background: var(--header-gradient, linear-gradient(135deg, #667eea 0%, #764ba2 100%));
+                color: var(--header-text-color, white);
                 display: flex;
                 justify-content: space-between;
                 align-items: center;
@@ -154,9 +155,9 @@ export class CollectionBrowserModal {
             
             .modal-expand-btn,
             .modal-close-btn {
-                background: rgba(255, 255, 255, 0.1);
+                background: var(--header-button-bg, rgba(255, 255, 255, 0.1));
                 border: none;
-                color: white;
+                color: var(--header-text-color, white);
                 border-radius: 50%;
                 width: 32px;
                 height: 32px;
@@ -169,7 +170,7 @@ export class CollectionBrowserModal {
             
             .modal-expand-btn:hover,
             .modal-close-btn:hover {
-                background: rgba(255, 255, 255, 0.2);
+                background: var(--header-button-hover-bg, rgba(255, 255, 255, 0.2));
                 transform: scale(1.05);
             }
             
@@ -247,10 +248,23 @@ export class CollectionBrowserModal {
                 }
             }
             
-            /* Dark mode support */
+            /* Light theme */
+            [data-theme="light"] .collection-browser-modal-dialog {
+                --header-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                --header-text-color: white;
+                --header-button-bg: rgba(255, 255, 255, 0.1);
+                --header-button-hover-bg: rgba(255, 255, 255, 0.2);
+            }
+            
+            /* Dark theme */
+            [data-theme="dark"] .collection-browser-modal-dialog,
             @media (prefers-color-scheme: dark) {
                 .collection-browser-modal-dialog {
                     background: var(--background-dark, #1f2937);
+                    --header-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+                    --header-text-color: white;
+                    --header-button-bg: rgba(255, 255, 255, 0.15);
+                    --header-button-hover-bg: rgba(255, 255, 255, 0.25);
                 }
             }
         `;

@@ -154,7 +154,17 @@ export class CollectionBrowserTrigger {
         if (!this.triggerButton) return;
         
         // Main click handler to open modal
-        this.triggerButton.addEventListener('click', () => {
+        this.triggerButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('🖱️ Collection browser trigger clicked');
+            
+            // Ensure button is not disabled
+            if (this.triggerButton.classList.contains('loading')) {
+                console.warn('⚠️ Button clicked while in loading state, ignoring');
+                return;
+            }
+            
             this.openModal();
         });
         
@@ -170,6 +180,12 @@ export class CollectionBrowserTrigger {
         document.addEventListener('modalCollectionSelected', (e) => {
             if (e.detail && e.detail.collection) {
                 this.updateSelection(e.detail.collection);
+                
+                // Ensure button is re-enabled after selection
+                setTimeout(() => {
+                    this.setLoadingState(false);
+                    console.log('✅ Trigger re-enabled after collection selection');
+                }, 200);
             }
         });
         
@@ -195,12 +211,29 @@ export class CollectionBrowserTrigger {
             this.setLoadingState(true);
             
             try {
+                // Force reset modal state if needed
+                if (this.modal.isOpen) {
+                    console.warn('⚠️ Modal thinks it\'s still open, forcing reset');
+                    this.modal.isOpen = false;
+                }
+                
                 await this.modal.open();
+                console.log('✅ Modal opened successfully');
             } catch (error) {
                 console.error('Error opening collection browser modal:', error);
+                // Reset modal state on error
+                if (this.modal) {
+                    this.modal.isOpen = false;
+                }
             } finally {
-                this.setLoadingState(false);
+                // Ensure loading state is cleared
+                setTimeout(() => {
+                    this.setLoadingState(false);
+                    console.log('✅ Loading state cleared for trigger button');
+                }, 100);
             }
+        } else {
+            console.error('❌ Modal not available for opening');
         }
     }
     
@@ -223,6 +256,9 @@ export class CollectionBrowserTrigger {
                 `📂 ${collection.title || collection.id}`.toUpperCase()
             );
         }
+        
+        // Ensure button remains clickable after selection
+        this.ensureButtonClickable();
     }
     
     /**
@@ -241,6 +277,9 @@ export class CollectionBrowserTrigger {
         if (this.inlineDropdownManager) {
             this.inlineDropdownManager.updateSearchSummary('collection', '📂 Everything');
         }
+        
+        // Ensure button remains clickable after clearing
+        this.ensureButtonClickable();
     }
     
     /**
@@ -250,6 +289,24 @@ export class CollectionBrowserTrigger {
     setLoadingState(loading) {
         if (this.triggerButton) {
             this.triggerButton.classList.toggle('loading', loading);
+        }
+    }
+    
+    /**
+     * Ensure the button is clickable and not stuck in any disabled state
+     */
+    ensureButtonClickable() {
+        if (this.triggerButton) {
+            // Remove any loading or disabled states
+            this.triggerButton.classList.remove('loading');
+            this.triggerButton.disabled = false;
+            this.triggerButton.style.pointerEvents = '';
+            this.triggerButton.style.opacity = '';
+            
+            // Ensure cursor is set to pointer
+            this.triggerButton.style.cursor = 'pointer';
+            
+            console.log('✅ Collection browser trigger ensured clickable');
         }
     }
     

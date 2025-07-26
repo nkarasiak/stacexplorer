@@ -1827,6 +1827,10 @@
                                             <i class="material-icons">crop_free</i>
                                             Draw
                                         </button>
+                                        <button id="from-view-inline" class="location-action-btn" title="Use Current Map View">
+                                            <i class="material-icons">visibility</i>
+                                            From View
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -2730,6 +2734,72 @@
                     }, 2000);
                 });
                 console.log('✅ Inline draw area button connected');
+            }
+            
+            // Inline from view button in location card
+            const inlineFromViewBtn = document.getElementById('from-view-inline');
+            
+            if (inlineFromViewBtn) {
+                inlineFromViewBtn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent triggering the parent card click
+                    console.log('✅ From View button clicked');
+                    
+                    // Get current map bounds
+                    if (window.stacExplorer && window.stacExplorer.mapManager && window.stacExplorer.mapManager.map) {
+                        const map = window.stacExplorer.mapManager.map;
+                        const bounds = map.getBounds();
+                        
+                        // Convert to bbox format: [west, south, east, north]
+                        const bbox = [
+                            bounds.getWest(),
+                            bounds.getSouth(), 
+                            bounds.getEast(),
+                            bounds.getNorth()
+                        ];
+                        
+                        // Format to reasonable precision (6 decimal places)
+                        const bboxString = bbox.map(coord => coord.toFixed(6)).join(',');
+                        
+                        // Update the bbox input field
+                        const bboxInput = document.getElementById('bbox-input');
+                        if (bboxInput) {
+                            bboxInput.value = bboxString;
+                            
+                            // Trigger input event to notify other components
+                            bboxInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            
+                            console.log('📍 Set bbox from current view:', bboxString);
+                            
+                            // Show success notification if available
+                            if (window.stacExplorer && window.stacExplorer.notificationService) {
+                                window.stacExplorer.notificationService.showNotification(
+                                    'Location set from current map view', 
+                                    'success'
+                                );
+                            }
+                        }
+                        
+                        // Visual feedback
+                        this.style.background = 'var(--primary-500, #2196F3)';
+                        this.style.color = 'white';
+                        setTimeout(() => {
+                            this.style.background = '';
+                            this.style.color = '';
+                        }, 2000);
+                        
+                    } else {
+                        console.error('❌ Map manager not available');
+                        
+                        // Show error notification if available
+                        if (window.stacExplorer && window.stacExplorer.notificationService) {
+                            window.stacExplorer.notificationService.showNotification(
+                                'Map not ready. Please wait for map to load.', 
+                                'warning'
+                            );
+                        }
+                    }
+                });
+                console.log('✅ From View button connected');
             }
         }
         

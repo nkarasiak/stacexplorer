@@ -97,7 +97,8 @@ export class CollectionManagerEnhanced {
                     const count = groupedCollections[source].length;
                     const label = source === 'copernicus' ? 'Copernicus' : 
                                  source === 'element84' ? 'Element84' :
-                                 source === 'planetary' ? 'Microsoft Planetary Computer' : source;
+                                 source === 'planetary' ? 'Microsoft Planetary Computer' :
+                                 source === 'planetlabs' ? 'Planet Labs Open Data' : source;
                     return `${label}: ${count}`;
                 }).join(', ');
                 
@@ -138,7 +139,8 @@ export class CollectionManagerEnhanced {
                     const count = groupedCollections[source].length;
                     const label = source === 'copernicus' ? 'Copernicus' : 
                                  source === 'element84' ? 'Element84' :
-                                 source === 'planetary' ? 'Microsoft Planetary Computer' : source;
+                                 source === 'planetary' ? 'Microsoft Planetary Computer' :
+                                 source === 'planetlabs' ? 'Planet Labs Open Data' : source;
                     return `${label}: ${count}`;
                 }).join(', ');
                 
@@ -172,27 +174,26 @@ export class CollectionManagerEnhanced {
      * @returns {Promise<Array>} Combined collections from all sources
      */
     async loadAllCollections() {
-        const allCollections = [];
         // Get enabled providers from config
         const dataSources = this.config?.appSettings?.enabledProviders || ['copernicus', 'element84'];
         const errors = [];
         
-        console.log('🔄 Loading collections from all data sources...');
+        console.log('🔄 Loading collections from all data sources in parallel...');
         console.log('📍 Available endpoints:', this.config?.stacEndpoints);
         console.log('🔍 Enabled providers:', dataSources);
         
-        for (const source of dataSources) {
+        // Create loading promises for all sources in parallel to avoid race conditions
+        const loadingPromises = dataSources.map(async (source) => {
             try {
-                console.log(`🔍 Loading collections from ${source}...`);
+                console.log(`🔍 Starting parallel load for ${source}...`);
                 
                 // Get endpoints for this source
                 const endpoints = this.config?.stacEndpoints?.[source];
                 if (!endpoints) {
                     const error = `No endpoints configured for ${source}`;
                     console.warn(`⚠️ ${error}`);
-                    console.warn('Available config:', this.config);
                     errors.push(error);
-                    continue;
+                    return { source, collections: [], error };
                 }
                 
                 console.log(`🔗 ${source} endpoints:`, endpoints);
@@ -205,22 +206,23 @@ export class CollectionManagerEnhanced {
                         const error = `Invalid collections URL for ${source}: ${endpoints.collections}`;
                         console.error(`❌ ${error}`);
                         errors.push(error);
-                        continue;
+                        return { source, collections: [], error };
                     }
                 }
                 
-                // Set API client to use this source
-                this.apiClient.setEndpoints(endpoints);
+                // Create a new API client instance for this source to avoid conflicts
+                const sourceApiClient = Object.create(this.apiClient);
+                sourceApiClient.setEndpoints(endpoints);
                 
                 // For Planet Labs, connect to catalog first
                 if (source === 'planetlabs') {
                     console.log(`🪐 Connecting to Planet Labs catalog...`);
-                    await this.apiClient.connectToCustomCatalog(endpoints.root);
+                    await sourceApiClient.connectToCustomCatalog(endpoints.root);
                 }
                 
                 // Fetch collections from this source with increased limit
                 console.log(`📡 Fetching collections from ${source} with limit 500...`);
-                const collections = await this.apiClient.fetchCollections(500);
+                const collections = await sourceApiClient.fetchCollections(500);
                 
                 console.log(`📊 Raw response from ${source}:`, {
                     type: typeof collections,
@@ -236,19 +238,22 @@ export class CollectionManagerEnhanced {
                         source: source,
                         sourceLabel: source === 'copernicus' ? 'Copernicus' : 
                                    source === 'element84' ? 'Element84' :
-                                   source === 'planetary' ? 'Microsoft Planetary Computer' : source,
+                                   source === 'planetary' ? 'Microsoft Planetary Computer' :
+                                   source === 'planetlabs' ? 'Planet Labs Open Data' : source,
                         displayTitle: `${collection.title || collection.id} (${source === 'copernicus' ? 'Copernicus' : 
                                                                            source === 'element84' ? 'Element84' :
-                                                                           source === 'planetary' ? 'Microsoft Planetary Computer' : source})`
+                                                                           source === 'planetary' ? 'Microsoft Planetary Computer' :
+                                                                           source === 'planetlabs' ? 'Planet Labs Open Data' : source})`
                     }));
                     
-                    allCollections.push(...collectionsWithSource);
                     console.log(`✅ Loaded ${collections.length} collections from ${source}`);
                     console.log(`📄 Sample collections:`, collections.slice(0, 3).map(c => ({id: c.id, title: c.title})));
+                    return { source, collections: collectionsWithSource, error: null };
                 } else {
                     const error = `No collections returned from ${source} (got: ${JSON.stringify(collections)})`;
                     console.warn(`⚠️ ${error}`);
                     errors.push(error);
+                    return { source, collections: [], error };
                 }
                 
             } catch (error) {
@@ -260,11 +265,28 @@ export class CollectionManagerEnhanced {
                     stack: error.stack
                 });
                 errors.push(errorMsg);
-                // Continue with other sources even if one fails
+                return { source, collections: [], error: errorMsg };
             }
-        }
+        });
         
-        console.log(`🗂️ Total collections loaded: ${allCollections.length}`);
+        // Wait for all sources to complete before processing results
+        console.log('⏳ Waiting for all data sources to complete...');
+        const results = await Promise.allSettled(loadingPromises);
+        
+        // Combine all successful results
+        const allCollections = [];
+        results.forEach((result, index) => {
+            if (result.status === 'fulfilled' && result.value.collections.length > 0) {
+                allCollections.push(...result.value.collections);
+                console.log(`✅ Added ${result.value.collections.length} collections from ${result.value.source}`);
+            } else if (result.status === 'rejected') {
+                const source = dataSources[index];
+                console.error(`❌ Failed to load collections from ${source}:`, result.reason);
+                errors.push(`${source}: ${result.reason.message}`);
+            }
+        });
+        
+        console.log(`🗂️ Total collections loaded from all sources: ${allCollections.length}`);
         
         if (errors.length > 0) {
             console.error('❌ Collection loading errors:', errors);

@@ -23,6 +23,9 @@ export class CollectionBrowserModal {
         this.gridSelector = null;
         this.isOpen = false;
         this.currentSelection = null;
+        this.modalId = 'modal_' + Math.random().toString(36).substr(2, 9);
+        
+        console.log('🏗️ CollectionBrowserModal created with ID:', this.modalId);
         
         this.createModal();
         this.setupEventListeners();
@@ -59,23 +62,7 @@ export class CollectionBrowserModal {
                     <div id="modal-collection-grid-container"></div>
                 </div>
                 
-                <div class="collection-browser-modal-footer">
-                    <div class="footer-actions-left">
-                        <div class="current-selection" id="current-selection" style="display: none;">
-                            <span class="selection-label">Selected:</span>
-                            <span class="selection-value" id="selection-value"></span>
-                        </div>
-                    </div>
-                    <div class="footer-actions-right">
-                        <button class="modal-btn modal-btn-secondary" id="modal-cancel-btn">
-                            Cancel
-                        </button>
-                        <button class="modal-btn modal-btn-primary" id="modal-apply-btn" disabled>
-                            <i class="material-icons">check</i>
-                            Apply Selection
-                        </button>
-                    </div>
-                </div>
+                <!-- Footer removed - immediate selection on click -->
             </div>
         `;
         
@@ -88,10 +75,6 @@ export class CollectionBrowserModal {
             dialog: modalOverlay.querySelector('.collection-browser-modal-dialog'),
             closeBtn: modalOverlay.querySelector('.modal-close-btn'),
             expandBtn: modalOverlay.querySelector('.modal-expand-btn'),
-            cancelBtn: modalOverlay.querySelector('#modal-cancel-btn'),
-            applyBtn: modalOverlay.querySelector('#modal-apply-btn'),
-            currentSelection: modalOverlay.querySelector('#current-selection'),
-            selectionValue: modalOverlay.querySelector('#selection-value'),
             gridContainer: modalOverlay.querySelector('#modal-collection-grid-container')
         };
         
@@ -241,92 +224,7 @@ export class CollectionBrowserModal {
                 display: grid !important;
             }
             
-            /* Footer */
-            .collection-browser-modal-footer {
-                padding: 1rem 1.5rem;
-                background: var(--background-secondary, #f8fafc);
-                border-top: 1px solid var(--border-color, #e5e7eb);
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-radius: 0 0 12px 12px;
-                min-height: 60px;
-            }
-            
-            .footer-actions-left {
-                flex: 1;
-            }
-            
-            .current-selection {
-                display: flex;
-                align-items: center;
-                gap: 0.5rem;
-                font-size: 0.95rem;
-            }
-            
-            .selection-label {
-                color: var(--text-secondary, #6b7280);
-                font-weight: 500;
-            }
-            
-            .selection-value {
-                color: var(--primary-color, #667eea);
-                font-weight: 600;
-                max-width: 300px;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                white-space: nowrap;
-            }
-            
-            .footer-actions-right {
-                display: flex;
-                gap: 1rem;
-            }
-            
-            .modal-btn {
-                padding: 10px 20px;
-                border: none;
-                border-radius: 6px;
-                font-size: 0.9rem;
-                font-weight: 500;
-                cursor: pointer;
-                display: flex;
-                align-items: center;
-                gap: 0.4rem;
-                transition: all 0.2s ease;
-                min-width: 100px;
-                justify-content: center;
-            }
-            
-            .modal-btn-secondary {
-                background: var(--background-color, #ffffff);
-                color: var(--text-secondary, #6b7280);
-                border: 2px solid var(--border-color, #d1d5db);
-            }
-            
-            .modal-btn-secondary:hover {
-                background: var(--background-secondary, #f9fafb);
-                border-color: var(--text-secondary, #6b7280);
-            }
-            
-            .modal-btn-primary {
-                background: var(--primary-color, #667eea);
-                color: white;
-                border: 2px solid var(--primary-color, #667eea);
-            }
-            
-            .modal-btn-primary:hover:not(:disabled) {
-                background: var(--primary-dark, #5a67d8);
-                border-color: var(--primary-dark, #5a67d8);
-                transform: translateY(-1px);
-            }
-            
-            .modal-btn-primary:disabled {
-                background: var(--text-muted, #9ca3af);
-                border-color: var(--text-muted, #9ca3af);
-                cursor: not-allowed;
-                transform: none;
-            }
+            /* No footer - immediate selection design */
             
             /* Responsive design */
             @media (max-width: 768px) {
@@ -346,47 +244,12 @@ export class CollectionBrowserModal {
                     width: 28px;
                     height: 28px;
                 }
-                
-                .collection-browser-modal-footer {
-                    padding: 0.75rem 1rem;
-                    flex-direction: column;
-                    gap: 0.75rem;
-                    align-items: stretch;
-                    min-height: auto;
-                }
-                
-                .footer-actions-right {
-                    justify-content: stretch;
-                    gap: 0.75rem;
-                }
-                
-                .modal-btn {
-                    flex: 1;
-                    padding: 8px 16px;
-                    font-size: 0.85rem;
-                }
             }
             
             /* Dark mode support */
             @media (prefers-color-scheme: dark) {
                 .collection-browser-modal-dialog {
                     background: var(--background-dark, #1f2937);
-                }
-                
-                .collection-browser-modal-footer {
-                    background: var(--background-dark-secondary, #374151);
-                    border-color: var(--border-dark, #4b5563);
-                }
-                
-                .modal-btn-secondary {
-                    background: var(--background-dark-secondary, #374151);
-                    color: var(--text-dark-secondary, #d1d5db);
-                    border-color: var(--border-dark, #4b5563);
-                }
-                
-                .modal-btn-secondary:hover {
-                    background: var(--background-dark, #1f2937);
-                    border-color: var(--text-dark-secondary, #d1d5db);
                 }
             }
         `;
@@ -408,19 +271,16 @@ export class CollectionBrowserModal {
             this.toggleExpanded();
         });
         
-        // Cancel button
-        this.modal.cancelBtn.addEventListener('click', () => {
-            this.close();
-        });
-        
-        // Apply button
-        this.modal.applyBtn.addEventListener('click', () => {
-            this.applySelection();
-        });
-        
         // Overlay click to close
         this.modal.overlay.addEventListener('click', (e) => {
+            console.log(`🖱️ Modal ${this.modalId} overlay clicked:`, {
+                target: e.target.tagName + (e.target.className ? '.' + e.target.className : ''),
+                isOverlay: e.target === this.modal.overlay,
+                willClose: e.target === this.modal.overlay
+            });
+            
             if (e.target === this.modal.overlay) {
+                console.log(`🚪 Modal ${this.modalId} closing due to overlay click`);
                 this.close();
             }
         });
@@ -435,8 +295,27 @@ export class CollectionBrowserModal {
         
         // Listen for collection selection from grid
         document.addEventListener('collectionSelected', (e) => {
-            if (this.isOpen && e.detail && e.detail.collection) {
+            console.log(`🔍 Modal ${this.modalId} received collectionSelected event:`, {
+                modalId: this.modalId,
+                isOpen: this.isOpen,
+                hasDetail: !!e.detail,
+                hasCollection: !!(e.detail && e.detail.collection),
+                collectionId: e.detail?.collection?.id
+            });
+            
+            // Process selection immediately, even if modal thinks it's not open
+            if (e.detail && e.detail.collection) {
+                console.log(`✅ Modal ${this.modalId} processing collection selection (forcing)`);
+                
+                // Force the modal to be open if it's not already
+                if (!this.isOpen) {
+                    console.warn(`⚠️ Modal ${this.modalId} was closed, forcing it to be open for selection processing`);
+                    this.isOpen = true;
+                }
+                
                 this.onCollectionSelected(e.detail.collection);
+            } else {
+                console.warn(`⚠️ Modal ${this.modalId} ignoring collection selection - missing data`);
             }
         });
         
@@ -452,9 +331,16 @@ export class CollectionBrowserModal {
      * Open the modal
      */
     async open() {
-        if (this.isOpen) return;
+        console.log('🔍 Attempting to open modal. Current state:', { isOpen: this.isOpen });
         
+        if (this.isOpen) {
+            console.warn('⚠️ Modal already open, aborting open attempt');
+            return;
+        }
+        
+        console.log('✅ Opening modal...');
         this.isOpen = true;
+        console.log('📊 Modal state set to OPEN:', this.isOpen);
         
         // Initialize grid selector if not already done
         if (!this.gridSelector) {
@@ -470,7 +356,7 @@ export class CollectionBrowserModal {
             const selectedId = this.collectionManager.getSelectedCollection();
             if (selectedId) {
                 this.gridSelector.setSelectedCollection(selectedId);
-                this.updateSelectionDisplay(selectedId);
+                console.log('✅ Synced current selection:', selectedId);
             }
         } else {
             // Try to load collections
@@ -496,9 +382,17 @@ export class CollectionBrowserModal {
      * Close the modal
      */
     close() {
-        if (!this.isOpen) return;
+        console.log('🔍 Attempting to close modal. Current state:', { isOpen: this.isOpen });
         
+        if (!this.isOpen) {
+            console.warn('⚠️ Modal already closed, aborting close attempt');
+            return;
+        }
+        
+        console.log('✅ Closing modal...');
+        console.trace('📍 MODAL CLOSE STACK TRACE:'); // This will show us what's calling close()
         this.isOpen = false;
+        console.log('📊 Modal state set to CLOSED:', this.isOpen);
         this.isExpanded = false;
         this.modal.overlay.classList.remove('open', 'expanded');
         document.body.style.overflow = ''; // Restore scrolling
@@ -506,11 +400,10 @@ export class CollectionBrowserModal {
         // Reset expand button icon
         this.updateExpandIcon();
         
-        // Reset selection display
+        // Reset selection
         this.currentSelection = null;
-        this.updateSelectionDisplay();
         
-        console.log('📕 Collection browser modal closed');
+        console.log('📕 Collection browser modal closed successfully');
     }
     
     /**
@@ -574,13 +467,16 @@ export class CollectionBrowserModal {
     }
     
     /**
-     * Handle collection selection from grid
+     * Handle collection selection from grid - immediately apply and close
      * @param {Object} collection - Selected collection
      */
     onCollectionSelected(collection) {
+        console.log('🎯 onCollectionSelected called with:', collection?.id || collection);
         this.currentSelection = collection;
-        this.updateSelectionDisplay(collection.title || collection.id);
-        this.modal.applyBtn.disabled = false;
+        
+        // Immediately apply selection and close modal
+        console.log('🚀 Applying selection and closing modal...');
+        this.applySelectionAndClose(collection);
     }
     
     /**
@@ -588,54 +484,42 @@ export class CollectionBrowserModal {
      */
     onCollectionCleared() {
         this.currentSelection = null;
-        this.updateSelectionDisplay();
-        this.modal.applyBtn.disabled = true;
+        // No need for UI updates since there's no footer
     }
     
     /**
-     * Update the selection display in footer
-     * @param {string} selectionText - Text to display
+     * Apply selection and close modal immediately
+     * @param {Object} collection - Collection to apply
      */
-    updateSelectionDisplay(selectionText = null) {
-        if (selectionText) {
-            this.modal.currentSelection.style.display = 'flex';
-            this.modal.selectionValue.textContent = selectionText;
-            this.modal.applyBtn.disabled = false;
-        } else {
-            this.modal.currentSelection.style.display = 'none';
-            this.modal.applyBtn.disabled = true;
-        }
-    }
-    
-    /**
-     * Apply the current selection and close modal
-     */
-    applySelection() {
-        if (!this.currentSelection) return;
+    applySelectionAndClose(collection) {
+        if (!collection) return;
         
         // Update the collection manager with the selection
         this.collectionManager.setSelectedCollection(
-            this.currentSelection.id, 
-            this.currentSelection.source
+            collection.id, 
+            collection.source
         );
         
         // Update the trigger button text
-        this.updateTriggerButton(this.currentSelection.title || this.currentSelection.id);
+        this.updateTriggerButton(collection.title || collection.id);
         
         // Dispatch global event
         document.dispatchEvent(new CustomEvent('modalCollectionSelected', {
             detail: {
-                collection: this.currentSelection,
-                source: this.currentSelection.source
+                collection: collection,
+                source: collection.source
             }
         }));
         
         this.notificationService.showNotification(
-            `Selected: ${this.currentSelection.title || this.currentSelection.id}`,
+            `Selected: ${collection.title || collection.id}`,
             'success'
         );
         
+        // Close modal immediately
         this.close();
+        
+        console.log('✅ Collection selected and modal closed:', collection.id);
     }
     
     /**
@@ -684,7 +568,6 @@ export class CollectionBrowserModal {
             this.gridSelector.clearSelection();
         }
         this.currentSelection = null;
-        this.updateSelectionDisplay();
         this.updateTriggerButton();
         
         // Update collection manager

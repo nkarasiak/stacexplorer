@@ -20,6 +20,7 @@ export class CollectionGridSelector {
         this.isLoading = false;
         this.searchTerm = '';
         this.selectedSource = 'all';
+        this.collectionsLoaded = false;
         
         // Create the selector UI
         this.createUI();
@@ -94,8 +95,8 @@ export class CollectionGridSelector {
                         </div>
                         
                         <div class="collection-source-filter">
-                            <select id="collection-source-filter" class="source-filter-select">
-                                <option value="all">All Sources</option>
+                            <select id="collection-source-filter" class="source-filter-select" disabled>
+                                <option value="all">Loading sources...</option>
                                 <option value="copernicus">Copernicus</option>
                                 <option value="element84">Element84</option>
                                 <option value="planetary">Microsoft Planetary Computer</option>
@@ -162,6 +163,11 @@ export class CollectionGridSelector {
         
         // Source filter
         this.elements.sourceFilter.addEventListener('change', (e) => {
+            // Only process if collections are loaded
+            if (!this.collectionsLoaded) {
+                console.warn('Collections not yet loaded, ignoring source filter change');
+                return;
+            }
             this.selectedSource = e.target.value;
             this.filterCollections();
         });
@@ -450,11 +456,20 @@ export class CollectionGridSelector {
         ).join('');
         
         // Add click handlers to cards
-        grid.querySelectorAll('.collection-card').forEach(card => {
+        console.log('🔧 Attaching click handlers to', grid.querySelectorAll('.collection-card').length, 'collection cards');
+        grid.querySelectorAll('.collection-card').forEach((card, index) => {
             const collectionId = card.dataset.collectionId;
             const collection = this.filteredCollections.find(c => c.id === collectionId);
             
-            card.addEventListener('click', () => {
+            if (!collection) {
+                console.warn('⚠️ No collection found for card:', collectionId);
+                return;
+            }
+            
+            console.log(`🔧 Attaching click handler ${index + 1} for:`, collection.id);
+            card.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent event from bubbling to modal overlay
+                console.log('🖱️ Collection card clicked:', collection.id);
                 this.selectCollection(collection);
             });
             
@@ -542,10 +557,24 @@ export class CollectionGridSelector {
      * @param {Object} collection - Collection to select
      */
     selectCollection(collection) {
+        console.log('🎯 selectCollection called for:', collection.id);
+        
+        // Check modal state before and after each operation
+        const checkModalState = (step) => {
+            const modalOverlay = document.querySelector('.collection-browser-modal-overlay.open');
+            console.log(`📊 Modal state ${step}:`, {
+                modalExists: !!modalOverlay,
+                hasOpenClass: modalOverlay?.classList.contains('open')
+            });
+        };
+        
+        checkModalState('BEFORE setting selectedCollection');
         this.selectedCollection = collection;
         
+        checkModalState('BEFORE renderCollections()');
         // Update UI
         this.renderCollections();
+        checkModalState('AFTER renderCollections()');;
         this.elements.clearSelectionBtn.style.display = 'inline-flex';
         
         // Update the original collection select for backward compatibility
@@ -556,6 +585,7 @@ export class CollectionGridSelector {
         }
         
         // Dispatch selection event
+        console.log('📡 Dispatching collectionSelected event for:', collection.id);
         document.dispatchEvent(new CustomEvent('collectionSelected', {
             detail: {
                 collection: collection,
@@ -563,12 +593,8 @@ export class CollectionGridSelector {
             }
         }));
         
-        this.notificationService.showNotification(
-            `Selected: ${collection.title || collection.id}`,
-            'success'
-        );
-        
-        console.log('✅ Collection selected:', collection.id);
+        // Note: Notification is shown by CollectionBrowserModal to avoid duplicates
+        console.log('✅ Collection selected and event dispatched:', collection.id);
     }
     
     /**
@@ -645,12 +671,31 @@ export class CollectionGridSelector {
     }
     
     /**
+     * Enable source filter after collections are loaded
+     */
+    enableSourceFilter() {
+        this.elements.sourceFilter.disabled = false;
+        this.elements.sourceFilter.querySelector('option[value="all"]').textContent = 'All Sources';
+        this.collectionsLoaded = true;
+    }
+    
+    /**
+     * Disable source filter while collections are loading
+     */
+    disableSourceFilter() {
+        this.elements.sourceFilter.disabled = true;
+        this.elements.sourceFilter.querySelector('option[value="all"]').textContent = 'Loading sources...';
+        this.collectionsLoaded = false;
+    }
+
+    /**
      * Show loading state
      */
     showLoading() {
         this.elements.loadingState.style.display = 'flex';
         this.elements.grid.style.display = 'none';
         this.elements.stats.style.display = 'none';
+        this.disableSourceFilter();
     }
     
     /**
@@ -659,6 +704,7 @@ export class CollectionGridSelector {
     hideLoading() {
         this.elements.loadingState.style.display = 'none';
         this.elements.grid.style.display = 'grid';
+        this.enableSourceFilter();
     }
     
     /**
@@ -683,6 +729,7 @@ export class CollectionGridSelector {
      */
     showError(message) {
         this.hideLoading();
+        this.disableSourceFilter(); // Keep disabled on error
         this.notificationService.showNotification(`Error: ${message}`, 'error');
     }
     

@@ -5,7 +5,6 @@
 
 import { getMapManager } from './components/map/MapManager.js';
 
-console.log('🚀 MapManager Auto-Initializer loaded');
 
 // Function to initialize map
 async function initializeMap() {
@@ -17,7 +16,6 @@ async function initializeMap() {
         const success = await mapManager.autoInitialize();
         
         if (success) {
-            console.log('✅ MapManager initialized successfully');
         } else {
             console.warn('⚠️ No suitable map container found. Ensure you have an element with id="map"');
         }
@@ -39,7 +37,6 @@ window.addEventListener('load', () => {
     try {
         const mapManager = getMapManager();
         if (mapManager && !mapManager.isMapReady()) {
-            console.log('🔄 Retrying MapManager initialization...');
             initializeMap();
         }
     } catch (error) {

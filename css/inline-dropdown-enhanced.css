@@ -47,11 +47,20 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* Light theme adjustments */
+/* Light theme adjustments - Enhanced compatibility */
 .light-theme .inline-dropdown-container {
     background: rgba(255, 255, 255, 0.98) !important;
     border-color: #667eea !important;
-    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15) !important;
+    color: var(--text-primary, #1a1a1a) !important;
+    backdrop-filter: blur(20px) !important;
+}
+
+/* Light theme dropdown header */
+.light-theme .inline-dropdown-container .ai-dropdown-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    box-shadow: 0 2px 12px rgba(102, 126, 234, 0.25) !important;
 }
 
 /* =================================================================
@@ -952,20 +961,302 @@
     color: rgba(255, 255, 255, 0.9) !important;
 }
 
-/* Light theme adjustments */
+/* =================================================================
+   COMPREHENSIVE LIGHT THEME SUPPORT
+   ================================================================= */
+
+/* Light theme dropdown options and content */
+.light-theme .inline-dropdown-container .ai-option {
+    color: var(--text-primary, #1a1a1a) !important;
+}
+
+.light-theme .inline-dropdown-container .ai-option:hover,
+.light-theme .inline-dropdown-container .ai-option.keyboard-highlighted {
+    background: linear-gradient(135deg, rgba(102, 110, 234, 0.08) 0%, rgba(118, 75, 162, 0.04) 100%) !important;
+    box-shadow: 0 4px 12px rgba(102, 110, 234, 0.15) !important;
+}
+
+.light-theme .inline-dropdown-container .ai-option-title {
+    color: var(--text-primary, #1a1a1a) !important;
+}
+
+.light-theme .inline-dropdown-container .ai-option-subtitle {
+    color: var(--text-secondary, #64748b) !important;
+}
+
+/* Light theme search inputs */
+.light-theme .inline-dropdown-container .ai-search-input:not(.ai-location-search-input) {
+    background: rgba(255, 255, 255, 0.8) !important;
+    border-bottom: 1px solid rgba(102, 110, 234, 0.3) !important;
+    color: var(--text-primary, #1a1a1a) !important;
+}
+
+.light-theme .inline-dropdown-container .ai-search-input:not(.ai-location-search-input):focus {
+    border-bottom: 2px solid rgba(102, 110, 234, 0.6) !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+}
+
+.light-theme .inline-dropdown-container .ai-search-input:not(.ai-location-search-input)::placeholder {
+    color: var(--text-secondary, #64748b) !important;
+}
+
+/* Enhanced light theme location search input */
+.light-theme .inline-dropdown-container .ai-location-search-input {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.95) 0%, 
+        rgba(248, 250, 252, 0.9) 100%) !important;
+    border: 2px solid rgba(102, 110, 234, 0.2) !important;
+    color: var(--text-primary, #1a1a1a) !important;
+    box-shadow: 
+        0 6px 24px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 0 0 1px rgba(102, 110, 234, 0.1) !important;
+}
+
+.light-theme .inline-dropdown-container .ai-location-search-input:focus {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.98) 0%, 
+        rgba(248, 250, 252, 0.95) 100%) !important;
+    border: 2px solid rgba(102, 110, 234, 0.4) !important;
+    box-shadow: 
+        0 0 32px rgba(102, 110, 234, 0.2),
+        0 6px 24px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
+}
+
+.light-theme .inline-dropdown-container .ai-location-search-input::placeholder {
+    color: var(--text-secondary, #64748b) !important;
+}
+
+/* Light theme source group headers */
+.light-theme .inline-dropdown-container .ai-source-group-header {
+    background: linear-gradient(135deg, rgba(102, 110, 234, 0.06) 0%, rgba(118, 75, 162, 0.03) 100%) !important;
+    color: #667eea !important;
+    border-bottom: 2px solid rgba(102, 110, 234, 0.3) !important;
+    box-shadow: 0 2px 8px rgba(102, 110, 234, 0.1) !important;
+}
+
+/* Light theme scrollbar */
+.light-theme .inline-dropdown-container .ai-options-section::-webkit-scrollbar-thumb {
+    background: rgba(102, 110, 234, 0.3) !important;
+}
+
+.light-theme .inline-dropdown-container .ai-options-section::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 110, 234, 0.5) !important;
+}
+
+/* Light theme beautiful search fields - Enhanced compatibility */
 .light-theme .beautiful-search-field,
 .light-theme .search-field-enhanced {
     background: linear-gradient(135deg, 
-        rgba(255, 255, 255, 0.9) 0%, 
-        rgba(248, 250, 252, 0.8) 100%) !important;
-    color: rgba(15, 23, 42, 0.9) !important;
-    border: 2px solid rgba(15, 23, 42, 0.1) !important;
+        rgba(255, 255, 255, 0.95) 0%, 
+        rgba(248, 250, 252, 0.9) 100%) !important;
+    color: var(--text-primary, #1a1a1a) !important;
+    border: 2px solid rgba(102, 110, 234, 0.15) !important;
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.05),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9),
+        0 0 0 1px rgba(102, 110, 234, 0.1) !important;
+}
+
+.light-theme .beautiful-search-field:focus,
+.light-theme .search-field-enhanced:focus {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.98) 0%, 
+        rgba(248, 250, 252, 0.95) 100%) !important;
+    border: 2px solid rgba(102, 110, 234, 0.4) !important;
+    box-shadow: 
+        0 0 40px rgba(102, 110, 234, 0.2),
+        0 8px 32px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95) !important;
 }
 
 .light-theme .beautiful-search-field::placeholder,
 .light-theme .search-field-enhanced::placeholder {
-    color: rgba(15, 23, 42, 0.5) !important;
+    color: var(--text-secondary, #64748b) !important;
 }
+
+/* Light theme search field wrapper icon */
+.light-theme .search-field-wrapper::before {
+    opacity: 0.6 !important;
+}
+
+.light-theme .search-field-wrapper:has(.beautiful-search-field:focus)::before,
+.light-theme .search-field-wrapper:has(.search-field-enhanced:focus)::before {
+    opacity: 0.9 !important;
+}
+
+/* =================================================================
+   ENHANCED LOCATION SEARCH SUGGESTIONS
+   ================================================================= */
+
+/* Beautiful location suggestion containers */
+.suggestion-container {
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 999999 !important;
+    
+    background: var(--md-surface, rgba(30, 30, 30, 0.98)) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    
+    border: 2px solid rgba(102, 126, 234, 0.3) !important;
+    border-top: none !important;
+    border-radius: 0 0 16px 16px !important;
+    
+    box-shadow: 
+        0 12px 48px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    
+    max-height: 320px !important;
+    overflow-y: auto !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    transform: translateY(-8px) !important;
+}
+
+.suggestion-container.active {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: translateY(0) !important;
+}
+
+/* Light theme suggestion container */
+.light-theme .suggestion-container {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border-color: rgba(102, 126, 234, 0.3) !important;
+    box-shadow: 
+        0 12px 48px rgba(0, 0, 0, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Individual suggestion items */
+.suggestion-item {
+    padding: 12px 16px !important;
+    cursor: pointer !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    
+    display: flex !important;
+    align-items: center !important;
+    gap: 12px !important;
+    
+    color: var(--text-primary) !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    
+    transition: all 0.2s ease !important;
+    position: relative !important;
+}
+
+.suggestion-item:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%) !important;
+    transform: translateX(4px) !important;
+    border-left: 3px solid rgba(102, 126, 234, 0.6) !important;
+    padding-left: 13px !important;
+}
+
+.suggestion-item:last-child {
+    border-bottom: none !important;
+    border-radius: 0 0 14px 14px !important;
+}
+
+/* Light theme suggestion items */
+.light-theme .suggestion-item {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+    color: var(--text-primary, #1a1a1a) !important;
+}
+
+.light-theme .suggestion-item:hover {
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.06) 0%, rgba(118, 75, 162, 0.03) 100%) !important;
+    border-left: 3px solid rgba(102, 126, 234, 0.5) !important;
+}
+
+/* Location suggestion icons */
+.suggestion-item .location-icon {
+    font-size: 20px !important;
+    color: rgba(102, 126, 234, 0.8) !important;
+    flex-shrink: 0 !important;
+    width: 24px !important;
+    text-align: center !important;
+}
+
+/* Location suggestion content */
+.suggestion-item .location-content {
+    flex: 1 !important;
+    min-width: 0 !important;
+}
+
+.suggestion-item .location-name {
+    font-weight: 600 !important;
+    color: var(--text-primary) !important;
+    margin-bottom: 2px !important;
+}
+
+.suggestion-item .location-details {
+    font-size: 12px !important;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.7)) !important;
+    opacity: 0.8 !important;
+}
+
+.light-theme .suggestion-item .location-details {
+    color: var(--text-secondary, #64748b) !important;
+}
+
+/* Enhanced scrollbar for suggestions */
+.suggestion-container::-webkit-scrollbar {
+    width: 8px !important;
+}
+
+.suggestion-container::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.suggestion-container::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.3) !important;
+    border-radius: 4px !important;
+}
+
+.suggestion-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.5) !important;
+}
+
+/* Loading and error states for suggestions */
+.suggestion-item.loading {
+    justify-content: center !important;
+    padding: 20px 16px !important;
+    color: rgba(102, 126, 234, 0.8) !important;
+    font-style: italic !important;
+}
+
+.suggestion-item.error {
+    justify-content: center !important;
+    padding: 20px 16px !important;
+    color: var(--md-danger, #f44336) !important;
+    font-style: italic !important;
+}
+
+.suggestion-item.no-results {
+    justify-content: center !important;
+    padding: 20px 16px !important;
+    color: var(--text-secondary, rgba(255, 255, 255, 0.6)) !important;
+    font-style: italic !important;
+}
+
+.light-theme .suggestion-item.no-results {
+    color: var(--text-secondary, #64748b) !important;
+}
+
+/* =================================================================
+   MINI LOCATION INPUT FIELD ENHANCEMENTS
+   ================================================================= */
+
+/* Note: mini-location-input styles are handled in index.html to avoid conflicts */
+
+/* Note: mini-location-input-container styles are also handled in index.html */
 
 /* =================================================================
    PREVENT CONFLICTS WITH OTHER ELEMENTS

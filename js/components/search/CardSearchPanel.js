@@ -991,7 +991,7 @@ export class CardSearchPanel {
             summaryDetails.textContent = summary.join(' • ');
             summaryDetails.classList.add('active');
         } else {
-            summaryDetails.textContent = 'Configure your search';
+            summaryDetails.textContent = 'Browse Collections';
             summaryDetails.classList.remove('active');
         }
     }
@@ -1171,18 +1171,22 @@ export class CardSearchPanel {
             // Update results panel
             this.resultsPanel.setItems(items);
             
-            // Collapse search container after search is performed
-            const searchContainer = document.getElementById('search-container');
-            if (!searchContainer.classList.contains('collapsed')) {
-                const collapseSearchEvent = new CustomEvent('toggleCard', { detail: { cardId: 'search-container' } });
-                document.dispatchEvent(collapseSearchEvent);
+            // Collapse search container only if we found results
+            if (items.length > 0) {
+                const searchContainer = document.getElementById('search-container');
+                if (!searchContainer.classList.contains('collapsed')) {
+                    const collapseSearchEvent = new CustomEvent('toggleCard', { detail: { cardId: 'search-container' } });
+                    document.dispatchEvent(collapseSearchEvent);
+                }
             }
             
-            // Make sure the results card is expanded
-            const resultsCard = document.getElementById('results-card');
-            if (resultsCard.classList.contains('collapsed')) {
-                const event = new CustomEvent('toggleCard', { detail: { cardId: 'results-card' } });
-                document.dispatchEvent(event);
+            // Only expand results card if we found results
+            if (items.length > 0) {
+                const resultsCard = document.getElementById('results-card');
+                if (resultsCard.classList.contains('collapsed')) {
+                    const event = new CustomEvent('toggleCard', { detail: { cardId: 'results-card' } });
+                    document.dispatchEvent(event);
+                }
             }
             
             // Dispatch event that search results have been loaded

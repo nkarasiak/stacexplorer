@@ -9,7 +9,6 @@ export class OfflineManager {
         this.offlineIndicator = null;
         this.offlineOverlay = null;
         
-        console.log('🌐 OfflineManager initialized - Initial status:', this.isOffline ? 'offline' : 'online');
         
         this.initializeEventListeners();
         this.createOfflineUI();
@@ -20,14 +19,12 @@ export class OfflineManager {
      */
     initializeEventListeners() {
         window.addEventListener('online', () => {
-            console.log('🌐 Back online');
             this.isOffline = false;
             this.updateUI();
             this.notifyCallbacks('online');
         });
         
         window.addEventListener('offline', () => {
-            console.log('📡 Gone offline');
             this.isOffline = true;
             this.updateUI();
             this.notifyCallbacks('offline');
@@ -50,7 +47,6 @@ export class OfflineManager {
                 this.isOffline = !hasConnectivity;
                 
                 if (wasOffline !== this.isOffline) {
-                    console.log('🔍 Deep connectivity check changed status:', this.isOffline ? 'offline' : 'online');
                     this.updateUI();
                     this.notifyCallbacks(this.isOffline ? 'offline' : 'online');
                 }
@@ -72,7 +68,6 @@ export class OfflineManager {
             });
             return true; // If we get here, we have connectivity
         } catch (error) {
-            console.log('🔍 Connectivity check failed:', error.message);
             return false;
         }
     }
@@ -308,7 +303,6 @@ export class OfflineManager {
         this.isOffline = offline;
         
         if (wasOffline !== this.isOffline) {
-            console.log(`🔧 Manually set to ${offline ? 'offline' : 'online'} mode`);
             this.updateUI();
             this.notifyCallbacks(offline ? 'offline' : 'online');
         }

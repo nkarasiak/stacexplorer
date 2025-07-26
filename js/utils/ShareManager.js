@@ -57,7 +57,6 @@ export class ShareManager {
                 this.notificationService.showNotification('View URL copied to clipboard!', 'success');
             }
             
-            console.log('URL copied to clipboard:', currentUrl);
         } catch (error) {
             console.error('Failed to copy URL:', error);
             

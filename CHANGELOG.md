@@ -5,6 +5,63 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.2] - 2025-07-26
+
+### 🆕 Added
+- **Command Palette Auto-Focus**: Collection search input automatically focuses when Browse Collections modal opens
+- **Enhanced Command Palette**: Added comprehensive commands for location search, date presets, and navigation
+- **Debug Tools**: Added static methods for force-closing modals and focusing search inputs
+- **Keyboard Shortcuts Guide**: New command palette command to show available shortcuts
+
+### 🔧 Improved
+- **Modal Interaction**: Click anywhere in Browse Collections modal body to focus search input
+- **Error Handling**: Enhanced command palette with robust event handling and fallback mechanisms
+- **Focus Management**: Multiple focus attempts ensure search input is ready for immediate typing
+- **User Experience**: Seamless typing experience in collection browser without manual clicking
+
+### 🐛 Fixed
+- **Modal Closing Issues**: Fixed ESC key and close button functionality in Browse Collections modal
+- **Event Conflicts**: Resolved ESC key handler conflicts using capture phase for priority
+- **Search Input Focus**: Fixed timing issues preventing auto-focus in collection search
+- **Command Palette Errors**: Fixed "Cannot read properties of undefined (reading 'toLowerCase')" errors
+- **Event Propagation**: Improved click and keyboard event handling throughout modals
+
+### 🛠️ Technical
+- **Modal State Management**: Enhanced modal opening/closing with better state tracking
+- **Event Listeners**: Improved event listener cleanup and priority handling
+- **Focus Strategies**: Multi-method approach to ensure search input focus works reliably
+- **Error Recovery**: Graceful fallbacks when focus attempts fail
+
+## [2.9.1] - 2025-07-26
+
+### 🐛 Fixed
+- **JavaScript Syntax Errors**: Fixed orphaned object literals causing syntax errors in index.html and SearchHistoryManager.js
+- **Console Errors**: Resolved "Unexpected token ':'" errors that were appearing in browser console
+
+## [2.9.0] - 2025-07-26
+
+### 🆕 Added
+- **Grid Collection Browser**: Enhanced collection browsing with grid-based modal layout for better visual organization
+- **Collection Manager Enhancements**: Improved collection management with enhanced UI and better user experience
+- **Inline Dropdown Improvements**: Enhanced dropdown functionality with better styling and behavior
+
+### 🔧 Improved
+- **Browse Collections Modal**: Optimized modal space utilization and improved preset button functionality
+- **Search Interface**: Enhanced collection browser modal with improved layout and navigation
+- **Collection Grid Selector**: Better grid-based selection interface for collections
+
+### 🐛 Fixed
+- **Calendar Display**: Fixed calendar and location inputs to display correctly in light theme
+- **Tutorial System**: Disabled tutorial functionality and removed tutorial button for cleaner interface
+- **Location Search**: Fixed location search dropdown and map preview functionality
+- **Date Input System**: Replaced date dropdown with improved inline mini date input system
+
+### 🛠️ Technical
+- **Modal Space Optimization**: Better space utilization in Browse Collections modal
+- **Theme Consistency**: Improved light theme compatibility across input components
+- **Collection Browser**: Enhanced grid-based collection browsing with modal interface
+- **Input System Modernization**: Updated date input system with inline mini date picker
+
 ## [2.8.0] - 2025-07-24
 
 ### 🛰️ Enhanced

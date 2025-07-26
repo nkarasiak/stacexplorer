@@ -20,6 +20,13 @@ export class DateDropdownHandler {
      * @returns {string} HTML string for date dropdown
      */
     createDateDropdownHTML() {
+        const today = new Date('2025-07-25');
+        const oneMonthAgo = new Date(today);
+        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+        
+        const defaultStart = this.formatDateForInput(oneMonthAgo);
+        const defaultEnd = this.formatDateForInput(today);
+        
         return `
             <div class="ai-dropdown-container ai-date-dropdown" style="display: none;">
                 <div class="ai-dropdown-header">
@@ -33,45 +40,33 @@ export class DateDropdownHandler {
                 </div>
                 
                 <div class="ai-dropdown-content">
-                    <!-- Quick Date Presets -->
-                    <div class="ai-preset-section">
-                        <h4 class="ai-section-title">Quick Presets</h4>
-                        <div class="ai-preset-grid">
-                            <button type="button" class="ai-preset-btn" data-days="1">
-                                <i class="material-icons">today</i>
-                                <span>1 Day</span>
-                            </button>
-                            <button type="button" class="ai-preset-btn" data-days="7">
-                                <i class="material-icons">date_range</i>
-                                <span>1 Week</span>
-                            </button>
-                            <button type="button" class="ai-preset-btn" data-days="30">
-                                <i class="material-icons">calendar_month</i>
-                                <span>1 Month</span>
-                            </button>
-                            <button type="button" class="ai-preset-btn" data-days="183">
-                                <i class="material-icons">event_note</i>
-                                <span>6 Months</span>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <!-- Date Picker Section -->
+                    <!-- Mini Text Calendar -->
                     <div class="ai-calendar-section">
-                        <h4 class="ai-section-title">Custom Range</h4>
-                        <div class="ai-date-inputs">
-                            <input type="text" 
-                                   id="ai-date-range-input" 
-                                   class="ai-date-input" 
-                                   placeholder="Select date range..."
-                                   readonly>
+                        <h4 class="ai-section-title">Date Range</h4>
+                        <div class="ai-mini-calendar">
+                            <div class="ai-date-input-row">
+                                <label for="ai-start-date" class="ai-date-label">Start Date:</label>
+                                <input type="date" 
+                                       id="ai-start-date" 
+                                       class="ai-date-text-input" 
+                                       value="${defaultStart}"
+                                       max="${defaultEnd}">
+                            </div>
+                            <div class="ai-date-input-row">
+                                <label for="ai-end-date" class="ai-date-label">End Date:</label>
+                                <input type="date" 
+                                       id="ai-end-date" 
+                                       class="ai-date-text-input" 
+                                       value="${defaultEnd}"
+                                       max="${defaultEnd}">
+                            </div>
                         </div>
                     </div>
                     
                     <!-- Action Buttons -->
                     <div class="ai-dropdown-actions">
                         <button type="button" class="ai-btn ai-btn-secondary ai-cancel-btn">Cancel</button>
-                        <button type="button" class="ai-btn ai-btn-primary ai-apply-btn" disabled>Apply</button>
+                        <button type="button" class="ai-btn ai-btn-primary ai-apply-btn">Apply</button>
                     </div>
                 </div>
             </div>
@@ -83,34 +78,38 @@ export class DateDropdownHandler {
      * @param {HTMLElement} dropdown - Dropdown container element
      */
     initializeDateDropdown(dropdown) {
-        const dateRangeInput = dropdown.querySelector('#ai-date-range-input');
+        const startDateInput = dropdown.querySelector('#ai-start-date');
+        const endDateInput = dropdown.querySelector('#ai-end-date');
         const applyBtn = dropdown.querySelector('.ai-apply-btn');
         const cancelBtn = dropdown.querySelector('.ai-cancel-btn');
         
-        if (!dateRangeInput) return;
+        if (!startDateInput || !endDateInput) return;
         
-        // Initialize Flatpickr
-        this.flatpickrInstance = flatpickr(dateRangeInput, {
-            mode: 'range',
-            dateFormat: 'Y-m-d',
-            showMonths: 2,
-            static: true,
-            position: 'below',
-            onChange: (selectedDates) => {
-                const hasValidRange = selectedDates.length === 2;
-                if (applyBtn) {
-                    applyBtn.disabled = !hasValidRange;
-                }
-                
-                if (hasValidRange) {
-                    this.currentSelection = {
-                        type: 'custom',
-                        start: selectedDates[0],
-                        end: selectedDates[1]
-                    };
-                }
+        // Set default selection based on the input values
+        this.currentSelection = {
+            type: 'custom',
+            start: new Date(startDateInput.value),
+            end: new Date(endDateInput.value)
+        };
+        
+        // Add event listeners for date inputs
+        const updateSelection = () => {
+            const startDate = startDateInput.value ? new Date(startDateInput.value) : null;
+            const endDate = endDateInput.value ? new Date(endDateInput.value) : null;
+            
+            if (startDate && endDate && startDate <= endDate) {
+                this.currentSelection = {
+                    type: 'custom',
+                    start: startDate,
+                    end: endDate
+                };
+                // Update end date max to ensure start date is not after end date
+                endDateInput.min = startDateInput.value;
             }
-        });
+        };
+        
+        startDateInput.addEventListener('change', updateSelection);
+        endDateInput.addEventListener('change', updateSelection);
         
         // Apply button handler
         if (applyBtn) {
@@ -221,9 +220,6 @@ export class DateDropdownHandler {
      * Cleanup when dropdown is destroyed
      */
     cleanup() {
-        if (this.flatpickrInstance) {
-            this.flatpickrInstance.destroy();
-            this.flatpickrInstance = null;
-        }
+        // No cleanup needed for native date inputs
     }
 }

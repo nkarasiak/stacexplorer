@@ -5,7 +5,6 @@
 
 import { PresetButtonHandler } from './PresetButtonHandler.js';
 import { SearchSummaryManager } from './SearchSummaryManager.js';
-import { DateDropdownHandler } from './DateDropdownHandler.js';
 import { DropdownRenderer } from './DropdownRenderer.js';
 import { defaultGeocodingService } from '../../utils/GeocodingService.js';
 
@@ -26,14 +25,13 @@ export class InlineDropdownManagerRefactored {
         // Initialize modular components
         this.searchSummaryManager = new SearchSummaryManager();
         this.dropdownRenderer = new DropdownRenderer();
-        this.dateDropdownHandler = new DateDropdownHandler(notificationService, this.searchSummaryManager);
         
         // Initialize preset button handler with bound methods
         this.presetButtonHandler = new PresetButtonHandler(
             notificationService,
             this.searchSummaryManager.updateSearchSummary.bind(this.searchSummaryManager),
-            this.dateDropdownHandler.formatDateForInput.bind(this.dateDropdownHandler),
-            this.dateDropdownHandler.formatDateDisplay.bind(this.dateDropdownHandler)
+            this.formatDateForInput.bind(this),
+            this.formatDateDisplay.bind(this)
         );
         
         // Initialize default state
@@ -64,9 +62,9 @@ export class InlineDropdownManagerRefactored {
             const summaryItem = e.target.closest('.search-summary-item[data-field]');
             if (!summaryItem) return;
             
-            // Skip if this is handled by existing inline scripts (collections)
+            // Skip if this is handled by existing inline scripts (collections) or new inline date inputs (date)
             const field = summaryItem.dataset.field;
-            if (field === 'collection') return;
+            if (field === 'collection' || field === 'date') return;
             
             // Prevent reopening immediately after preset selection
             if (this.presetButtonHandler.isPresetJustSelected()) {
@@ -115,8 +113,9 @@ export class InlineDropdownManagerRefactored {
             let content = '';
             switch (fieldType) {
                 case 'date':
-                    content = this.dateDropdownHandler.createDateDropdownHTML();
-                    break;
+                    // Date dropdown removed - using inline date inputs instead
+                    console.log('Date dropdown disabled - using inline date inputs');
+                    return;
                 case 'collection':
                     content = await this.createCollectionDropdownHTML();
                     break;
@@ -153,7 +152,7 @@ export class InlineDropdownManagerRefactored {
         
         switch (fieldType) {
             case 'date':
-                this.dateDropdownHandler.initializeDateDropdown(this.currentDropdown);
+                // Date dropdown removed - no initialization needed
                 break;
             case 'collection':
                 this.initializeCollectionDropdown(this.currentDropdown);
@@ -337,23 +336,37 @@ export class InlineDropdownManagerRefactored {
      * @param {string} presetValue - Preset value to handle
      */
     handleDateSelection(presetValue) {
-        // Delegate to preset button handler if it's a preset
-        if (presetValue === 'anytime') {
-            this.dateDropdownHandler.resetToAnytime();
-        } else {
-            // For other presets, let the preset handler manage it
-            // This maintains compatibility with existing code
-        }
+        // Date dropdown removed - using inline date inputs instead
+        console.log('Date selection handled by inline inputs:', presetValue);
     }
     
     /**
      * Open Flatpickr calendar (for compatibility with app.js)
      */
     openFlatpickrCalendar() {
-        // Show the date dropdown which includes the calendar
-        const dateField = document.querySelector('[data-field="date"]');
-        if (dateField) {
-            this.showDropdown('date', dateField);
-        }
+        // Date dropdown removed - inline date inputs handle calendar functionality
+        console.log('Calendar functionality handled by inline date inputs');
+    }
+    
+    /**
+     * Format date for input field (YYYY-MM-DD)
+     * @param {Date} date - Date to format
+     * @returns {string} Formatted date string
+     */
+    formatDateForInput(date) {
+        return date.toISOString().split('T')[0];
+    }
+    
+    /**
+     * Format date for display (MMM DD, YYYY)
+     * @param {Date} date - Date to format
+     * @returns {string} Formatted date string
+     */
+    formatDateDisplay(date) {
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
     }
 }

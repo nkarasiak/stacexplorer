@@ -32,7 +32,6 @@ export class GeocodingService {
         // User-Agent is required by Nominatim
         this.userAgent = options.userAgent || 'STAC-Explorer/1.0';
         
-        console.log('🌍 GeocodingService initialized with Nominatim API');
     }
     
     /**
@@ -75,7 +74,6 @@ export class GeocodingService {
         // Check cache first
         const cacheKey = `${normalizedQuery}:${JSON.stringify(options)}`;
         if (this.cache.has(cacheKey)) {
-            console.log('📋 Using cached result for:', query);
             return this.cache.get(cacheKey);
         }
         
@@ -86,7 +84,6 @@ export class GeocodingService {
             // Cache the results
             this.cacheResult(cacheKey, processedResults);
             
-            console.log(`🔍 Found ${processedResults.length} results for "${query}"`);
             return processedResults;
         } catch (error) {
             console.error('❌ Error geocoding location:', error);
@@ -126,7 +123,6 @@ export class GeocodingService {
         
         const url = `${this.baseUrl}/search?${params}`;
         
-        console.log('🌐 Fetching from Nominatim:', url);
         
         const response = await fetch(url, {
             headers: {
@@ -444,7 +440,6 @@ export class GeocodingService {
      */
     clearCache() {
         this.cache.clear();
-        console.log('🗑️ Geocoding cache cleared');
     }
     
     /**

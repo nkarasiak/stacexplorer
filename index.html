@@ -81,6 +81,8 @@
     <link rel="stylesheet" href="css/map-fix.css">
     <!-- Filter System CSS -->
     <link rel="stylesheet" href="css/filter-system.css">
+    <!-- Collection Grid Selector -->
+    <link rel="stylesheet" href="css/components/collection-grid.css">
     <!-- Flatpickr CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <!-- Flatpickr Dark Theme -->
@@ -195,37 +197,7 @@
             font-size: 16px;
         }
         
-        /* Enhanced Collection Dropdown Styling */
-        #collection-select {
-            height: 200px !important;
-            size: 10 !important;
-        }
-        
-        #collection-select optgroup {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--primary-600, #4f46e5);
-            background-color: var(--surface-secondary, #f8f9fa);
-            padding: 8px 0;
-            margin: 4px 0;
-        }
-        
-        #collection-select optgroup option {
-            font-weight: 400;
-            color: var(--text-color, #333);
-            padding: 6px 16px;
-            background-color: white;
-        }
-        
-        .dark-theme #collection-select optgroup {
-            color: var(--primary-300, #a5b4fc);
-            background-color: var(--surface-tertiary, #2a2a2a);
-        }
-        
-        .dark-theme #collection-select optgroup option {
-            color: #ddd;
-            background-color: var(--surface-primary, #1a1a1a);
-        }
+        /* Old collection select dropdown removed - using beautiful modal now */
         
         /* AI Search Info Styling */
         .ai-search-info {
@@ -1775,9 +1747,6 @@
             <div class="sidebar-header">
                 <h1 id="app-logo" style="cursor: pointer;" title="Return to Homepage"><i class="material-icons">satellite_alt</i> <span>STAC Explorer</span></h1>
                 <div>
-                    <button id="tutorial-btn" title="Start Interactive Tutorial">
-                        <i class="material-icons">help</i>
-                    </button>
                     <button id="theme-toggle" class="theme-toggle">
                         <i class="material-icons">light_mode</i>
                     </button>
@@ -1846,13 +1815,21 @@
                                         </div>
                                         <div class="search-summary-content">
                                             <div class="search-summary-label">LOCATION:</div>
-                                            <div class="search-summary-value">Worldwide</div>
+                                            <div class="search-summary-value">
+                                                <div class="mini-location-input-container">
+                                                    <input type="text" id="summary-location-input" class="mini-location-input" placeholder="Search city/country..." value="">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="location-tools-inline">
                                         <button id="draw-bbox-inline" class="location-action-btn" title="Draw Area on Map">
                                             <i class="material-icons">crop_free</i>
                                             Draw
+                                        </button>
+                                        <button id="from-view-inline" class="location-action-btn" title="Use Current Map View">
+                                            <i class="material-icons">visibility</i>
+                                            From View
                                         </button>
                                     </div>
                                 </div>
@@ -1866,7 +1843,55 @@
                                         </div>
                                         <div class="search-summary-content">
                                             <div class="search-summary-label">TIME:</div>
-                                            <div class="search-summary-value">Anytime</div>
+                                            <div class="search-summary-value">
+                                                <div class="mini-date-inputs" id="mini-date-container">
+                                                    <input type="date" id="summary-start-date" class="mini-date-input" value="">
+                                                    <span class="date-separator">to</span>
+                                                    <input type="date" id="summary-end-date" class="mini-date-input" value="">
+                                                </div>
+                                                <script>
+                                                    // Immediate date initialization and protection
+                                                    (function() {
+                                                        const today = new Date();
+                                                        const oneMonthAgo = new Date(today);
+                                                        oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                                                        
+                                                        const todayStr = today.toISOString().split('T')[0];
+                                                        const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
+                                                        
+                                                        
+                                                        const startInput = document.getElementById('summary-start-date');
+                                                        const endInput = document.getElementById('summary-end-date');
+                                                        
+                                                        if (startInput && endInput) {
+                                                            startInput.value = oneMonthAgoStr;
+                                                            endInput.value = todayStr;
+                                                            startInput.max = todayStr;
+                                                            endInput.max = todayStr;
+                                                        }
+                                                        
+                                                        // Add mutation observer to restore date inputs if they get replaced
+                                                        const summaryValueDiv = document.querySelector('[data-field="date"] .search-summary-value');
+                                                        if (summaryValueDiv) {
+                                                            const observer = new MutationObserver((mutations) => {
+                                                                mutations.forEach((mutation) => {
+                                                                    if (mutation.type === 'childList' && !summaryValueDiv.querySelector('.mini-date-inputs')) {
+                                                                        // Restore the mini date inputs
+                                                                        summaryValueDiv.innerHTML = `
+                                                                            <div class="mini-date-inputs" id="mini-date-container">
+                                                                                <input type="date" id="summary-start-date" class="mini-date-input" value="${oneMonthAgoStr}" max="${todayStr}">
+                                                                                <span class="date-separator">to</span>
+                                                                                <input type="date" id="summary-end-date" class="mini-date-input" value="${todayStr}" max="${todayStr}">
+                                                                            </div>
+                                                                        `;
+                                                                    }
+                                                                });
+                                                            });
+                                                            observer.observe(summaryValueDiv, { childList: true, subtree: true });
+                                                        }
+                                                    })();
+                                                </script>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="time-presets-mini">
@@ -1907,12 +1932,11 @@
                             </div>
                             <div id="source-card"></div>
                             <div id="dataset-card"></div>
-                            <div id="time-card"></div>
                             <div id="quality-card"></div>
                             <div id="cloud-cover-controls"></div>
                             <div id="global-summary">
                                 <div class="summary-text">
-                                    <span id="summary-details">Configure your search</span>
+                                    <span id="summary-details">Browse Collections</span>
                                 </div>
                             </div>
                             
@@ -2045,7 +2069,6 @@
                     // On desktop, check sidebar state
                     const isHidden = this.sidebar.classList.contains('hidden');
                     toggleIcon.textContent = isHidden ? 'chevron_right' : 'chevron_left';
-                    console.log(`🔧 Set initial desktop toggle icon: ${toggleIcon.textContent} (sidebar hidden: ${isHidden})`);
                 }
             }
             
@@ -2089,9 +2112,6 @@
                     
                     sidebarHeader.appendChild(this.mobileCloseBtn);
                     
-                    console.log('Mobile close button created:', this.mobileCloseBtn);
-                    console.log('Sidebar header children:', sidebarHeader.children);
-                    console.log('Close button position:', this.mobileCloseBtn.getBoundingClientRect());
                 } else {
                     console.error('Sidebar header not found!');
                 }
@@ -2193,8 +2213,6 @@
             openSidebar() {
                 if (this.isDesktop) return;
                 
-                console.log('Opening sidebar...');
-                console.log('Close button exists:', !!this.mobileCloseBtn);
                 
                 this.isOpen = true;
                 this.sidebar.classList.add('mobile-open');
@@ -2203,13 +2221,10 @@
                 
                 // Hide hamburger menu when sidebar is open
                 this.mobileMenuBtn.style.display = 'none';
-                console.log('Hamburger hidden');
                 
                 // Show mobile close button when sidebar is open
                 if (this.mobileCloseBtn) {
                     this.mobileCloseBtn.style.display = 'flex';
-                    console.log('Close button shown, display:', this.mobileCloseBtn.style.display);
-                    console.log('Close button computed style:', window.getComputedStyle(this.mobileCloseBtn).display);
                 } else {
                     console.error('No close button to show!');
                 }
@@ -2217,7 +2232,6 @@
                 // Update ARIA attributes
                 this.sidebar.setAttribute('aria-hidden', 'false');
                 
-                console.log('Sidebar opened, close button should be visible:', this.mobileCloseBtn);
                 
                 // Focus first focusable element in sidebar
                 setTimeout(() => {
@@ -2251,7 +2265,6 @@
                 // Update ARIA attributes
                 this.sidebar.setAttribute('aria-hidden', 'true');
                 
-                console.log('Sidebar closed, hamburger should be visible');
                 
                 // Return focus to menu button
                 this.mobileMenuBtn.focus();
@@ -2260,39 +2273,30 @@
             toggleDesktopSidebar() {
                 if (!this.isDesktop) return;
                 
-                console.log('🔄 Toggle clicked! Current classes:', this.sidebar.className);
-                console.log('🔄 Current computed width:', window.getComputedStyle(this.sidebar).width);
                 
                 const isCurrentlyHidden = this.sidebar.classList.contains('hidden');
-                console.log('🔄 Is currently hidden?', isCurrentlyHidden);
                 
                 if (isCurrentlyHidden) {
                     // Show the sidebar
-                    console.log('🔄 Showing sidebar...');
                     this.sidebar.classList.remove('hidden');
                     // Update toggle button icon to show it can hide
                     const toggleIcon = this.sidebarToggle.querySelector('i');
                     if (toggleIcon) {
                         toggleIcon.textContent = 'chevron_left';
                     }
-                    console.log('🔄 After show - classes:', this.sidebar.className);
                     
                 } else {
                     // Hide the sidebar
-                    console.log('🔄 Hiding sidebar...');
                     this.sidebar.classList.add('hidden');
                     // Update toggle button icon to show it can show
                     const toggleIcon = this.sidebarToggle.querySelector('i');
                     if (toggleIcon) {
                         toggleIcon.textContent = 'chevron_right';
                     }
-                    console.log('🔄 After hide - classes:', this.sidebar.className);
                 }
                 
                 // Force a recompute
                 setTimeout(() => {
-                    console.log('🔄 New computed width:', window.getComputedStyle(this.sidebar).width);
-                    console.log('🔄 New computed transform:', window.getComputedStyle(this.sidebar).transform);
                 }, 100);
             }
             
@@ -2367,7 +2371,6 @@
                 // Hide mobile toggle on the landing page (no parameters)
                 const shouldShow = hasSearchParams || hasHash;
                 
-                console.log(`Mobile toggle visibility: ${shouldShow ? 'visible' : 'hidden'} (params: ${hasSearchParams}, hash: ${hasHash})`);
                 
                 return shouldShow;
             }
@@ -2397,7 +2400,6 @@
             // Export to global scope for debugging and external access
             window.mobileSidebarManager = mobileSidebarManager;
             
-            console.log('Mobile sidebar manager initialized');
         });
         
         // Logo click handler - return to homepage
@@ -2413,7 +2415,6 @@
                     window.location.href = baseUrl;
                 });
                 
-                console.log('🏠 Logo click handler initialized');
             }
         });
     </script>
@@ -2437,10 +2438,8 @@
                     
                     // Add a new event listener
                     newBtn.addEventListener('click', function() {
-                        console.log('Criteria Draw Bbox button clicked (hidden)');
                         
                         if (window.stacExplorer && window.stacExplorer.mapManager) {
-                            console.log('Starting drawing mode...');
                             
                             // Access the map manager directly
                             const mapManager = window.stacExplorer.mapManager;
@@ -2448,43 +2447,27 @@
                             // Start drawing mode
                             mapManager.startDrawingBbox();
                             
-                            console.log('Drawing mode activated');
                         } else {
                             console.error('Map manager not available');
                         }
                     });
                     
-                    console.log('Draw Bounding Box button initialized (hidden)');
                 } else {
                     console.error('Could not find the criteria-draw-bbox-btn element');
                 }
                 
-                // Also set up the preset 2024 button
-                const preset2024Btn = document.getElementById('preset-2024');
-                if (preset2024Btn) {
-                    preset2024Btn.addEventListener('click', function() {
-                        console.log('2024 preset clicked (hidden)');
-                        document.getElementById('date-start').value = '2024-01-01';
-                        document.getElementById('date-end').value = '2024-12-31';
-                        // Trigger change events
-                        document.getElementById('date-start').dispatchEvent(new Event('change'));
-                        document.getElementById('date-end').dispatchEvent(new Event('change'));
-                    });
-                    console.log('2024 preset button initialized (hidden)');
-                }
+                // Note: Preset button handlers are now initialized in the main DOMContentLoaded section
                 
                 // Set up collection info button
                 const collectionInfoBtn = document.getElementById('collection-info-btn');
                 if (collectionInfoBtn) {
                     collectionInfoBtn.addEventListener('click', function() {
-                        console.log('Collection info button clicked (hidden)');
                         // This can be a no-op since the inline AI search handles collection details
                     });
-                    console.log('Collection info button initialized (hidden)');
                 }
 
                 // Set up visible date preset buttons
-                setupDatePresetButtons();
+                // setupDatePresetButtons(); // Disabled - using new inline date input system
                 
                 // Set up source preset buttons
                 setupSourcePresetButtons();
@@ -2495,41 +2478,11 @@
             }, 1000); // Wait 1 second to ensure everything is loaded
         });
 
-        // Enhanced Date Preset Button Setup
+        // OLD Date Preset Button Setup - DISABLED
+        // This function is disabled in favor of the new inline date input system
         function setupDatePresetButtons() {
-            const presetButtons = document.querySelectorAll('.preset-mini-btn');
-            
-            presetButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.stopPropagation(); // Prevent triggering the parent click
-                    
-                    const days = this.getAttribute('data-days');
-                    const year = this.getAttribute('data-year');
-                    
-                    // Remove active class from all preset buttons
-                    presetButtons.forEach(btn => btn.classList.remove('active'));
-                    // Add active class to clicked button
-                    this.classList.add('active');
-                    
-                    if (days) {
-                        setDateRange(parseInt(days));
-                        console.log(`✅ Date preset: Last ${days} days`);
-                    } else if (year) {
-                        if (year === 'current') {
-                            setYearRange(new Date().getFullYear());
-                            console.log(`✅ Date preset: Current year (${new Date().getFullYear()})`);
-                        } else {
-                            setYearRange(parseInt(year));
-                            console.log(`✅ Date preset: Year ${year}`);
-                        }
-                    }
-                    
-                    // Update the search summary display
-                    updateSearchSummaryDisplay();
-                });
-            });
-            
-            console.log('✅ Date preset mini buttons initialized');
+            // Old preset button handlers are disabled
+            // New handlers are initialized in the DOMContentLoaded section below
         }
 
         // Source Preset Button Setup
@@ -2550,7 +2503,6 @@
                             // Trigger the dropdown by simulating a click on the source card
                             summarySource.click();
                         }
-                        console.log('✅ Opened source dropdown for more collections');
                         return;
                     }
                     
@@ -2570,12 +2522,10 @@
                         // Update the search summary display
                         updateSourceSummaryDisplay(this.textContent, this.title);
                         
-                        console.log(`✅ Source preset selected: ${this.title} (${collection})`);
                     }
                 });
             });
             
-            console.log('✅ Source preset mini buttons initialized');
         }
 
         // Set selected collection in hidden form
@@ -2626,27 +2576,63 @@
             const startDateStr = startDate.toISOString().split('T')[0];
             const endDateStr = today.toISOString().split('T')[0];
             
-            // Set the hidden form inputs
-            document.getElementById('date-start').value = startDateStr;
-            document.getElementById('date-end').value = endDateStr;
+            // Update mini date inputs (new system)
+            const summaryStartInput = document.getElementById('summary-start-date');
+            const summaryEndInput = document.getElementById('summary-end-date');
+            if (summaryStartInput) summaryStartInput.value = startDateStr;
+            if (summaryEndInput) summaryEndInput.value = endDateStr;
             
-            // Trigger change events to notify other components
-            document.getElementById('date-start').dispatchEvent(new Event('change'));
-            document.getElementById('date-end').dispatchEvent(new Event('change'));
+            // Update hidden form inputs (for compatibility)
+            const formStartInput = document.getElementById('date-start');
+            const formEndInput = document.getElementById('date-end');
+            if (formStartInput) formStartInput.value = startDateStr;
+            if (formEndInput) formEndInput.value = endDateStr;
+            
+            // Trigger search parameter change event
+            document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                detail: {
+                    type: 'date',
+                    dateType: 'custom',
+                    dateStart: startDateStr,
+                    dateEnd: endDateStr
+                }
+            }));
         }
 
         // Set date range for a specific year
         function setYearRange(year) {
             const startDateStr = `${year}-01-01`;
-            const endDateStr = `${year}-12-31`;
+            let endDateStr;
             
-            // Set the hidden form inputs
-            document.getElementById('date-start').value = startDateStr;
-            document.getElementById('date-end').value = endDateStr;
+            // If it's the current year, use today's date as end date
+            const currentYear = new Date().getFullYear();
+            if (year === currentYear) {
+                endDateStr = new Date().toISOString().split('T')[0];
+            } else {
+                endDateStr = `${year}-12-31`;
+            }
             
-            // Trigger change events to notify other components
-            document.getElementById('date-start').dispatchEvent(new Event('change'));
-            document.getElementById('date-end').dispatchEvent(new Event('change'));
+            // Update mini date inputs (new system)
+            const summaryStartInput = document.getElementById('summary-start-date');
+            const summaryEndInput = document.getElementById('summary-end-date');
+            if (summaryStartInput) summaryStartInput.value = startDateStr;
+            if (summaryEndInput) summaryEndInput.value = endDateStr;
+            
+            // Update hidden form inputs (for compatibility)
+            const formStartInput = document.getElementById('date-start');
+            const formEndInput = document.getElementById('date-end');
+            if (formStartInput) formStartInput.value = startDateStr;
+            if (formEndInput) formEndInput.value = endDateStr;
+            
+            // Trigger search parameter change event
+            document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                detail: {
+                    type: 'date',
+                    dateType: 'custom',
+                    dateStart: startDateStr,
+                    dateEnd: endDateStr
+                }
+            }));
         }
 
         // Update the search summary display with current date selection
@@ -2696,7 +2682,6 @@
             if (inlineDrawBtn && hiddenDrawBtn) {
                 inlineDrawBtn.addEventListener('click', function(e) {
                     e.stopPropagation(); // Prevent triggering the parent card click
-                    console.log('✅ Inline Draw Area button clicked');
                     
                     // Trigger the hidden button's functionality
                     hiddenDrawBtn.click();
@@ -2709,7 +2694,69 @@
                         this.style.color = '';
                     }, 2000);
                 });
-                console.log('✅ Inline draw area button connected');
+            }
+            
+            // Inline from view button in location card
+            const inlineFromViewBtn = document.getElementById('from-view-inline');
+            
+            if (inlineFromViewBtn) {
+                inlineFromViewBtn.addEventListener('click', function(e) {
+                    e.stopPropagation(); // Prevent triggering the parent card click
+                    
+                    // Get current map bounds
+                    if (window.stacExplorer && window.stacExplorer.mapManager && window.stacExplorer.mapManager.map) {
+                        const map = window.stacExplorer.mapManager.map;
+                        const bounds = map.getBounds();
+                        
+                        // Convert to bbox format: [west, south, east, north]
+                        const bbox = [
+                            bounds.getWest(),
+                            bounds.getSouth(), 
+                            bounds.getEast(),
+                            bounds.getNorth()
+                        ];
+                        
+                        // Format to reasonable precision (6 decimal places)
+                        const bboxString = bbox.map(coord => coord.toFixed(6)).join(',');
+                        
+                        // Update the bbox input field
+                        const bboxInput = document.getElementById('bbox-input');
+                        if (bboxInput) {
+                            bboxInput.value = bboxString;
+                            
+                            // Trigger input event to notify other components
+                            bboxInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            
+                            
+                            // Show success notification if available
+                            if (window.stacExplorer && window.stacExplorer.notificationService) {
+                                window.stacExplorer.notificationService.showNotification(
+                                    'Location set from current map view', 
+                                    'success'
+                                );
+                            }
+                        }
+                        
+                        // Visual feedback
+                        this.style.background = 'var(--primary-500, #2196F3)';
+                        this.style.color = 'white';
+                        setTimeout(() => {
+                            this.style.background = '';
+                            this.style.color = '';
+                        }, 2000);
+                        
+                    } else {
+                        console.error('❌ Map manager not available');
+                        
+                        // Show error notification if available
+                        if (window.stacExplorer && window.stacExplorer.notificationService) {
+                            window.stacExplorer.notificationService.showNotification(
+                                'Map not ready. Please wait for map to load.', 
+                                'warning'
+                            );
+                        }
+                    }
+                });
             }
         }
         
@@ -2730,7 +2777,6 @@
             summaryItems.forEach(item => {
                 item.addEventListener('click', function() {
                     const field = this.getAttribute('data-field');
-                    console.log(`✅ Search summary ${field} clicked`);
                     
                     if (field === 'collection') {
                         // Trigger the source dropdown from the inline dropdown system
@@ -2756,7 +2802,6 @@
                 // Import the beautiful GeocodingService
                 const { defaultGeocodingService } = await import('./js/utils/GeocodingService.js');
                 geocodingService = defaultGeocodingService;
-                console.log('✅ Beautiful GeocodingService loaded');
                 
                 // Initialize map preview functionality
                 initializeMapPreview();
@@ -2772,9 +2817,7 @@
             setTimeout(() => {
                 if (window.stacExplorer && window.stacExplorer.mapManager && window.stacExplorer.mapManager.map) {
                     mapPreviewHandler = new LocationMapPreview(window.stacExplorer.mapManager.map);
-                    console.log('✅ Map preview handler initialized');
                 } else {
-                    console.log('⏳ Map not ready, retrying map preview init...');
                     initializeMapPreview(); // Retry
                 }
             }, 1000);
@@ -2801,7 +2844,6 @@
                         pitch: this.map.getPitch()
                     };
                     this.hasStoredOriginalView = true;
-                    console.log('🗺️ Original map view stored for search session');
                 }
             }
 
@@ -2809,7 +2851,6 @@
             resetStoredView() {
                 this.originalView = null;
                 this.hasStoredOriginalView = false;
-                console.log('🗺️ Original map view reset');
             }
 
             // Show location preview on map
@@ -2830,7 +2871,6 @@
                 // Zoom to location
                 this.zoomToLocation(result);
                 
-                console.log(`🗺️ Showing preview for: ${result.name || result.shortName}`);
             }
 
             // Hide location preview
@@ -2854,7 +2894,6 @@
                     });
                 }
                 
-                console.log('🗺️ Preview hidden, map restored');
             }
 
             // Create GeoJSON from location result
@@ -3200,7 +3239,6 @@
             const bboxStr = suggestionElement.getAttribute('data-bbox');
             const category = suggestionElement.getAttribute('data-category');
             
-            console.log(`✅ Selected beautiful location: ${name} (${lat}, ${lon}) [${category}]`);
             
             let bbox;
             if (bboxStr && bboxStr !== '') {
@@ -3270,7 +3308,6 @@
             const lon = parseFloat(suggestionElement.getAttribute('data-lon'));
             const name = suggestionElement.getAttribute('data-name');
             
-            console.log(`✅ Selected location: ${name} (${lat}, ${lon})`);
             
             // Create a bounding box around the location (roughly 0.1 degree buffer)
             const buffer = 0.1;
@@ -3360,11 +3397,241 @@
             if (modalOverlay) {
                 modalOverlay.style.display = 'none';
                 modalOverlay.classList.remove('active');
-                console.log('✅ Hidden collection details modal overlay');
             }
             
             // Ensure body doesn't have modal-open class
             document.body.classList.remove('modal-open');
+            
+            // Initialize date input handlers with retry logic
+            const initializeDateInputs = () => {
+                const startDateInput = document.getElementById('summary-start-date');
+                const endDateInput = document.getElementById('summary-end-date');
+                
+                if (!startDateInput || !endDateInput) {
+                    // Try again in 100ms if inputs don't exist yet
+                    setTimeout(initializeDateInputs, 100);
+                    return;
+                }
+                
+                // Initialize with default values (today and one month ago)
+                const today = new Date();
+                const oneMonthAgo = new Date(today);
+                oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                
+                const todayStr = today.toISOString().split('T')[0];
+                const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
+                
+                
+                startDateInput.value = oneMonthAgoStr;
+                endDateInput.value = todayStr;
+                startDateInput.max = todayStr;
+                endDateInput.max = todayStr;
+                
+                // Also update the form inputs immediately
+                const formStartInput = document.getElementById('date-start');
+                const formEndInput = document.getElementById('date-end');
+                if (formStartInput) formStartInput.value = oneMonthAgoStr;
+                if (formEndInput) formEndInput.value = todayStr;
+                
+                const updateDateInputs = () => {
+                    // Update form inputs when summary date inputs change
+                    const formStartInput = document.getElementById('date-start');
+                    const formEndInput = document.getElementById('date-end');
+                    
+                    if (formStartInput && formEndInput) {
+                        formStartInput.value = startDateInput.value;
+                        formEndInput.value = endDateInput.value;
+                        
+                        // Trigger search parameter change event
+                        document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                            detail: {
+                                type: 'date',
+                                dateType: 'custom',
+                                dateStart: startDateInput.value,
+                                dateEnd: endDateInput.value
+                            }
+                        }));
+                    }
+                };
+                
+                // Update end date min when start date changes
+                startDateInput.addEventListener('change', () => {
+                    endDateInput.min = startDateInput.value;
+                    updateDateInputs();
+                });
+                
+                endDateInput.addEventListener('change', updateDateInputs);
+                
+            };
+            
+            // FORCE RESTORE mini date inputs - replace any text that's there
+            const forceRestoreDateInputs = () => {
+                const summaryValueDiv = document.querySelector('[data-field="date"] .search-summary-value');
+                if (summaryValueDiv) {
+                    const today = new Date();
+                    const oneMonthAgo = new Date(today);
+                    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+                    const todayStr = today.toISOString().split('T')[0];
+                    const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
+                    
+                    summaryValueDiv.innerHTML = `
+                        <div class="mini-date-inputs" id="mini-date-container">
+                            <input type="date" id="summary-start-date" class="mini-date-input" value="${oneMonthAgoStr}" max="${todayStr}">
+                            <span class="date-separator">to</span>
+                            <input type="date" id="summary-end-date" class="mini-date-input" value="${todayStr}" max="${todayStr}">
+                        </div>
+                    `;
+                }
+            };
+            
+            // Force restore immediately and repeatedly
+            forceRestoreDateInputs();
+            setTimeout(forceRestoreDateInputs, 10);
+            setTimeout(forceRestoreDateInputs, 100);
+            setTimeout(forceRestoreDateInputs, 500);
+            setTimeout(forceRestoreDateInputs, 1000);
+            
+            // Set up continuous monitoring every 2 seconds
+            setInterval(() => {
+                const summaryValueDiv = document.querySelector('[data-field="date"] .search-summary-value');
+                if (summaryValueDiv && !summaryValueDiv.querySelector('.mini-date-inputs')) {
+                    forceRestoreDateInputs();
+                }
+            }, 2000);
+            
+            // Start initialization immediately and also run it multiple times to ensure it works
+            initializeDateInputs();
+            
+            // Also try again after a short delay to ensure DOM is ready
+            setTimeout(initializeDateInputs, 50);
+            setTimeout(initializeDateInputs, 200);
+            setTimeout(initializeDateInputs, 500);
+            
+            // Disable click handler on TIME button to prevent old dropdown
+            const timeButton = document.getElementById('summary-date');
+            if (timeButton) {
+                timeButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                });
+            }
+            
+            // Initialize preset button handlers
+            const initializePresetButtons = () => {
+                // Helper function to update both summary and form inputs
+                const updateDateInputs = (startDate, endDate) => {
+                    // Update summary date inputs
+                    const summaryStartInput = document.getElementById('summary-start-date');
+                    const summaryEndInput = document.getElementById('summary-end-date');
+                    const formStartInput = document.getElementById('date-start');
+                    const formEndInput = document.getElementById('date-end');
+                    
+                    if (summaryStartInput) summaryStartInput.value = startDate;
+                    if (summaryEndInput) summaryEndInput.value = endDate;
+                    if (formStartInput) formStartInput.value = startDate;
+                    if (formEndInput) formEndInput.value = endDate;
+                    
+                    // Trigger search parameter change event
+                    document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                        detail: {
+                            type: 'date',
+                            dateType: 'custom',
+                            dateStart: startDate,
+                            dateEnd: endDate
+                        }
+                    }));
+                };
+                
+                // 7D button
+                const preset7DBtn = document.getElementById('preset-last-7-days');
+                if (preset7DBtn) {
+                    preset7DBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Remove active class from all preset buttons
+                        document.querySelectorAll('.preset-mini-btn').forEach(btn => btn.classList.remove('active'));
+                        preset7DBtn.classList.add('active');
+                        
+                        const today = new Date();
+                        const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                        const startDate = new Date(endDate);
+                        startDate.setDate(startDate.getDate() - 7);
+                        
+                        updateDateInputs(
+                            startDate.toISOString().split('T')[0],
+                            endDate.toISOString().split('T')[0]
+                        );
+                        
+                    });
+                }
+                
+                // 30D button
+                const preset30DBtn = document.getElementById('preset-last-30-days');
+                if (preset30DBtn) {
+                    preset30DBtn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Remove active class from all preset buttons
+                        document.querySelectorAll('.preset-mini-btn').forEach(btn => btn.classList.remove('active'));
+                        preset30DBtn.classList.add('active');
+                        
+                        const today = new Date();
+                        const endDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                        const startDate = new Date(endDate);
+                        startDate.setDate(startDate.getDate() - 30);
+                        
+                        updateDateInputs(
+                            startDate.toISOString().split('T')[0],
+                            endDate.toISOString().split('T')[0]
+                        );
+                        
+                    });
+                }
+                
+                // 2025 button
+                const preset2025Btn = document.getElementById('preset-this-year');
+                if (preset2025Btn) {
+                    preset2025Btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Remove active class from all preset buttons
+                        document.querySelectorAll('.preset-mini-btn').forEach(btn => btn.classList.remove('active'));
+                        preset2025Btn.classList.add('active');
+                        
+                        const today = new Date();
+                        updateDateInputs(
+                            `${today.getFullYear()}-01-01`,
+                            today.toISOString().split('T')[0]
+                        );
+                        
+                    });
+                }
+                
+                // 2024 button
+                const preset2024Btn = document.getElementById('preset-2024');
+                if (preset2024Btn) {
+                    preset2024Btn.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        // Remove active class from all preset buttons
+                        document.querySelectorAll('.preset-mini-btn').forEach(btn => btn.classList.remove('active'));
+                        preset2024Btn.classList.add('active');
+                        
+                        updateDateInputs('2024-01-01', '2024-12-31');
+                        
+                    });
+                }
+                
+            };
+            
+            // Initialize preset buttons immediately and with delays
+            initializePresetButtons();
+            setTimeout(initializePresetButtons, 100);
+            setTimeout(initializePresetButtons, 500);
             
             // Additional check to prevent scrolling issues
             setTimeout(() => {
@@ -3379,8 +3646,276 @@
                 document.body.style.overflow = 'hidden';
                 document.body.style.height = '100vh';
                 
-                console.log('✅ Fixed scrolling and modal issues');
             }, 2000);
+            
+            // Initialize mini location input functionality
+            const initializeLocationInput = () => {
+                const locationInput = document.getElementById('summary-location-input');
+                if (!locationInput) return;
+                
+                let searchTimeout = null;
+                let currentRequest = null;
+                
+                // Function to handle location search with geocoding service
+                const handleLocationSearch = async (query) => {
+                    if (!query || query.length < 2) {
+                        return;
+                    }
+                    
+                    
+                    try {
+                        // Check if geocoding service is available
+                        
+                        // Wait for geocoding service to be available
+                        if (!window.geocodingService && window.initializeGeocodingService) {
+                            await window.initializeGeocodingService();
+                        }
+                        
+                        const service = window.geocodingService;
+                        if (!service) {
+                            console.warn('⚠️ Geocoding service not available after initialization attempt');
+                            return;
+                        }
+                        
+                        
+                        // Use the geocoding service to search
+                        service.searchLocations(query, (results, error) => {
+                            
+                            if (error) {
+                                console.error('❌ Location search error:', error);
+                                hideLocationResults();
+                                return;
+                            }
+                            
+                            if (results && results.length > 0) {
+                                showLocationResults(results);
+                            } else {
+                                hideLocationResults();
+                            }
+                        });
+                        
+                    } catch (error) {
+                        console.error('Error in location search:', error);
+                    }
+                };
+                
+                // Function to show location results in a dropdown
+                const showLocationResults = (results) => {
+                    hideLocationResults(); // Clear any existing dropdown
+                    
+                    const dropdown = document.createElement('div');
+                    dropdown.id = 'location-results-dropdown';
+                    dropdown.className = 'location-results-dropdown';
+                    
+                    // Debug styling to make it very visible
+                    dropdown.style.cssText = `
+                        background: #2a2a2a;
+                        border: 2px solid #667eea;
+                        border-radius: 6px;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+                        max-height: 200px;
+                        overflow-y: auto;
+                        display: block !important;
+                    `;
+                    
+                    results.slice(0, 5).forEach((result, index) => {
+                        const item = document.createElement('div');
+                        item.className = 'location-result-item';
+                        item.style.cssText = `
+                            padding: 12px;
+                            cursor: pointer;
+                            border-bottom: 1px solid #404040;
+                            background: #2a2a2a;
+                            color: white;
+                        `;
+                        item.innerHTML = `
+                            <div style="font-size: 13px; font-weight: 500; color: #ffffff;">${result.shortName || result.name || result.display_name}</div>
+                            <div style="font-size: 11px; color: #aaaaaa; margin-top: 2px;">${result.type || 'Location'}</div>
+                        `;
+                        
+                        item.addEventListener('click', () => {
+                            selectLocationResult(result);
+                            hideLocationResults();
+                        });
+                        
+                        item.addEventListener('mouseenter', () => {
+                            item.style.background = '#333333';
+                            // Show location preview on map
+                            showLocationPreview(result);
+                        });
+                        
+                        item.addEventListener('mouseleave', () => {
+                            item.style.background = '#2a2a2a';
+                            // Clear location preview
+                            clearLocationPreview();
+                        });
+                        
+                        dropdown.appendChild(item);
+                    });
+                    
+                    // Position dropdown below the input - use document.body to avoid container clipping
+                    const rect = locationInput.getBoundingClientRect();
+                    dropdown.style.position = 'fixed';
+                    dropdown.style.top = (rect.bottom + window.scrollY + 2) + 'px';
+                    dropdown.style.left = rect.left + 'px';
+                    dropdown.style.width = rect.width + 'px';
+                    dropdown.style.zIndex = '9999';
+                    
+                    document.body.appendChild(dropdown);
+                };
+                
+                // Function to hide location results dropdown
+                const hideLocationResults = () => {
+                    const existing = document.getElementById('location-results-dropdown');
+                    if (existing) {
+                        existing.remove();
+                    }
+                };
+                
+                // Function to select a location result
+                const selectLocationResult = (result) => {
+                    const displayName = result.shortName || result.name || result.display_name;
+                    
+                    // Update the bbox input if bbox is available
+                    if (result.bbox && Array.isArray(result.bbox) && result.bbox.length === 4) {
+                        const bboxInput = document.getElementById('bbox-input');
+                        if (bboxInput) {
+                            bboxInput.value = result.bbox.join(',');
+                            bboxInput.dispatchEvent(new Event('change'));
+                        }
+                    }
+                    
+                    // Update the location input value
+                    locationInput.value = displayName;
+                    
+                    // Trigger search parameter change event
+                    document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                        detail: {
+                            type: 'location',
+                            location: result.bbox || [result.lon, result.lat],
+                            locationName: displayName
+                        }
+                    }));
+                    
+                };
+                
+                // Function to show location preview on map
+                const showLocationPreview = (result) => {
+                    try {
+                        // Get the map manager from the global scope
+                        const mapManager = window.stacExplorer?.mapManager;
+                        if (!mapManager) {
+                            console.warn('Map manager not available for location preview');
+                            return;
+                        }
+                        
+                        let bbox = null;
+                        
+                        // Get bounding box from result
+                        if (result.bbox && Array.isArray(result.bbox) && result.bbox.length === 4) {
+                            bbox = result.bbox;
+                        } else if (result.lon && result.lat) {
+                            // Create a small bbox around the point
+                            const margin = 0.1; // ~11km at equator
+                            bbox = [
+                                parseFloat(result.lon) - margin,
+                                parseFloat(result.lat) - margin,
+                                parseFloat(result.lon) + margin,
+                                parseFloat(result.lat) + margin
+                            ];
+                        }
+                        
+                        if (bbox && bbox.length === 4) {
+                            
+                            // Use displayBboxOnMap to show the location with zoom
+                            const locationName = result.display_name || result.name || 'Location Preview';
+                            mapManager.displayBboxOnMap(bbox, locationName);
+                        }
+                    } catch (error) {
+                        console.error('Error showing location preview:', error);
+                    }
+                };
+                
+                // Function to clear location preview from map
+                const clearLocationPreview = () => {
+                    try {
+                        const mapManager = window.stacExplorer?.mapManager;
+                        if (!mapManager) return;
+                        
+                        
+                        // Clear the search bbox (which is used for location display)
+                        if (typeof mapManager.clearSearchBbox === 'function') {
+                            mapManager.clearSearchBbox();
+                        }
+                    } catch (error) {
+                        console.error('Error clearing location preview:', error);
+                    }
+                };
+                
+                // Add input event listener with debouncing
+                locationInput.addEventListener('input', (e) => {
+                    const query = e.target.value.trim();
+                    
+                    // Clear previous timeout
+                    if (searchTimeout) {
+                        clearTimeout(searchTimeout);
+                    }
+                    
+                    // Set new timeout for debounced search
+                    searchTimeout = setTimeout(() => {
+                        handleLocationSearch(query);
+                    }, 500);
+                });
+                
+                // Add enter key handler for immediate search
+                locationInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const query = e.target.value.trim();
+                        if (query) {
+                            // Clear timeout and search immediately
+                            if (searchTimeout) {
+                                clearTimeout(searchTimeout);
+                            }
+                            handleLocationSearch(query);
+                        }
+                    } else if (e.key === 'Escape') {
+                        hideLocationResults();
+                    }
+                });
+                
+                // Hide dropdown when clicking outside
+                document.addEventListener('click', (e) => {
+                    const dropdown = document.getElementById('location-results-dropdown');
+                    if (dropdown && !locationInput.contains(e.target) && !dropdown.contains(e.target)) {
+                        hideLocationResults();
+                    }
+                });
+                
+            };
+            
+            // Initialize location input
+            initializeLocationInput();
+            setTimeout(initializeLocationInput, 100);
+            setTimeout(initializeLocationInput, 500);
+            
+            // Disable click handler on LOCATION element to prevent old dropdown
+            const locationElement = document.getElementById('summary-location');
+            if (locationElement) {
+                locationElement.addEventListener('click', (e) => {
+                    // Allow clicks to reach the input field
+                    if (e.target.id === 'summary-location-input') {
+                        return;
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // Focus the input instead
+                    const locationInput = document.getElementById('summary-location-input');
+                    if (locationInput) {
+                        locationInput.focus();
+                    }
+                });
+            }
         });
     </script>
     <!-- Leaflet JavaScript for mini maps -->
@@ -3397,7 +3932,6 @@
             const action = urlParams.get('action');
             
             if (collectionId && action === 'details') {
-                console.log('🔗 Handling shared collection URL:', collectionId, source);
                 
                 // Wait for app to initialize, then trigger collection details
                 setTimeout(() => {
@@ -3888,6 +4422,262 @@
         .theme-selector option {
             background: var(--surface-elevated, #1a1a1a);
             color: var(--text-primary, #ffffff);
+        }
+        
+        /* Mini Date Inputs Styling */
+        .mini-date-inputs {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+        }
+        
+        .mini-date-input {
+            background: var(--surface-elevated, #2a2a2a);
+            border: 1px solid var(--border-color, #404040);
+            border-radius: 6px;
+            color: var(--text-primary, #ffffff);
+            font-size: 11px;
+            padding: 2px 4px;
+            width: 70px;
+            min-width: 70px;
+            height: 28px;
+            transition: all 0.2s ease;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        
+        .mini-date-input:focus {
+            outline: none;
+            border-color: var(--accent-color, #667eea);
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            background: var(--surface-elevated-hover, #333333);
+        }
+        
+        .mini-date-input:hover {
+            border-color: var(--border-hover, #555555);
+            background: var(--surface-elevated-hover, #333333);
+        }
+        
+        .date-separator {
+            color: var(--text-secondary, #aaaaaa);
+            font-size: 11px;
+            font-weight: 500;
+            padding: 0 2px;
+        }
+
+        /* Mini Location Input Styling (matching mini date inputs) */
+        .mini-location-input-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        
+        .mini-location-input {
+            background: var(--surface-elevated, #2a2a2a);
+            border: 1px solid var(--border-color, #404040);
+            border-radius: 6px;
+            color: var(--text-primary, #ffffff);
+            font-size: 11px;
+            padding: 2px 6px;
+            width: 140px;
+            min-width: 140px;
+            height: 28px;
+            transition: all 0.2s ease;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            box-sizing: border-box;
+            text-align: left;
+        }
+        
+        .mini-location-input:focus {
+            outline: none;
+            border-color: var(--accent-color, #667eea);
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            background: var(--surface-elevated-hover, #333333);
+        }
+        
+        .mini-location-input:hover {
+            border-color: var(--border-hover, #555555);
+            background: var(--surface-elevated-hover, #333333);
+        }
+        
+        .mini-location-input::placeholder {
+            color: var(--text-secondary, #aaaaaa);
+            font-size: 11px;
+        }
+
+        /* Location Results Dropdown */
+        .location-results-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: var(--surface-elevated, #2a2a2a);
+            border: 1px solid var(--border-color, #404040);
+            border-radius: 6px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 2px;
+        }
+        
+        .location-result-item {
+            padding: 8px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border-color, #404040);
+            transition: background-color 0.2s ease;
+        }
+        
+        .location-result-item:last-child {
+            border-bottom: none;
+        }
+        
+        .location-result-item:hover {
+            background: var(--surface-elevated-hover, #333333);
+        }
+        
+        .location-result-name {
+            font-size: 12px;
+            color: var(--text-primary, #ffffff);
+            font-weight: 500;
+        }
+        
+        .location-result-type {
+            font-size: 10px;
+            color: var(--text-secondary, #aaaaaa);
+            margin-top: 2px;
+        }
+        
+        /* Hide/minimize calendar icon to save space */
+        .mini-date-input::-webkit-calendar-picker-indicator {
+            display: none;
+        }
+        
+        /* Fix date input internal layout and text */
+        .mini-date-input::-webkit-datetime-edit-fields-wrapper {
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mini-date-input::-webkit-datetime-edit {
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mini-date-input::-webkit-datetime-edit-text {
+            color: var(--text-secondary, #888888);
+            padding: 0 1px;
+        }
+        
+        .mini-date-input::-webkit-datetime-edit-month-field,
+        .mini-date-input::-webkit-datetime-edit-day-field,
+        .mini-date-input::-webkit-datetime-edit-year-field {
+            color: var(--text-primary, #ffffff);
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mini-date-input::-webkit-datetime-edit-year-field {
+            min-width: 35px;
+        }
+        
+        /* Light theme adjustments */
+        .light-theme .mini-date-input {
+            background: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            color: #1f2937 !important;
+        }
+        
+        .light-theme .mini-date-input:focus {
+            outline: none !important;
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+            background: #f9fafb !important;
+        }
+        
+        .light-theme .mini-date-input:hover {
+            border-color: #9ca3af !important;
+            background: #f9fafb !important;
+        }
+        
+        /* Light theme adjustments for location input */
+        .light-theme .mini-location-input {
+            background: #ffffff !important;
+            border: 1px solid #d1d5db !important;
+            color: #1f2937 !important;
+        }
+        
+        .light-theme .mini-location-input:focus {
+            outline: none !important;
+            border-color: #667eea !important;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
+            background: #f9fafb !important;
+        }
+        
+        .light-theme .mini-location-input:hover {
+            border-color: #9ca3af !important;
+            background: #f9fafb !important;
+        }
+        
+        .light-theme .mini-location-input::placeholder {
+            color: #6b7280 !important;
+        }
+
+        /* Enhanced light theme compatibility for location search dropdown */
+        body.light-theme .search-suggestions,
+        .light-theme .search-suggestions {
+            background: rgba(255, 255, 255, 0.98) !important;
+            border: 1px solid rgba(0, 0, 0, 0.12) !important;
+            color: #1a1a1a !important;
+        }
+
+        body.light-theme .suggestion-item,
+        .light-theme .suggestion-item {
+            color: #1a1a1a !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+        }
+
+        body.light-theme .suggestion-item:hover,
+        .light-theme .suggestion-item:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.04) 100%) !important;
+            color: #1a1a1a !important;
+        }
+
+        body.light-theme .suggestion-name,
+        .light-theme .suggestion-name {
+            color: #1a1a1a !important;
+        }
+
+        body.light-theme .suggestion-details,
+        .light-theme .suggestion-details {
+            color: #64748b !important;
+        }
+
+        body.light-theme .suggestion-item .material-icons,
+        .light-theme .suggestion-item .material-icons {
+            color: rgba(102, 126, 234, 0.8) !important;
+        }
+        
+        /* Dark theme adjustments - only apply when NOT in light theme */
+        @media (prefers-color-scheme: dark) {
+            body:not(.light-theme) .mini-date-input {
+                background: #1a1a1a;
+                border-color: #404040;
+                color: #ffffff;
+            }
+            
+            body:not(.light-theme) .mini-date-input:focus {
+                border-color: #667eea;
+                background: #252525;
+            }
+            
+            body:not(.light-theme) .mini-date-input:hover {
+                border-color: #555555;
+                background: #252525;
+            }
         }
     </style>
 

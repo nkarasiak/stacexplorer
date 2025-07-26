@@ -5,6 +5,11 @@
 
 export class InteractiveTutorial {
     constructor() {
+        // Disable tutorial completely
+        console.log('🚫 Tutorial disabled');
+        this.isDisabled = true;
+        return;
+        
         // Disable tutorial on mobile devices
         this.isMobile = window.innerWidth <= 768;
         if (this.isMobile) {
@@ -36,9 +41,10 @@ export class InteractiveTutorial {
                         <h3>Let's explore satellite imagery together!</h3>
                         <p>This quick tutorial will show you how to:</p>
                         <ul>
-                            <li>🛰️ Select Sentinel-2 satellite data</li>
-                            <li>📍 Choose your city location</li>
-                            <li>📅 View images from the past 7 days</li>
+                            <li>🛰️ Browse and select satellite collections with the new modal browser</li>
+                            <li>📍 Search locations with enhanced dropdown and map preview</li>
+                            <li>📅 Set time ranges using the intuitive mini date picker</li>
+                            <li>🔍 Search and explore your satellite imagery results</li>
                         </ul>
                         <p>Ready to start your Earth observation journey?</p>
                     </div>
@@ -87,31 +93,60 @@ export class InteractiveTutorial {
             },
             {
                 id: 'select-sentinel2',
-                title: 'Select Sentinel-2 Data 🛰️',
+                title: 'Browse Collections 🛰️',
                 content: `
                     <div class="tutorial-step">
                         <h3>Choose Your Satellite Data Source</h3>
-                        <p>Sentinel-2 provides high-quality optical imagery perfect for viewing your city from space.</p>
-                        <p><strong>Search for "sentinel-2"</strong> in the source dropdown and <strong>select the recommended Sentinel-2 collection</strong>.</p>
+                        <p>Now let's select a satellite data collection using the Browse Collections modal.</p>
+                        <p>Look for the <strong>SOURCE button</strong> that will be highlighted and <strong>click it to open the modal</strong>.</p>
+                        <div class="tutorial-highlight-info">
+                            <div class="info-icon">🔘</div>
+                            <span>The SOURCE button will be highlighted with a pulsing blue glow</span>
+                        </div>
+                        <div class="tutorial-highlight-info" style="margin-top: 8px;">
+                            <div class="info-icon">✨</div>
+                            <span>Look for recommended collections with gradient borders and star badges</span>
+                        </div>
+                        <div class="tutorial-highlight-info" style="margin-top: 8px;">
+                            <div class="info-icon">🚀</div>
+                            <span>Simply click any collection to select it - the modal closes automatically!</span>
+                        </div>
+                        <div class="tutorial-highlight-info" style="margin-top: 8px;">
+                            <div class="info-icon">🔍</div>
+                            <span>Use the search bar to filter collections by name or source</span>
+                        </div>
                         <div class="tutorial-highlight-info" style="margin-top: 12px;">
                             <div class="info-icon">⏳</div>
                             <span>The "Continue" button will be enabled once you select a collection</span>
                         </div>
-                        <div class="tutorial-highlight-info">
-                            <div class="info-icon">ℹ️</div>
-                            <span>Sentinel-2 captures images every 5 days with 10-60m resolution</span>
-                        </div>
                     </div>
                 `,
-                target: '[data-collection="sentinel-2-c1-l2a"]',
+                target: '#summary-source',
                 position: 'right',
                 buttons: [
                     { text: 'Previous', action: 'previous', primary: false },
                     { text: 'Next Step', action: 'next', primary: true, disabled: true }
                 ],
                 action: () => {
-                    // Open the source dropdown
-                    this.openSourceDropdown();
+                    // Prevent multiple executions
+                    if (this.collectionStepInProgress) {
+                        console.log('🎯 Tutorial: Collection step already in progress, skipping');
+                        return;
+                    }
+                    this.collectionStepInProgress = true;
+                    
+                    console.log('🎯 Tutorial: Starting collection step');
+                    
+                    // Reposition tutorial to not block the modal
+                    this.repositionTutorialForModal();
+                    
+                    // Show collection button guidance
+                    setTimeout(() => {
+                        this.showCollectionButtonGuide();
+                    }, 500);
+                    
+                    // Listen for modal interactions
+                    this.listenForModalClose();
                     
                     // Wait for user to select a collection
                     this.waitForCollectionSelection();
@@ -127,15 +162,27 @@ export class InteractiveTutorial {
             },
             {
                 id: 'select-location',
-                title: 'Set Your Location 📍',
+                title: 'Search Location 📍',
                 content: `
                     <div class="tutorial-step">
-                        <h3>Focus on Your City</h3>
-                        <p>Now let's set the map to focus on <strong>your city</strong>.</p>
-                        <p><strong>Search for your city name</strong> in the location dropdown and <strong>select it from the results</strong>.</p>
+                        <h3>Find Your Area of Interest</h3>
+                        <p>Now let's search for your location using the enhanced location finder.</p>
+                        <p>Look for the <strong>location input field</strong> that will be highlighted and <strong>type your city name</strong>.</p>
                         <div class="tutorial-highlight-info">
+                            <div class="info-icon">🔍</div>
+                            <span>The location input will be highlighted with a pulsing blue glow</span>
+                        </div>
+                        <div class="tutorial-highlight-info" style="margin-top: 8px;">
+                            <div class="info-icon">🌍</div>
+                            <span>Get intelligent suggestions from OpenStreetMap as you type</span>
+                        </div>
+                        <div class="tutorial-highlight-info" style="margin-top: 8px;">
+                            <div class="info-icon">🗺️</div>
+                            <span>Click on any suggestion from the dropdown to select it</span>
+                        </div>
+                        <div class="tutorial-highlight-info" style="margin-top: 8px;">
                             <div class="info-icon">🎯</div>
-                            <span>This will search for satellite images specifically over your area</span>
+                            <span>Selected area automatically sets the search boundary box</span>
                         </div>
                         <div class="tutorial-highlight-info" style="margin-top: 12px;">
                             <div class="info-icon">⏳</div>
@@ -143,20 +190,26 @@ export class InteractiveTutorial {
                         </div>
                     </div>
                 `,
-                target: '#summary-location',
+                target: '#summary-location-input',
                 position: 'right',
                 buttons: [
                     { text: 'Previous', action: 'previous', primary: false },
                     { text: 'Next Step', action: 'next', primary: true, disabled: true }
                 ],
                 action: () => {
-                    const locationSummary = document.getElementById('summary-location');
-                    if (locationSummary) {
-                        locationSummary.click();
-                        
-                        // Wait for user to select a location
-                        this.waitForLocationSelection();
-                    }
+                    // Reposition tutorial to not block location search
+                    this.repositionTutorialForModal();
+                    
+                    // Focus on the location input and show guidance
+                    setTimeout(() => {
+                        this.showLocationSearchGuide();
+                    }, 500);
+                    
+                    // Listen for location search close to restore tutorial
+                    this.listenForLocationSearchClose();
+                    
+                    // Wait for user to select a location
+                    this.waitForLocationSelection();
                 },
                 validation: () => {
                     // Check if a location has been selected by looking for ln parameter in URL
@@ -175,25 +228,43 @@ export class InteractiveTutorial {
                 title: 'Set Time Range 📅',
                 content: `
                     <div class="tutorial-step">
-                        <h3>Choose Last 7 Days</h3>
-                        <p>Let's look for recent satellite images from the past week.</p>
-                        <p><strong>Click on the date summary</strong> to open the time selector.</p>
+                        <h3>Choose Your Time Period</h3>
+                        <p>Now let's set the date range using the enhanced mini date picker.</p>
+                        <p>Look for the <strong>date input fields</strong> that will be highlighted and <strong>click to select dates</strong>.</p>
                         <div class="tutorial-highlight-info">
+                            <div class="info-icon">📅</div>
+                            <span>Start and end date inputs will be highlighted with a pulsing blue glow</span>
+                        </div>
+                        <div class="tutorial-highlight-info" style="margin-top: 8px;">
+                            <div class="info-icon">🗓️</div>
+                            <span>Click on each date field to open the calendar picker</span>
+                        </div>
+                        <div class="tutorial-highlight-info" style="margin-top: 8px;">
+                            <div class="info-icon">⚡</div>
+                            <span>Use preset buttons or pick custom date ranges</span>
+                        </div>
+                        <div class="tutorial-highlight-info" style="margin-top: 8px;">
                             <div class="info-icon">⏰</div>
-                            <span>Sentinel-2 captures new images every 5 days, so we should find recent data</span>
+                            <span>Tip: Try "Last 7 days" to find the most recent satellite imagery</span>
                         </div>
                     </div>
                 `,
-                target: '#summary-date',
+                target: '#mini-date-container',
                 position: 'right',
                 buttons: [
                     { text: 'Next Step', action: 'next', primary: true }
                 ],
                 action: () => {
-                    const dateSummary = document.getElementById('summary-date');
-                    if (dateSummary) {
-                        dateSummary.click();
-                    }
+                    // Reposition tutorial to not block date picker
+                    this.repositionTutorialForModal();
+                    
+                    // Show date picker guidance
+                    setTimeout(() => {
+                        this.showDatePickerGuide();
+                    }, 500);
+                    
+                    // Listen for date picker close to restore tutorial
+                    this.listenForDatePickerClose();
                 }
             },
             {
@@ -202,11 +273,11 @@ export class InteractiveTutorial {
                 content: `
                     <div class="tutorial-step">
                         <h3>Find Your Satellite Images</h3>
-                        <p>Perfect! You've set up:</p>
+                        <p>Perfect! You've configured:</p>
                         <ul>
-                            <li>🛰️ <strong>Data:</strong> Sentinel-2</li>
-                            <li>📍 <strong>Location:</strong> Your selected city</li>
-                            <li>📅 <strong>Time:</strong> Last 7 days</li>
+                            <li>🛰️ <strong>Collection:</strong> Selected from the browse modal</li>
+                            <li>📍 <strong>Location:</strong> Found using enhanced location search</li>
+                            <li>📅 <strong>Time:</strong> Set with the mini date picker</li>
                         </ul>
                         <p><strong>Click the "Search" button</strong> to find your satellite images!</p>
                     </div>
@@ -233,10 +304,12 @@ export class InteractiveTutorial {
                         <div class="tutorial-tips">
                             <h4>💡 What you can do next:</h4>
                             <ul>
-                                <li><strong>Click on any image</strong> to see it on the map</li>
+                                <li><strong>Click on any image</strong> to display it on the map</li>
                                 <li><strong>Use the visualization panel</strong> to change color combinations</li>
-                                <li><strong>Zoom in</strong> to see more detail</li>
-                                <li><strong>Try different time ranges</strong> to see changes over time</li>
+                                <li><strong>Explore different collections</strong> using the browse modal</li>
+                                <li><strong>Search new locations</strong> with the enhanced location finder</li>
+                                <li><strong>Adjust time ranges</strong> using the mini date picker</li>
+                                <li><strong>Zoom and pan</strong> to explore your imagery in detail</li>
                             </ul>
                         </div>
                         <p>Happy exploring! 🌍</p>
@@ -255,7 +328,10 @@ export class InteractiveTutorial {
      * Start the tutorial
      */
     start() {
-        if (this.isMobile || this.isActive) return;
+        if (this.isDisabled || this.isMobile || this.isActive) {
+            console.log('🚫 Tutorial start blocked - disabled');
+            return;
+        }
         
         this.isActive = true;
         this.currentStep = 0;
@@ -302,6 +378,9 @@ export class InteractiveTutorial {
         
         const step = this.steps[stepIndex];
         this.currentStep = stepIndex;
+        
+        // Reset step progress flags when changing steps
+        this.collectionStepInProgress = false;
         
         this.updateProgress();
         document.getElementById('tutorial-content').innerHTML = step.content;
@@ -374,19 +453,794 @@ export class InteractiveTutorial {
         console.log(`🎨 Tutorial theme changed to: ${theme}`);
     }
 
+
     /**
-     * Open the source dropdown menu for Sentinel-2 selection
+     * Temporarily hide tutorial overlay to allow modal interaction
      */
-    openSourceDropdown() {
+    hideTutorialTemporarily() {
+        if (this.overlay) {
+            this.overlay.style.display = 'none';
+            console.log('🎯 Tutorial: Temporarily hidden for modal interaction');
+        }
+    }
+
+    /**
+     * Show tutorial overlay again
+     */
+    showTutorialAgain() {
+        if (this.overlay && this.isActive) {
+            this.overlay.style.display = 'flex';
+            this.overlay.style.position = 'fixed';
+            this.overlay.style.top = '0';
+            this.overlay.style.left = '0';
+            this.overlay.style.width = '100%';
+            this.overlay.style.height = '100%';
+            console.log('🎯 Tutorial: Shown again after modal interaction');
+        }
+    }
+
+    /**
+     * Reposition tutorial to be visible alongside the modal
+     */
+    repositionTutorialForModal() {
+        if (this.overlay && this.tutorialPanel) {
+            // Move tutorial to top-right corner, smaller and non-blocking
+            this.overlay.style.background = 'none';
+            this.overlay.style.position = 'fixed';
+            this.overlay.style.top = '20px';
+            this.overlay.style.right = '20px';
+            this.overlay.style.left = 'unset';
+            this.overlay.style.width = 'auto';
+            this.overlay.style.height = 'auto';
+            this.overlay.style.alignItems = 'flex-start';
+            this.overlay.style.justifyContent = 'flex-end';
+            
+            this.tutorialPanel.style.maxWidth = '350px';
+            this.tutorialPanel.style.width = '350px';
+            this.tutorialPanel.style.transform = 'none';
+            this.tutorialPanel.style.position = 'relative';
+            
+            console.log('🎯 Tutorial: Repositioned for modal interaction');
+        }
+    }
+
+    /**
+     * Show visual guide for collection selection
+     */
+    showCollectionSelectionGuide() {
+        // Add visual indicators and arrows pointing to recommended collections
         setTimeout(() => {
-            const summarySource = document.getElementById('summary-source');
-            if (summarySource) {
-                summarySource.click();
-                console.log('🎯 Tutorial: Opened source dropdown for Sentinel-2 selection');
-            } else {
-                console.warn('⚠️ Tutorial: Could not find summary-source element');
+            const priorityCards = document.querySelectorAll('.collection-card.priority-collection');
+            if (priorityCards.length > 0) {
+                console.log('🌟 Tutorial: Adding collection selection guide');
+                
+                // Create floating guide overlay
+                const guideOverlay = document.createElement('div');
+                guideOverlay.id = 'tutorial-collection-guide';
+                guideOverlay.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    pointer-events: none;
+                    z-index: 2500;
+                `;
+                
+                priorityCards.forEach((card, index) => {
+                    // Highlight the card
+                    card.style.animation = 'pulse 2s infinite';
+                    card.style.boxShadow = '0 0 20px rgba(99, 102, 241, 0.6), 0 0 40px rgba(139, 92, 246, 0.3)';
+                    card.style.transform = 'scale(1.02)';
+                    card.style.zIndex = '2100';
+                    
+                    // Add floating arrow and text
+                    const rect = card.getBoundingClientRect();
+                    const arrow = document.createElement('div');
+                    arrow.style.cssText = `
+                        position: absolute;
+                        top: ${rect.top - 60}px;
+                        left: ${rect.left + rect.width/2 - 100}px;
+                        width: 200px;
+                        background: rgba(99, 102, 241, 0.95);
+                        color: white;
+                        padding: 8px 12px;
+                        border-radius: 8px;
+                        font-size: 14px;
+                        font-weight: 600;
+                        text-align: center;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+                        animation: bounce 1s infinite;
+                        pointer-events: none;
+                        z-index: 2600;
+                    `;
+                    arrow.textContent = index === 0 ? '⭐ Click this recommended collection!' : '⭐ Recommended';
+                    
+                    // Add arrow pointer
+                    const pointer = document.createElement('div');
+                    pointer.style.cssText = `
+                        position: absolute;
+                        top: 100%;
+                        left: 50%;
+                        margin-left: -10px;
+                        width: 0;
+                        height: 0;
+                        border-left: 10px solid transparent;
+                        border-right: 10px solid transparent;
+                        border-top: 10px solid rgba(99, 102, 241, 0.95);
+                    `;
+                    arrow.appendChild(pointer);
+                    guideOverlay.appendChild(arrow);
+                });
+                
+                document.body.appendChild(guideOverlay);
+                
+                // Remove guide when user selects a collection or after timeout
+                const removeGuide = () => {
+                    this.cleanupCollectionGuides();
+                };
+                
+                // Remove after 10 seconds or when collection is selected
+                setTimeout(removeGuide, 10000);
+                
+                // Listen for collection selection
+                const selectionHandler = () => {
+                    removeGuide();
+                    document.removeEventListener('modalCollectionSelected', selectionHandler);
+                };
+                document.addEventListener('modalCollectionSelected', selectionHandler);
             }
-        }, 500);
+        }, 1000);
+    }
+
+    /**
+     * Show visual guide for collection button
+     */
+    showCollectionButtonGuide() {
+        const sourceButton = document.getElementById('summary-source');
+        if (!sourceButton) {
+            console.warn('⚠️ Tutorial: Could not find SOURCE button');
+            return;
+        }
+
+        // Add debugging to track modal state
+        const modal = document.getElementById('collection-browser-modal');
+        console.log('🛰️ Tutorial: Modal state check:', {
+            modalExists: !!modal,
+            modalHasOpenClass: modal && modal.classList.contains('open'),
+            modalDisplay: modal ? modal.style.display : 'N/A'
+        });
+
+        // Check if modal is already open - if so, skip button guide and show collection guide
+        if (modal && modal.classList.contains('open')) {
+            console.log('🛰️ Tutorial: Modal already open, showing collection guide directly');
+            setTimeout(() => {
+                this.showCollectionSelectionGuide();
+            }, 500);
+            return;
+        }
+
+        console.log('🛰️ Tutorial: Adding collection button guide');
+
+        // Monitor for unexpected modal opening with detailed logging
+        let modalOpenedAutomatically = false;
+        const modalObserver = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    const target = mutation.target;
+                    if (target.classList.contains('open') && !modalOpenedAutomatically) {
+                        modalOpenedAutomatically = true;
+                        console.warn('🚨 Tutorial: Modal opened automatically after ~0.5 seconds! This suggests there is code auto-clicking the SOURCE button.');
+                        console.warn('🚨 Stack trace:', new Error().stack);
+                        this.cleanupCollectionButtonGuide();
+                        setTimeout(() => {
+                            this.showCollectionSelectionGuide();
+                        }, 500);
+                        modalObserver.disconnect();
+                    }
+                }
+            });
+        });
+        
+        if (modal) {
+            modalObserver.observe(modal, { attributes: true, attributeFilter: ['class'] });
+            
+            // Clean up observer after 20 seconds
+            setTimeout(() => {
+                modalObserver.disconnect();
+            }, 20000);
+        }
+
+        // Create floating guide overlay
+        const guideOverlay = document.createElement('div');
+        guideOverlay.id = 'tutorial-collection-button-guide';
+        guideOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2500;
+        `;
+
+        // Mark button as tutorial-controlled to prevent external auto-clicks
+        sourceButton.setAttribute('data-tutorial-controlled', 'true');
+        
+        // Highlight the SOURCE button
+        sourceButton.style.animation = 'pulse 2s infinite';
+        sourceButton.style.boxShadow = '0 0 15px rgba(99, 102, 241, 0.6), 0 0 30px rgba(139, 92, 246, 0.3)';
+        sourceButton.style.transform = 'scale(1.05)';
+        sourceButton.style.zIndex = '2100';
+
+        // Add floating arrow and text
+        const rect = sourceButton.getBoundingClientRect();
+        const arrow = document.createElement('div');
+        arrow.style.cssText = `
+            position: absolute;
+            top: ${rect.bottom + 15}px;
+            left: ${rect.left + rect.width/2 - 150}px;
+            width: 300px;
+            background: rgba(99, 102, 241, 0.95);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: bounce 1s infinite;
+            pointer-events: none;
+            z-index: 2600;
+        `;
+        arrow.innerHTML = `
+            <div>🛰️ Click here to browse collections!</div>
+            <div style="font-size: 12px; margin-top: 4px; opacity: 0.9;">Opens the collection browser modal</div>
+        `;
+
+        // Add arrow pointer (pointing up to the button)
+        const pointer = document.createElement('div');
+        pointer.style.cssText = `
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -10px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid rgba(99, 102, 241, 0.95);
+        `;
+        arrow.appendChild(pointer);
+        guideOverlay.appendChild(arrow);
+
+        document.body.appendChild(guideOverlay);
+
+        // Set up click handler to detect when user clicks the button
+        const buttonClickHandler = (event) => {
+            console.log('🛰️ Tutorial: User clicked SOURCE button manually');
+            
+            // Remove button guide immediately when clicked
+            this.cleanupCollectionButtonGuide();
+            
+            // Wait for modal to open, then show collection selection guides
+            setTimeout(() => {
+                this.showCollectionSelectionGuide();
+            }, 1000);
+            
+            sourceButton.removeEventListener('click', buttonClickHandler);
+        };
+        
+        sourceButton.addEventListener('click', buttonClickHandler);
+
+        // Remove guide after 15 seconds if user doesn't click
+        setTimeout(() => {
+            this.cleanupCollectionButtonGuide();
+            sourceButton.removeEventListener('click', buttonClickHandler);
+        }, 15000);
+    }
+
+    /**
+     * Show visual guide for location search
+     */
+    showLocationSearchGuide() {
+        const locationInput = document.getElementById('summary-location-input');
+        if (!locationInput) {
+            console.warn('⚠️ Tutorial: Could not find location input field');
+            return;
+        }
+
+        console.log('🌍 Tutorial: Adding location search guide');
+
+        // Create floating guide overlay
+        const guideOverlay = document.createElement('div');
+        guideOverlay.id = 'tutorial-location-guide';
+        guideOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2500;
+        `;
+
+        // Highlight the location input
+        locationInput.style.animation = 'pulse 2s infinite';
+        locationInput.style.boxShadow = '0 0 15px rgba(99, 102, 241, 0.6), 0 0 30px rgba(139, 92, 246, 0.3)';
+        locationInput.style.transform = 'scale(1.05)';
+        locationInput.style.zIndex = '2100';
+
+        // Add floating arrow and text
+        const rect = locationInput.getBoundingClientRect();
+        const arrow = document.createElement('div');
+        arrow.style.cssText = `
+            position: absolute;
+            top: ${rect.bottom + 15}px;
+            left: ${rect.left + rect.width/2 - 150}px;
+            width: 300px;
+            background: rgba(99, 102, 241, 0.95);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: bounce 1s infinite;
+            pointer-events: none;
+            z-index: 2600;
+        `;
+        arrow.innerHTML = `
+            <div>🔍 Type your city name here!</div>
+            <div style="font-size: 12px; margin-top: 4px; opacity: 0.9;">e.g., "Paris", "New York", "Tokyo"</div>
+        `;
+
+        // Add arrow pointer (pointing up to the input)
+        const pointer = document.createElement('div');
+        pointer.style.cssText = `
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -10px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid rgba(99, 102, 241, 0.95);
+        `;
+        arrow.appendChild(pointer);
+        guideOverlay.appendChild(arrow);
+
+        document.body.appendChild(guideOverlay);
+
+        // Focus the input to make it active
+        locationInput.focus();
+        locationInput.click();
+
+        // Remove guide when user starts typing or selects a location
+        const removeGuide = () => {
+            const guide = document.getElementById('tutorial-location-guide');
+            if (guide) {
+                guide.remove();
+            }
+            if (locationInput) {
+                locationInput.style.animation = '';
+                locationInput.style.boxShadow = '';
+                locationInput.style.transform = '';
+                locationInput.style.zIndex = '';
+            }
+            console.log('🌍 Tutorial: Location guide cleaned up');
+        };
+
+        // Remove after 15 seconds or when user interacts
+        setTimeout(removeGuide, 15000);
+
+        // Listen for user input
+        const inputHandler = () => {
+            removeGuide();
+            locationInput.removeEventListener('input', inputHandler);
+        };
+        locationInput.addEventListener('input', inputHandler);
+
+        // Listen for location selection
+        const selectionHandler = () => {
+            removeGuide();
+            document.removeEventListener('location-selected', selectionHandler);
+        };
+        document.addEventListener('location-selected', selectionHandler);
+    }
+
+    /**
+     * Show visual guide for date picker
+     */
+    showDatePickerGuide() {
+        const startDateInput = document.getElementById('summary-start-date');
+        const endDateInput = document.getElementById('summary-end-date');
+        const dateContainer = document.getElementById('mini-date-container');
+        
+        if (!startDateInput || !endDateInput || !dateContainer) {
+            console.warn('⚠️ Tutorial: Could not find date input fields');
+            return;
+        }
+
+        console.log('📅 Tutorial: Adding date picker guide');
+
+        // Create floating guide overlay
+        const guideOverlay = document.createElement('div');
+        guideOverlay.id = 'tutorial-date-guide';
+        guideOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 2500;
+        `;
+
+        // Highlight both date inputs
+        [startDateInput, endDateInput].forEach((input, index) => {
+            input.style.animation = 'pulse 2s infinite';
+            input.style.boxShadow = '0 0 15px rgba(99, 102, 241, 0.6), 0 0 30px rgba(139, 92, 246, 0.3)';
+            input.style.transform = 'scale(1.05)';
+            input.style.zIndex = '2100';
+        });
+
+        // Add floating arrow and text
+        const containerRect = dateContainer.getBoundingClientRect();
+        const arrow = document.createElement('div');
+        arrow.style.cssText = `
+            position: absolute;
+            top: ${containerRect.bottom + 15}px;
+            left: ${containerRect.left + containerRect.width/2 - 175}px;
+            width: 350px;
+            background: rgba(99, 102, 241, 0.95);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            animation: bounce 1s infinite;
+            pointer-events: none;
+            z-index: 2600;
+        `;
+        arrow.innerHTML = `
+            <div>📅 Click on the date fields to set your time range!</div>
+            <div style="font-size: 12px; margin-top: 4px; opacity: 0.9;">Pick start date → end date for your search period</div>
+        `;
+
+        // Add arrow pointer (pointing up to the date inputs)
+        const pointer = document.createElement('div');
+        pointer.style.cssText = `
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            margin-left: -10px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid rgba(99, 102, 241, 0.95);
+        `;
+        arrow.appendChild(pointer);
+        guideOverlay.appendChild(arrow);
+
+        document.body.appendChild(guideOverlay);
+
+        // Focus the first date input to make it active
+        startDateInput.focus();
+        startDateInput.click();
+
+        // Remove guide when user interacts with date inputs
+        const removeGuide = () => {
+            const guide = document.getElementById('tutorial-date-guide');
+            if (guide) {
+                guide.remove();
+            }
+            [startDateInput, endDateInput].forEach(input => {
+                if (input) {
+                    input.style.animation = '';
+                    input.style.boxShadow = '';
+                    input.style.transform = '';
+                    input.style.zIndex = '';
+                }
+            });
+            console.log('📅 Tutorial: Date picker guide cleaned up');
+        };
+
+        // Remove after 15 seconds or when user interacts
+        setTimeout(removeGuide, 15000);
+
+        // Listen for user interaction with date inputs
+        [startDateInput, endDateInput].forEach(input => {
+            const changeHandler = () => {
+                removeGuide();
+                input.removeEventListener('change', changeHandler);
+            };
+            const focusHandler = () => {
+                // Don't remove immediately on focus, wait for actual change
+                setTimeout(() => {
+                    if (input.value) {
+                        removeGuide();
+                        input.removeEventListener('focus', focusHandler);
+                    }
+                }, 1000);
+            };
+            input.addEventListener('change', changeHandler);
+            input.addEventListener('focus', focusHandler);
+        });
+    }
+
+    /**
+     * Listen for modal close events to show tutorial again
+     */
+    listenForModalClose() {
+        // Listen for collection selection event first
+        const collectionSelectionHandler = (event) => {
+            console.log('🎯 Tutorial: Collection selected, cleaning up guides');
+            this.cleanupCollectionButtonGuide();
+            this.cleanupCollectionGuides();
+            
+            // Reset step progress flag
+            this.collectionStepInProgress = false;
+            
+            // Wait a bit for modal to close, then restore tutorial
+            setTimeout(() => {
+                this.restoreTutorialPosition();
+            }, 500);
+            
+            document.removeEventListener('modalCollectionSelected', collectionSelectionHandler);
+        };
+        document.addEventListener('modalCollectionSelected', collectionSelectionHandler);
+        
+        // Also check if modal is still open periodically as fallback
+        const checkModalClosed = () => {
+            const modal = document.getElementById('collection-browser-modal');
+            const isModalOpen = modal && modal.classList.contains('open');
+            
+            if (!isModalOpen) {
+                // Modal is closed, clean up guides and restore tutorial
+                this.cleanupCollectionButtonGuide();
+                this.cleanupCollectionGuides();
+                this.collectionStepInProgress = false;
+                this.restoreTutorialPosition();
+                console.log('🎯 Tutorial: Modal closed, tutorial restored');
+                document.removeEventListener('modalCollectionSelected', collectionSelectionHandler);
+                return;
+            }
+            
+            // Check again in 500ms
+            setTimeout(checkModalClosed, 500);
+        };
+        
+        // Start checking after a small delay
+        setTimeout(checkModalClosed, 1000);
+    }
+
+    /**
+     * Clean up collection selection guides
+     */
+    cleanupCollectionGuides() {
+        // Remove guide overlay
+        const guide = document.getElementById('tutorial-collection-guide');
+        if (guide) {
+            guide.remove();
+        }
+        
+        // Reset collection card styles
+        const priorityCards = document.querySelectorAll('.collection-card.priority-collection');
+        priorityCards.forEach(card => {
+            card.style.animation = '';
+            card.style.boxShadow = '';
+            card.style.transform = '';
+            card.style.zIndex = '';
+        });
+        
+        console.log('🎯 Tutorial: Collection guides cleaned up');
+    }
+
+    /**
+     * Clean up collection button guide
+     */
+    cleanupCollectionButtonGuide() {
+        // Remove button guide overlay
+        const guide = document.getElementById('tutorial-collection-button-guide');
+        if (guide) {
+            guide.remove();
+        }
+        
+        // Reset SOURCE button styles
+        const sourceButton = document.getElementById('summary-source');
+        if (sourceButton) {
+            sourceButton.style.animation = '';
+            sourceButton.style.boxShadow = '';
+            sourceButton.style.transform = '';
+            sourceButton.style.zIndex = '';
+            sourceButton.removeAttribute('data-tutorial-controlled');
+        }
+        
+        console.log('🛰️ Tutorial: Collection button guide cleaned up');
+    }
+
+    /**
+     * Clean up location search guides
+     */
+    cleanupLocationGuides() {
+        // Remove guide overlay
+        const guide = document.getElementById('tutorial-location-guide');
+        if (guide) {
+            guide.remove();
+        }
+        
+        // Reset location input styles
+        const locationInput = document.getElementById('summary-location-input');
+        if (locationInput) {
+            locationInput.style.animation = '';
+            locationInput.style.boxShadow = '';
+            locationInput.style.transform = '';
+            locationInput.style.zIndex = '';
+        }
+        
+        console.log('🌍 Tutorial: Location guides cleaned up');
+    }
+
+    /**
+     * Clean up date picker guides
+     */
+    cleanupDateGuides() {
+        // Remove guide overlay
+        const guide = document.getElementById('tutorial-date-guide');
+        if (guide) {
+            guide.remove();
+        }
+        
+        // Reset date input styles
+        const startDateInput = document.getElementById('summary-start-date');
+        const endDateInput = document.getElementById('summary-end-date');
+        [startDateInput, endDateInput].forEach(input => {
+            if (input) {
+                input.style.animation = '';
+                input.style.boxShadow = '';
+                input.style.transform = '';
+                input.style.zIndex = '';
+            }
+        });
+        
+        console.log('📅 Tutorial: Date picker guides cleaned up');
+    }
+
+    /**
+     * Restore tutorial to its normal position and state
+     */
+    restoreTutorialPosition() {
+        if (this.overlay && this.tutorialPanel && this.isActive) {
+            // Reset overlay styles to normal
+            this.overlay.style.background = 'var(--overlay-background, rgba(0, 0, 0, 0.7))';
+            this.overlay.style.position = 'fixed';
+            this.overlay.style.top = '0';
+            this.overlay.style.left = '0';
+            this.overlay.style.right = 'unset';
+            this.overlay.style.width = '100%';
+            this.overlay.style.height = '100%';
+            this.overlay.style.alignItems = 'center';
+            this.overlay.style.justifyContent = 'center';
+            this.overlay.style.display = 'flex';
+            
+            // Reset panel styles
+            this.tutorialPanel.style.maxWidth = '500px';
+            this.tutorialPanel.style.width = '90%';
+            this.tutorialPanel.style.transform = 'none';
+            this.tutorialPanel.style.position = 'relative';
+            
+            // Reposition panel based on current step
+            const currentStep = this.steps[this.currentStep];
+            if (currentStep) {
+                this.positionPanel(currentStep);
+            }
+            
+            console.log('🎯 Tutorial: Position restored to normal');
+        }
+    }
+
+    /**
+     * Listen for location search close events to show tutorial again
+     */
+    listenForLocationSearchClose() {
+        // Listen for location selection event
+        const locationSelectionHandler = (event) => {
+            console.log('🎯 Tutorial: Location selected, cleaning up guides');
+            this.cleanupLocationGuides();
+            
+            // Wait a bit then restore tutorial
+            setTimeout(() => {
+                this.restoreTutorialPosition();
+            }, 500);
+            
+            document.removeEventListener('location-selected', locationSelectionHandler);
+        };
+        document.addEventListener('location-selected', locationSelectionHandler);
+        
+        // Also check if location dropdown is still active periodically as fallback
+        const checkLocationSearchClosed = () => {
+            // Check for active location dropdown/input
+            const locationInput = document.getElementById('summary-location-input');
+            const locationDropdown = document.querySelector('.search-suggestions');
+            const isLocationActive = (locationInput && document.activeElement === locationInput) || 
+                                   (locationDropdown && locationDropdown.style.display !== 'none' && locationDropdown.style.visibility !== 'hidden');
+            
+            if (!isLocationActive) {
+                // Location search is closed, restore tutorial
+                this.cleanupLocationGuides();
+                this.restoreTutorialPosition();
+                console.log('🎯 Tutorial: Location search closed, tutorial restored');
+                document.removeEventListener('location-selected', locationSelectionHandler);
+                return;
+            }
+            
+            // Check again in 500ms
+            setTimeout(checkLocationSearchClosed, 500);
+        };
+        
+        // Start checking after a small delay
+        setTimeout(checkLocationSearchClosed, 2000);
+    }
+
+    /**
+     * Listen for date picker close events to show tutorial again
+     */
+    listenForDatePickerClose() {
+        // Listen for date change events
+        const dateChangeHandler = (event) => {
+            console.log('🎯 Tutorial: Date changed, cleaning up guides');
+            this.cleanupDateGuides();
+            
+            // Wait a bit then restore tutorial
+            setTimeout(() => {
+                this.restoreTutorialPosition();
+            }, 500);
+        };
+        
+        const startDateInput = document.getElementById('summary-start-date');
+        const endDateInput = document.getElementById('summary-end-date');
+        
+        if (startDateInput) {
+            startDateInput.addEventListener('change', dateChangeHandler);
+        }
+        if (endDateInput) {
+            endDateInput.addEventListener('change', dateChangeHandler);
+        }
+        
+        // Also check if date picker is still active periodically as fallback
+        const checkDatePickerClosed = () => {
+            // Check for active date picker elements
+            const isDateActive = (startDateInput && document.activeElement === startDateInput) || 
+                                (endDateInput && document.activeElement === endDateInput);
+            
+            if (!isDateActive) {
+                // Date picker is closed, restore tutorial
+                this.cleanupDateGuides();
+                this.restoreTutorialPosition();
+                console.log('🎯 Tutorial: Date picker closed, tutorial restored');
+                
+                // Clean up event listeners
+                if (startDateInput) {
+                    startDateInput.removeEventListener('change', dateChangeHandler);
+                }
+                if (endDateInput) {
+                    endDateInput.removeEventListener('change', dateChangeHandler);
+                }
+                return;
+            }
+            
+            // Check again in 500ms
+            setTimeout(checkDatePickerClosed, 500);
+        };
+        
+        // Start checking after a small delay
+        setTimeout(checkDatePickerClosed, 2000);
     }
 
     /**
@@ -566,6 +1420,7 @@ export class InteractiveTutorial {
                 }
                 this.nextStep();
                 break;
+            case 'previous':
             case 'prev':
                 this.prevStep();
                 break;
@@ -703,14 +1558,16 @@ export class InteractiveTutorial {
      * Check if tutorial should be shown
      */
     static shouldShowTutorial() {
-        return !localStorage.getItem('stac-explorer-tutorial-completed');
+        // Tutorial is disabled globally
+        return false;
+        // return !localStorage.getItem('stac-explorer-tutorial-completed');
     }
 
     /**
      * Bind global events
      */
     bindEvents() {
-        if (this.isMobile) return;
+        if (this.isDisabled || this.isMobile) return;
         
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && this.isActive) {
@@ -722,7 +1579,7 @@ export class InteractiveTutorial {
         this.initializeTutorialButton();
         
         // Check if this is a first visit and auto-start tutorial
-        if (this.isFirstVisit()) {
+        if (!this.isDisabled && this.isFirstVisit()) {
             setTimeout(() => this.start(), 1500);
         }
     }
@@ -733,10 +1590,10 @@ export class InteractiveTutorial {
     initializeTutorialButton() {
         const tutorialBtn = document.getElementById('tutorial-btn');
         if (tutorialBtn) {
-            if (this.isMobile) {
-                // Hide tutorial button on mobile
+            if (this.isDisabled || this.isMobile) {
+                // Hide tutorial button when disabled or on mobile
                 tutorialBtn.style.display = 'none';
-                console.log('📱 Tutorial button hidden on mobile');
+                console.log('🚫 Tutorial button hidden - disabled');
             } else {
                 tutorialBtn.addEventListener('click', () => this.start());
                 console.log('🎓 Tutorial button initialized');
@@ -764,7 +1621,7 @@ export class InteractiveTutorial {
                 width: 100%;
                 height: 100%;
                 background: var(--overlay-background, rgba(0, 0, 0, 0.7));
-                z-index: 10000;
+                z-index: 1500;
                 display: flex;
                 align-items: center;
                 justify-content: center;
@@ -1130,6 +1987,18 @@ export class InteractiveTutorial {
                 }
                 50% {
                     box-shadow: 0 0 0 8px var(--primary-100, rgba(33, 150, 243, 0.2));
+                }
+            }
+            
+            @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% {
+                    transform: translateY(0);
+                }
+                40% {
+                    transform: translateY(-10px);
+                }
+                60% {
+                    transform: translateY(-5px);
                 }
             }
             

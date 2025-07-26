@@ -12,7 +12,7 @@ export class UnifiedStateManager {
         this.searchPanel = components.searchPanel;
         this.inlineDropdownManager = components.inlineDropdownManager;
         this.notificationService = components.notificationService || {
-            showNotification: (msg, type) => console.log(`[${type}] ${msg}`)
+            showNotification: (msg, type) => {}
         };
         
         // State tracking

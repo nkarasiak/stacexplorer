@@ -57,6 +57,12 @@ export class PresetButtonHandler {
         if (startInput) startInput.value = startDateStr;
         if (endInput) endInput.value = endDateStr;
         
+        // Update mini date fields
+        const summaryStartInput = document.getElementById('summary-start-date');
+        const summaryEndInput = document.getElementById('summary-end-date');
+        if (summaryStartInput) summaryStartInput.value = startDateStr;
+        if (summaryEndInput) summaryEndInput.value = endDateStr;
+        
         // Close any open dropdown immediately
         const dropdownEvent = new CustomEvent('closeDropdown');
         document.dispatchEvent(dropdownEvent);

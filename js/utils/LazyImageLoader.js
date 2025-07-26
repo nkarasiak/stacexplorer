@@ -281,7 +281,6 @@ export class LazyImageLoader {
             this.retryQueue.set(src, retryCount + 1);
             
             setTimeout(() => {
-                console.log(`Retrying image load (attempt ${retryCount + 1}):`, src);
                 this.loadImage(img);
             }, this.options.retryDelay * (retryCount + 1)); // Exponential backoff
             
@@ -343,14 +342,12 @@ export class LazyImageLoader {
             
             // Data saver is explicitly enabled
             if (connection.saveData) {
-                console.log('📡 Data saver mode detected - reducing image quality');
                 return true;
             }
             
             // Slow connection detected
             if (connection.effectiveType && 
                 (connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g')) {
-                console.log('📡 Slow connection detected - enabling data saver mode');
                 return true;
             }
         }
@@ -358,7 +355,6 @@ export class LazyImageLoader {
         // Check user agent for mobile browsers
         const isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (isMobile && window.innerWidth <= 768) {
-            console.log('📱 Mobile device detected - optimizing for mobile');
             return true;
         }
         

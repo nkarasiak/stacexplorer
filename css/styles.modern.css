@@ -558,34 +558,12 @@ body, html {
     z-index: 1002;
 }
 
-/* Tutorial Button - Same style as theme toggle */
-#tutorial-btn {
-    position: absolute;
-    top: 16px;
-    right: 116px; /* 32px (theme toggle) + 10px gap + 74px (theme toggle right position) */
-    background: var(--primary-gradient);
-    border: none;
-    color: white;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    z-index: 1002;
-}
-
-#theme-toggle:hover,
-#tutorial-btn:hover {
+#theme-toggle:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
-#theme-toggle i,
-#tutorial-btn i {
+#theme-toggle i {
     font-size: 18px;
 }
 
@@ -1740,10 +1718,6 @@ select, select * {
         transform: scale(0.98) !important;
     }
     
-    /* Hide tutorial button on mobile */
-    #tutorial-btn {
-        display: none !important;
-    }
         border-radius: var(--border-radius) !important;
     }
     
@@ -3086,9 +3060,6 @@ html.dark-theme .modal-body .info-group div {
         right: 70px;
     }
     
-    #tutorial-btn {
-        right: 112px;
-    }
     
     .sidebar-header {
         padding-right: 120px;

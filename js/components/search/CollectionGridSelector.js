@@ -584,12 +584,27 @@ export class CollectionGridSelector {
             originalSelect.dispatchEvent(new Event('change'));
         }
         
+        // Get current catalog ID for the URL generation
+        let catalogId = null;
+        if (window.stacExplorer?.apiClient?.endpoints?.root) {
+            // Try to determine catalog ID from current API endpoint
+            const currentEndpoint = window.stacExplorer.apiClient.endpoints.root;
+            const legacyMapping = {
+                'https://stac.dataspace.copernicus.eu/v1': 'cdse-stac',
+                'https://earth-search.aws.element84.com/v1': 'earth-search-aws',
+                'https://planetarycomputer.microsoft.com/api/stac/v1': 'microsoft-pc'
+            };
+            catalogId = legacyMapping[currentEndpoint];
+            console.log('📡 Determined catalog ID for collection event:', catalogId);
+        }
+        
         // Dispatch selection event
         console.log('📡 Dispatching collectionSelected event for:', collection.id);
         document.dispatchEvent(new CustomEvent('collectionSelected', {
             detail: {
                 collection: collection,
-                source: collection.source
+                source: collection.source,
+                catalogId: catalogId  // Add catalog ID for URL generation
             }
         }));
         

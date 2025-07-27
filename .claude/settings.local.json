@@ -40,7 +40,12 @@
       "Bash(timeout 10s npm run preview)",
       "Bash(timeout 15s npm run dev)",
       "Bash(start python serve.py)",
-      "Bash(gh repo view:*)"
+      "Bash(gh repo view:*)",
+      "WebFetch(domain:radiantearth.github.io)",
+      "Bash(timeout:*)",
+      "Bash(del test_server.py simple_test.py)",
+      "WebFetch(domain:stac.dataspace.copernicus.eu)",
+      "Bash(powershell:*)"
     ],
     "deny": []
   }

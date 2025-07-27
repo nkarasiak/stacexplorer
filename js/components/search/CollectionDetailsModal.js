@@ -786,11 +786,26 @@ export class CollectionDetailsModal {
     selectCollection() {
         if (!this.currentCollection) return;
         
+        // Get current catalog ID for the URL generation
+        let catalogId = null;
+        if (window.stacExplorer?.apiClient?.endpoints?.root) {
+            // Try to determine catalog ID from current API endpoint
+            const currentEndpoint = window.stacExplorer.apiClient.endpoints.root;
+            const legacyMapping = {
+                'https://stac.dataspace.copernicus.eu/v1': 'cdse-stac',
+                'https://earth-search.aws.element84.com/v1': 'earth-search-aws',
+                'https://planetarycomputer.microsoft.com/api/stac/v1': 'microsoft-pc'
+            };
+            catalogId = legacyMapping[currentEndpoint];
+            console.log('📡 Determined catalog ID for collection modal event:', catalogId);
+        }
+        
         // Dispatch collection selection event
         document.dispatchEvent(new CustomEvent('collectionSelected', {
             detail: {
                 collection: this.currentCollection,
-                source: this.currentCollection.source
+                source: this.currentCollection.source,
+                catalogId: catalogId  // Add catalog ID for URL generation
             }
         }));
         

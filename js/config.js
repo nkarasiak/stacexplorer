@@ -25,11 +25,6 @@ export const CONFIG = {
             collections: '',
             search: '',
             type: 'catalog'
-        },
-        custom: {
-            root: '',
-            collections: '',
-            search: ''
         }
     },
     

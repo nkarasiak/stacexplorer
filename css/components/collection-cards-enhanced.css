@@ -1,0 +1,474 @@
+/**
+ * Enhanced Collection Cards - Ultra-Modern 2025 Design
+ * Beautiful, responsive cards with advanced micro-interactions
+ */
+
+/* Modern Collection Card Layout - Simplified */
+.collection-card.modern-card {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 1rem;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+    margin-bottom: 1rem;
+}
+
+.collection-card.modern-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-color: var(--primary-color, #0066cc);
+}
+
+/* Enhanced Image Container */
+.collection-card-image {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.collection-card-image .image-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.collection-card-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    filter: contrast(1.1) saturate(1.2);
+}
+
+.collection-card-image img.fallback-image {
+    filter: none;
+    opacity: 0.9;
+}
+
+.collection-card:hover .collection-card-image img {
+    transform: scale(1.05);
+}
+
+.image-gradient {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60%;
+    background: linear-gradient(transparent 0%, rgba(0, 0, 0, 0.3) 60%, rgba(0, 0, 0, 0.6) 100%);
+    pointer-events: none;
+}
+
+/* Enhanced Overlay */
+.collection-card-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(4px);
+}
+
+.collection-card:hover .collection-card-overlay {
+    opacity: 1;
+}
+
+.collection-details-btn,
+.collection-browse-btn {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.collection-details-btn:hover,
+.collection-browse-btn:hover {
+    transform: scale(1.15) rotateZ(5deg);
+    background: white;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.collection-browse-btn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+}
+
+.collection-browse-btn:hover {
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+}
+
+.collection-details-btn .material-icons,
+.collection-browse-btn .material-icons {
+    font-size: 1.2rem;
+}
+
+/* Priority Badge */
+.collection-priority-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    color: #333;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4);
+    z-index: 2;
+    animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 4px 12px rgba(255, 215, 0, 0.4); }
+    50% { box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6); }
+}
+
+/* Enhanced Content Area */
+.collection-card-content {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.collection-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.collection-card-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1a202c;
+    line-height: 1.3;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+.collection-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-shrink: 0;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #dc2626;
+    position: relative;
+}
+
+.status-dot.active {
+    background: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+
+.status-dot.active::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: #10b981;
+    opacity: 0.3;
+    animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping {
+    75%, 100% {
+        transform: scale(2);
+        opacity: 0;
+    }
+}
+
+/* Enhanced Badges */
+.collection-card-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.collection-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 1rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: white;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.badge-more {
+    padding: 0.25rem 0.5rem;
+    border-radius: 1rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #6b7280;
+    background: rgba(107, 114, 128, 0.1);
+    border: 1px solid rgba(107, 114, 128, 0.2);
+}
+
+/* Description */
+.collection-card-description {
+    margin: 0;
+    color: #4b5563;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    opacity: 0.9;
+}
+
+/* Stats Section */
+.collection-card-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+    font-weight: 500;
+}
+
+.stat-item .material-icons {
+    font-size: 1rem;
+    color: #9ca3af;
+}
+
+/* Footer */
+.collection-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-top: auto;
+}
+
+.collection-id {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: #6b7280;
+    opacity: 0.8;
+    flex: 1;
+    min-width: 0;
+}
+
+.collection-id code {
+    background: rgba(107, 114, 128, 0.1);
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.3rem;
+    font-family: 'JetBrains Mono', 'Monaco', 'Consolas', monospace;
+    font-size: 0.7rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 120px;
+}
+
+.collection-id .material-icons {
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+/* Action Button */
+.collection-actions {
+    flex-shrink: 0;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1.2rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: none;
+    border-radius: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    box-shadow: 
+        0 4px 12px rgba(102, 126, 234, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.action-btn:hover {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 
+        0 8px 20px rgba(102, 126, 234, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+}
+
+.action-btn:active {
+    transform: translateY(0) scale(1);
+    transition-duration: 0.1s;
+}
+
+.action-btn .material-icons {
+    font-size: 1rem;
+}
+
+/* Dark Theme Support */
+[data-theme="dark"] .collection-card.modern-card {
+    background: rgba(30, 41, 59, 0.9);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 
+        0 10px 40px rgba(0, 0, 0, 0.3),
+        0 2px 8px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .collection-card-title {
+    color: #f1f5f9;
+}
+
+[data-theme="dark"] .collection-card-description {
+    color: #cbd5e1;
+}
+
+[data-theme="dark"] .collection-card-stats {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .collection-id code {
+    background: rgba(255, 255, 255, 0.1);
+    color: #e2e8f0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .collection-card.modern-card {
+        min-height: 380px;
+    }
+    
+    .collection-card-content {
+        padding: 1.25rem;
+        gap: 0.75rem;
+    }
+    
+    .collection-card-title {
+        font-size: 1.1rem;
+    }
+    
+    .collection-card-stats {
+        gap: 0.75rem;
+    }
+    
+    .collection-card-footer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+    
+    .action-btn {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .collection-card-image {
+        height: 160px;
+    }
+    
+    .collection-card.modern-card {
+        min-height: 340px;
+    }
+    
+    .collection-card-content {
+        padding: 1rem;
+    }
+    
+    .collection-details-btn,
+    .collection-browse-btn {
+        width: 42px;
+        height: 42px;
+    }
+    
+    .collection-priority-badge {
+        width: 32px;
+        height: 32px;
+        top: 8px;
+        right: 8px;
+    }
+}
+
+/* Loading Animation for New Cards */
+.collection-card.modern-card {
+    animation: fadeInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) backwards;
+    animation-delay: calc(var(--card-index) * 0.1s);
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Focus States for Accessibility */
+.collection-card.modern-card:focus-visible {
+    outline: 3px solid #667eea;
+    outline-offset: 3px;
+}
+
+.action-btn:focus-visible,
+.collection-details-btn:focus-visible,
+.collection-browse-btn:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}

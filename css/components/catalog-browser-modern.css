@@ -1,0 +1,261 @@
+/**
+ * Modern STAC Catalog Browser - Additional 2025 Enhancements
+ * Advanced micro-interactions, smooth animations, and cutting-edge CSS features
+ */
+
+/* Advanced micro-interactions and hover effects */
+.catalog-card,
+.collection-card {
+    --hover-scale: 1.02;
+    --hover-y: -8px;
+    --hover-rotation: 2deg;
+    
+    transition: var(--transition-smooth);
+    perspective: 1000px;
+    transform-style: preserve-3d;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .catalog-card:hover,
+    .collection-card:hover {
+        transform: 
+            translateY(var(--hover-y)) 
+            scale(var(--hover-scale)) 
+            rotateX(var(--hover-rotation));
+        
+        /* Dynamic lighting effect */
+        background: 
+            radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
+                rgba(255, 255, 255, 0.95) 0%, 
+                rgba(255, 255, 255, 0.8) 100%);
+    }
+}
+
+/* Dynamic mouse tracking (requires JS to set custom properties) */
+.catalog-card,
+.collection-card {
+    position: relative;
+    overflow: hidden;
+}
+
+.catalog-card::before,
+.collection-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+        rgba(var(--primary-color-rgb), 0.1) 0%,
+        transparent 50%
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    border-radius: inherit;
+}
+
+.catalog-card:hover::before,
+.collection-card:hover::before {
+    opacity: 1;
+}
+
+/* Advanced loading states with skeleton screens */
+.catalog-skeleton {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0.1) 25%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0.1) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmerFlow 2s infinite ease-in-out;
+    border-radius: 1rem;
+    height: 200px;
+}
+
+@keyframes shimmerFlow {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+/* Modern focus indicators with improved accessibility */
+.catalog-card:focus-visible,
+.collection-card:focus-visible,
+.catalog-item:focus-visible {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 3px;
+    box-shadow: 
+        0 0 0 6px rgba(var(--primary-color-rgb), 0.2),
+        var(--glass-shadow);
+}
+
+/* Enhanced keyboard navigation */
+.catalog-card[tabindex]:focus,
+.collection-card[tabindex]:focus {
+    z-index: 10;
+    transform: scale(1.05) translateZ(20px);
+}
+
+/* Smart grid auto-sizing with CSS subgrid (when supported) */
+@supports (grid-template-rows: subgrid) {
+    .collections-grid {
+        grid-template-rows: subgrid;
+    }
+    
+    .catalog-grid {
+        grid-template-rows: subgrid;
+    }
+}
+
+/* Container queries for ultra-responsive design */
+@container catalog-content (max-width: 400px) {
+    .catalog-card,
+    .collection-card {
+        --hover-scale: 1.01;
+        --hover-y: -4px;
+        --hover-rotation: 1deg;
+    }
+    
+    .catalog-browser-header h3 {
+        font-size: 0.85rem;
+    }
+}
+
+/* High refresh rate optimizations */
+@media (prefers-reduced-motion: no-preference) {
+    @supports (color: color(display-p3 1 0 0)) {
+        /* Enhanced colors for wide gamut displays */
+        :root {
+            --primary-color: color(display-p3 0.2 0.4 0.9);
+            --secondary-color: color(display-p3 0.4 0.6 0.95);
+        }
+    }
+}
+
+/* Dark mode enhancements with system preference detection */
+@media (prefers-color-scheme: dark) {
+    [data-theme="auto"] .catalog-browser-panel {
+        background: linear-gradient(135deg, 
+            rgba(15, 23, 42, 0.95) 0%, 
+            rgba(30, 41, 59, 0.98) 100%);
+    }
+    
+    [data-theme="auto"] .catalog-card,
+    [data-theme="auto"] .collection-card {
+        background: rgba(255, 255, 255, 0.05);
+        border-color: rgba(255, 255, 255, 0.1);
+    }
+}
+
+/* Advanced typography with modern font features */
+.catalog-browser-panel {
+    font-feature-settings: 
+        "kern" 1,     /* Kerning */
+        "liga" 1,     /* Ligatures */
+        "calt" 1,     /* Contextual alternates */
+        "tnum" 1;     /* Tabular numbers */
+    
+    font-variant-numeric: tabular-nums;
+    text-rendering: optimizeLegibility;
+}
+
+/* Smooth state transitions with spring physics */
+.catalog-item-actions .btn-icon {
+    transition: 
+        transform var(--transition-bounce),
+        background-color 0.2s ease,
+        box-shadow 0.3s ease;
+}
+
+.catalog-item-actions .btn-icon:active {
+    transform: scale(0.95) rotateZ(-1deg);
+    transition-duration: 0.1s;
+}
+
+/* Progressive enhancement for newer CSS features */
+@supports (backdrop-filter: blur(10px)) {
+    .catalog-browser-panel {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: var(--glass-backdrop);
+    }
+}
+
+@supports not (backdrop-filter: blur(10px)) {
+    .catalog-browser-panel {
+        background: rgba(255, 255, 255, 0.95);
+    }
+}
+
+/* Modern scrollbar with better UX */
+.catalog-tree::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.catalog-tree::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.catalog-tree::-webkit-scrollbar-thumb {
+    background: linear-gradient(45deg, 
+        rgba(var(--primary-color-rgb), 0.6),
+        rgba(var(--secondary-color-rgb), 0.6));
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.catalog-tree::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(45deg, 
+        rgba(var(--primary-color-rgb), 0.8),
+        rgba(var(--secondary-color-rgb), 0.8));
+}
+
+/* Touch-friendly interactions for mobile */
+@media (pointer: coarse) {
+    .catalog-card,
+    .collection-card,
+    .catalog-item {
+        min-height: 60px;
+        padding: 1rem;
+    }
+    
+    .catalog-item-actions .btn-icon {
+        min-width: 44px;
+        min-height: 44px;
+    }
+}
+
+/* Print styles for catalog listings */
+@media print {
+    .catalog-browser-panel {
+        background: white !important;
+        backdrop-filter: none !important;
+        box-shadow: none !important;
+    }
+    
+    .catalog-card,
+    .collection-card {
+        break-inside: avoid;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+        background: white !important;
+    }
+    
+    .catalog-item-actions {
+        display: none !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .catalog-card,
+    .collection-card,
+    .catalog-item {
+        border: 2px solid var(--text-primary);
+        background: var(--bg-primary);
+    }
+    
+    .catalog-item-actions .btn-icon {
+        border: 2px solid var(--primary-color);
+    }
+}

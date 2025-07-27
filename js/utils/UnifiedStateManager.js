@@ -11,6 +11,8 @@ export class UnifiedStateManager {
         this.mapManager = components.mapManager;
         this.searchPanel = components.searchPanel;
         this.inlineDropdownManager = components.inlineDropdownManager;
+        this.catalogBrowser = components.catalogBrowser;
+        this.viewModeToggle = components.viewModeToggle;
         this.notificationService = components.notificationService || {
             showNotification: (msg, type) => {}
         };
@@ -58,6 +60,12 @@ export class UnifiedStateManager {
             geometry: 'g',              // WKT/GeoJSON geometry
             geojson: 'gj',              // complete GeoJSON
             
+            // Catalog Browser parameters
+            viewMode: 'vm',             // view mode (map|browser)
+            catalogId: 'cid',           // selected catalog id
+            collectionId: 'col',        // selected collection id
+            itemId: 'itm',              // selected item id (different from search itemId)
+            
             // Legacy/additional parameters
             catalogUrl: 'catalogUrl'    // custom catalog URL
         };
@@ -70,14 +78,51 @@ export class UnifiedStateManager {
     }
     
     /**
+     * Encode browse path for URL
+     */
+    encodeBrowsePath(browsePath) {
+        try {
+            const pathData = browsePath.map(item => ({
+                t: item.type,
+                i: item.data.id,
+                n: item.data.name || item.data.title || item.data.id
+            }));
+            return btoa(JSON.stringify(pathData));
+        } catch (error) {
+            console.error('Error encoding browse path:', error);
+            return '';
+        }
+    }
+    
+    /**
+     * Decode browse path from URL
+     */
+    decodeBrowsePath(encodedPath) {
+        try {
+            const pathData = JSON.parse(atob(encodedPath));
+            return pathData.map(item => ({
+                type: item.t,
+                data: {
+                    id: item.i,
+                    name: item.n,
+                    title: item.n
+                }
+            }));
+        } catch (error) {
+            console.error('Error decoding browse path:', error);
+            return [];
+        }
+    }
+    
+    /**
      * Initialize the unified state manager
      */
     async initialize() {
         
-        // Listen for browser back/forward navigation
-        window.addEventListener('popstate', (event) => {
-            this.restoreStateFromURL();
-        });
+        // Browser navigation is now handled by UnifiedRouter
+        // window.addEventListener('popstate', (event) => {
+        //     this.restoreStateFromURL();
+        // });
         
         // Set up event listeners for state changes
         this.setupStateListeners();
@@ -85,6 +130,15 @@ export class UnifiedStateManager {
         // Wait for map to be ready before initializing state
         if (this.mapManager) {
             await this.waitForMapReady();
+        }
+        
+        // Wait for catalog browser components to be ready if URL has browser state
+        const params = new URLSearchParams(window.location.search);
+        if (params.has(this.urlKeys.viewMode) && params.get(this.urlKeys.viewMode) === 'browser') {
+            console.log('🔗 Browser mode detected in URL, waiting for components...');
+            await this.waitForCatalogBrowserReady();
+            // Additional delay to ensure DOM is ready
+            await new Promise(resolve => setTimeout(resolve, 500));
         }
         
         // Restore state from URL on page load
@@ -104,7 +158,30 @@ export class UnifiedStateManager {
                params.has(this.urlKeys.collection) ||
                params.has(this.urlKeys.locationBbox) ||
                params.has(this.urlKeys.dateStart) ||
-               params.has(this.urlKeys.dateEnd);
+               params.has(this.urlKeys.dateEnd) ||
+               params.has(this.urlKeys.viewMode) ||
+               params.has(this.urlKeys.catalogId) ||
+               params.has(this.urlKeys.browsePath);
+    }
+    
+    /**
+     * Wait for catalog browser components to be ready
+     */
+    async waitForCatalogBrowserReady() {
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max wait
+        
+        while ((!this.catalogBrowser || !this.viewModeToggle) && attempts < maxAttempts) {
+            console.log(`📍 Waiting for catalog browser components... (${attempts + 1}/${maxAttempts})`);
+            await new Promise(resolve => setTimeout(resolve, 100));
+            attempts++;
+        }
+        
+        if (!this.catalogBrowser || !this.viewModeToggle) {
+            console.warn('📍 Catalog browser components not ready after waiting');
+        } else {
+            console.log('📍 Catalog browser components ready!');
+        }
     }
     
     /**
@@ -130,7 +207,11 @@ export class UnifiedStateManager {
         const params = new URLSearchParams(window.location.search);
         const pathname = window.location.pathname;
         
+        console.log('🔗 Initializing from URL:', window.location.href);
+        console.log('🔗 URL Parameters:', Array.from(params.entries()));
+        
         this.isRestoringFromUrl = true;
+        this.isApplyingState = true;
         
         // Note: RESTful URLs removed for GitHub Pages compatibility
         
@@ -140,6 +221,9 @@ export class UnifiedStateManager {
             
             // Handle catalog/collection source first
             await this.restoreCatalogState(params);
+            
+            // Restore catalog browser state
+            await this.restoreCatalogBrowserState(params);
             
             // Wait for collections to be loaded
             await this.waitForCollectionsLoaded();
@@ -163,6 +247,7 @@ export class UnifiedStateManager {
             
         } finally {
             this.isRestoringFromUrl = false;
+            this.isApplyingState = false;
         }
     }
     
@@ -255,6 +340,133 @@ export class UnifiedStateManager {
             document.addEventListener('collectionsUpdated', resolve, { once: true });
             checkCollections();
         });
+    }
+    
+    /**
+     * Restore catalog browser state from URL parameters
+     */
+    async restoreCatalogBrowserState(params, retryCount = 0) {
+        console.log('📍 Checking catalog browser components availability...');
+        console.log('📍 catalogBrowser:', !!this.catalogBrowser);
+        console.log('📍 viewModeToggle:', !!this.viewModeToggle);
+        
+        if (!this.catalogBrowser || !this.viewModeToggle) {
+            if (retryCount < 3) {
+                console.warn(`📍 Catalog browser components not available, retry ${retryCount + 1}/3...`);
+                console.log('📍 Available URL keys:', this.urlKeys);
+                console.log('📍 URL parameters:', Array.from(params.entries()));
+                
+                // Try again after a short delay with exponential backoff
+                setTimeout(() => {
+                    console.log('📍 Retrying catalog browser restoration...');
+                    this.restoreCatalogBrowserState(params, retryCount + 1);
+                }, 1000 * (retryCount + 1));
+                return;
+            } else {
+                console.error('📍 Catalog browser components still not available after 3 retries, giving up');
+                return;
+            }
+        }
+        
+        try {
+            console.log('📍 Restoring catalog browser state from URL...');
+            
+            // Check if we should be in browser mode
+            if (params.has(this.urlKeys.viewMode) && params.get(this.urlKeys.viewMode) === 'browser') {
+                console.log('📍 Switching to browser view mode');
+                console.log('📍 View mode toggle available:', !!this.viewModeToggle);
+                console.log('📍 Catalog browser available:', !!this.catalogBrowser);
+                
+                if (this.viewModeToggle) {
+                    this.viewModeToggle.setMode('browser');
+                } else {
+                    console.warn('📍 ViewModeToggle not available, showing catalog browser directly');
+                    if (this.catalogBrowser) {
+                        this.catalogBrowser.show();
+                    }
+                }
+                
+                // Restore catalog selection
+                if (params.has(this.urlKeys.catalogId)) {
+                    const catalogId = params.get(this.urlKeys.catalogId);
+                    const catalogName = params.get(this.urlKeys.catalogName) || catalogId;
+                    
+                    console.log('📍 Restoring catalog:', catalogId, catalogName);
+                    
+                    // Create catalog object for restoration
+                    const catalog = {
+                        id: catalogId,
+                        name: catalogName,
+                        endpoint: this.getCatalogEndpoint(catalogId)
+                    };
+                    
+                    if (catalog.endpoint) {
+                        // Connect to the catalog
+                        await this.catalogBrowser.selectCatalog(catalog);
+                        
+                        // Restore collection if specified
+                        if (params.has(this.urlKeys.collectionId)) {
+                            const collectionId = params.get(this.urlKeys.collectionId);
+                            console.log('📍 Restoring collection:', collectionId);
+                            
+                            // Find the collection in the loaded collections
+                            const collections = await this.catalogBrowser.apiClient.getCollections();
+                            const collection = collections.find(c => c.id === collectionId);
+                            
+                            if (collection) {
+                                await this.catalogBrowser.browseCollection(collection);
+                                
+                                // Restore item if specified
+                                if (params.has(this.urlKeys.itemId)) {
+                                    const itemId = params.get(this.urlKeys.itemId);
+                                    console.log('📍 Restoring item:', itemId);
+                                    // Note: Item restoration would require loading the collection items
+                                    // and finding the specific item, but for now we'll just browse the collection
+                                }
+                            } else {
+                                console.warn('📍 Collection not found:', collectionId);
+                            }
+                        }
+                    } else {
+                        console.warn('📍 Catalog endpoint not found for:', catalogId);
+                    }
+                }
+            }
+            
+        } catch (error) {
+            console.error('📍 Error restoring catalog browser state:', error);
+        }
+    }
+    
+    /**
+     * Get catalog endpoint by ID
+     */
+    getCatalogEndpoint(catalogId) {
+        // This should match the catalog IDs from the config
+        const catalogEndpoints = {
+            'copernicus': { 
+                root: 'https://stac.dataspace.copernicus.eu/v1',
+                collections: 'https://stac.dataspace.copernicus.eu/v1/collections',
+                search: 'https://stac.dataspace.copernicus.eu/v1/search'
+            },
+            'element84': { 
+                root: 'https://earth-search.aws.element84.com/v1',
+                collections: 'https://earth-search.aws.element84.com/v1/collections',
+                search: 'https://earth-search.aws.element84.com/v1/search'
+            },
+            'planetary': { 
+                root: 'https://planetarycomputer.microsoft.com/api/stac/v1',
+                collections: 'https://planetarycomputer.microsoft.com/api/stac/v1/collections',
+                search: 'https://planetarycomputer.microsoft.com/api/stac/v1/search'
+            },
+            'planetlabs': { 
+                root: 'https://api.planet.com/data/v1',
+                collections: 'https://api.planet.com/data/v1/collections',
+                search: 'https://api.planet.com/data/v1/search'
+            }
+        };
+        
+        return catalogEndpoints[catalogId] || null;
     }
     
     /**
@@ -691,26 +903,26 @@ export class UnifiedStateManager {
             }
         });
         
-        // Listen for active item changes
+        // Active item changes are now handled by UnifiedRouter
         document.addEventListener('itemActivated', (event) => {
             if (!this.isRestoringFromUrl) {
                 this.activeItemId = event.detail.itemId;
                 this.activeAssetKey = event.detail.assetKey || null;
-                this.updateURL();
+                // URL updates are handled by UnifiedRouter
             }
         });
         
         // Listen for form element changes
         this.setupFormElementListeners();
         
-        // Listen for map changes
-        if (this.mapManager && this.mapManager.map) {
-            this.mapManager.map.on('moveend', () => {
-                if (!this.isRestoringFromUrl) {
-                    this.updateURL();
-                }
-            });
-        }
+        // Map changes are now handled by UnifiedRouter
+        // if (this.mapManager && this.mapManager.map) {
+        //     this.mapManager.map.on('moveend', () => {
+        //         if (!this.isRestoringFromUrl) {
+        //             this.updateURL();
+        //         }
+        //     });
+        // }
     }
     
     /**
@@ -726,12 +938,13 @@ export class UnifiedStateManager {
             'bbox-input'
         ];
         
-        elements.forEach(elementId => {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.addEventListener('change', () => this.updateURL());
-            }
-        });
+        // Form element changes are now handled by UnifiedRouter
+        // elements.forEach(elementId => {
+        //     const element = document.getElementById(elementId);
+        //     if (element) {
+        //         element.addEventListener('change', () => this.updateURL());
+        //     }
+        // });
     }
     
     /**
@@ -790,6 +1003,31 @@ export class UnifiedStateManager {
                 urlParams.set(this.urlKeys.cloudCover, this.currentState.cloudCover.toString());
             }
             
+            // Catalog Browser state
+            if (this.currentState.viewMode && this.currentState.viewMode !== 'map') {
+                urlParams.set(this.urlKeys.viewMode, this.currentState.viewMode);
+            } else {
+                urlParams.delete(this.urlKeys.viewMode);
+            }
+            
+            if (this.currentState.catalogId) {
+                urlParams.set(this.urlKeys.catalogId, this.currentState.catalogId);
+            } else {
+                urlParams.delete(this.urlKeys.catalogId);
+            }
+            
+            if (this.currentState.collectionId) {
+                urlParams.set(this.urlKeys.collectionId, this.currentState.collectionId);
+            } else {
+                urlParams.delete(this.urlKeys.collectionId);
+            }
+            
+            if (this.currentState.itemId) {
+                urlParams.set(this.urlKeys.itemId, this.currentState.itemId);
+            } else {
+                urlParams.delete(this.urlKeys.itemId);
+            }
+            
             // Update URL
             const newURL = urlParams.toString() ? 
                 `${window.location.pathname}?${urlParams.toString()}` : 
@@ -806,7 +1044,8 @@ export class UnifiedStateManager {
      * Update URL with current application state (for form elements)
      */
     updateURL() {
-        if (this.isRestoringFromUrl) {
+        if (this.isRestoringFromUrl || this.isUpdatingFromURL || this.isApplyingState) {
+            console.log('🚫 Skipping URL update during restoration/update process');
             return;
         }
         
@@ -929,6 +1168,19 @@ export class UnifiedStateManager {
             setTimeout(() => {
                 this.isUpdatingFromURL = false;
             }, 1000);
+        }
+    }
+    
+    /**
+     * Manually restore URL state (can be called after all components are ready)
+     */
+    async manuallyRestoreUrlState() {
+        const params = new URLSearchParams(window.location.search);
+        console.log('🔧 Manual URL restoration triggered');
+        console.log('🔧 URL parameters:', Array.from(params.entries()));
+        
+        if (params.has(this.urlKeys.viewMode) && params.get(this.urlKeys.viewMode) === 'browser') {
+            await this.restoreCatalogBrowserState(params);
         }
     }
     

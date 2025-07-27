@@ -1,0 +1,293 @@
+/**
+ * Globe Toggle Component Styles
+ * Provides styling for the 2D/3D view toggle button
+ */
+
+.view-toggle-container {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.view-toggle-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    user-select: none;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.view-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.9);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+.view-toggle-btn:active {
+    transform: translateY(0);
+}
+
+.view-toggle-btn .material-icons {
+    font-size: 20px;
+    transition: transform 0.3s ease;
+}
+
+.view-toggle-btn:hover .material-icons {
+    transform: scale(1.1);
+}
+
+.view-toggle-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-color: rgba(102, 126, 234, 0.5);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.view-toggle-btn.active:hover {
+    background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+.toggle-text {
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Light theme adjustments */
+.light-theme .view-toggle-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: #1a1a1a;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .view-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
+.light-theme .view-toggle-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* Globe container styles */
+#globe {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #000;
+}
+
+#globe canvas {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Loading state for globe */
+.globe-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 18px;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.globe-loading .spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Animation for view transitions */
+.view-transition {
+    transition: opacity 0.3s ease-in-out;
+}
+
+.view-transition.hiding {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.view-transition.showing {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .view-toggle-container {
+        top: 10px;
+        right: 10px;
+    }
+    
+    .view-toggle-btn {
+        padding: 10px 12px;
+        font-size: 13px;
+        min-width: 100px;
+    }
+    
+    .view-toggle-btn .material-icons {
+        font-size: 18px;
+    }
+    
+    .toggle-text {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .view-toggle-btn {
+        padding: 8px 10px;
+        min-width: auto;
+    }
+    
+    .view-toggle-btn .material-icons {
+        font-size: 16px;
+    }
+}
+
+/* Globe instructions overlay */
+.globe-instructions {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1001;
+    animation: slideDown 0.3s ease-out;
+}
+
+.instruction-card {
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.instruction-card .material-icons {
+    color: #4fc3f7;
+    font-size: 20px;
+}
+
+.instruction-card .close-btn {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    margin-left: auto;
+}
+
+.instruction-card .close-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.instruction-card .close-btn .material-icons {
+    font-size: 18px;
+    color: inherit;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Light theme adjustments for instructions */
+.light-theme .instruction-card {
+    background: rgba(255, 255, 255, 0.95);
+    color: #1a1a1a;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+.light-theme .instruction-card .close-btn {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.light-theme .instruction-card .close-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #1a1a1a;
+}
+
+/* Tooltip styles for mobile */
+@media (max-width: 768px) {
+    .view-toggle-btn::after {
+        content: attr(title);
+        position: absolute;
+        bottom: -30px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 1001;
+    }
+    
+    .view-toggle-btn:hover::after {
+        opacity: 1;
+    }
+    
+    .light-theme .view-toggle-btn::after {
+        background: rgba(255, 255, 255, 0.9);
+        color: #1a1a1a;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .instruction-card {
+        max-width: 300px;
+        font-size: 13px;
+        padding: 12px 16px;
+    }
+}

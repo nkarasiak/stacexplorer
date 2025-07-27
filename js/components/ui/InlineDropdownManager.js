@@ -2416,7 +2416,11 @@ export class InlineDropdownManager {
             this.temporarilyDisableClickOutside = false;
             
             // Clean up location preview when closing dropdown
-            this.hideLocationPreviewOnMap();
+            if (window.clearLocationPreview) {
+                window.clearLocationPreview();
+            } else if (this.mapManager && typeof this.mapManager.clearLocationPreview === 'function') {
+                this.mapManager.clearLocationPreview();
+            }
             
             if (this.currentDropdown) {
                 // Animate out if possible

@@ -9,6 +9,7 @@ import { NotificationService } from './components/common/NotificationService.js'
 import { MapManager, getMapManager } from './components/map/MapManager.js';
 import { STACApiClient } from './components/api/StacApiClient.js';
 import { UnifiedStateManager } from './utils/UnifiedStateManager.js';
+import { UnifiedRouter } from './utils/UnifiedRouter.js';
 // import { ShareManager } from './utils/ShareManager.js'; // REMOVED - no longer needed
 import { initializeGeometrySync } from './utils/GeometrySync.js';
 import { GeocodingService } from './utils/GeocodingService.js';
@@ -27,6 +28,8 @@ import { searchHistoryUI } from './components/ui/SearchHistoryUI.js';
 import { CommandPalette } from './components/ui/CommandPalette.js';
 import { SatelliteAnimation } from './components/ui/SatelliteAnimation.js';
 import { InteractiveTutorial } from './components/ui/InteractiveTutorial.js';
+import { ViewModeToggle } from './components/ui/ViewModeToggle.js';
+import { CatalogBrowserPanel } from './components/search/CatalogBrowserPanel.js';
 // Removed: URL state integration is now handled by UnifiedStateManager
 // Removed inline AI search imports - only using the full-screen version now
 
@@ -42,10 +45,96 @@ export async function initializeApp() {
   await initApp();
 }
 
+// Minimal initialization for browser deep links
+async function initAppForBrowserMode() {
+    try {
+        console.log('🚀 Fast initialization for browser mode');
+        
+        // Initialize only essential services
+        const notificationService = new NotificationService();
+        const uiManager = new UIManager();
+        const apiClient = new STACApiClient();
+        
+        // Initialize catalog browser
+        const catalogBrowser = new CatalogBrowserPanel(apiClient, notificationService, CONFIG);
+        
+        // Initialize view mode toggle (needed for UI state)
+        const viewModeToggle = new ViewModeToggle();
+        
+        // Initialize minimal state manager for routing
+        const stateManager = new UnifiedStateManager({
+            mapManager: null, // Not needed for browser mode
+            searchPanel: null,
+            inlineDropdownManager: null,
+            catalogBrowser,
+            viewModeToggle,
+            notificationService
+        });
+        
+        // Hide map and search UI for browser mode
+        const mapContainer = document.getElementById('map');
+        const searchContainer = document.querySelector('.sidebar');
+        if (mapContainer) mapContainer.style.display = 'none';
+        if (searchContainer) searchContainer.style.display = 'none';
+        
+        // Initialize router for deep link handling
+        const unifiedRouter = new UnifiedRouter(stateManager);
+        
+        // Make components globally accessible
+        if (!window.stacExplorer) window.stacExplorer = {};
+        window.stacExplorer.unifiedStateManager = stateManager;
+        window.stacExplorer.unifiedRouter = unifiedRouter;
+        window.stacExplorer.catalogBrowser = catalogBrowser;
+        window.stacExplorer.viewModeToggle = viewModeToggle;
+        window.stacExplorer.notificationService = notificationService;
+        
+        console.log('✅ Fast browser mode initialization complete');
+        
+        // Show the page now that initialization is complete
+        if (window.__STAC_SHOW_PAGE) {
+            window.__STAC_SHOW_PAGE();
+        }
+        
+    } catch (error) {
+        console.error('❌ Error in fast browser mode initialization:', error);
+        // Fallback to normal initialization
+        await initAppNormal();
+    }
+}
+
 // Keep the original function for backwards compatibility
 async function initApp() {
     
     try {
+        // Check if early detection already identified this as a browser deep link
+        if (window.__STAC_EARLY_BROWSER_MODE) {
+            console.log('🚀 Early browser mode detected, using fast initialization');
+            await initAppForBrowserMode();
+            return;
+        }
+        
+        // Fallback detection for browser deep links
+        const path = window.location.pathname;
+        const isBrowserDeepLink = path.startsWith('/browser/') && path.split('/').length > 2;
+        
+        if (isBrowserDeepLink) {
+            console.log('🚀 Browser deep link detected (fallback), using fast initialization:', path);
+            await initAppForBrowserMode();
+            return;
+        }
+        
+        await initAppNormal();
+    } catch (error) {
+        console.error('Error initializing application:', error);
+        alert(`Error initializing application: ${error.message}`);
+    }
+}
+
+// Normal initialization for map/search mode  
+async function initAppNormal() {
+    try {
+        console.log('🌍 Normal initialization for map/search mode');
+        
         // Initialize core services
         const notificationService = new NotificationService();
         
@@ -156,17 +245,63 @@ async function initApp() {
             inlineDropdownManager
         });
         
+        // Initialize catalog browser and view mode toggle
+        const catalogBrowser = new CatalogBrowserPanel(apiClient, notificationService, CONFIG);
+        const viewModeToggle = new ViewModeToggle();
+        
+        // Set up catalog browser event handlers
+        catalogBrowser.setItemSelectHandler((item) => {
+            // When an item is selected, add it to the map and results
+            resultsPanel.displayResults([item]);
+            mapManager.displaySearchResults([item]);
+            notificationService.showNotification(`Selected item: ${item.properties?.title || item.id}`, 'info');
+        });
+        
+        catalogBrowser.setCollectionSelectHandler((collection) => {
+            // When a collection is selected, update the search form
+            if (collectionManager) {
+                collectionManager.selectCollection(collection.id);
+                notificationService.showNotification(`Selected collection: ${collection.title || collection.id}`, 'info');
+            }
+        });
+        
+        // Set up view mode toggle handler
+        viewModeToggle.setModeChangeHandler((mode) => {
+            if (mode === 'catalog') {
+                catalogBrowser.show();
+            } else {
+                catalogBrowser.hide();
+            }
+        });
+
         // Initialize unified state manager after all components are ready
         const stateManager = new UnifiedStateManager({
             catalogSelector,
             mapManager, 
             searchPanel,
             inlineDropdownManager,
-            notificationService
+            notificationService,
+            catalogBrowser,
+            viewModeToggle
         });
         
-        // Make stateManager globally accessible
+        // Initialize unified router for clean URLs
+        const unifiedRouter = new UnifiedRouter(stateManager);
+        
+        // Make components globally accessible
         window.stacExplorer.unifiedStateManager = stateManager;
+        window.stacExplorer.unifiedRouter = unifiedRouter;
+        window.stacExplorer.catalogBrowser = catalogBrowser;
+        window.stacExplorer.viewModeToggle = viewModeToggle;
+        
+        // Manual URL restoration as a fallback after everything is loaded
+        setTimeout(async () => {
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('vm') && params.get('vm') === 'browser') {
+                console.log('🔄 Attempting manual URL restoration as fallback...');
+                await stateManager.manuallyRestoreUrlState();
+            }
+        }, 2000);
 
         // Initialize Visualization System
         const { RasterVisualizationManager } = await import('./components/visualization/RasterVisualizationManager.js');

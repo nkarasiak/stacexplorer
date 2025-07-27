@@ -350,6 +350,15 @@ export class STACApiClient {
     }
     
     /**
+     * Get collections from the STAC catalog
+     * @param {number} limit - Maximum number of collections to fetch (default: 1000)
+     * @returns {Promise<Array>} - Promise resolving to an array of collections
+     */
+    async getCollections(limit = 1000) {
+        return await this.fetchCollections(limit);
+    }
+    
+    /**
      * Search for STAC items
      * @param {Object} params - Search parameters
      * @returns {Promise<Array>} - Promise resolving to an array of items

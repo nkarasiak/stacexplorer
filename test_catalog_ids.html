@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test STAC Catalog IDs</title>
+</head>
+<body>
+    <h1>Test STAC Catalog ID Detection</h1>
+    <div id="results"></div>
+
+    <script>
+        async function testCatalogIds() {
+            const results = document.getElementById('results');
+            
+            const endpoints = {
+                'planetary': {
+                    root: 'https://planetarycomputer.microsoft.com/api/stac/v1',
+                    collections: 'https://planetarycomputer.microsoft.com/api/stac/v1/collections',
+                    search: 'https://planetarycomputer.microsoft.com/api/stac/v1/search'
+                },
+                'element84': {
+                    root: 'https://earth-search.aws.element84.com/v1',
+                    collections: 'https://earth-search.aws.element84.com/v1/collections',
+                    search: 'https://earth-search.aws.element84.com/v1/search'
+                },
+                'copernicus': {
+                    root: 'https://catalogue.dataspace.copernicus.eu/stac',
+                    collections: 'https://catalogue.dataspace.copernicus.eu/stac/collections',
+                    search: 'https://catalogue.dataspace.copernicus.eu/stac/search'
+                }
+            };
+
+            for (const [configKey, endpoint] of Object.entries(endpoints)) {
+                try {
+                    results.innerHTML += `<h3>Testing ${configKey}</h3>`;
+                    results.innerHTML += `<p>Fetching from: ${endpoint.root}</p>`;
+                    
+                    const response = await fetch(endpoint.root);
+                    const stacRoot = await response.json();
+                    
+                    const realId = stacRoot.id || 'NOT_FOUND';
+                    const realTitle = stacRoot.title || stacRoot.description || 'NOT_FOUND';
+                    
+                    results.innerHTML += `
+                        <div style="background: #f0f0f0; padding: 10px; margin: 10px 0;">
+                            <strong>Config Key:</strong> ${configKey}<br>
+                            <strong>Real STAC ID:</strong> ${realId}<br>
+                            <strong>Real STAC Title:</strong> ${realTitle}<br>
+                            <strong>URL should use:</strong> /browser/${realId}/collection-name
+                        </div>
+                    `;
+                } catch (error) {
+                    results.innerHTML += `
+                        <div style="background: #ffcccc; padding: 10px; margin: 10px 0;">
+                            <strong>Error for ${configKey}:</strong> ${error.message}
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        testCatalogIds();
+    </script>
+</body>
+</html>

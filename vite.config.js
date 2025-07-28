@@ -1,5 +1,4 @@
 import { defineConfig } from 'vite'
-import legacy from '@vitejs/plugin-legacy'
 import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { resolve } from 'path'
@@ -9,9 +8,6 @@ export default defineConfig({
   base: process.env.NODE_ENV === 'production' ? '/stacexplorer/' : '/',
   
   plugins: [
-    legacy({
-      targets: ['defaults', 'not IE 11']
-    }),
     
     // Bundle analyzer for optimization insights
     visualizer({

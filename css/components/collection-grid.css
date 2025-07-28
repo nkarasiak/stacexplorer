@@ -37,9 +37,16 @@
 
 /* Modal-specific title adjustments */
 #modal-collection-grid-container .collection-card-title {
-    font-size: 0.9rem;
+    font-size: 0.8rem;
     margin: 0 0 0.3rem 0;
     line-height: 1.2;
+    font-weight: 500;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+    word-break: break-word;
 }
 
 .collection-subtitle {
@@ -348,6 +355,11 @@
         gap: 1rem;
         padding: 1rem;
     }
+    
+    .collection-card-title {
+        font-size: 0.8rem;
+        line-height: 1.1;
+    }
 }
 
 @media (min-width: 1400px) {
@@ -487,16 +499,19 @@
 
 .collection-card-title {
     margin: 0;
-    font-size: 0.95rem;
-    font-weight: 400;
+    font-size: 0.85rem;
+    font-weight: 500;
     color: var(--text-color, #1f2937);
-    line-height: 1.3;
+    line-height: 1.2;
     flex: 1;
     margin-right: 0.5rem;
     overflow: hidden;
     display: -webkit-box;
-    -webkit-line-clamp: 2;
+    -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
+    word-break: break-word;
+    hyphens: auto;
 }
 
 .selected-icon {

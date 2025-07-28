@@ -33,6 +33,9 @@ export class CollectionManagerEnhanced {
         // Setup collection info button
         this.setupCollectionInfoButton();
         
+        // Setup catalog toggle listener
+        this.setupCatalogToggleListener();
+        
         // Auto-load collections from all sources on startup - defer to manual call
         // this.loadAllCollectionsOnStartup();
     }
@@ -59,6 +62,53 @@ export class CollectionManagerEnhanced {
     }
     
     /**
+     * Setup catalog toggle listener to reload collections when settings change
+     */
+    setupCatalogToggleListener() {
+        document.addEventListener('catalogToggled', (event) => {
+            console.log('📊 Catalog toggled:', event.detail);
+            
+            // Reload collections with new settings
+            console.log('🔄 Reloading collections due to catalog settings change...');
+            this.loadAllCollectionsOnStartup();
+        });
+    }
+    
+    /**
+     * Get enabled catalogs from localStorage settings
+     */
+    getEnabledCatalogs() {
+        const catalogs = ['copernicus', 'element84', 'microsoft-pc', 'planetlabs'];
+        const enabledCatalogs = [];
+        
+        catalogs.forEach(catalogKey => {
+            const savedState = localStorage.getItem(`catalog-${catalogKey}-enabled`);
+            const defaultState = catalogKey !== 'planetlabs'; // planetlabs default is false
+            const isEnabled = savedState !== null ? savedState === 'true' : defaultState;
+            
+            if (isEnabled) {
+                // Map the localStorage keys to actual source keys
+                const sourceMapping = {
+                    'copernicus': 'copernicus',
+                    'element84': 'element84', 
+                    'microsoft-pc': 'planetary',
+                    'planetlabs': 'planetlabs'
+                };
+                enabledCatalogs.push(sourceMapping[catalogKey]);
+            }
+        });
+        
+        console.log('🔍 Enabled catalogs from settings:', enabledCatalogs);
+        
+        // If no catalogs are enabled, return empty array (don't load anything)
+        if (enabledCatalogs.length === 0) {
+            console.log('⚠️ No catalogs enabled - will not load collections');
+        }
+        
+        return enabledCatalogs;
+    }
+
+    /**
      * Load collections from all sources on startup with caching
      */
     async loadAllCollectionsOnStartup() {
@@ -69,8 +119,17 @@ export class CollectionManagerEnhanced {
             // Debug: Check localStorage contents
             console.log('[DEBUG] localStorage keys:', Object.keys(localStorage).filter(k => k.includes('collections')));
             
-            // Generate cache key based on enabled providers
-            const dataSources = this.config?.appSettings?.enabledProviders || ['copernicus', 'element84'];
+            // Generate cache key based on enabled catalogs from settings
+            const dataSources = this.getEnabledCatalogs();
+            
+            // If no catalogs are enabled, clear collections and return
+            if (dataSources.length === 0) {
+                this.allCollections = [];
+                this.notificationService.showNotification('ℹ️ No catalogs enabled - collections cleared', 'info');
+                this.hideLoadingState();
+                return [];
+            }
+            
             const cacheKey = `collections_cache_${dataSources.sort().join('_')}`;
             
             // Try to load from cache first
@@ -174,8 +233,15 @@ export class CollectionManagerEnhanced {
      * @returns {Promise<Array>} Combined collections from all sources
      */
     async loadAllCollections() {
-        // Get enabled providers from config
-        const dataSources = this.config?.appSettings?.enabledProviders || ['copernicus', 'element84'];
+        // Get enabled catalogs from settings
+        const dataSources = this.getEnabledCatalogs();
+        
+        // If no catalogs are enabled, return empty array
+        if (dataSources.length === 0) {
+            console.log('⚠️ No catalogs enabled - returning empty collections');
+            return [];
+        }
+        
         const errors = [];
         
         console.log('🔄 Loading collections from all data sources in parallel...');

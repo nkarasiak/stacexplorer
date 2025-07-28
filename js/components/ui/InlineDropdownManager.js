@@ -172,6 +172,9 @@ export class InlineDropdownManager {
         // Initialize persistent preset button handler (survives DOM updates)
         this.setupPersistentPresetHandler();
         
+        // Clean up any leftover debug dropdowns first
+        this.cleanupDebugDropdowns();
+        
         // Initialize event listeners
         this.initializeInlineDropdowns();
         this.setupGlobalListeners();
@@ -179,6 +182,31 @@ export class InlineDropdownManager {
         
         // Pre-load collections in background
         setTimeout(() => this.preloadCollections(), 1000);
+        
+        // Add global cleanup function for debugging
+        window.cleanupDebugDropdowns = () => this.cleanupDebugDropdowns();
+    }
+    
+    /**
+     * Clean up any leftover debug dropdowns from previous sessions
+     */
+    cleanupDebugDropdowns() {
+        try {
+            // Remove any leftover debug dropdowns or inline dropdown containers
+            const debugDropdowns = document.querySelectorAll('.debug-inline-dropdown, .inline-dropdown-container');
+            debugDropdowns.forEach(dropdown => {
+                try {
+                    if (dropdown.parentNode) {
+                        dropdown.parentNode.removeChild(dropdown);
+                        console.log('🧹 Removed leftover debug dropdown');
+                    }
+                } catch (error) {
+                    console.warn('⚠️ Error removing debug dropdown:', error);
+                }
+            });
+        } catch (error) {
+            console.warn('⚠️ Error in cleanupDebugDropdowns:', error);
+        }
     }
     
     /**
@@ -1185,8 +1213,7 @@ export class InlineDropdownManager {
         // Set up close button handler for loading dropdown
         this.setupCloseButtonHandler(dropdown);
         
-        // Add a debug class for easier identification
-        dropdown.classList.add('debug-inline-dropdown');
+        // Debug class removed - no longer needed
         
         // Store references
         this.currentDropdown = dropdown;
@@ -1914,7 +1941,11 @@ export class InlineDropdownManager {
      * @returns {string} Formatted date
      */
     formatDateForInput(date) {
-        return date.toISOString().split('T')[0];
+        // Use local date to avoid timezone shifts
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
     }
     
     /**

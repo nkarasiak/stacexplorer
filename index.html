@@ -1822,6 +1822,9 @@
             <div class="sidebar-header">
                 <h1 id="app-logo" style="cursor: pointer;" title="Return to Homepage"><i class="material-icons">satellite_alt</i> <span>STAC Explorer</span></h1>
                 <div>
+                    <button id="settings-toggle" class="settings-toggle" title="Settings">
+                        <i class="material-icons">settings</i>
+                    </button>
                     <button id="theme-toggle" class="theme-toggle">
                         <i class="material-icons">light_mode</i>
                     </button>
@@ -4139,6 +4142,30 @@
             overflow: hidden;
         }
         
+        /* Modal Overlay */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            backdrop-filter: blur(4px);
+        }
+        
+        .modal-dialog {
+            background: var(--surface-primary, #1e1e1e);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-height: 90vh;
+            overflow-y: auto;
+            margin: 20px;
+        }
+
         .modal-header {
             display: flex;
             align-items: center;
@@ -4507,6 +4534,22 @@
             transform: translateX(24px);
         }
         
+        /* Settings Description Section */
+        .setting-description-section {
+            margin-bottom: 20px;
+            padding: 12px 16px;
+            background: var(--surface-secondary, #252525);
+            border-radius: 6px;
+            border-left: 3px solid var(--accent-color, #667eea);
+        }
+        
+        .setting-description-section p {
+            margin: 0;
+            color: var(--text-secondary, #aaaaaa);
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
         /* Theme Selector Styles */
         .theme-selector {
             background: var(--surface-primary, #1a1a1a);
@@ -4836,6 +4879,65 @@
                     <div class="setting-status" id="gpu-status-display">
                         <i class="material-icons">info</i>
                         <span id="gpu-status-text">Checking GPU acceleration status...</span>
+                    </div>
+                </div>
+                
+                <div class="settings-section">
+                    <h4><i class="material-icons">storage</i> Data Catalogs</h4>
+                    <div class="setting-description-section">
+                        <p>Enable or disable data catalogs for search. Disabled catalogs won't appear in collection dropdowns.</p>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <div class="setting-content">
+                            <div class="setting-label">Copernicus Data Space</div>
+                            <div class="setting-description">European Space Agency satellite data</div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="catalog-copernicus-toggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <div class="setting-content">
+                            <div class="setting-label">Element84 Earth Search</div>
+                            <div class="setting-description">Comprehensive Earth observation datasets</div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="catalog-element84-toggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <div class="setting-content">
+                            <div class="setting-label">Microsoft Planetary Computer</div>
+                            <div class="setting-description">Enhanced support with presigning API</div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="catalog-microsoft-toggle" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="setting-item">
+                        <div class="setting-content">
+                            <div class="setting-label">Planet Labs</div>
+                            <div class="setting-description">High-resolution commercial satellite imagery</div>
+                        </div>
+                        <div class="setting-control">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="catalog-planetlabs-toggle">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
                     </div>
                 </div>
             </div>

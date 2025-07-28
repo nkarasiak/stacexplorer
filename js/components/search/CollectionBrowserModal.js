@@ -301,6 +301,13 @@ export class CollectionBrowserModal {
                 console.log(`🚪 Modal ${this.modalId} closing due to overlay click`);
                 this.close();
             } else if (e.target === this.modal.dialog || e.target.closest('.collection-browser-modal-body')) {
+                // Don't auto-focus if clicking on form controls
+                if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION' || 
+                    e.target.closest('select') || e.target.closest('.collection-source-filter')) {
+                    console.log('🖱️ Clicked on form control - skipping auto-focus');
+                    return;
+                }
+                
                 // If clicking inside the modal body, focus the search input
                 this.focusSearchInput();
             }

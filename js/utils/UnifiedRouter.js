@@ -9,29 +9,62 @@ export class UnifiedRouter {
         this.stateManager = stateManager;
         this.isProcessingRoute = false;
         this.currentMode = 'view'; // 'view' or 'browser'
+        this.basePath = this.getBasePath();
         
-        // Route patterns for both modes
-        this.routes = {
+        // Route patterns for both modes - dynamically created to handle base path
+        this.routes = this.createRoutePatterns();
+        
+        this.initialize();
+    }
+    
+    /**
+     * Create route patterns with the correct base path
+     */
+    createRoutePatterns() {
+        const base = this.basePath.replace(/\/$/, ''); // Remove trailing slash
+        return {
             // Viewer mode routes (search/visualization) - order matters for pattern matching
-            viewRoot: /^\/viewer\/?$/,
-            viewSearch: /^\/viewer\/search\/?$/,
-            viewItem: /^\/viewer\/item\/([^\/]+)\/?$/,
-            viewCollection: /^\/viewer\/collection\/([^\/]+)\/?$/,
-            viewCatalogCollectionItem: /^\/viewer\/([^\/]+)\/([^\/]+)\/([^\/]+)\/?$/,  // /viewer/{catalogId}/{collectionId}/{itemId}
-            viewCatalogCollection: /^\/viewer\/([^\/]+)\/([^\/]+)\/?$/,  // /viewer/{catalogId}/{collectionId} - must be last
+            viewRoot: new RegExp(`^${base}/viewer/?$`),
+            viewSearch: new RegExp(`^${base}/viewer/search/?$`),
+            viewItem: new RegExp(`^${base}/viewer/item/([^/]+)/?$`),
+            viewCollection: new RegExp(`^${base}/viewer/collection/([^/]+)/?$`),
+            viewCatalogCollectionItem: new RegExp(`^${base}/viewer/([^/]+)/([^/]+)/([^/]+)/?$`),  // /viewer/{catalogId}/{collectionId}/{itemId}
+            viewCatalogCollection: new RegExp(`^${base}/viewer/([^/]+)/([^/]+)/?$`),  // /viewer/{catalogId}/{collectionId} - must be last
             
             // Browser mode routes (catalog browsing) - simplified structure
-            browserRoot: /^\/browser\/?$/,
-            browserCatalog: /^\/browser\/([^\/]+)\/?$/,                    // /browser/{catalogId}
-            browserCollection: /^\/browser\/([^\/]+)\/([^\/]+)\/?$/,       // /browser/{catalogId}/{collectionId}
-            browserItem: /^\/browser\/([^\/]+)\/([^\/]+)\/([^\/]+)\/?$/,    // /browser/{catalogId}/{collectionId}/{itemId}
+            browserRoot: new RegExp(`^${base}/browser/?$`),
+            browserCatalog: new RegExp(`^${base}/browser/([^/]+)/?$`),                    // /browser/{catalogId}
+            browserCollection: new RegExp(`^${base}/browser/([^/]+)/([^/]+)/?$`),       // /browser/{catalogId}/{collectionId}
+            browserItem: new RegExp(`^${base}/browser/([^/]+)/([^/]+)/([^/]+)/?$`),    // /browser/{catalogId}/{collectionId}/{itemId}
             
             // Legacy redirect patterns
             legacyCatalog: /^\/catalog(?:\/.*)?$/,
             legacyBrowserVerbose: /^\/browser\/catalog\/([^\/]+)(?:\/collection\/([^\/]+))?(?:\/item\/([^\/]+))?\/?$/
         };
+    }
+
+    /**
+     * Get the base path for the application (e.g., '/stacexplorer/' on GitHub Pages)
+     */
+    getBasePath() {
+        // Check if we're running on GitHub Pages
+        const hostname = window.location.hostname;
+        const pathname = window.location.pathname;
         
-        this.initialize();
+        // Detect GitHub Pages by hostname pattern and path structure
+        if (hostname.endsWith('.github.io') && pathname.startsWith('/stacexplorer/')) {
+            return '/stacexplorer';
+        }
+        
+        // For local development or other deployments
+        return '';
+    }
+    
+    /**
+     * Create a path with the correct base path prefix
+     */
+    createPath(path) {
+        return this.basePath + path;
     }
     
     initialize() {
@@ -739,12 +772,12 @@ export class UnifiedRouter {
      * Update path for view mode (search/visualization)
      */
     updateViewPath(stateChange) {
-        let newPath = '/viewer';
+        let newPath = this.createPath('/viewer');
         const params = new URLSearchParams(window.location.search);
         
         // Determine specific viewer path
         if (stateChange.type === 'item' && stateChange.itemId) {
-            newPath = `/viewer/item/${encodeURIComponent(stateChange.itemId)}`;
+            newPath = this.createPath(`/viewer/item/${encodeURIComponent(stateChange.itemId)}`);
             if (stateChange.assetKey) {
                 params.set('asset_key', stateChange.assetKey);
             }
@@ -753,15 +786,15 @@ export class UnifiedRouter {
             const catalogId = stateChange.catalogId || this.getCurrentCatalogIdSync();
             if (catalogId) {
                 // Use new catalog+collection format: /viewer/{catalogId}/{collectionId}
-                newPath = `/viewer/${encodeURIComponent(catalogId)}/${encodeURIComponent(stateChange.collection)}`;
+                newPath = this.createPath(`/viewer/${encodeURIComponent(catalogId)}/${encodeURIComponent(stateChange.collection)}`);
                 console.log('📍 Generated catalog+collection URL:', newPath);
             } else {
                 // Fallback to legacy collection-only format
-                newPath = `/viewer/collection/${encodeURIComponent(stateChange.collection)}`;
+                newPath = this.createPath(`/viewer/collection/${encodeURIComponent(stateChange.collection)}`);
                 console.log('📍 Generated legacy collection URL (no catalog):', newPath);
             }
         } else if (stateChange.search || stateChange.locationBbox || stateChange.dateStart) {
-            newPath = '/viewer/search';
+            newPath = this.createPath('/viewer/search');
         }
         
         // Update query parameters for view state
@@ -890,7 +923,7 @@ export class UnifiedRouter {
         
         // Preserve any existing query parameters
         const search = window.location.search;
-        const newUrl = search ? `/viewer${search}` : '/viewer';
+        const newUrl = search ? `${this.createPath('/viewer')}${search}` : this.createPath('/viewer');
         
         window.history.replaceState({}, '', newUrl);
         

@@ -178,7 +178,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**[🚀 Live Demo](https://nkarasiak.github.io/stacexplorer/) • [📖 STAC Spec](https://stacspec.org/) • [🛰️ Copernicus](https://dataspace.copernicus.eu/)**
+**[📖 STAC Spec](https://stacspec.org/) • [🛰️ Copernicus](https://dataspace.copernicus.eu/)**
 
 *Made with ❤️ for the Earth observation community*
 

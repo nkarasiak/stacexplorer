@@ -188,21 +188,48 @@ export class InlineDropdownManager {
     setupPersistentPresetHandler() {
         // Use event delegation on document to catch all preset button clicks
         document.addEventListener('click', (e) => {
-            // Check if clicked element is a preset button
-            const presetBtn = e.target.closest('.ai-preset-btn');
+            // Check if clicked element is a preset button (either dropdown or mini preset buttons)
+            const presetBtn = e.target.closest('.ai-preset-btn, .preset-mini-btn');
             if (!presetBtn) return;
             
             // Prevent default and stop propagation
             e.preventDefault();
             e.stopPropagation();
             
-            // Get days from data attribute
-            const days = parseInt(presetBtn.dataset.days);
-            if (isNaN(days)) return;
+            // Handle different preset types
+            let startDate, endDate;
             
-            // Calculate dates
-            const startDate = new Date();
-            const endDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+            if (presetBtn.dataset.days) {
+                const days = parseInt(presetBtn.dataset.days);
+                if (isNaN(days)) return;
+                
+                // Calculate dates (going back in time for mini buttons, forward for dropdown buttons)
+                if (presetBtn.classList.contains('preset-mini-btn')) {
+                    // Mini buttons go back in time
+                    endDate = new Date();
+                    startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+                } else {
+                    // Dropdown buttons go forward in time (existing behavior)
+                    startDate = new Date();
+                    endDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+                }
+            } else if (presetBtn.dataset.year) {
+                const year = presetBtn.dataset.year;
+                
+                if (year === 'current') {
+                    const currentYear = new Date().getFullYear();
+                    startDate = new Date(currentYear, 0, 1); // January 1st
+                    endDate = new Date(currentYear, 11, 31); // December 31st
+                } else {
+                    const yearNum = parseInt(year);
+                    if (isNaN(yearNum)) return;
+                    
+                    startDate = new Date(yearNum, 0, 1); // January 1st
+                    endDate = new Date(yearNum, 11, 31); // December 31st
+                }
+            } else {
+                return; // No valid preset data
+            }
             
             // Format dates
             const startDateStr = this.formatDateForInput(startDate);
@@ -213,6 +240,19 @@ export class InlineDropdownManager {
             const endInput = document.getElementById('date-end');
             if (startInput) startInput.value = startDateStr;
             if (endInput) endInput.value = endDateStr;
+            
+            // Update mini date fields if they exist
+            const summaryStartInput = document.getElementById('summary-start-date');
+            const summaryEndInput = document.getElementById('summary-end-date');
+            if (summaryStartInput) summaryStartInput.value = startDateStr;
+            if (summaryEndInput) summaryEndInput.value = endDateStr;
+            
+            // Add visual feedback for mini preset buttons
+            if (presetBtn.classList.contains('preset-mini-btn')) {
+                // Remove active class from all preset mini buttons and add to clicked one
+                document.querySelectorAll('.preset-mini-btn').forEach(btn => btn.classList.remove('active'));
+                presetBtn.classList.add('active');
+            }
             
             // Close any open dropdown immediately
             if (this.currentDropdown) {
@@ -1366,23 +1406,46 @@ export class InlineDropdownManager {
         dropdown.offsetHeight; // Force reflow
         
         requestAnimationFrame(() => {
-            dropdown.style.opacity = '1';
-            dropdown.style.transform = 'translateY(0) scale(1)';
+            requestAnimationFrame(() => { // Double RAF for better reliability
+                dropdown.style.opacity = '1';
+                dropdown.style.transform = 'translateY(0) scale(1)';
+            });
         });
         
         
-        // Debug: Check if dropdown is actually visible
+        // Debug: Check if dropdown is actually visible after animation completes
         setTimeout(() => {
             const finalRect = dropdown.getBoundingClientRect();
+            const computedStyle = window.getComputedStyle(dropdown);
             const isVisible = finalRect.width > 0 && finalRect.height > 0 && 
-                            window.getComputedStyle(dropdown).display !== 'none' &&
-                            window.getComputedStyle(dropdown).visibility !== 'hidden';
-            
+                            computedStyle.display !== 'none' &&
+                            computedStyle.visibility !== 'hidden' &&
+                            parseFloat(computedStyle.opacity) > 0;
             
             if (!isVisible) {
-                console.error('❌ Dropdown positioned but not visible! Check for CSS conflicts.');
+                console.warn('❌ Dropdown positioned but not visible! Attempting to fix...');
+                console.log('Debug info:', {
+                    rect: finalRect,
+                    display: computedStyle.display,
+                    visibility: computedStyle.visibility,
+                    opacity: computedStyle.opacity,
+                    zIndex: computedStyle.zIndex
+                });
+                
+                // Force visibility as fallback
+                dropdown.style.setProperty('display', 'block', 'important');
+                dropdown.style.setProperty('visibility', 'visible', 'important');
+                dropdown.style.setProperty('opacity', '1', 'important');
+                dropdown.style.setProperty('pointer-events', 'auto', 'important');
+                dropdown.style.setProperty('z-index', '999999', 'important');
+                dropdown.style.setProperty('position', 'fixed', 'important');
+                
+                // Ensure it's definitely attached to body and not trapped by overflow:hidden
+                if (dropdown.parentNode !== document.body) {
+                    document.body.appendChild(dropdown);
+                }
             }
-        }, 100);
+        }, 300); // Wait longer for animation to complete
     }
     
     /**

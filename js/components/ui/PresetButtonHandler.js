@@ -22,31 +22,68 @@ export class PresetButtonHandler {
         // Use event delegation on document to catch all preset button clicks
         document.addEventListener('click', (e) => {
             // Check if clicked element is a preset button
-            const presetBtn = e.target.closest('.ai-preset-btn');
+            const presetBtn = e.target.closest('.preset-mini-btn');
             if (!presetBtn) return;
             
             // Prevent default and stop propagation
             e.preventDefault();
             e.stopPropagation();
             
-            // Get days from data attribute
-            const days = parseInt(presetBtn.dataset.days);
-            if (isNaN(days)) return;
+            // Remove active class from all preset buttons and add to clicked one
+            document.querySelectorAll('.preset-mini-btn').forEach(btn => btn.classList.remove('active'));
+            presetBtn.classList.add('active');
             
-            this.handlePresetButtonClick(days);
+            // Handle different preset types
+            if (presetBtn.dataset.days) {
+                const days = parseInt(presetBtn.dataset.days);
+                if (!isNaN(days)) {
+                    this.handleDaysPreset(days);
+                }
+            } else if (presetBtn.dataset.year) {
+                this.handleYearPreset(presetBtn.dataset.year);
+            }
             
         }, true); // Use capture phase to ensure it runs first
     }
     
     /**
-     * Handle preset button click
+     * Handle days preset button click
      * @param {number} days - Number of days for the preset
      */
-    handlePresetButtonClick(days) {
-        // Calculate dates
-        const startDate = new Date();
-        const endDate = new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+    handleDaysPreset(days) {
+        // Calculate dates (going back in time)
+        const endDate = new Date();
+        const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
         
+        this.updateDatesAndTriggerSearch(startDate, endDate);
+    }
+    
+    /**
+     * Handle year preset button click
+     * @param {string} year - Year preset ('current' or specific year like '2024')
+     */
+    handleYearPreset(year) {
+        let startDate, endDate;
+        
+        if (year === 'current') {
+            const currentYear = new Date().getFullYear();
+            startDate = new Date(currentYear, 0, 1); // January 1st
+            endDate = new Date(currentYear, 11, 31); // December 31st
+        } else {
+            const yearNum = parseInt(year);
+            if (isNaN(yearNum)) return;
+            
+            startDate = new Date(yearNum, 0, 1); // January 1st
+            endDate = new Date(yearNum, 11, 31); // December 31st
+        }
+        
+        this.updateDatesAndTriggerSearch(startDate, endDate);
+    }
+    
+    /**
+     * Common method to update dates and trigger search
+     */
+    updateDatesAndTriggerSearch(startDate, endDate) {
         // Format dates
         const startDateStr = this.formatDateForInput(startDate);
         const endDateStr = this.formatDateForInput(endDate);

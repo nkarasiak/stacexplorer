@@ -14,7 +14,7 @@ This project is configured to automatically deploy to GitHub Pages using GitHub 
    - GitHub Actions will build the project using Vite and deploy to GitHub Pages
 
 3. **Access Your Site:**
-   - Your site will be available at: `https://nkarasiak.github.io/stacexplorer/`
+   - Your site will be available at: `https://[your-username].github.io/stacexplorer/`
    - The deployment URL will also be shown in the Actions tab
 
 ## Local Development vs Production

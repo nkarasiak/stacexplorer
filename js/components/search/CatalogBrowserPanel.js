@@ -18,6 +18,20 @@ export class CatalogBrowserPanel {
         this.init();
     }
     
+    /**
+     * Create application path with correct base path for GitHub Pages
+     */
+    createAppPath(path) {
+        const hostname = window.location.hostname;
+        const pathname = window.location.pathname;
+        
+        if (hostname.endsWith('.github.io') && pathname.startsWith('/stacexplorer/')) {
+            return '/stacexplorer' + path;
+        }
+        
+        return path;
+    }
+    
     init() {
         this.createPanel();
         this.setupEventListeners();
@@ -149,7 +163,7 @@ export class CatalogBrowserPanel {
         
         // Add click handler for the STAC Explorer logo to return to homepage
         document.getElementById('app-logo').addEventListener('click', () => {
-            window.location.href = '/viewer';
+            window.location.href = this.createAppPath('/viewer');
         });
         
         // Add click handler for Browser header to navigate to root
@@ -1748,7 +1762,7 @@ export class CatalogBrowserPanel {
         console.log('📍 Retrieved collectionId:', collectionId);
         
         if (catalogId && collectionId) {
-            const viewerUrl = `/viewer/${catalogId}/${collectionId}/${item.id}`;
+            const viewerUrl = this.createAppPath(`/viewer/${catalogId}/${collectionId}/${item.id}`);
             console.log('🔗 Navigating to viewer to show item on map:', viewerUrl);
             window.location.href = viewerUrl;
         } else {

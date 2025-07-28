@@ -128,6 +128,9 @@ class MapManager {
             if (this.useDeckGL) {
                 await this.initializeDeckGL();
             }
+            
+            // Set up URL parameter updates for map interactions
+            this.setupMapURLUpdates();
 
             this.isInitialized = true;
             
@@ -215,6 +218,42 @@ class MapManager {
             attributes: true,
             attributeFilter: ['class']
         });
+    }
+    
+    /**
+     * Set up URL parameter updates for map interactions
+     */
+    setupMapURLUpdates() {
+        if (!this.map) return;
+        
+        // Debounce URL updates to avoid too many calls
+        let updateTimeout;
+        const debounceMs = 300; // Wait 300ms after last interaction
+        
+        const updateMapURL = () => {
+            clearTimeout(updateTimeout);
+            updateTimeout = setTimeout(() => {
+                const center = this.map.getCenter();
+                const zoom = this.map.getZoom();
+                
+                // Update URL parameters
+                const url = new URL(window.location);
+                url.searchParams.set('mapCenter', `${center.lat.toFixed(6)},${center.lng.toFixed(6)}`);
+                url.searchParams.set('mapZoom', zoom.toFixed(2));
+                
+                // Update URL without refreshing the page
+                window.history.replaceState({}, '', url);
+                
+                console.log('🗺️ Updated map URL:', {
+                    center: `${center.lat.toFixed(6)},${center.lng.toFixed(6)}`,
+                    zoom: zoom.toFixed(2)
+                });
+            }, debounceMs);
+        };
+        
+        // Listen for map move events (pan and zoom)
+        this.map.on('moveend', updateMapURL);
+        this.map.on('zoomend', updateMapURL);
     }
 
     /**

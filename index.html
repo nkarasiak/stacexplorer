@@ -10,14 +10,14 @@
     <meta name="keywords" content="STAC, satellite imagery, earth observation, geospatial data, remote sensing, GIS, satellite data, planetary computer, sentinel, landsat">
     <meta name="author" content="STAC Explorer">
     <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://nkarasiak.github.io/stacexplorer/">
+    <link rel="canonical" href="" id="canonical-url">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://nkarasiak.github.io/stacexplorer/">
+    <meta property="og:url" content="" id="og-url">
     <meta property="og:title" content="STAC Explorer - Discover Satellite Earth Observation Data">
     <meta property="og:description" content="Modern web interface to explore satellite imagery and Earth observation data from multiple STAC catalogs. Search by location, time, and data type.">
-    <meta property="og:image" content="https://nkarasiak.github.io/stacexplorer/static/images/earthdaily_satellite.webp">
+    <meta property="og:image" content="" id="og-image">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta property="og:site_name" content="STAC Explorer">
@@ -25,10 +25,10 @@
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://nkarasiak.github.io/stacexplorer/">
+    <meta property="twitter:url" content="" id="twitter-url">
     <meta property="twitter:title" content="STAC Explorer - Discover Satellite Earth Observation Data">
     <meta property="twitter:description" content="Modern web interface to explore satellite imagery and Earth observation data from multiple STAC catalogs.">
-    <meta property="twitter:image" content="https://nkarasiak.github.io/stacexplorer/static/images/earthdaily_satellite.webp">
+    <meta property="twitter:image" content="" id="twitter-image">
     <meta property="twitter:creator" content="@your_twitter_handle">
     
     <!-- Additional SEO -->
@@ -170,7 +170,7 @@
         "@type": "WebApplication",
         "name": "STAC Explorer",
         "description": "Modern web interface to explore satellite imagery and Earth observation data from multiple STAC catalogs. Search, filter, and visualize geospatial datasets.",
-        "url": "https://nkarasiak.github.io/stacexplorer/",
+        "url": "",
         "applicationCategory": "GeospatialApplication",
         "operatingSystem": "Web Browser",
         "offers": {
@@ -194,7 +194,7 @@
             "sentinel",
             "landsat"
         ],
-        "screenshot": "https://nkarasiak.github.io/stacexplorer/static/images/earthdaily_satellite.webp",
+        "screenshot": "",
         "datePublished": "2024-01-01",
         "dateModified": "2024-12-24",
         "inLanguage": "en-US",
@@ -2482,11 +2482,52 @@
             const appLogo = document.getElementById('app-logo');
             if (appLogo) {
                 appLogo.addEventListener('click', () => {
-                    // Navigate to homepage (/viewer)
-                    window.location.href = '/viewer';
+                    // Navigate to homepage (/viewer) - with correct base path
+                    const basePath = window.location.hostname.endsWith('.github.io') && 
+                                   window.location.pathname.startsWith('/stacexplorer/') ? '/stacexplorer' : '';
+                    window.location.href = basePath + '/viewer';
                 });
                 
             }
+            
+            // Dynamically set meta tag URLs based on current location
+            const currentUrl = window.location.origin + window.location.pathname;
+            const imageUrl = window.location.origin + window.location.pathname.replace(/\/$/, '') + '/static/images/earthdaily_satellite.webp';
+            
+            // Update canonical URL
+            const canonicalLink = document.getElementById('canonical-url');
+            if (canonicalLink) canonicalLink.href = currentUrl;
+            
+            // Update Open Graph URLs
+            const ogUrl = document.getElementById('og-url');
+            if (ogUrl) ogUrl.content = currentUrl;
+            
+            const ogImage = document.getElementById('og-image');
+            if (ogImage) ogImage.content = imageUrl;
+            
+            // Update Twitter URLs
+            const twitterUrl = document.getElementById('twitter-url');
+            if (twitterUrl) twitterUrl.content = currentUrl;
+            
+            const twitterImage = document.getElementById('twitter-image');
+            if (twitterImage) twitterImage.content = imageUrl;
+            
+            // Update JSON-LD structured data
+            const scriptTag = document.querySelector('script[type="application/ld+json"]');
+            if (scriptTag) {
+                try {
+                    const jsonData = JSON.parse(scriptTag.textContent);
+                    jsonData.url = currentUrl;
+                    jsonData.screenshot = imageUrl;
+                    scriptTag.textContent = JSON.stringify(jsonData, null, 2);
+                } catch (e) {
+                    console.warn('Could not update JSON-LD structured data:', e);
+                }
+            }
+            
+            // Update sitemap.xml dynamically (for client-side processing)
+            // Note: This won't affect the actual sitemap.xml file, but can help with dynamic content
+            console.log('Dynamic URLs set for current location:', currentUrl);
         });
     </script>
     
@@ -3587,7 +3628,8 @@
                 });
             }
             
-            // Initialize preset button handlers
+            // Initialize preset button handlers - DEPRECATED: Now handled by InlineDropdownManager
+            /*
             const initializePresetButtons = () => {
                 // Helper function to update both summary and form inputs
                 const updateDateInputs = (startDate, endDate) => {
@@ -3697,12 +3739,11 @@
                     });
                 }
                 
-            };
+            }; // End of deprecated initializePresetButtons function
+            */
             
             // Initialize preset buttons immediately and with delays
-            initializePresetButtons();
-            setTimeout(initializePresetButtons, 100);
-            setTimeout(initializePresetButtons, 500);
+            // Preset buttons are now handled by InlineDropdownManager
             
             // Additional check to prevent scrolling issues
             setTimeout(() => {
@@ -4505,10 +4546,11 @@
         }
         
         .mini-date-input {
-            background: var(--surface-elevated, #2a2a2a);
-            border: 1px solid var(--border-color, #404040);
+            /* Default to light theme styles since light is the default */
+            background: #ffffff;
+            border: 1px solid #d1d5db;
             border-radius: 6px;
-            color: var(--text-primary, #ffffff);
+            color: #1f2937;
             font-size: 11px;
             padding: 2px 4px;
             width: 70px;
@@ -4522,14 +4564,14 @@
         
         .mini-date-input:focus {
             outline: none;
-            border-color: var(--accent-color, #667eea);
+            border-color: #667eea;
             box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
-            background: var(--surface-elevated-hover, #333333);
+            background: #f9fafb;
         }
         
         .mini-date-input:hover {
-            border-color: var(--border-hover, #555555);
-            background: var(--surface-elevated-hover, #333333);
+            border-color: #9ca3af;
+            background: #f9fafb;
         }
         
         .date-separator {
@@ -4656,22 +4698,24 @@
         }
         
         /* Light theme adjustments */
-        .light-theme .mini-date-input {
-            background: #ffffff !important;
-            border: 1px solid #d1d5db !important;
-            color: #1f2937 !important;
+        /* Light theme styles are now the default - no overrides needed */
+        
+        /* Dark theme adjustments for date inputs */
+        .dark-theme .mini-date-input {
+            background: #2a2a2a !important;
+            border: 1px solid #404040 !important;
+            color: #ffffff !important;
         }
         
-        .light-theme .mini-date-input:focus {
-            outline: none !important;
+        .dark-theme .mini-date-input:focus {
             border-color: #667eea !important;
             box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
-            background: #f9fafb !important;
+            background: #333333 !important;
         }
         
-        .light-theme .mini-date-input:hover {
-            border-color: #9ca3af !important;
-            background: #f9fafb !important;
+        .dark-theme .mini-date-input:hover {
+            border-color: #555555 !important;
+            background: #333333 !important;
         }
         
         /* Light theme adjustments for location input */
@@ -4733,23 +4777,6 @@
         }
         
         /* Dark theme adjustments - only apply when NOT in light theme */
-        @media (prefers-color-scheme: dark) {
-            body:not(.light-theme) .mini-date-input {
-                background: #1a1a1a;
-                border-color: #404040;
-                color: #ffffff;
-            }
-            
-            body:not(.light-theme) .mini-date-input:focus {
-                border-color: #667eea;
-                background: #252525;
-            }
-            
-            body:not(.light-theme) .mini-date-input:hover {
-                border-color: #555555;
-                background: #252525;
-            }
-        }
     </style>
 
     <!-- Search History Dropdown Portal (outside all containers to avoid clipping) -->

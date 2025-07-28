@@ -153,7 +153,7 @@ export class CollectionBrowserTrigger {
     setupEventListeners() {
         if (!this.triggerButton) return;
         
-        // Main click handler to open modal
+        // Main click handler to open panel
         this.triggerButton.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -165,14 +165,14 @@ export class CollectionBrowserTrigger {
                 return;
             }
             
-            this.openModal();
+            this.openPanel();
         });
         
         // Keyboard support
         this.triggerButton.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                this.openModal();
+                this.openPanel();
             }
         });
         
@@ -203,37 +203,79 @@ export class CollectionBrowserTrigger {
     }
     
     /**
-     * Open the collection browser modal
+     * Open the collection browser panel
      */
-    async openModal() {
-        if (this.modal) {
-            // Show loading state
-            this.setLoadingState(true);
-            
-            try {
-                // Force reset modal state if needed
-                if (this.modal.isOpen) {
-                    console.warn('⚠️ Modal thinks it\'s still open, forcing reset');
-                    this.modal.isOpen = false;
-                }
-                
-                await this.modal.open();
-                console.log('✅ Modal opened successfully');
-            } catch (error) {
-                console.error('Error opening collection browser modal:', error);
-                // Reset modal state on error
-                if (this.modal) {
-                    this.modal.isOpen = false;
-                }
-            } finally {
-                // Ensure loading state is cleared
-                setTimeout(() => {
-                    this.setLoadingState(false);
-                    console.log('✅ Loading state cleared for trigger button');
-                }, 100);
+    async openPanel() {
+        console.log('🔍 Opening collection browser panel...');
+        
+        // Show loading state
+        this.setLoadingState(true);
+        
+        try {
+            // Get UIManager instance from global scope
+            const uiManager = window.stacExplorer?.uiManager;
+            if (!uiManager) {
+                console.error('❌ UIManager not available for opening panel');
+                return;
             }
-        } else {
-            console.error('❌ Modal not available for opening');
+            
+            // Show the panel using UIManager
+            uiManager.showBrowseCollectionsPanel();
+            
+            // Initialize the collection browser content in the panel if modal exists
+            if (this.modal) {
+                // Move the collection grid content to the panel
+                await this.initializeCollectionBrowserInPanel();
+            }
+            
+            console.log('✅ Panel opened successfully');
+        } catch (error) {
+            console.error('Error opening collection browser panel:', error);
+        } finally {
+            // Ensure loading state is cleared
+            setTimeout(() => {
+                this.setLoadingState(false);
+                console.log('✅ Loading state cleared for trigger button');
+            }, 100);
+        }
+    }
+    
+    /**
+     * Initialize collection browser content in the panel
+     */
+    async initializeCollectionBrowserInPanel() {
+        try {
+            const panelContent = document.getElementById('browse-collections-content');
+            if (!panelContent) {
+                console.error('❌ Panel content container not found');
+                return;
+            }
+            
+            // Initialize grid selector if not already done
+            if (!this.modal.gridSelector) {
+                await this.modal.initializeGridSelector();
+            }
+            
+            // Move the grid selector into the panel
+            const gridElement = document.getElementById('collection-grid-container');
+            if (gridElement) {
+                panelContent.appendChild(gridElement);
+                console.log('✅ Collection grid moved to panel');
+            }
+            
+            // Load collections
+            const collections = this.modal.collectionManager.getAllCollections();
+            if (collections && collections.length > 0) {
+                await this.modal.gridSelector.loadCollections(collections);
+                
+                // Sync current selection
+                const selectedId = this.modal.collectionManager.getSelectedCollection();
+                if (selectedId) {
+                    this.modal.gridSelector.setSelectedCollection(selectedId);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error initializing collection browser in panel:', error);
         }
     }
     

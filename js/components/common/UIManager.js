@@ -103,6 +103,17 @@ export class UIManager {
         // Initialize catalog toggles
         this.initializeCatalogToggles();
         
+        // Browse Collections panel
+        const browseCollectionsCloseBtn = document.getElementById('browse-collections-close-btn');
+        if (browseCollectionsCloseBtn) {
+            browseCollectionsCloseBtn.addEventListener('click', () => {
+                console.log('🔧 Browse Collections close button clicked');
+                this.hideBrowseCollectionsPanel();
+            });
+        } else {
+            console.warn('🔧 Browse Collections close button not found');
+        }
+        
         // Sidebar toggle
         document.getElementById('sidebar-toggle').addEventListener('click', () => {
             this.toggleSidebar();
@@ -479,6 +490,45 @@ export class UIManager {
         // Remove escape key handler
         if (this.handleSettingsPanelEscape) {
             document.removeEventListener('keydown', this.handleSettingsPanelEscape);
+        }
+    }
+    
+    /**
+     * Show browse collections panel
+     */
+    showBrowseCollectionsPanel() {
+        console.log('🔧 showBrowseCollectionsPanel called');
+        const browseCollectionsPanel = document.getElementById('browse-collections-panel');
+        const mapDiv = document.getElementById('map');
+        
+        if (browseCollectionsPanel && mapDiv) {
+            console.log('🔧 Showing browse collections panel');
+            
+            // Hide map and show browse collections panel
+            mapDiv.style.display = 'none';
+            browseCollectionsPanel.style.display = 'block';
+            
+            console.log('🔧 Browse collections panel shown');
+        } else {
+            console.error('🔧 Browse collections panel or map element not found!');
+        }
+    }
+    
+    /**
+     * Hide browse collections panel
+     */
+    hideBrowseCollectionsPanel() {
+        console.log('🔧 hideBrowseCollectionsPanel called');
+        
+        const browseCollectionsPanel = document.getElementById('browse-collections-panel');
+        const mapDiv = document.getElementById('map');
+        
+        if (browseCollectionsPanel && mapDiv) {
+            // Hide browse collections panel and show map
+            browseCollectionsPanel.style.display = 'none';
+            mapDiv.style.display = 'block';
+            
+            console.log('🔧 Browse collections panel hidden, map restored');
         }
     }
     

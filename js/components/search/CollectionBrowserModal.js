@@ -569,10 +569,16 @@ export class CollectionBrowserModal {
             'success'
         );
         
-        // Close modal immediately
-        this.close();
+        // Close panel instead of modal
+        const uiManager = window.stacExplorer?.uiManager;
+        if (uiManager) {
+            uiManager.hideBrowseCollectionsPanel();
+        } else {
+            // Fallback to closing modal if UIManager not available
+            this.close();
+        }
         
-        console.log('✅ Collection selected and modal closed:', collection.id);
+        console.log('✅ Collection selected and panel/modal closed:', collection.id);
     }
     
     /**

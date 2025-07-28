@@ -173,6 +173,7 @@ async function initAppForBrowserMode() {
         window.stacExplorer.itemViewPage = itemViewPage;
         window.stacExplorer.viewModeToggle = viewModeToggle;
         window.stacExplorer.notificationService = notificationService;
+        window.stacExplorer.uiManager = uiManager;
         window.stacExplorer.mapManager = mapManager;
         window.stacExplorer.searchPanel = searchPanel;
         window.stacExplorer.inlineDropdownManager = inlineDropdownManager;
@@ -678,6 +679,7 @@ async function initAppNormal() {
             interactiveTutorial,
             geocodingService,
             offlineManager,
+            uiManager,
             config: CONFIG,
             // Visualization system
             visualizationPanel,

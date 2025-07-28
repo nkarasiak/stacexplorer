@@ -5197,6 +5197,110 @@ html.dark-theme .modal-body .info-group div {
     color: var(--primary-color, #667eea);
 }
 
+/* Browse Collections Panel */
+.browse-collections-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--background-color, #ffffff);
+    z-index: 1000;
+    overflow: hidden;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.browse-collections-panel .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem 2rem;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    background: var(--background-color, #ffffff);
+    flex-shrink: 0;
+}
+
+.browse-collections-panel .panel-header h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color, #1f2937);
+}
+
+.browse-collections-panel .panel-header h2 .material-icons {
+    font-size: 1.75rem;
+    color: var(--primary-color, #667eea);
+}
+
+.browse-collections-panel .panel-close-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--primary-color, #667eea);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.browse-collections-panel .panel-close-btn:hover {
+    background: var(--primary-color-hover, #5a67d8);
+    transform: translateY(-1px);
+}
+
+.browse-collections-panel .panel-close-btn .material-icons {
+    font-size: 1.125rem;
+}
+
+.browse-collections-panel .panel-content {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+}
+
+/* Collections grid in browse panel should scroll with margins included */
+.browse-collections-panel .collections-grid {
+    overflow-y: auto !important;
+    height: calc(100vh - 200px) !important;
+    margin: 1rem;
+    padding: 0 !important;
+}
+
+/* Collection grid container in browse panel */
+.browse-collections-panel #collection-grid-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.browse-collections-panel #collection-grid-container .collection-grid-selector {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.browse-collections-panel #collection-grid-container .collection-grid-header {
+    flex-shrink: 0;
+    margin: 1rem 1rem 0 1rem;
+}
+
+.browse-collections-panel #collection-grid-container .collections-grid {
+    flex: 1;
+    min-height: 0;
+}
+
 /* Dark theme for settings panel */
 html.dark-theme .settings-panel {
     background: var(--background-dark, #1f2937);
@@ -5205,6 +5309,20 @@ html.dark-theme .settings-panel {
 html.dark-theme .settings-header {
     background: var(--background-dark, #1f2937);
     border-bottom-color: var(--border-dark, #374151);
+}
+
+/* Dark theme for browse collections panel */
+html.dark-theme .browse-collections-panel {
+    background: var(--background-dark, #1f2937);
+}
+
+html.dark-theme .browse-collections-panel .panel-header {
+    background: var(--background-dark, #1f2937);
+    border-bottom-color: var(--border-dark, #374151);
+}
+
+html.dark-theme .browse-collections-panel .panel-header h2 {
+    color: var(--text-dark, #f9fafb);
 }
 
 html.dark-theme .settings-header h2 {

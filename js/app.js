@@ -30,6 +30,7 @@ import { SatelliteAnimation } from './components/ui/SatelliteAnimation.js';
 import { InteractiveTutorial } from './components/ui/InteractiveTutorial.js';
 import { ViewModeToggle } from './components/ui/ViewModeToggle.js';
 import { CatalogBrowserPanel } from './components/search/CatalogBrowserPanel.js';
+import { ItemViewPage } from './components/pages/ItemViewPage.js';
 // Removed: URL state integration is now handled by UnifiedStateManager
 // Removed inline AI search imports - only using the full-screen version now
 
@@ -57,6 +58,9 @@ async function initAppForBrowserMode() {
         
         // Initialize catalog browser
         const catalogBrowser = new CatalogBrowserPanel(apiClient, notificationService, CONFIG);
+        
+        // Initialize item view page
+        const itemViewPage = new ItemViewPage(apiClient, notificationService, CONFIG);
         
         // Initialize view mode toggle (needed for UI state) - set to catalog mode for browser
         const viewModeToggle = new ViewModeToggle();
@@ -89,6 +93,7 @@ async function initAppForBrowserMode() {
         window.stacExplorer.unifiedStateManager = stateManager;
         window.stacExplorer.unifiedRouter = unifiedRouter;
         window.stacExplorer.catalogBrowser = catalogBrowser;
+        window.stacExplorer.itemViewPage = itemViewPage;
         window.stacExplorer.viewModeToggle = viewModeToggle;
         window.stacExplorer.notificationService = notificationService;
         
@@ -251,6 +256,7 @@ async function initAppNormal() {
         
         // Initialize catalog browser and view mode toggle
         const catalogBrowser = new CatalogBrowserPanel(apiClient, notificationService, CONFIG);
+        const itemViewPage = new ItemViewPage(apiClient, notificationService, CONFIG);
         const viewModeToggle = new ViewModeToggle();
         
         // Set up catalog browser event handlers
@@ -296,6 +302,7 @@ async function initAppNormal() {
         window.stacExplorer.unifiedStateManager = stateManager;
         window.stacExplorer.unifiedRouter = unifiedRouter;
         window.stacExplorer.catalogBrowser = catalogBrowser;
+        window.stacExplorer.itemViewPage = itemViewPage;
         window.stacExplorer.viewModeToggle = viewModeToggle;
         
         // Manual URL restoration as a fallback after everything is loaded

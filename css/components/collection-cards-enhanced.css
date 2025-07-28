@@ -29,23 +29,41 @@
 .collection-card-image {
     position: relative;
     height: 180px;
-    overflow: hidden;
+    overflow: hidden !important;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px 12px 0 0 !important;
+    width: 100% !important;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 .collection-card-image .image-container {
     position: relative;
-    width: 100%;
+    width: 100% !important;
     height: 100%;
-    overflow: hidden;
+    overflow: hidden !important;
+    border-radius: 12px 12px 0 0 !important;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
 }
 
 .collection-card-image img {
-    width: 100%;
+    width: 100% !important;
     height: 100%;
     object-fit: cover;
     transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     filter: contrast(1.1) saturate(1.2);
+    border-radius: 12px 12px 0 0 !important;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    border: none;
+    display: block;
 }
 
 .collection-card-image img.fallback-image {
@@ -54,7 +72,7 @@
 }
 
 .collection-card:hover .collection-card-image img {
-    transform: scale(1.05);
+    /* Removed zoom effect to prevent overflow */
 }
 
 .image-gradient {

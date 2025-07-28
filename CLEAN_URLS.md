@@ -4,13 +4,13 @@ This implementation provides a unified routing system with clear separation betw
 
 ## URL Structure
 
-### Search/Visualization Mode (`/view/`)
+### Search/Visualization Mode (`/viewer/`)
 ```
-/view                                                   # Default search interface
-/view/search                                            # Search with filters
-/view/collection/{collectionId}                        # Search within collection
-/view/{catalogId}/{collectionId}                       # Search within collection from specific catalog
-/view/item/{itemId}                                     # View specific item
+/viewer                                                 # Default search interface
+/viewer/search                                          # Search with filters
+/viewer/collection/{collectionId}                      # Search within collection
+/viewer/{catalogId}/{collectionId}                     # Search within collection from specific catalog
+/viewer/item/{itemId}                                   # View specific item
 ```
 
 ### Catalog Browser Mode (`/browser/`)
@@ -25,11 +25,11 @@ This implementation provides a unified routing system with clear separation betw
 
 **Search/Visualization:**
 ```
-http://localhost:8000/view                              # Main search interface
-http://localhost:8000/view/search                      # Search with parameters  
-http://localhost:8000/view/collection/sentinel-2-l2a   # Search within Sentinel-2
-http://localhost:8000/view/microsoft-pc/sentinel-1-rtc # Search Sentinel-1 from Microsoft catalog
-http://localhost:8000/view/item/LC08_L2SP_199024_20220101_20220101_02_T1  # View item
+http://localhost:8000/viewer                           # Main search interface
+http://localhost:8000/viewer/search                    # Search with parameters  
+http://localhost:8000/viewer/collection/sentinel-2-l2a # Search within Sentinel-2
+http://localhost:8000/viewer/microsoft-pc/sentinel-1-rtc # Search Sentinel-1 from Microsoft catalog
+http://localhost:8000/viewer/item/LC08_L2SP_199024_20220101_20220101_02_T1  # View item
 ```
 
 **Catalog Browser:**
@@ -75,7 +75,7 @@ python -m http.server 8000
 
 ### Mode-Specific Navigation
 
-**Search/Visualization Mode (`/view/`):**
+**Search/Visualization Mode (`/viewer/`):**
 - Search interface with filters and parameters
 - Item visualization and analysis
 - Map-based exploration
@@ -104,11 +104,11 @@ python -m http.server 8000
 ### URL Mapping
 ```javascript
 // Search/Visualization routes
-/view                                   → Default search interface
-/view/search                           → Search with filters
-/view/collection/{id}                  → Search within collection
-/view/{catalogId}/{collectionId}       → Search within collection from specific catalog
-/view/item/{id}                        → View specific item
+/viewer                                → Default search interface
+/viewer/search                         → Search with filters
+/viewer/collection/{id}                → Search within collection
+/viewer/{catalogId}/{collectionId}     → Search within collection from specific catalog
+/viewer/item/{id}                      → View specific item
 
 // Catalog browser routes  
 /browser                               → Catalog selection view
@@ -149,9 +149,9 @@ planetary   → detected real ID
 2. **Navigate using clean URLs:**
    
    **For Search/Visualization:**
-   - Visit `http://localhost:8000/view` for the main search interface
-   - Search parameters appear as query strings in `/view/search`
-   - Item views use `/view/item/{itemId}` paths
+   - Visit `http://localhost:8000/viewer` for the main search interface
+   - Search parameters appear as query strings in `/viewer/search`
+   - Item views use `/viewer/item/{itemId}` paths
    
    **For Catalog Browsing:**
    - Visit `http://localhost:8000/browser` to see available catalogs

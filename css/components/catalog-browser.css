@@ -3,7 +3,7 @@
  * Uses same design language as main STAC Explorer interface
  */
 
-/* Catalog Browser Panel - Main Container */
+/* Catalog Browser Panel - Enable full page scrolling */
 .catalog-browser-panel {
     position: fixed;
     top: 0;
@@ -16,6 +16,11 @@
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+
+/* Ensure body doesn't scroll when catalog browser is active */
+body:has(.catalog-browser-panel:not(.hidden)) {
     overflow: hidden;
 }
 
@@ -37,7 +42,7 @@
     display: flex;
     flex-direction: column;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
+    overflow: visible;
 }
 
 /* Sidebar Header - Matching Main App */
@@ -126,39 +131,47 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow: visible;
     background: var(--surface-primary, rgba(255, 255, 255, 0.8));
 }
 
-/* Main Content Area */
+/* Main Content Area - Enable full page scrolling */
 .catalog-browser-main {
     flex: 1;
     display: flex;
     flex-direction: column;
     background: var(--bg-primary, #ffffff);
     position: relative;
-    overflow: hidden;
-    z-index: 1;
-}
-
-/* Content Container - Matching Main App Structure */
-.catalog-content-container {
-    flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
-    padding: 1.5rem;
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
+    z-index: 1;
+    height: 100vh;
+}
+
+/* Content Container - Full page scroll instead of div scroll */
+.catalog-content-container {
+    flex: 1;
+    overflow: visible;
+    padding: 0;
+    height: 100%;
 }
 
 /* Catalog Tree View - Main Content Display Area */
 #catalog-tree-view {
     width: 100%;
     height: 100%;
-    min-height: 100%;
     display: flex;
     flex-direction: column;
     flex: 1;
+    padding: 1.5rem;
+    box-sizing: border-box;
+    min-height: 0; /* Allow flex item to shrink */
+}
+
+/* Exception for specific elements that need controlled overflow */
+#catalog-tree-view .catalog-card-thumbnail img,
+#catalog-tree-view .catalog-card-content {
+    overflow: hidden !important;
 }
 
 /* Card Container - Using Main App Card Style */
@@ -180,7 +193,7 @@
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 16px 16px 0 0;
+    border-radius: 12px 12px 0 0;
     padding: 16px 20px;
     display: flex;
     align-items: center;
@@ -311,6 +324,8 @@
     display: flex;
     flex-direction: column;
     height: 100%;
+    box-sizing: border-box;
+    width: 100%;
 }
 
 .collection-card:hover {
@@ -326,9 +341,17 @@
 .collection-card-image {
     position: relative;
     height: 200px;
-    overflow: hidden;
+    overflow: hidden !important;
     background: #f8f9fa;
     flex-shrink: 0;
+    border-radius: 12px 12px 0 0 !important;
+    width: 100% !important;
+    box-sizing: border-box;
+    margin: 0 !important;
+    padding: 0 !important;
+    contain: layout size;
+    max-width: 100%;
+    border: none;
 }
 
 .collection-card-image img {
@@ -336,41 +359,39 @@
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
+    display: block;
+    margin: 0;
+    padding: 0;
+    border: none;
+    outline: none;
+    max-width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 12px 12px 0 0 !important;
+    box-sizing: border-box;
 }
 
 .collection-card:hover .collection-card-image img {
-    transform: scale(1.05);
+    /* Removed zoom effect */
 }
 
 /* Title Overlay on Image */
 .collection-title-overlay {
     position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: linear-gradient(
-        180deg,
-        rgba(0, 0, 0, 0) 0%,
-        rgba(0, 0, 0, 0.3) 30%,
-        rgba(0, 0, 0, 0.7) 70%,
-        rgba(0, 0, 0, 0.85) 100%
-    );
-    backdrop-filter: blur(8px) saturate(150%);
-    -webkit-backdrop-filter: blur(8px) saturate(150%);
-    padding: 1.5rem 1rem 1rem;
+    bottom: 1rem;
+    left: 1rem;
+    background: rgba(0, 0, 0, 0.75);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
     transition: all 0.3s ease;
+    width: fit-content;
+    max-width: calc(100% - 2rem);
 }
 
 .collection-card:hover .collection-title-overlay {
-    background: linear-gradient(
-        180deg,
-        rgba(0, 0, 0, 0) 0%,
-        rgba(0, 0, 0, 0.4) 30%,
-        rgba(0, 0, 0, 0.8) 70%,
-        rgba(0, 0, 0, 0.9) 100%
-    );
-    backdrop-filter: blur(12px) saturate(180%);
-    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    background: rgba(0, 0, 0, 0.85);
+    transform: translateY(-2px);
 }
 
 .collection-card-overlay {
@@ -465,7 +486,6 @@
     z-index: 10 !important;
     position: relative !important;
     max-height: none !important;
-    overflow: visible !important;
 }
 
 /* Dark theme overrides */
@@ -510,6 +530,8 @@
     flex: 1;
     align-content: start;
     grid-auto-rows: minmax(320px, auto);
+    overflow: visible;
+    min-height: 0;
 }
 
 /* Glassmorphic Catalog Cards */
@@ -518,8 +540,8 @@
         rgba(255, 255, 255, 0.25) 0%, 
         rgba(255, 255, 255, 0.15) 50%,
         rgba(255, 255, 255, 0.1) 100%);
-    backdrop-filter: blur(20px) saturate(180%);
-    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    backdrop-filter: blur(8px) saturate(120%);
+    -webkit-backdrop-filter: blur(8px) saturate(120%);
     border: 1px solid rgba(255, 255, 255, 0.3);
     border-radius: 16px;
     overflow: hidden;
@@ -532,7 +554,6 @@
         inset 0 1px 0 rgba(255, 255, 255, 0.4),
         inset 0 -1px 0 rgba(255, 255, 255, 0.1);
     min-height: 320px;
-    max-height: 400px;
     display: flex;
     flex-direction: column;
     height: auto;
@@ -546,8 +567,8 @@
         rgba(255, 255, 255, 0.2) 100%);
     border-color: rgba(255, 255, 255, 0.5);
     transform: translateY(-4px) scale(1.02);
-    backdrop-filter: blur(25px) saturate(200%);
-    -webkit-backdrop-filter: blur(25px) saturate(200%);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
     box-shadow: 
         0 12px 40px rgba(0, 0, 0, 0.15),
         0 4px 24px rgba(0, 0, 0, 0.1),
@@ -772,20 +793,22 @@
     height: 100%;
 }
 
-/* Thumbnail Container - Same as ResultsPanel */
+/* Thumbnail Container - Exact same as ResultsPanel */
 .thumbnail-container {
     position: relative;
     width: 100%;
-    margin-bottom: 8px;
+    margin-bottom: 8px;  /* Reduced from 10px */
 }
 
 .dataset-thumbnail {
     width: 100%;
-    height: 120px;
-    object-fit: none;
-    object-position: center center;
+    height: 120px;  /* Keep same height */
+    object-fit: cover;
     border-radius: var(--border-radius-sm);
-    margin-bottom: 10px;
+    margin-bottom: 10px;  /* Reduced from 12px */
+    background: var(--surface-elevated);
+    box-shadow: var(--shadow-md);
+    transition: var(--transition-fast);
 }
 
 .dataset-thumbnail:hover {
@@ -793,9 +816,25 @@
     box-shadow: var(--shadow-lg);
 }
 
-/* Override lazy loading opacity */
+/* Lazy Loading States for Mobile Performance - Same as ResultsPanel */
 .dataset-thumbnail.lazy-loading {
-    opacity: 1 !important;
+    background: var(--surface-elevated);
+    opacity: 1;
+    animation: skeleton-loading 1.5s ease-in-out infinite alternate;
+}
+
+.dataset-thumbnail.lazy-error {
+    background: var(--surface-elevated);
+    position: relative;
+}
+
+.dataset-thumbnail.lazy-error::after {
+    content: '⚠️';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
 }
 
 /* Thumbnail Overlay - Same as ResultsPanel */

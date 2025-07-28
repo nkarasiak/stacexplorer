@@ -149,7 +149,7 @@ export class CatalogBrowserPanel {
         
         // Add click handler for the STAC Explorer logo to return to homepage
         document.getElementById('app-logo').addEventListener('click', () => {
-            window.location.href = '/view';
+            window.location.href = '/viewer';
         });
         
         document.getElementById('retry-catalog').addEventListener('click', () => {
@@ -168,6 +168,10 @@ export class CatalogBrowserPanel {
     show(skipAutoLoad = false) {
         this.isVisible = true;
         this.panel.classList.remove('hidden');
+        
+        // Enable full page scrolling for catalog browser
+        document.body.style.overflow = 'auto';
+        document.documentElement.style.overflow = 'auto';
         
         // Force clear any stuck loading states
         this.forceResetLoadingStates();
@@ -217,6 +221,11 @@ export class CatalogBrowserPanel {
     hide() {
         this.isVisible = false;
         this.panel.classList.add('hidden');
+        
+        // Restore app's no-scroll behavior
+        document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
+        
         this.notifyStateChange();
     }
     
@@ -1512,8 +1521,8 @@ export class CatalogBrowserPanel {
                         </div>
                         <img data-src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail lazy-loading">
                         <div class="thumbnail-overlay">
-                            <button class="info-btn details-btn" title="Show details">
-                                <i class="material-icons">info</i>
+                            <button class="info-btn details-btn" title="View item page">
+                                <i class="material-icons">open_in_new</i>
                             </button>
                             <button class="info-btn viz-btn" title="High Resolution Preview">
                                 <i class="material-icons">visibility</i>
@@ -1534,8 +1543,8 @@ export class CatalogBrowserPanel {
                             <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                         </div>
                         <div class="thumbnail-overlay">
-                            <button class="info-btn details-btn" title="Show details">
-                                <i class="material-icons">info</i>
+                            <button class="info-btn details-btn" title="View item page">
+                                <i class="material-icons">open_in_new</i>
                             </button>
                             <button class="info-btn viz-btn" title="High Resolution Preview">
                                 <i class="material-icons">visibility</i>
@@ -1562,8 +1571,8 @@ export class CatalogBrowserPanel {
                                 <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                             </div>
                             <div class="thumbnail-overlay">
-                                <button class="info-btn details-btn" title="Show details">
-                                    <i class="material-icons">info</i>
+                                <button class="info-btn details-btn" title="View item page">
+                                    <i class="material-icons">open_in_new</i>
                                 </button>
                                 <button class="info-btn viz-btn" title="High Resolution Preview">
                                     <i class="material-icons">visibility</i>
@@ -1615,7 +1624,7 @@ export class CatalogBrowserPanel {
         const detailsBtn = element.querySelector('.details-btn');
         const vizBtn = element.querySelector('.viz-btn');
         
-        // Main card click - view on map
+        // Main card click - view item page
         if (clickableCard) {
             clickableCard.addEventListener('click', (e) => {
                 // Don't trigger if clicking on buttons
@@ -1623,10 +1632,8 @@ export class CatalogBrowserPanel {
                     return;
                 }
                 
-                console.log('🗺️ [CATALOG-BROWSER] Adding item to map:', item.id);
-                if (this.onItemSelect) {
-                    this.onItemSelect(item);
-                }
+                console.log('🔗 [CATALOG-BROWSER] Navigating to item page:', item.id);
+                this.viewItem(item);
             });
         }
         
@@ -1720,19 +1727,30 @@ export class CatalogBrowserPanel {
     }
     
     viewItem(item) {
-        // Remove any existing item from path and add the new item
-        this.currentPath = this.currentPath.filter(p => p.type !== 'item');
+        // Navigate to the item page instead of updating breadcrumb
+        console.log('📍 viewItem called with:', item.id);
+        console.log('📍 Current path:', this.currentPath);
         
-        // Add the new item to path
-        this.currentPath.push({
-            type: 'item',
-            data: item
-        });
+        const catalogId = this.getCurrentCatalogId();
+        const collectionId = this.getCurrentCollectionId();
         
-        this.updateBreadcrumb();
+        console.log('📍 Retrieved catalogId:', catalogId);
+        console.log('📍 Retrieved collectionId:', collectionId);
         
-        if (this.onItemSelect) {
-            this.onItemSelect(item);
+        if (catalogId && collectionId) {
+            const viewerUrl = `/viewer/${catalogId}/${collectionId}/${item.id}`;
+            console.log('🔗 Navigating to viewer to show item on map:', viewerUrl);
+            window.location.href = viewerUrl;
+        } else {
+            console.warn('❌ Cannot navigate to item page - missing catalog or collection ID');
+            console.warn('  catalogId:', catalogId);
+            console.warn('  collectionId:', collectionId);
+            console.warn('  currentPath:', this.currentPath);
+            
+            // Fallback to current behavior
+            if (this.onItemSelect) {
+                this.onItemSelect(item);
+            }
         }
     }
     

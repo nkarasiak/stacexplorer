@@ -63,7 +63,7 @@ class STACExplorerHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         
         # Handle SPA routes that should serve index.html
         spa_routes = [
-            'view',     # /view and /view/...
+            'viewer',   # /viewer and /viewer/...
             'browser',  # /browser and /browser/...
             'catalog',  # Legacy /catalog/... routes (will be redirected)
         ]
@@ -118,17 +118,17 @@ def run_server(port=8000, directory=None):
             print(f"STAC Explorer server running at http://localhost:{port}")
             print(f"Serving directory: {os.getcwd()}")
             print("\nExample clean URLs:")
-            print("\nSearch/Visualization Mode (/view/):")
-            print(f"   - http://localhost:{port}/view")
-            print(f"   - http://localhost:{port}/view/search")
-            print(f"   - http://localhost:{port}/view/collection/sentinel-2-l2a")
-            print(f"   - http://localhost:{port}/view/item/LC08_L2SP_199024_20220101_20220101_02_T1")
+            print("\nSearch/Visualization Mode (/viewer/):")
+            print(f"   - http://localhost:{port}/viewer")
+            print(f"   - http://localhost:{port}/viewer/search")
+            print(f"   - http://localhost:{port}/viewer/collection/sentinel-2-l2a")
+            print(f"   - http://localhost:{port}/viewer/item/LC08_L2SP_199024_20220101_20220101_02_T1")
             print("\nCatalog Browser Mode (/browser/):")
             print(f"   - http://localhost:{port}/browser")
             print(f"   - http://localhost:{port}/browser/cdse-stac")
             print(f"   - http://localhost:{port}/browser/earth-search-aws/sentinel-2-l2a")
             print(f"   - http://localhost:{port}/browser/microsoft-pc/landsat-c2-l2/LC08_L2SP_199024_20220101_20220101_02_T1")
-            print("\nSPA routing enabled - all /view/* and /browser/* URLs will serve index.html")
+            print("\nSPA routing enabled - all /viewer/* and /browser/* URLs will serve index.html")
             print("   Press Ctrl+C to stop the server\n")
             
             httpd.serve_forever()

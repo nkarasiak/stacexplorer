@@ -1837,20 +1837,22 @@ select, select * {
     }
 
 /* Modal Dialog - Enhanced for Better Functionality */
+/* Modern 2025 Modal Dialog - Space Optimized */
 .modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: var(--overlay-background);
-    backdrop-filter: var(--glass-blur-sm) var(--glass-saturate, saturate(100%));
-    -webkit-backdrop-filter: var(--glass-blur-sm) var(--glass-saturate, saturate(100%));
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(12px) saturate(120%);
+    -webkit-backdrop-filter: blur(12px) saturate(120%);
     display: none;
     justify-content: center;
     align-items: center;
     z-index: 9999;
-    animation: fadeIn 0.3s ease;
+    animation: fadeInBackdrop 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    padding: 20px;
 }
 
 .modal-overlay.active {
@@ -1858,17 +1860,295 @@ select, select * {
 }
 
 .modal-dialog {
-    background: var(--surface-elevated);
-    backdrop-filter: var(--glass-blur) var(--glass-saturate, saturate(100%));
-    -webkit-backdrop-filter: var(--glass-blur) var(--glass-saturate, saturate(100%));
-    border: 1px solid var(--border-primary);
-    border-radius: var(--border-radius);
+    background: linear-gradient(145deg, 
+        rgba(255, 255, 255, 0.95) 0%, 
+        rgba(255, 255, 255, 0.9) 100%);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.15),
+        0 10px 30px rgba(0, 0, 0, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    width: 95vw;
+    max-width: 1200px;
+    height: 90vh;
+    max-height: 800px;
+    display: flex;
+    flex-direction: column;
+    animation: slideInUp 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow: hidden;
+    position: relative;
 }
 
+/* Modern Modal Animations */
+@keyframes fadeInBackdrop {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(12px) saturate(120%);
+        -webkit-backdrop-filter: blur(12px) saturate(120%);
+    }
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(60px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Modern Modal Header */
+.modal-header {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.1) 0%, 
+        rgba(255, 255, 255, 0.05) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.3) 50%, 
+        transparent 100%);
+}
+
+.modal-header-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex: 1;
+    min-width: 0;
+}
+
+.modal-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a202c;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: -0.02em;
+    line-height: 1.3;
+}
+
+.modal-title .material-icons {
+    font-size: 1.75rem;
+    color: #667eea;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.item-collection-badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    color: #64748b;
+}
+
+.modal-close:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(239, 68, 68, 0.2);
+}
+
+.modal-close .material-icons {
+    font-size: 1.25rem;
+}
+
+/* Optimized Modal Body */
+.modal-body {
+    flex: 1;
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+}
+
+#modal-content {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 24px;
+    scroll-behavior: smooth;
+}
+
+/* Custom Scrollbar */
+#modal-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+#modal-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+#modal-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 4px;
+    opacity: 0.7;
+}
+
+#modal-content::-webkit-scrollbar-thumb:hover {
+    opacity: 1;
+}
+
+/* Modern Modal Footer */
+.modal-footer {
+    background: linear-gradient(135deg, 
+        rgba(255, 255, 255, 0.08) 0%, 
+        rgba(255, 255, 255, 0.04) 100%);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+    gap: 16px;
+}
+
+.footer-actions-left,
+.footer-actions-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Enhanced Button Styles */
+.md-btn {
+    padding: 12px 20px;
+    border-radius: 12px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.md-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        transparent, 
+        rgba(255, 255, 255, 0.2), 
+        transparent);
+    transition: left 0.5s;
+}
+
+.md-btn:hover::before {
+    left: 100%;
+}
+
+.md-btn-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    color: #64748b;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.md-btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #475569;
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.md-btn-primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3);
+}
+
+.md-btn-primary:hover {
+    background: linear-gradient(135deg, #5a67d8, #6b46c1);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
+}
+
+.md-btn .material-icons {
+    font-size: 1.1rem;
+}
+
+/* Dark Theme Support */
 html.dark-theme .modal-dialog {
-    background: var(--surface-elevated) !important;
-    border-color: var(--border-primary) !important;
-    box-shadow: var(--elevated-shadow) !important;
+    background: linear-gradient(145deg, 
+        rgba(30, 41, 59, 0.95) 0%, 
+        rgba(30, 41, 59, 0.9) 100%) !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 
+        0 20px 60px rgba(0, 0, 0, 0.4),
+        0 10px 30px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+html.dark-theme .modal-title {
+    color: #f1f5f9 !important;
 }
 
 html.dark-theme .modal-overlay,

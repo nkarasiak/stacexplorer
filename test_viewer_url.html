@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Viewer URL</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .log { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Test Viewer URL Processing</h1>
+    
+    <div>
+        <p><strong>Test URL:</strong> <code>/viewer/microsoft-pc/sentinel-1-rtc/S1A_IW_GRDH_1SDV_20250713T092822_20250713T092849_060063_rtc</code></p>
+        <button onclick="testRouteMatching()">Test Route Matching</button>
+        <button onclick="testCatalogLookup()">Test Catalog Lookup</button>
+        <button onclick="testFullWorkflow()">Test Full Workflow</button>
+    </div>
+    
+    <div id="output"></div>
+
+    <script type="module">
+        // Import the router class (simulate)
+        class MockUnifiedRouter {
+            constructor() {
+                this.routes = {
+                    viewCatalogCollectionItem: /^\/viewer\/([^\/]+)\/([^\/]+)\/([^\/]+)\/?$/, 
+                    viewCatalogCollection: /^\/viewer\/([^\/]+)\/([^\/]+)\/?$/ 
+                };
+            }
+            
+            matchRoute(path) {
+                for (const [routeName, pattern] of Object.entries(this.routes)) {
+                    const match = path.match(pattern);
+                    if (match) {
+                        return {
+                            name: routeName,
+                            matches: match.slice(1),
+                            path: path,
+                            mode: routeName.startsWith('browser') ? 'browser' : 'view'
+                        };
+                    }
+                }
+                return null;
+            }
+            
+            async getCatalogConfig(catalogId) {
+                const config = {
+                    stacEndpoints: {
+                        planetary: {
+                            root: 'https://planetarycomputer.microsoft.com/api/stac/v1',
+                            collections: 'https://planetarycomputer.microsoft.com/api/stac/v1/collections',
+                            search: 'https://planetarycomputer.microsoft.com/api/stac/v1/search'
+                        }
+                    }
+                };
+                
+                const catalogs = [];
+                for (const [key, endpoint] of Object.entries(config.stacEndpoints)) {
+                    try {
+                        const response = await fetch(endpoint.root);
+                        const stacRoot = await response.json();
+                        
+                        catalogs.push({
+                            id: stacRoot.id || key,
+                            name: stacRoot.title || stacRoot.description || key,
+                            endpoint: endpoint,
+                            url: endpoint.root,
+                            configKey: key
+                        });
+                    } catch (error) {
+                        catalogs.push({
+                            id: key,
+                            name: key,
+                            endpoint: endpoint,
+                            url: endpoint.root,
+                            configKey: key
+                        });
+                    }
+                }
+                
+                let catalog = catalogs.find(c => c.id === catalogId);
+                
+                if (!catalog) {
+                    const legacyAliases = {
+                        'copernicus': 'cdse-stac',
+                        'element84': 'earth-search-aws', 
+                        'planetary': 'microsoft-pc'
+                    };
+                    
+                    const realId = legacyAliases[catalogId];
+                    if (realId) {
+                        catalog = catalogs.find(c => c.id === realId);
+                    }
+                }
+                
+                return catalog || null;
+            }
+        }
+        
+        const router = new MockUnifiedRouter();
+        
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `log ${type}`;
+            div.innerHTML = message;
+            output.appendChild(div);
+        }
+        
+        window.testRouteMatching = function() {
+            log('<strong>Testing Route Matching</strong>');
+            const testUrl = '/viewer/microsoft-pc/sentinel-1-rtc/S1A_IW_GRDH_1SDV_20250713T092822_20250713T092849_060063_rtc';
+            
+            const route = router.matchRoute(testUrl);
+            if (route) {
+                log(`✅ Route matched: ${route.name}`, 'success');
+                log(`📍 catalogId: ${route.matches[0]}`);
+                log(`📍 collectionId: ${route.matches[1]}`);
+                log(`📍 itemId: ${route.matches[2]}`);
+            } else {
+                log('❌ No route matched', 'error');
+            }
+        };
+        
+        window.testCatalogLookup = async function() {
+            log('<strong>Testing Catalog Lookup</strong>');
+            try {
+                const catalog = await router.getCatalogConfig('microsoft-pc');
+                if (catalog) {
+                    log(`✅ Catalog found: ${catalog.name}`, 'success');
+                    log(`📍 ID: ${catalog.id}`);
+                    log(`📍 Endpoint: ${catalog.endpoint.root}`);
+                } else {
+                    log('❌ Catalog not found', 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+            }
+        };
+        
+        window.testFullWorkflow = async function() {
+            log('<strong>Testing Full Workflow</strong>');
+            const testUrl = '/viewer/microsoft-pc/sentinel-1-rtc/S1A_IW_GRDH_1SDV_20250713T092822_20250713T092849_060063_rtc';
+            
+            try {
+                // Step 1: Route matching
+                log('Step 1: Route matching...');
+                const route = router.matchRoute(testUrl);
+                if (!route) {
+                    throw new Error('Route not matched');
+                }
+                log(`✅ Route: ${route.name}`, 'success');
+                
+                const [catalogId, collectionId, itemId] = route.matches;
+                
+                // Step 2: Catalog lookup
+                log('Step 2: Catalog lookup...');
+                const catalog = await router.getCatalogConfig(catalogId);
+                if (!catalog) {
+                    throw new Error('Catalog not found');
+                }
+                log(`✅ Catalog: ${catalog.name}`, 'success');
+                
+                // Step 3: API client test
+                log('Step 3: Testing API endpoints...');
+                
+                // Test collections endpoint
+                const collectionsResponse = await fetch(catalog.endpoint.collections);
+                if (!collectionsResponse.ok) {
+                    throw new Error(`Collections API failed: ${collectionsResponse.status}`);
+                }
+                const collectionsData = await collectionsResponse.json();
+                const collection = collectionsData.collections.find(c => c.id === collectionId);
+                if (!collection) {
+                    throw new Error(`Collection '${collectionId}' not found`);
+                }
+                log(`✅ Collection found: ${collection.title}`, 'success');
+                
+                // Test item endpoint
+                const itemUrl = `${catalog.endpoint.root}/collections/${collectionId}/items/${itemId}`;
+                const itemResponse = await fetch(itemUrl);
+                if (!itemResponse.ok) {
+                    throw new Error(`Item API failed: ${itemResponse.status}`);
+                }
+                const itemData = await itemResponse.json();
+                log(`✅ Item found: ${itemData.id}`, 'success');
+                log(`📍 Item datetime: ${itemData.properties?.datetime}`, 'success');
+                
+                log('🎉 <strong>All tests passed! The URL should work correctly.</strong>', 'success');
+                
+            } catch (error) {
+                log(`❌ Workflow failed: ${error.message}`, 'error');
+            }
+        };
+        
+        // Clear output function
+        window.clearOutput = function() {
+            document.getElementById('output').innerHTML = '';
+        };
+    </script>
+    
+    <button onclick="clearOutput()">Clear Output</button>
+</body>
+</html>

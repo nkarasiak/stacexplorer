@@ -82,6 +82,10 @@ export class ResultsPanel {
                 </div>
                 <div class="modal-footer">
                     <div class="footer-actions-left">
+                        <button class="md-btn md-btn-primary" id="view-on-map-btn">
+                            <i class="material-icons">map</i>
+                            View on Map
+                        </button>
                         <button class="md-btn md-btn-secondary" id="copy-item-btn">
                             <i class="material-icons">content_copy</i>
                             Copy Item Info
@@ -120,7 +124,8 @@ export class ResultsPanel {
             content: modalOverlay.querySelector('#modal-content'),
             title: modalOverlay.querySelector('#item-title'),
             collectionBadge: modalOverlay.querySelector('#item-collection-badge'),
-            copyItemBtn: modalOverlay.querySelector('#copy-item-btn')
+            copyItemBtn: modalOverlay.querySelector('#copy-item-btn'),
+            viewOnMapBtn: modalOverlay.querySelector('#view-on-map-btn')
         };
         
         // Setup enhanced event listeners
@@ -134,6 +139,11 @@ export class ResultsPanel {
         // Copy item button
         this.modal.copyItemBtn.addEventListener('click', () => {
             this.copyItemInfo();
+        });
+        
+        // View on Map button
+        this.modal.viewOnMapBtn.addEventListener('click', () => {
+            this.viewItemOnMap();
         });
     }
     
@@ -1595,6 +1605,36 @@ export class ResultsPanel {
             console.error('❌ Error copying item info:', error);
             this.notificationService.showNotification(
                 'Failed to copy item information', 
+                'error'
+            );
+        }
+    }
+
+    /**
+     * View current item on map by navigating to viewer URL
+     */
+    async viewItemOnMap() {
+        try {
+            if (!this.currentItem) {
+                console.warn('No current item to display on map');
+                return;
+            }
+
+            console.log('🗺️ Navigating to viewer for item:', this.currentItem.id);
+            
+            // Get current URL and replace /browser/ with /viewer/
+            const currentUrl = window.location.href;
+            const viewerUrl = currentUrl.replace('/browser/', '/viewer/');
+            
+            console.log('🔗 Navigating to viewer URL:', viewerUrl);
+            
+            // Navigate to the viewer URL
+            window.location.href = viewerUrl;
+            
+        } catch (error) {
+            console.error('❌ Error navigating to viewer:', error);
+            this.notificationService.showNotification(
+                'Failed to navigate to viewer', 
                 'error'
             );
         }

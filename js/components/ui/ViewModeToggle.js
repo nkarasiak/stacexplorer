@@ -30,11 +30,11 @@ export class ViewModeToggle {
         
         toggle.innerHTML = `
             <div class="toggle-container">
-                <button id="map-mode-btn" class="toggle-btn active">
+                <button id="map-mode-btn" class="toggle-btn active" style="display: none;">
                     <i class="material-icons">map</i>
                     <span>Map Search</span>
                 </button>
-                <button id="catalog-mode-btn" class="toggle-btn">
+                <button id="catalog-mode-btn" class="toggle-btn" style="display: none;">
                     <i class="material-icons">folder_open</i>
                     <span>Catalog Browse</span>
                 </button>

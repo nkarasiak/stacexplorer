@@ -152,6 +152,16 @@ export class CatalogBrowserPanel {
             window.location.href = '/viewer';
         });
         
+        // Add click handler for Browser header to navigate to root
+        const browserHeader = document.querySelector('.browser-section-header h2');
+        if (browserHeader) {
+            browserHeader.style.cursor = 'pointer';
+            browserHeader.title = 'Return to Catalogs';
+            browserHeader.addEventListener('click', () => {
+                this.navigateToRoot();
+            });
+        }
+        
         document.getElementById('retry-catalog').addEventListener('click', () => {
             this.loadCurrentLevel();
         });
@@ -169,9 +179,9 @@ export class CatalogBrowserPanel {
         this.isVisible = true;
         this.panel.classList.remove('hidden');
         
-        // Enable full page scrolling for catalog browser
-        document.body.style.overflow = 'auto';
-        document.documentElement.style.overflow = 'auto';
+        // Allow normal page scrolling for catalog browser
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
         
         // Force clear any stuck loading states
         this.forceResetLoadingStates();
@@ -222,9 +232,9 @@ export class CatalogBrowserPanel {
         this.isVisible = false;
         this.panel.classList.add('hidden');
         
-        // Restore app's no-scroll behavior
-        document.body.style.overflow = 'hidden';
-        document.documentElement.style.overflow = 'hidden';
+        // Allow normal scrolling when hidden
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
         
         this.notifyStateChange();
     }
@@ -1790,21 +1800,17 @@ export class CatalogBrowserPanel {
         
         console.log('🍞 Updating breadcrumb with path:', this.currentPath);
         
-        // Always start with "Catalogs"
-        const home = document.createElement('button');
-        home.className = 'breadcrumb-item';
-        home.innerHTML = '<i class="material-icons">home</i> Catalogs';
-        home.addEventListener('click', () => {
-            this.navigateToRoot();
-        });
-        container.appendChild(home);
+        // No home breadcrumb - Browser icon handles root navigation
         
         // Build breadcrumb based on current path
         this.currentPath.forEach((pathItem, index) => {
-            const separator = document.createElement('span');
-            separator.className = 'breadcrumb-separator';
-            separator.textContent = '>';
-            container.appendChild(separator);
+            // Add separator before each item except the first
+            if (index > 0) {
+                const separator = document.createElement('span');
+                separator.className = 'breadcrumb-separator';
+                separator.textContent = '>';
+                container.appendChild(separator);
+            }
             
             const crumb = document.createElement('button');
             crumb.className = 'breadcrumb-item';
@@ -1851,6 +1857,8 @@ export class CatalogBrowserPanel {
     navigateToPath(index) {
         this.currentPath = this.currentPath.slice(0, index + 1);
         this.loadCurrentLevel();
+        this.updateBreadcrumb();
+        this.notifyStateChange();
     }
     
     loadCurrentLevel() {

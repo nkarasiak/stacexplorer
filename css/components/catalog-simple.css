@@ -479,8 +479,28 @@
 }
 
 /* Dark theme support */
+[data-theme="dark"] .collections-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .collections-header:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
+    box-shadow: 
+        0 16px 48px rgba(0, 0, 0, 0.2),
+        0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
 [data-theme="dark"] .collections-header h2 {
-    color: #f1f5f9;
+    background: linear-gradient(135deg, #e2e8f0 0%, #a0a0a0 50%, #6b7280 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="dark"] .collections-header h2::after {
+    background: linear-gradient(90deg, #8b5cf6, #6366f1);
 }
 
 [data-theme="dark"] .search-input {
@@ -508,8 +528,119 @@
     color: #f1f5f9;
 }
 
+[data-theme="dark"] .items-controls span {
+    color: #a0a0a0;
+}
+
+[data-theme="dark"] .header-controls {
+    color: var(--text-secondary-dark, #a0a0a0);
+}
+
 [data-theme="dark"] .empty-state {
     color: #cbd5e1;
+}
+
+/* Light theme styles for catalog simple */
+[data-theme="light"] .collections-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+    border-color: rgba(0, 0, 0, 0.06);
+    box-shadow: 
+        0 4px 16px rgba(0, 0, 0, 0.04),
+        0 1px 0 rgba(255, 255, 255, 1),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+[data-theme="light"] .collections-header:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(241, 245, 249, 0.95) 100%);
+    box-shadow: 
+        0 8px 24px rgba(0, 0, 0, 0.06),
+        0 1px 0 rgba(255, 255, 255, 1),
+        inset 0 1px 0 rgba(255, 255, 255, 1);
+}
+
+[data-theme="light"] .collections-header h2 {
+    background: linear-gradient(135deg, #1f2937 0%, #374151 50%, #4b5563 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+[data-theme="light"] .collections-header h2::after {
+    background: linear-gradient(90deg, #4f46e5, #6366f1);
+}
+
+[data-theme="light"] .search-input {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: var(--text-primary-light, #1f2937);
+}
+
+[data-theme="light"] .search-input:focus {
+    background: rgba(255, 255, 255, 1);
+    border-color: var(--primary-600, #4f46e5);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+}
+
+[data-theme="light"] .items-section {
+    background: var(--bg-primary-light, #ffffff);
+    color: var(--text-primary-light, #1f2937);
+}
+
+[data-theme="light"] .items-header h3 {
+    color: var(--text-primary-light, #1f2937);
+}
+
+[data-theme="light"] .items-controls select {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.1);
+    color: var(--text-primary-light, #1f2937);
+}
+
+[data-theme="light"] .items-controls select:focus {
+    border-color: var(--primary-600, #4f46e5);
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+}
+
+[data-theme="light"] .items-controls span {
+    color: var(--text-secondary-light, #6b7280);
+}
+
+[data-theme="light"] .header-controls {
+    color: var(--text-secondary-light, #6b7280);
+}
+
+[data-theme="light"] .empty-state {
+    color: var(--text-secondary-light, #6b7280);
+}
+
+[data-theme="light"] .empty-state button {
+    background: var(--primary-600, #4f46e5);
+    color: white;
+}
+
+[data-theme="light"] .empty-state button:hover {
+    background: var(--primary-700, #4338ca);
+}
+
+/* Light theme view toggle and buttons */
+[data-theme="light"] .view-toggle {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .view-btn {
+    color: var(--text-secondary-light, #6b7280);
+}
+
+[data-theme="light"] .view-btn:hover {
+    color: var(--text-primary-light, #1f2937);
+    background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="light"] .view-btn.active {
+    color: white;
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
 }
 
 /* Ultra-Responsive Collections Grid - 2025 Design */

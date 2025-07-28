@@ -46,49 +46,126 @@ export async function initializeApp() {
   await initApp();
 }
 
-// Minimal initialization for browser deep links
+// Full initialization for browser mode - now compatible with viewer mode
 async function initAppForBrowserMode() {
     try {
-        console.log('🚀 Fast initialization for browser mode');
+        console.log('🚀 Full initialization for browser mode (compatible with viewer)');
         
-        // Initialize only essential services
+        // Initialize all services (same as viewer mode)
         const notificationService = new NotificationService();
         const uiManager = new UIManager();
         const apiClient = new STACApiClient();
         
-        // Initialize catalog browser
-        const catalogBrowser = new CatalogBrowserPanel(apiClient, notificationService, CONFIG);
+        // Initialize map manager (hidden for browser mode but fully functional)
+        const mapManager = new MapManager();
         
-        // Initialize item view page
+        // Initialize catalog selector first (will be updated with collection manager)
+        const catalogSelector = new CatalogSelector(apiClient, null, notificationService);
+        
+        // Initialize collection manager
+        const collectionManager = new CollectionManagerEnhanced(apiClient, notificationService, catalogSelector, CONFIG);
+        
+        // Update catalog selector with collection manager
+        catalogSelector.collectionManager = collectionManager;
+        
+        // Initialize filter manager (needs container element)
+        const filterContainer = document.getElementById('smart-filters-container') || 
+                               document.getElementById('search-container') || 
+                               document.querySelector('.sidebar-content') ||
+                               document.body; // Ultimate fallback
+        const filterManager = new FilterManager(filterContainer, notificationService);
+        
+        // Initialize results panel (without inline dropdown manager initially)
+        const resultsPanel = new ResultsPanel(
+            apiClient,
+            notificationService,
+            mapManager,
+            notificationService,
+            null // Will be updated below
+        );
+        
+        // Initialize search form
+        const searchForm = new SearchForm(mapManager, null);
+        
+        // Initialize search panel
+        const searchPanel = new CardSearchPanel(
+            apiClient, 
+            resultsPanel, 
+            catalogSelector,
+            collectionManager, 
+            searchForm,
+            notificationService
+        );
+        
+        // Initialize Inline Dropdown Manager
+        const inlineDropdownManager = new InlineDropdownManager(
+            apiClient,
+            searchPanel,
+            collectionManager,
+            mapManager,
+            notificationService
+        );
+        
+        // Update results panel with inline dropdown manager
+        resultsPanel.inlineDropdownManager = inlineDropdownManager;
+        
+        // Initialize collection selector integration
+        const collectionSelectorIntegration = new CollectionSelectorIntegration(
+            collectionManager, 
+            apiClient, 
+            notificationService, 
+            CONFIG
+        );
+        
+        // Load collections
+        await collectionManager.loadAllCollectionsOnStartup();
+        
+        // Update filters for collections
+        if (collectionManager && collectionManager.allCollections && collectionManager.allCollections.length > 0) {
+            filterManager.updateFiltersForCollections(collectionManager.allCollections);
+        }
+        
+        // Update search form with inline dropdown manager
+        if (searchForm.inlineDropdownManager === null) {
+            searchForm.inlineDropdownManager = inlineDropdownManager;
+        }
+        
+        // Initialize catalog browser and item view page
+        const catalogBrowser = new CatalogBrowserPanel(apiClient, notificationService, CONFIG);
         const itemViewPage = new ItemViewPage(apiClient, notificationService, CONFIG);
         
-        // Initialize view mode toggle (needed for UI state) - set to catalog mode for browser
+        // Initialize view mode toggle - set to catalog mode for browser
         const viewModeToggle = new ViewModeToggle();
-        viewModeToggle.setMode('catalog', true); // Set to catalog mode silently
+        viewModeToggle.setMode('catalog', true);
         
-        // Initialize minimal state manager for routing
+        // Initialize full state manager with all components
         const stateManager = new UnifiedStateManager({
-            mapManager: null, // Not needed for browser mode
-            searchPanel: null,
-            inlineDropdownManager: null,
+            mapManager,
+            searchPanel,
+            inlineDropdownManager,
             catalogBrowser,
             viewModeToggle,
             notificationService
         });
         
-        // Hide map and search UI for browser mode
+        // For browser mode, hide map initially but allow toggling
         const mapContainer = document.getElementById('map');
-        const searchContainer = document.querySelector('.sidebar');
         if (mapContainer) mapContainer.style.display = 'none';
-        if (searchContainer) searchContainer.style.display = 'none';
         
-        // Initialize router for deep link handling
+        // Allow sidebar to be visible in browser mode for toggling between modes
+        const searchContainer = document.querySelector('.sidebar');
+        if (searchContainer) {
+            // Keep sidebar visible but initially collapsed/minimized for browser mode
+            searchContainer.style.display = 'block';
+        }
+        
+        // Initialize router
         const unifiedRouter = new UnifiedRouter(stateManager);
         
-        // Ensure catalog browser is shown for browser mode
-        catalogBrowser.show(true); // Skip auto-load
+        // Show catalog browser for browser mode
+        catalogBrowser.show(true);
         
-        // Make components globally accessible
+        // Make all components globally accessible (same as viewer mode)
         if (!window.stacExplorer) window.stacExplorer = {};
         window.stacExplorer.unifiedStateManager = stateManager;
         window.stacExplorer.unifiedRouter = unifiedRouter;
@@ -96,8 +173,36 @@ async function initAppForBrowserMode() {
         window.stacExplorer.itemViewPage = itemViewPage;
         window.stacExplorer.viewModeToggle = viewModeToggle;
         window.stacExplorer.notificationService = notificationService;
+        window.stacExplorer.mapManager = mapManager;
+        window.stacExplorer.searchPanel = searchPanel;
+        window.stacExplorer.inlineDropdownManager = inlineDropdownManager;
+        window.stacExplorer.collectionManager = collectionManager;
+        window.stacExplorer.apiClient = apiClient;
+        window.stacExplorer.resultsPanel = resultsPanel;
+        window.stacExplorer.catalogSelector = catalogSelector;
+        window.stacExplorer.filterManager = filterManager;
+        window.stacExplorer.searchForm = searchForm;
         
-        console.log('✅ Fast browser mode initialization complete');
+        // Set up view mode change handlers to show/hide UI elements in browser mode
+        viewModeToggle.onModeChange = (mode) => {
+            const mapContainer = document.getElementById('map');
+            const sidebarContent = document.querySelector('.sidebar-content');
+            
+            if (mode === 'map') {
+                // Show map and search UI
+                if (mapContainer) mapContainer.style.display = 'block';
+                if (sidebarContent) sidebarContent.style.display = 'block';
+                // Hide catalog browser
+                catalogBrowser.hide();
+            } else if (mode === 'catalog') {
+                // Hide map, show catalog browser
+                if (mapContainer) mapContainer.style.display = 'none';
+                // Keep sidebar visible for mode toggle
+                catalogBrowser.show();
+            }
+        };
+        
+        console.log('✅ Full browser mode initialization complete (compatible with viewer)');
         
         // Show the page now that initialization is complete
         if (window.__STAC_SHOW_PAGE) {
@@ -105,7 +210,7 @@ async function initAppForBrowserMode() {
         }
         
     } catch (error) {
-        console.error('❌ Error in fast browser mode initialization:', error);
+        console.error('❌ Error in full browser mode initialization:', error);
         // Fallback to normal initialization
         await initAppNormal();
     }

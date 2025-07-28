@@ -3,25 +3,30 @@
  * Uses same design language as main STAC Explorer interface
  */
 
-/* Catalog Browser Panel - Enable full page scrolling */
+/* Catalog Browser Panel - Normal page flow instead of modal */
 .catalog-browser-panel {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
-    height: 100vh;
+    height: auto;
+    min-height: 100vh;
     background: var(--bg-primary, #ffffff);
-    z-index: 2000;
+    z-index: 1000;
     display: flex;
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
+    overflow-y: auto;
 }
 
-/* Ensure body doesn't scroll when catalog browser is active */
+/* Ensure proper positioning context and scrolling */
+body {
+    position: relative;
+}
+
 body:has(.catalog-browser-panel:not(.hidden)) {
-    overflow: hidden;
+    overflow: auto;
 }
 
 .catalog-browser-panel:not(.hidden) {
@@ -135,20 +140,19 @@ body:has(.catalog-browser-panel:not(.hidden)) {
     background: var(--surface-primary, rgba(255, 255, 255, 0.8));
 }
 
-/* Main Content Area - Enable full page scrolling */
+/* Main Content Area - Normal page flow */
 .catalog-browser-main {
     flex: 1;
     display: flex;
     flex-direction: column;
     background: var(--bg-primary, #ffffff);
     position: relative;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: visible;
     z-index: 1;
-    height: 100vh;
+    flex: 1;
 }
 
-/* Content Container - Full page scroll instead of div scroll */
+/* Content Container - Normal page flow */
 .catalog-content-container {
     flex: 1;
     overflow: visible;
@@ -185,6 +189,16 @@ body:has(.catalog-browser-panel:not(.hidden)) {
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
     border-radius: 16px;
     margin-bottom: 1.5rem;
+}
+
+/* Browser header clickable styles */
+.browser-section-header h2 {
+    transition: all 0.2s ease;
+}
+
+.browser-section-header h2:hover {
+    color: var(--primary-600, #4f46e5);
+    transform: translateY(-1px);
 }
 
 /* Card Header - Matching Main App */
@@ -381,17 +395,30 @@ body:has(.catalog-browser-panel:not(.hidden)) {
     position: absolute;
     bottom: 1rem;
     left: 1rem;
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border-radius: 8px;
     padding: 0.5rem 0.75rem;
     transition: all 0.3s ease;
     width: fit-content;
     max-width: calc(100% - 2rem);
+    color: white;
 }
 
 .collection-card:hover .collection-title-overlay {
-    background: rgba(0, 0, 0, 0.85);
+    background: rgba(0, 0, 0, 0.9);
     transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.collection-title-overlay .collection-card-title {
+    color: white !important;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    line-height: 1.2;
 }
 
 .collection-card-overlay {
@@ -1318,6 +1345,214 @@ body:has(.catalog-browser-panel:not(.hidden)) {
 [data-theme="dark"] .catalog-item:hover {
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
     border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Dark theme breadcrumb styles */
+[data-theme="dark"] .breadcrumb-item {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: var(--text-secondary-dark, #a0a0a0);
+}
+
+[data-theme="dark"] .breadcrumb-item:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: var(--text-primary-dark, #e2e8f0);
+}
+
+[data-theme="dark"] .breadcrumb-item:first-child {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+}
+
+[data-theme="dark"] .breadcrumb-separator {
+    color: var(--text-muted-dark, #6b7280);
+}
+
+/* Dark theme card header and body styles */
+[data-theme="dark"] .catalog-card-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .catalog-card-header h2 {
+    color: var(--text-primary-dark, #e2e8f0);
+}
+
+[data-theme="dark"] .catalog-card-header .material-icons {
+    color: var(--primary-400, #8b5cf6);
+}
+
+[data-theme="dark"] .catalog-card-body {
+    color: var(--text-secondary-dark, #a0a0a0);
+}
+
+/* Dark theme collections grid and other content */
+[data-theme="dark"] .collections-grid,
+[data-theme="dark"] .catalog-grid,
+[data-theme="dark"] .items-grid {
+    background: transparent;
+}
+
+[data-theme="dark"] .catalog-content-container {
+    background: var(--bg-primary-dark, #1a1a1a);
+    color: var(--text-primary-dark, #e2e8f0);
+}
+
+[data-theme="dark"] #catalog-tree-view {
+    background: var(--surface-primary-dark, rgba(30, 30, 30, 0.8));
+    color: var(--text-primary-dark, #e2e8f0);
+}
+
+/* Dark theme loading and search interface styles */
+[data-theme="dark"] .loading-state {
+    background: var(--surface-primary-dark, rgba(30, 30, 30, 0.8));
+    color: var(--text-secondary-dark, #a0a0a0);
+}
+
+[data-theme="dark"] .loading-spinner {
+    border-color: rgba(255, 255, 255, 0.1);
+    border-top-color: var(--primary-400, #8b5cf6);
+}
+
+[data-theme="dark"] .catalog-search-interface {
+    background: var(--surface-secondary-dark, rgba(40, 40, 40, 0.9));
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .loading-dots {
+    color: var(--text-secondary-dark, #a0a0a0);
+}
+
+/* Dark theme collection title overlay */
+[data-theme="dark"] .collection-title-overlay {
+    background: rgba(0, 0, 0, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .collection-card:hover .collection-title-overlay {
+    background: rgba(0, 0, 0, 0.95);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .browser-section-header h2:hover {
+    color: var(--primary-400, #8b5cf6);
+}
+
+/* Light theme styles for catalog browser */
+[data-theme="light"] .catalog-browser-panel {
+    background: var(--bg-primary-light, #ffffff);
+    color: var(--text-primary-light, #1f2937);
+}
+
+[data-theme="light"] .catalog-browser-sidebar {
+    background: var(--surface-primary-light, rgba(248, 250, 252, 0.9));
+    border-right-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .catalog-breadcrumb {
+    background: var(--surface-secondary-light, rgba(241, 245, 249, 0.9));
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .breadcrumb-item {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.04) 0%, rgba(0, 0, 0, 0.02) 100%);
+    border-color: rgba(0, 0, 0, 0.08);
+    color: var(--text-secondary-light, #6b7280);
+}
+
+[data-theme="light"] .breadcrumb-item:hover {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.06) 0%, rgba(0, 0, 0, 0.03) 100%);
+    border-color: rgba(0, 0, 0, 0.12);
+    color: var(--text-primary-light, #1f2937);
+}
+
+[data-theme="light"] .breadcrumb-item:first-child {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: transparent;
+}
+
+[data-theme="light"] .breadcrumb-separator {
+    color: var(--text-muted-light, #9ca3af);
+}
+
+[data-theme="light"] .catalog-card-header {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.03) 0%, rgba(0, 0, 0, 0.01) 100%);
+    border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .catalog-card-header h2 {
+    color: var(--text-primary-light, #1f2937);
+}
+
+[data-theme="light"] .catalog-card-header .material-icons {
+    color: var(--primary-600, #4f46e5);
+}
+
+[data-theme="light"] .catalog-card-body {
+    color: var(--text-secondary-light, #6b7280);
+}
+
+[data-theme="light"] .collection-card,
+[data-theme="light"] .catalog-card,
+[data-theme="light"] .catalog-item {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(248, 250, 252, 0.9) 100%);
+    border-color: rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .collection-card:hover,
+[data-theme="light"] .catalog-card:hover,
+[data-theme="light"] .catalog-item:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 1) 0%, rgba(241, 245, 249, 0.95) 100%);
+    border-color: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06), 0 2px 4px rgba(0, 0, 0, 0.04);
+}
+
+[data-theme="light"] .catalog-content-container {
+    background: var(--bg-primary-light, #ffffff);
+    color: var(--text-primary-light, #1f2937);
+}
+
+[data-theme="light"] #catalog-tree-view {
+    background: var(--surface-primary-light, rgba(248, 250, 252, 0.9));
+    color: var(--text-primary-light, #1f2937);
+}
+
+[data-theme="light"] .loading-state {
+    background: var(--surface-primary-light, rgba(248, 250, 252, 0.9));
+    color: var(--text-secondary-light, #6b7280);
+}
+
+[data-theme="light"] .loading-spinner {
+    border-color: rgba(0, 0, 0, 0.1);
+    border-top-color: var(--primary-600, #4f46e5);
+}
+
+[data-theme="light"] .catalog-search-interface {
+    background: var(--surface-secondary-light, rgba(241, 245, 249, 0.9));
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .loading-dots {
+    color: var(--text-secondary-light, #6b7280);
+}
+
+/* Light theme collection title overlay */
+[data-theme="light"] .collection-title-overlay {
+    background: rgba(0, 0, 0, 0.75);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .collection-card:hover .collection-title-overlay {
+    background: rgba(0, 0, 0, 0.85);
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .browser-section-header h2:hover {
+    color: var(--primary-600, #4f46e5);
 }
 
 /* Performance Optimizations */

@@ -2482,12 +2482,8 @@
             const appLogo = document.getElementById('app-logo');
             if (appLogo) {
                 appLogo.addEventListener('click', () => {
-                    // Clear all URL parameters and return to homepage
-                    const currentUrl = new URL(window.location);
-                    const baseUrl = `${currentUrl.protocol}//${currentUrl.host}${currentUrl.pathname}`;
-                    
-                    // Navigate to clean homepage
-                    window.location.href = baseUrl;
+                    // Navigate to homepage (/viewer)
+                    window.location.href = '/viewer';
                 });
                 
             }

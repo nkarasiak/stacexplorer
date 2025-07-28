@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig } from 'vitest/config'
 import { VitePWA } from 'vite-plugin-pwa'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { resolve } from 'path'
@@ -56,6 +56,15 @@ export default defineConfig({
       }
     })
   ],
+
+  // Vitest configuration
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    include: ['**/*.test.js'],
+    reporters: ['verbose'],
+    setupFiles: ['./.test/setup.js'],
+  },
   
   // Development server configuration
   server: {

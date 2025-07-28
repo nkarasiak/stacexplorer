@@ -444,6 +444,13 @@ class MapManager {
         const onClick = (e) => {
             if (!this.drawingMode) return;
             
+            const source = this.map.getSource('drawing-source');
+            if (!source) {
+                console.warn('Drawing source not available, aborting draw action.');
+                this.stopDrawing();
+                return;
+            }
+
             if (!isDrawing) {
                 // First click - set the starting point
                 firstPoint = [e.lngLat.lng, e.lngLat.lat];
@@ -458,7 +465,7 @@ class MapManager {
                     }
                 };
                 
-                this.map.getSource('drawing-source').setData({
+                source.setData({
                     type: 'FeatureCollection',
                     features: [marker]
                 });
@@ -552,6 +559,11 @@ class MapManager {
      * Update bbox preview during drawing
      */
     updateBboxPreview(startPoint, endPoint) {
+        const source = this.map.getSource('drawing-source');
+        if (!source) {
+            console.warn('Drawing source not available, skipping preview update. This can happen during theme changes.');
+            return;
+        }
         const bbox = this.createBboxFromPoints(startPoint, endPoint);
         const features = [];
         
@@ -579,7 +591,7 @@ class MapManager {
             }
         });
 
-        this.map.getSource('drawing-source').setData({
+        source.setData({
             type: 'FeatureCollection',
             features: features
         });

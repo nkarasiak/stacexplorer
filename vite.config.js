@@ -5,6 +5,9 @@ import { visualizer } from 'rollup-plugin-visualizer'
 import { resolve } from 'path'
 
 export default defineConfig({
+  // GitHub Pages deployment configuration
+  base: process.env.NODE_ENV === 'production' ? '/stacexplorer/' : '/',
+  
   plugins: [
     legacy({
       targets: ['defaults', 'not IE 11']
@@ -45,11 +48,11 @@ export default defineConfig({
         theme_color: '#667eea',
         background_color: '#ffffff',
         display: 'standalone',
-        scope: '/',
-        start_url: '/',
+        scope: process.env.NODE_ENV === 'production' ? '/stacexplorer/' : '/',
+        start_url: process.env.NODE_ENV === 'production' ? '/stacexplorer/' : '/',
         icons: [
           {
-            src: '/favicon.svg',
+            src: 'favicon.svg',
             sizes: 'any',
             type: 'image/svg+xml'
           }

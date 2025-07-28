@@ -9,6 +9,7 @@
     "build": "vite build",
     "build:analyze": "vite build && open dist/stats.html",
     "build:prod": "NODE_ENV=production vite build",
+    "build:gh-pages": "NODE_ENV=production vite build",
     "preview": "vite preview",
     "start": "npm run preview",
     "validate": "node validate-build.js",

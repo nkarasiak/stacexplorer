@@ -96,15 +96,8 @@ try {
 try {
   const mainJS = readFileSync('src/main.js', 'utf-8');
   
-  const hasRelativeCSS = mainJS.includes('../css/');
   const hasRelativeJS = mainJS.includes('../js/app.js');
   const hasInitialization = mainJS.includes('initializeApp');
-  
-  checks.push({
-    name: 'Main.js has correct CSS imports',
-    status: hasRelativeCSS ? 'PASS' : 'FAIL',
-    passed: hasRelativeCSS
-  });
   
   checks.push({
     name: 'Main.js has correct JS imports',

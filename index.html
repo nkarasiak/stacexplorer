@@ -2233,6 +2233,7 @@
     
     <!-- Enhanced Mobile Sidebar Manager -->
     <script type="module">
+        import { getBasePath } from '/js/utils/BasePath.js';
         /**
          * Enhanced Mobile Sidebar Manager
          * Hamburger menu only appears when sidebar is hidden
@@ -2610,8 +2611,7 @@
             if (appLogo) {
                 appLogo.addEventListener('click', () => {
                     // Navigate to homepage (/viewer) - with correct base path
-                    const basePath = window.location.hostname.endsWith('.github.io') && 
-                                   window.location.pathname.startsWith('/stacexplorer/') ? '/stacexplorer' : '';
+                    const basePath = getBasePath();
                     window.location.href = basePath + '/viewer';
                 });
                 
@@ -2619,7 +2619,8 @@
             
             // Dynamically set meta tag URLs based on current location
             const currentUrl = window.location.origin + window.location.pathname;
-            const imageUrl = window.location.origin + window.location.pathname.replace(/\/$/, '') + '/static/images/earthdaily_satellite.webp';
+            const basePath = getBasePath();
+            const imageUrl = window.location.origin + basePath + '/static/images/earthdaily_satellite.webp';
             
             // Update canonical URL
             const canonicalLink = document.getElementById('canonical-url');

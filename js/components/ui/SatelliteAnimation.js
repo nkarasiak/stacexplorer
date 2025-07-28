@@ -2,6 +2,7 @@
  * SatelliteAnimation.js - Animated satellite that flies across the screen when no search results are shown
  */
 
+import { getBasePath } from '../../utils/BasePath.js';
 import { offlineManager } from '../../utils/OfflineManager.js';
 
 export class SatelliteAnimation {
@@ -124,7 +125,8 @@ export class SatelliteAnimation {
         
         // Create satellite image
         this.satellite = document.createElement('img');
-        this.satellite.src = '/static/images/earthdaily_satellite.webp';
+        const basePath = getBasePath();
+        this.satellite.src = `${basePath}/static/images/earthdaily_satellite.webp`;
         this.satellite.className = 'satellite hidden';
         this.satellite.alt = 'Satellite';
         

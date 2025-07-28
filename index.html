@@ -2096,6 +2096,115 @@
                 <div class="spinner"></div>
                 <span>Loading data...</span>
             </div>
+            
+            <!-- Settings Panel (hidden by default) -->
+            <div id="settings-panel" class="settings-panel" style="display: none;">
+                <div class="settings-header">
+                    <h2><i class="material-icons">settings</i> Settings</h2>
+                    <button class="settings-close-btn" id="settings-close-btn">
+                        <i class="material-icons">close</i>
+                        <span>Back to Map</span>
+                    </button>
+                </div>
+                
+                <div class="settings-content">
+                    <div class="settings-section">
+                        <h3><i class="material-icons">palette</i> Appearance</h3>
+                        <div class="setting-item">
+                            <div class="setting-content">
+                                <div class="setting-label">Theme</div>
+                                <div class="setting-description">Choose your preferred color theme</div>
+                            </div>
+                            <div class="setting-control">
+                                <select id="theme-selector-panel" class="theme-selector">
+                                    <option value="auto">Auto (System)</option>
+                                    <option value="dark">Dark</option>
+                                    <option value="light">Light</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3><i class="material-icons">speed</i> Performance</h3>
+                        <div class="setting-item">
+                            <div class="setting-content">
+                                <div class="setting-label">GPU Acceleration</div>
+                                <div class="setting-description">Use Deck.gl for hardware-accelerated rendering when possible</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="gpu-acceleration-toggle-panel" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="setting-status" id="gpu-status-display-panel">
+                            <i class="material-icons">info</i>
+                            <span id="gpu-status-text-panel">Checking GPU acceleration status...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3><i class="material-icons">storage</i> Data Catalogs</h3>
+                        <div class="setting-description-section">
+                            <p>Enable or disable data catalogs for search. Disabled catalogs won't appear in collection dropdowns.</p>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-content">
+                                <div class="setting-label">Copernicus Data Space</div>
+                                <div class="setting-description">European Space Agency satellite data</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="catalog-copernicus-toggle-panel" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-content">
+                                <div class="setting-label">Element84 Earth Search</div>
+                                <div class="setting-description">Comprehensive Earth observation datasets</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="catalog-element84-toggle-panel" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-content">
+                                <div class="setting-label">Microsoft Planetary Computer</div>
+                                <div class="setting-description">Enhanced support with presigning API</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="catalog-microsoft-toggle-panel" checked>
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="setting-item">
+                            <div class="setting-content">
+                                <div class="setting-label">Planet Labs</div>
+                                <div class="setting-description">High-resolution commercial satellite imagery</div>
+                            </div>
+                            <div class="setting-control">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="catalog-planetlabs-toggle-panel">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         </main>
     </div>

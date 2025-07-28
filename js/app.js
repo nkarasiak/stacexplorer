@@ -281,6 +281,16 @@ async function initAppNormal() {
         await mapManager.initialize('map').then(() => {
             // Update Deck.gl status indicator
             updateDeckGLStatus(mapManager);
+            
+            // Trigger theme update for map after initialization
+            const currentTheme = document.documentElement.classList.contains('dark-theme') ? 'dark' : 'light';
+            console.log('🎨 Map initialized, applying current theme:', currentTheme);
+            document.dispatchEvent(new CustomEvent('themeChange', {
+                detail: { 
+                    theme: currentTheme === 'light' ? 'Light' : 'Dark',
+                    themeMode: currentTheme
+                }
+            }));
         }).catch(error => {
             console.error('Failed to initialize map:', error);
         });

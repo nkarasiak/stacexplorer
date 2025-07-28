@@ -57,20 +57,20 @@ export class UIManager {
             console.warn('🔧 Theme selector not found');
         }
         
-        // Settings modal
+        // Settings panel
         const settingsToggle = document.getElementById('settings-toggle');
-        const settingsModal = document.getElementById('settings-modal');
-        const settingsModalClose = document.getElementById('settings-modal-close');
+        const settingsPanel = document.getElementById('settings-panel');
+        const settingsCloseBtn = document.getElementById('settings-close-btn');
         
         console.log('🔧 Settings elements found:', {
             settingsToggle: !!settingsToggle,
-            settingsModal: !!settingsModal,
-            settingsModalClose: !!settingsModalClose,
+            settingsPanel: !!settingsPanel,
+            settingsCloseBtn: !!settingsCloseBtn,
             settingsToggleEl: settingsToggle,
-            settingsModalEl: settingsModal
+            settingsPanelEl: settingsPanel
         });
         
-        if (settingsToggle && settingsModal) {
+        if (settingsToggle && settingsPanel) {
             console.log('🔧 Adding settings button click listener');
             // Mark that we've added the main listener
             settingsToggle.setAttribute('data-main-listener-added', 'true');
@@ -78,42 +78,26 @@ export class UIManager {
                 console.log('🔧 Settings button clicked!');
                 e.preventDefault();
                 e.stopPropagation();
-                this.showSettingsModal();
+                this.showSettingsPanel();
             });
             console.log('🔧 Settings button listener added successfully');
             
-            if (settingsModalClose) {
-                settingsModalClose.addEventListener('click', () => {
+            if (settingsCloseBtn) {
+                settingsCloseBtn.addEventListener('click', () => {
                     console.log('🔧 Settings close button clicked');
-                    this.hideSettingsModal();
+                    this.hideSettingsPanel();
                 });
             } else {
-                console.warn('🔧 Settings modal close button not found');
+                console.warn('🔧 Settings close button not found');
             }
             
-            // Close modal when clicking outside (with proper event handling)
-            settingsModal.addEventListener('click', (e) => {
-                console.log('🔧 Modal clicked:', {
-                    target: e.target,
-                    isBackdrop: e.target === settingsModal,
-                    modalJustOpened: this.modalJustOpened
-                });
-                
-                if (e.target === settingsModal && !this.modalJustOpened) {
-                    console.log('🔧 Clicked outside modal dialog - closing');
-                    this.hideSettingsModal();
-                } else if (this.modalJustOpened) {
-                    console.log('🔧 Modal just opened - ignoring click');
-                }
-            });
-            
-            // Close modal with Escape key
-            this.handleSettingsModalEscape = (e) => {
+            // Close panel with Escape key
+            this.handleSettingsPanelEscape = (e) => {
                 if (e.key === 'Escape') {
-                    this.hideSettingsModal();
+                    this.hideSettingsPanel();
                 }
             };
-            document.addEventListener('keydown', this.handleSettingsModalEscape);
+            document.addEventListener('keydown', this.handleSettingsPanelEscape);
         }
         
         // Initialize catalog toggles
@@ -248,23 +232,26 @@ export class UIManager {
         
         // Check system preference
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        console.log('🎨 System prefers dark mode:', prefersDark);
         
-        let themeToApply = 'light'; // Default theme
+        let themeToApply;
         
         if (savedTheme) {
             // Use saved preference
             themeToApply = savedTheme;
             console.log('🎨 Using saved theme preference:', savedTheme);
         } else {
-            // Always default to light theme if no saved preference
-            console.log('🎨 Using default theme: light');
+            // Default to system preference (Auto mode)
+            themeToApply = prefersDark ? 'dark' : 'light';
+            console.log('🎨 Using system theme preference (Auto):', themeToApply, '(system prefers dark:', prefersDark + ')');
         }
         
         // Apply the theme
         this.setTheme(themeToApply);
         
-        // Update theme selector to reflect current setting
-        this.updateThemeSelector();
+        // Update theme selectors to reflect current setting
+        this.updateThemeSelector('modal');
+        this.updateThemeSelector('panel');
         
         // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
@@ -297,14 +284,15 @@ export class UIManager {
         }
         
         // Dispatch theme change event for map and other components
-        document.dispatchEvent(new CustomEvent('themeChange', {
+        const themeChangeEvent = new CustomEvent('themeChange', {
             detail: { 
                 theme: theme === 'light' ? 'Light' : 'Dark',
                 themeMode: theme
             }
-        }));
+        });
+        document.dispatchEvent(themeChangeEvent);
         
-        console.log(`🎨 Theme set to: ${theme}`);
+        console.log(`🎨 Theme set to: ${theme}, event dispatched:`, themeChangeEvent.detail);
     }
     
     /**
@@ -348,15 +336,17 @@ export class UIManager {
             console.log('💾 Saved explicit theme preference:', themeChoice);
         }
         
-        // Update theme selector to reflect the change
-        this.updateThemeSelector();
+        // Update theme selectors to reflect the change
+        this.updateThemeSelector('modal');
+        this.updateThemeSelector('panel');
     }
     
     /**
      * Update theme selector dropdown to reflect current state
      */
-    updateThemeSelector() {
-        const themeSelector = document.getElementById('theme-selector');
+    updateThemeSelector(context = 'modal') {
+        const selectorId = context === 'panel' ? 'theme-selector-panel' : 'theme-selector';
+        const themeSelector = document.getElementById(selectorId);
         if (!themeSelector) return;
         
         const savedTheme = localStorage.getItem('stac-explorer-theme');
@@ -367,6 +357,14 @@ export class UIManager {
         } else {
             // No explicit preference - using system
             themeSelector.value = 'auto';
+        }
+        
+        // Add event listener if not already added
+        if (!themeSelector.hasAttribute('data-listener-added')) {
+            themeSelector.addEventListener('change', (e) => {
+                this.handleThemeSelection(e.target.value);
+            });
+            themeSelector.setAttribute('data-listener-added', 'true');
         }
     }
     
@@ -388,10 +386,11 @@ export class UIManager {
     }
     
     /**
-     * Update GPU status in settings modal
+     * Update GPU status in settings modal or panel
      */
-    updateGPUStatus() {
-        const gpuStatusText = document.getElementById('gpu-status-text');
+    updateGPUStatus(context = 'modal') {
+        const statusId = context === 'panel' ? 'gpu-status-text-panel' : 'gpu-status-text';
+        const gpuStatusText = document.getElementById(statusId);
         if (!gpuStatusText) return;
         
         try {
@@ -431,121 +430,68 @@ export class UIManager {
     }
     
     /**
-     * Show settings modal
+     * Show settings panel
      */
-    showSettingsModal() {
-        console.log('🔧 showSettingsModal called');
-        const settingsModal = document.getElementById('settings-modal');
-        console.log('🔧 Settings modal element:', settingsModal);
+    showSettingsPanel() {
+        console.log('🔧 showSettingsPanel called');
+        const settingsPanel = document.getElementById('settings-panel');
+        const mapDiv = document.getElementById('map');
         
-        if (settingsModal) {
-            // Check if modal is already visible/opening
-            if (settingsModal.classList.contains('active') || settingsModal.style.display === 'flex' || this.modalJustOpened) {
-                console.log('🔧 Modal already open or opening - ignoring duplicate call');
-                return;
-            }
+        if (settingsPanel && mapDiv) {
+            console.log('🔧 Showing settings panel');
             
-            console.log('🔧 Current modal classes:', settingsModal.className);
+            // Hide map and show settings panel
+            mapDiv.style.display = 'none';
+            settingsPanel.style.display = 'block';
             
-            // Set flag to prevent immediate closure and duplicate opens
-            this.modalJustOpened = true;
+            // Update theme selector when panel opens
+            this.updateThemeSelector('panel');
             
-            // Add a small delay to prevent immediate closure from event bubbling
-            setTimeout(() => {
-                settingsModal.classList.add('active');
-                settingsModal.style.display = 'flex'; // Fallback
-                document.body.style.overflow = 'hidden'; // Prevent background scroll
-                console.log('🔧 Modal shown with active class');
-                
-                // Debug modal visibility
-                const modalDialog = settingsModal.querySelector('.modal-dialog');
-                console.log('🔧 Modal dialog element:', modalDialog);
-                
-                if (modalDialog) {
-                    const dialogStyle = window.getComputedStyle(modalDialog);
-                    console.log('🔧 Modal dialog visibility:', {
-                        display: dialogStyle.display,
-                        visibility: dialogStyle.visibility,
-                        opacity: dialogStyle.opacity,
-                        zIndex: dialogStyle.zIndex,
-                        width: dialogStyle.width,
-                        height: dialogStyle.height,
-                        background: dialogStyle.background,
-                        transform: dialogStyle.transform
-                    });
-                    
-                    // Force dialog visibility
-                    modalDialog.style.display = 'block';
-                    modalDialog.style.visibility = 'visible';
-                    modalDialog.style.opacity = '1';
-                    modalDialog.style.background = 'white';
-                    modalDialog.style.border = '2px solid red';
-                    console.log('🔧 Forced dialog visibility with red border');
-                }
-                
-                // Update theme selector when modal opens
-                this.updateThemeSelector();
-                
-                // Update GPU status when modal opens
-                this.updateGPUStatus();
-                
-                // Test: Force modal to stay visible for debugging
-                settingsModal.style.display = 'flex !important';
-                settingsModal.style.visibility = 'visible';
-                settingsModal.style.opacity = '1';
-                settingsModal.style.zIndex = '99999';
-                
-                // Clear the flag after a longer delay to prevent immediate closure
-                setTimeout(() => {
-                    this.modalJustOpened = false;
-                    console.log('🔧 Modal protection flag cleared - clicks outside will now close modal');
-                    
-                    // Check if modal is still visible
-                    console.log('🔧 Modal status after timeout:', {
-                        display: settingsModal.style.display,
-                        classList: settingsModal.className,
-                        visible: window.getComputedStyle(settingsModal).display
-                    });
-                }, 500);
-            }, 10);
+            // Update GPU status when panel opens
+            this.updateGPUStatus('panel');
+            
+            // Initialize catalog toggles for panel
+            this.initializeCatalogToggles('panel');
+            
+            console.log('🔧 Settings panel shown');
         } else {
-            console.error('🔧 Settings modal element not found!');
+            console.error('🔧 Settings panel or map element not found!');
         }
     }
     
     /**
-     * Hide settings modal
+     * Hide settings panel
      */
-    hideSettingsModal() {
-        console.log('🔧 hideSettingsModal called');
-        console.trace('🔧 Hide modal called from:');
+    hideSettingsPanel() {
+        console.log('🔧 hideSettingsPanel called');
         
-        const settingsModal = document.getElementById('settings-modal');
-        if (settingsModal) {
-            settingsModal.classList.remove('active');
-            settingsModal.style.display = 'none'; // Fallback
-            document.body.style.overflow = ''; // Restore scroll
-            console.log('🔧 Modal hidden');
+        const settingsPanel = document.getElementById('settings-panel');
+        const mapDiv = document.getElementById('map');
+        
+        if (settingsPanel && mapDiv) {
+            // Hide settings panel and show map
+            settingsPanel.style.display = 'none';
+            mapDiv.style.display = 'block';
+            
+            console.log('🔧 Settings panel hidden, map restored');
         }
         
         // Remove escape key handler
-        if (this.handleSettingsModalEscape) {
-            document.removeEventListener('keydown', this.handleSettingsModalEscape);
+        if (this.handleSettingsPanelEscape) {
+            document.removeEventListener('keydown', this.handleSettingsPanelEscape);
         }
-        
-        // Reset the flag
-        this.modalJustOpened = false;
     }
     
     /**
      * Initialize catalog toggles with default states and event listeners
      */
-    initializeCatalogToggles() {
+    initializeCatalogToggles(context = 'modal') {
+        const suffix = context === 'panel' ? '-panel' : '';
         const catalogs = {
-            'catalog-copernicus-toggle': { key: 'copernicus', default: true },
-            'catalog-element84-toggle': { key: 'element84', default: true },
-            'catalog-microsoft-toggle': { key: 'microsoft-pc', default: true },
-            'catalog-planetlabs-toggle': { key: 'planetlabs', default: false }
+            [`catalog-copernicus-toggle${suffix}`]: { key: 'copernicus', default: true },
+            [`catalog-element84-toggle${suffix}`]: { key: 'element84', default: true },
+            [`catalog-microsoft-toggle${suffix}`]: { key: 'microsoft-pc', default: true },
+            [`catalog-planetlabs-toggle${suffix}`]: { key: 'planetlabs', default: false }
         };
         
         // Load saved states or set defaults

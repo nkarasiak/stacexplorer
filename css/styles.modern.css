@@ -5105,3 +5105,133 @@ html.dark-theme .modal-body .info-group div {
     font-size: 13px;
     font-style: italic;
 }
+
+/* Settings Panel Styles */
+.settings-panel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--background-color, #ffffff);
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 0;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2rem 2rem 1rem 2rem;
+    border-bottom: 1px solid var(--border-color, #e5e7eb);
+    background: var(--background-color, #ffffff);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.settings-header h2 {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: var(--text-color, #1f2937);
+}
+
+.settings-header h2 .material-icons {
+    font-size: 1.75rem;
+    color: var(--primary-color, #667eea);
+}
+
+.settings-close-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: var(--primary-color, #667eea);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.settings-close-btn:hover {
+    background: var(--primary-color-hover, #5a67d8);
+    transform: translateY(-1px);
+}
+
+.settings-close-btn .material-icons {
+    font-size: 1.125rem;
+}
+
+.settings-content {
+    padding: 1rem 2rem 2rem 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.settings-content .settings-section {
+    margin-bottom: 2rem;
+}
+
+.settings-content .settings-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 0 0 1rem 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color, #1f2937);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-color-light, #f3f4f6);
+}
+
+.settings-content .settings-section h3 .material-icons {
+    font-size: 1.375rem;
+    color: var(--primary-color, #667eea);
+}
+
+/* Dark theme for settings panel */
+html.dark-theme .settings-panel {
+    background: var(--background-dark, #1f2937);
+}
+
+html.dark-theme .settings-header {
+    background: var(--background-dark, #1f2937);
+    border-bottom-color: var(--border-dark, #374151);
+}
+
+html.dark-theme .settings-header h2 {
+    color: var(--text-dark, #f9fafb);
+}
+
+html.dark-theme .settings-content .settings-section h3 {
+    color: var(--text-dark, #f9fafb);
+    border-bottom-color: var(--border-dark-light, #374151);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .settings-header {
+        padding: 1rem;
+    }
+    
+    .settings-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    .settings-close-btn {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+    }
+    
+    .settings-content {
+        padding: 1rem;
+    }
+}

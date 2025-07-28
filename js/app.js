@@ -58,8 +58,9 @@ async function initAppForBrowserMode() {
         // Initialize catalog browser
         const catalogBrowser = new CatalogBrowserPanel(apiClient, notificationService, CONFIG);
         
-        // Initialize view mode toggle (needed for UI state)
+        // Initialize view mode toggle (needed for UI state) - set to catalog mode for browser
         const viewModeToggle = new ViewModeToggle();
+        viewModeToggle.setMode('catalog', true); // Set to catalog mode silently
         
         // Initialize minimal state manager for routing
         const stateManager = new UnifiedStateManager({
@@ -79,6 +80,9 @@ async function initAppForBrowserMode() {
         
         // Initialize router for deep link handling
         const unifiedRouter = new UnifiedRouter(stateManager);
+        
+        // Ensure catalog browser is shown for browser mode
+        catalogBrowser.show(true); // Skip auto-load
         
         // Make components globally accessible
         if (!window.stacExplorer) window.stacExplorer = {};
@@ -113,12 +117,12 @@ async function initApp() {
             return;
         }
         
-        // Fallback detection for browser deep links
+        // Fallback detection for browser mode (including root browser path)
         const path = window.location.pathname;
-        const isBrowserDeepLink = path.startsWith('/browser/') && path.split('/').length > 2;
+        const isBrowserMode = path.startsWith('/browser');
         
-        if (isBrowserDeepLink) {
-            console.log('🚀 Browser deep link detected (fallback), using fast initialization:', path);
+        if (isBrowserMode) {
+            console.log('🚀 Browser mode detected (fallback), using fast initialization:', path);
             await initAppForBrowserMode();
             return;
         }

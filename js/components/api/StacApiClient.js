@@ -16,6 +16,16 @@ export class STACApiClient {
             search: ''
         };
         
+        // Token cache to prevent rate limiting
+        this.tokenCache = new Map();
+        this.tokenCacheExpiry = new Map();
+        this.TOKEN_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes
+        
+        // Rate limiting state
+        this.tokenRequestQueue = new Map(); // Pending requests per collection
+        this.lastTokenRequest = new Map(); // Last request time per collection
+        this.MIN_REQUEST_INTERVAL = 1000; // Minimum 1 second between requests
+        
         if (endpoints) {
             this.setEndpoints(endpoints);
         }
@@ -543,6 +553,56 @@ export class STACApiClient {
     }
     
     /**
+     * Fetch a new token for a specific collection
+     * @param {string} collection - Collection name
+     * @returns {Promise<string>} - Token string
+     */
+    async fetchToken(collection) {
+        const tokenEndpoint = `https://planetarycomputer.microsoft.com/api/sas/v1/token/${collection}`;
+        
+        console.log(`🔗 [PRESIGN-API] Fetching new token for collection: ${collection}`);
+        
+        try {
+            const tokenResponse = await fetch(tokenEndpoint);
+            
+            if (tokenResponse.ok) {
+                const tokenData = await tokenResponse.json();
+                
+                if (tokenData.token) {
+                    // Cache the token
+                    const now = Date.now();
+                    this.tokenCache.set(collection, tokenData.token);
+                    this.tokenCacheExpiry.set(collection, now + this.TOKEN_CACHE_DURATION);
+                    console.log(`🔗 [PRESIGN-API] Cached token for collection: ${collection} (expires in ${this.TOKEN_CACHE_DURATION/1000/60} minutes)`);
+                    
+                    return tokenData.token;
+                }
+            } else {
+                const errorText = await tokenResponse.text();
+                console.warn(`🔗 [PRESIGN-API] Token request failed:`, {
+                    status: tokenResponse.status,
+                    statusText: tokenResponse.statusText,
+                    responseText: errorText
+                });
+                
+                // Handle 429 errors with exponential backoff
+                if (tokenResponse.status === 429) {
+                    const retryAfter = tokenResponse.headers.get('Retry-After') || '60';
+                    const waitTime = parseInt(retryAfter) * 1000;
+                    console.warn(`🔗 [PRESIGN-API] Rate limited. Waiting ${waitTime}ms before retry.`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
+                    return this.fetchToken(collection); // Retry once
+                }
+                
+                throw new Error(`Token request failed: ${tokenResponse.status} ${tokenResponse.statusText}`);
+            }
+        } catch (error) {
+            console.error(`🔗 [PRESIGN-API] Error fetching token for ${collection}:`, error);
+            throw error;
+        }
+    }
+
+    /**
      * Get a presigned URL for Planetary Computer blob storage
      * @param {string} url - Original blob storage URL
      * @returns {Promise<string>} - Presigned URL
@@ -557,27 +617,43 @@ export class STACApiClient {
                 return url;
             }
             
+            // Check token cache first
+            const now = Date.now();
+            const cachedToken = this.tokenCache.get(collection);
+            const cacheExpiry = this.tokenCacheExpiry.get(collection);
             
-            // Use the correct SAS token endpoint for the specific collection
-            const tokenEndpoint = `https://planetarycomputer.microsoft.com/api/sas/v1/token/${collection}`;
+            if (cachedToken && cacheExpiry && now < cacheExpiry) {
+                console.log(`🔗 [PRESIGN-API] Using cached token for collection: ${collection}`);
+                return `${url}?${cachedToken}`;
+            }
             
-            const tokenResponse = await fetch(tokenEndpoint);
+            // Check if there's already a pending request for this collection
+            if (this.tokenRequestQueue.has(collection)) {
+                console.log(`🔗 [PRESIGN-API] Waiting for existing token request for collection: ${collection}`);
+                const token = await this.tokenRequestQueue.get(collection);
+                return `${url}?${token}`;
+            }
             
+            // Rate limiting: ensure minimum interval between requests
+            const lastRequest = this.lastTokenRequest.get(collection) || 0;
+            const timeSinceLastRequest = now - lastRequest;
+            if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
+                const waitTime = this.MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+                console.log(`🔗 [PRESIGN-API] Rate limiting: waiting ${waitTime}ms before token request for ${collection}`);
+                await new Promise(resolve => setTimeout(resolve, waitTime));
+            }
             
-            if (tokenResponse.ok) {
-                const tokenData = await tokenResponse.json();
-                
-                if (tokenData.token) {
-                    const presignedUrl = `${url}?${tokenData.token}`;
-                    return presignedUrl;
-                }
-            } else {
-                const errorText = await tokenResponse.text();
-                console.warn(`🔗 [PRESIGN-API] Token request failed:`, {
-                    status: tokenResponse.status,
-                    statusText: tokenResponse.statusText,
-                    responseText: errorText
-                });
+            // Create a promise for this token request and queue it
+            const tokenPromise = this.fetchToken(collection);
+            this.tokenRequestQueue.set(collection, tokenPromise);
+            this.lastTokenRequest.set(collection, Date.now());
+            
+            try {
+                const token = await tokenPromise;
+                return `${url}?${token}`;
+            } finally {
+                // Clean up the queue
+                this.tokenRequestQueue.delete(collection);
             }
             
         } catch (error) {

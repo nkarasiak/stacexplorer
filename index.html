@@ -41,12 +41,12 @@
     
     <!-- Early deep link detection script - must be before any CSS/assets -->
     <script>
-        // Ultra-fast deep link detection - runs immediately without waiting for DOM
+        // Ultra-fast browser mode detection - runs immediately without waiting for DOM
         (function() {
             const path = window.location.pathname;
-            const isBrowserDeepLink = path.startsWith('/browser/') && path.split('/').length > 2;
+            const isBrowserMode = path.startsWith('/browser');
             
-            if (isBrowserDeepLink) {
+            if (isBrowserMode) {
                 // Hide the page immediately to prevent flash
                 document.documentElement.style.visibility = 'hidden';
                 document.documentElement.style.opacity = '0';
@@ -54,7 +54,7 @@
                 // Add browser-mode class to body for early styling
                 document.documentElement.classList.add('browser-mode-loading');
                 
-                console.log('🚀 Early deep link detection - hiding page for fast loading:', path);
+                console.log('🚀 Early browser mode detection - hiding page for fast loading:', path);
                 
                 // Set flag for later use in main app
                 window.__STAC_EARLY_BROWSER_MODE = true;

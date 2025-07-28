@@ -325,7 +325,7 @@
 /* Collection Card Image */
 .collection-card-image {
     position: relative;
-    height: 160px;
+    height: 200px;
     overflow: hidden;
     background: #f8f9fa;
     flex-shrink: 0;
@@ -340,6 +340,37 @@
 
 .collection-card:hover .collection-card-image img {
     transform: scale(1.05);
+}
+
+/* Title Overlay on Image */
+.collection-title-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.3) 30%,
+        rgba(0, 0, 0, 0.7) 70%,
+        rgba(0, 0, 0, 0.85) 100%
+    );
+    backdrop-filter: blur(8px) saturate(150%);
+    -webkit-backdrop-filter: blur(8px) saturate(150%);
+    padding: 1.5rem 1rem 1rem;
+    transition: all 0.3s ease;
+}
+
+.collection-card:hover .collection-title-overlay {
+    background: linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.4) 30%,
+        rgba(0, 0, 0, 0.8) 70%,
+        rgba(0, 0, 0, 0.9) 100%
+    );
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
 }
 
 .collection-card-overlay {
@@ -400,13 +431,27 @@
 .collection-card-title {
     all: unset !important;
     display: block !important;
-    margin: 0 0 8px 0 !important;
+    margin: 0 !important;
     padding: 0 !important;
-    font-size: 1.1rem !important;
-    font-weight: 600 !important;
-    color: #1a1a1a !important;
+    font-size: 1.2rem !important;
+    font-weight: 700 !important;
+    color: white !important;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif !important;
     line-height: 1.3 !important;
+    text-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.8),
+        0 1px 2px rgba(0, 0, 0, 0.9) !important;
+    letter-spacing: -0.01em !important;
+    transition: all 0.3s ease !important;
+}
+
+.collection-card:hover .collection-card-title {
+    color: #ffffff !important;
+    text-shadow: 
+        0 3px 6px rgba(0, 0, 0, 0.9),
+        0 1px 3px rgba(0, 0, 0, 1),
+        0 0 20px rgba(255, 255, 255, 0.1) !important;
+    transform: translateY(-2px) !important;
 }
 
 .collection-card-description {
@@ -692,6 +737,133 @@
 
 
 /* Items List */
+/* Results List - Multi-column Card Layout */
+.results-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
+    list-style: none;
+    margin: 0;
+}
+
+/* Dataset Item Cards */
+.dataset-item {
+    background: rgba(255, 255, 255, 1);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.dataset-item:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 50px rgba(0, 0, 0, 0.18);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Dataset Content */
+.dataset-content {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+/* Thumbnail Container - Same as ResultsPanel */
+.thumbnail-container {
+    position: relative;
+    width: 100%;
+    margin-bottom: 8px;
+}
+
+.dataset-thumbnail {
+    width: 100%;
+    height: 120px;
+    object-fit: none;
+    object-position: center center;
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 10px;
+}
+
+.dataset-thumbnail:hover {
+    transform: scale(1.02);
+    box-shadow: var(--shadow-lg);
+}
+
+/* Override lazy loading opacity */
+.dataset-thumbnail.lazy-loading {
+    opacity: 1 !important;
+}
+
+/* Thumbnail Overlay - Same as ResultsPanel */
+.thumbnail-overlay {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    padding: 4px;
+    display: flex;
+    gap: 4px;
+}
+
+/* Dataset Info Bottom */
+.dataset-info-bottom {
+    padding: 1rem;
+    background: rgba(255, 255, 255, 1);
+}
+
+/* Dataset Title */
+.dataset-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary, #1a1a1a);
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Dataset ID with Text Clipping */
+.dataset-id {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-secondary, #666666);
+    background: rgba(0, 0, 0, 0.05);
+    padding: 0.4rem 0.6rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+}
+
+.dataset-id .material-icons {
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+.dataset-id .id-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0; /* Important for text-overflow to work in flex */
+    font-family: 'Roboto Mono', monospace;
+    font-size: 0.75rem;
+}
+
+/* No Thumbnail Layout */
+.dataset-item .dataset-info {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-height: 200px;
+    justify-content: space-between;
+}
+
 .items-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -1009,6 +1181,57 @@
         flex-direction: column;
         gap: 0.75rem;
         align-items: center;
+    }
+}
+
+/* Responsive Grid for Dataset Cards */
+@media (min-width: 1400px) {
+    .results-list {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.25rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .results-list {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.25rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .results-list {
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1rem;
+        padding: 0.75rem 0;
+    }
+    
+    .dataset-info-bottom {
+        padding: 0.75rem;
+    }
+    
+    .dataset-title {
+        font-size: 0.9rem;
+    }
+    
+    .dataset-id {
+        font-size: 0.75rem;
+        padding: 0.3rem 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .results-list {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .dataset-item {
+        border-radius: 12px;
+    }
+    
+    .dataset-info-bottom {
+        padding: 0.65rem;
     }
     
     .catalog-content-container {

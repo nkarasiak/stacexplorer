@@ -7,10 +7,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:analyze": "vite build && open dist/stats.html",
+    "build:prod": "NODE_ENV=production vite build",
     "preview": "vite preview",
     "start": "npm run preview",
     "validate": "node validate-build.js",
     "test:build": "npm run build && npm run validate",
+    "optimize": "npm run build:prod && npm run validate",
     "legacy:dev": "concurrently \"npm run proxy\" \"npm run watch\"",
     "legacy:start": "node proxy.js",
     "proxy": "node proxy.js",
@@ -36,8 +39,11 @@
     "concurrently": "^8.2.2",
     "http-server": "^14.1.1",
     "nodemon": "^3.0.2",
-    "vite": "^7.0.5",
-    "vite-plugin-eslint": "^1.8.1"
+    "rollup-plugin-visualizer": "^5.12.0",
+    "terser": "^5.31.6",
+    "vite": "^5.4.10",
+    "vite-plugin-eslint": "^1.8.1",
+    "vite-plugin-pwa": "^0.21.1"
   },
   "keywords": [
     "stac",

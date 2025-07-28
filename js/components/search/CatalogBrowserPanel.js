@@ -568,12 +568,14 @@ export class CatalogBrowserPanel {
                             <i class="material-icons">arrow_forward</i>
                         </button>
                     </div>
+                    <div class="collection-title-overlay">
+                        <h3 class="collection-card-title" title="${title}">
+                            ${title || collection.id || 'Untitled Collection'}
+                        </h3>
+                    </div>
                 </div>
                 
                 <div class="collection-card-content">
-                    <h3 class="collection-card-title" title="${title}">
-                        ${title || collection.id || 'Untitled Collection'}
-                    </h3>
                     
                     <div class="collection-card-meta">
                         ${temporalInfo ? `
@@ -1104,7 +1106,7 @@ export class CatalogBrowserPanel {
             
             const searchParams = {
                 collections: [collection.id],
-                limit: 5 // Limited to 5 items for faster loading
+                limit: 10 // Default query limit for collection browsing
             };
             
             console.log('📊 Search parameters:', searchParams);
@@ -1208,9 +1210,9 @@ export class CatalogBrowserPanel {
         // Create items grid in main content area
         const catalogTree = document.getElementById('catalog-tree-view');
         catalogTree.innerHTML = `
-            <div class="items-grid" id="items-list">
+            <ul class="results-list" id="items-list">
                 <!-- Items will be rendered here -->
-            </div>
+            </ul>
         `;
         
         // Progressive loading for better performance with large collections
@@ -1479,8 +1481,8 @@ export class CatalogBrowserPanel {
     }
     
     createItemElement(item) {
-        const element = document.createElement('div');
-        element.className = 'catalog-item item-item';
+        const element = document.createElement('li');
+        element.className = 'dataset-item';
         element.setAttribute('tabindex', '0');
         element.setAttribute('role', 'button');
         element.setAttribute('aria-label', `STAC Item: ${item.properties?.title || item.id}`);
@@ -1488,62 +1490,100 @@ export class CatalogBrowserPanel {
         const title = item.properties?.title || item.id;
         const datetime = item.properties?.datetime ? 
             new Date(item.properties.datetime).toLocaleDateString() : 'No date';
-        const description = item.properties?.description || 
-                          `STAC item from ${item.collection || 'unknown collection'}`;
         
-        const thumbnail = this.getThumbnailUrl(item);
+        const thumbnailUrl = this.getThumbnailUrl(item);
+        const hasThumbnail = !!thumbnailUrl;
         const cloudCover = item.properties?.['eo:cloud_cover'];
-        const instruments = item.properties?.instruments?.join(', ');
         
-        element.innerHTML = `
-            <div class="catalog-item-thumbnail ${thumbnail ? '' : 'loading'}">
-                ${thumbnail ? 
-                    `<img src="${thumbnail}" alt="${title}" loading="lazy" onerror="this.parentElement.innerHTML='<i class=\"material-icons\">broken_image</i>'">` : 
-                    '<i class="material-icons">image</i>'
-                }
-            </div>
-            <div class="catalog-item-content">
-                <div class="catalog-item-title">${title}</div>
-                <div class="catalog-item-description">${description}</div>
-                <div class="catalog-item-meta">
-                    <span class="item-date"><i class="material-icons">event</i>${datetime}</span>
-                    ${cloudCover !== undefined ? `<span class="cloud-cover"><i class="material-icons">cloud</i>${Math.round(cloudCover)}%</span>` : ''}
-                    ${instruments ? `<span class="instruments"><i class="material-icons">satellite</i>${instruments}</span>` : ''}
-                    <span class="item-id"><i class="material-icons">fingerprint</i>${item.id}</span>
+        // Format date and cloud cover (same as ResultsPanel)
+        const itemDate = datetime;
+        const cloudIcon = cloudCover !== undefined ? 
+            ` <span class="cloud-info" title="Cloud cover: ${Math.round(cloudCover)}%">
+                <i class="material-icons">cloud</i>${Math.round(cloudCover)}%
+             </span>` : '';
+        
+        // Use the same card structure as ResultsPanel with additional ID info
+        if (hasThumbnail && thumbnailUrl) {
+            element.innerHTML = `
+                <div class="dataset-content clickable-card" title="Click to view on map">
+                    <div class="thumbnail-container">
+                        <div class="dataset-metadata">
+                            <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
+                        </div>
+                        <img data-src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail lazy-loading">
+                        <div class="thumbnail-overlay">
+                            <button class="info-btn details-btn" title="Show details">
+                                <i class="material-icons">info</i>
+                            </button>
+                            <button class="info-btn viz-btn" title="High Resolution Preview">
+                                <i class="material-icons">visibility</i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="dataset-info-bottom">
+                        <div class="dataset-title" title="${title}">${title}</div>
+                    </div>
                 </div>
-            </div>
-            <div class="catalog-item-actions">
-                <button class="btn-icon view-item" title="Preview Item" aria-label="Preview ${title}">
-                    <i class="material-icons">visibility</i>
-                </button>
-                <button class="btn-icon select-item" title="Add to Map" aria-label="Add ${title} to map">
-                    <i class="material-icons">add_location</i>
-                </button>
-            </div>
-        `;
+            `;
+        } else {
+            // No thumbnail available - show minimal info as clickable card
+            element.innerHTML = `
+                <div class="dataset-content clickable-card no-thumbnail" title="Click to view on map">
+                    <div class="dataset-info">
+                        <div class="dataset-metadata">
+                            <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
+                        </div>
+                        <div class="thumbnail-overlay">
+                            <button class="info-btn details-btn" title="Show details">
+                                <i class="material-icons">info</i>
+                            </button>
+                            <button class="info-btn viz-btn" title="High Resolution Preview">
+                                <i class="material-icons">visibility</i>
+                            </button>
+                        </div>
+                        <div class="dataset-title" title="${title}">${title}</div>
+                    </div>
+                </div>
+            `;
+        }
         
-        // Enhanced interaction handlers
-        const viewBtn = element.querySelector('.view-item');
-        const selectBtn = element.querySelector('.select-item');
-        
-        viewBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            this.viewItem(item);
-        });
-        
-        selectBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (this.onItemSelect) {
-                this.onItemSelect(item);
-                // Visual feedback
-                selectBtn.innerHTML = '<i class="material-icons">check</i>';
-                selectBtn.style.background = 'var(--success-color)';
-                setTimeout(() => {
-                    selectBtn.innerHTML = '<i class="material-icons">add_location</i>';
-                    selectBtn.style.background = '';
-                }, 1000);
-            }
-        });
+        // Handle thumbnail error (similar to ResultsPanel)
+        const thumbnailImg = element.querySelector('.dataset-thumbnail');
+        if (thumbnailImg) {
+            thumbnailImg.onerror = () => {
+                console.log('🚫 Thumbnail failed to load for item:', item.id, '- converting to no-thumbnail layout');
+                
+                // Replace the entire card content with no-thumbnail layout (same as ResultsPanel)
+                const clickableCard = element.querySelector('.clickable-card');
+                if (clickableCard) {
+                    clickableCard.innerHTML = `
+                        <div class="dataset-info">
+                            <div class="dataset-metadata">
+                                <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
+                            </div>
+                            <div class="thumbnail-overlay">
+                                <button class="info-btn details-btn" title="Show details">
+                                    <i class="material-icons">info</i>
+                                </button>
+                                <button class="info-btn viz-btn" title="High Resolution Preview">
+                                    <i class="material-icons">visibility</i>
+                                </button>
+                            </div>
+                            <div class="dataset-title" title="${title}">${title}</div>
+                        </div>
+                    `;
+                    
+                    // Add the no-thumbnail class
+                    clickableCard.classList.add('no-thumbnail');
+                    
+                    // Re-attach event listeners to the new buttons
+                    this.attachItemEventListeners(element, item);
+                }
+            };
+        }
+
+        // Attach event listeners using the new card structure
+        this.attachItemEventListeners(element, item);
         
         // Keyboard navigation
         element.addEventListener('keydown', (e) => {
@@ -1554,8 +1594,8 @@ export class CatalogBrowserPanel {
         });
         
         // Enhanced hover effects for thumbnail
-        const thumbnail_el = element.querySelector('.catalog-item-thumbnail');
-        if (thumbnail) {
+        const thumbnail_el = element.querySelector('.thumbnail-container');
+        if (thumbnail_el) {
             thumbnail_el.addEventListener('mouseenter', () => {
                 const img = thumbnail_el.querySelector('img');
                 if (img && !img.complete) {
@@ -1567,16 +1607,116 @@ export class CatalogBrowserPanel {
         return element;
     }
     
+    /**
+     * Attach event listeners to item cards (same as ResultsPanel)
+     */
+    attachItemEventListeners(element, item) {
+        const clickableCard = element.querySelector('.clickable-card');
+        const detailsBtn = element.querySelector('.details-btn');
+        const vizBtn = element.querySelector('.viz-btn');
+        
+        // Main card click - view on map
+        if (clickableCard) {
+            clickableCard.addEventListener('click', (e) => {
+                // Don't trigger if clicking on buttons
+                if (e.target.closest('.info-btn')) {
+                    return;
+                }
+                
+                console.log('🗺️ [CATALOG-BROWSER] Adding item to map:', item.id);
+                if (this.onItemSelect) {
+                    this.onItemSelect(item);
+                }
+            });
+        }
+        
+        // Details button
+        if (detailsBtn) {
+            detailsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.viewItem(item);
+            });
+        }
+        
+        // Visualization button - same as details for now
+        if (vizBtn) {
+            vizBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.onItemSelect) {
+                    this.onItemSelect(item);
+                    
+                    // Visual feedback
+                    const originalIcon = vizBtn.innerHTML;
+                    vizBtn.innerHTML = '<i class="material-icons">check</i>';
+                    vizBtn.style.background = 'var(--success-color)';
+                    setTimeout(() => {
+                        vizBtn.innerHTML = originalIcon;
+                        vizBtn.style.background = '';
+                    }, 1500);
+                }
+            });
+        }
+    }
+    
     getThumbnailUrl(item) {
-        if (!item.assets) return null;
+        // Helper function to check if URL is usable (same as ResultsPanel)
+        const isUsableUrl = (url) => {
+            if (!url) return false;
+            // Skip S3 URLs as they often have CORS issues in browser
+            if (url.includes('s3.amazonaws.com') || url.includes('.s3.')) return false;
+            return true;
+        };
+
+        let thumbnailUrl = null;
+        let hasThumbnail = false;
+
+        // PRIORITY 1: Check for thumbnail sources with rendered_preview prioritized (same as ResultsPanel)
         
-        const thumbnailAsset = item.assets.thumbnail || 
-                              item.assets.preview || 
-                              Object.values(item.assets).find(asset => 
-                                  asset.type?.includes('image') && asset.roles?.includes('thumbnail')
-                              );
-        
-        return thumbnailAsset?.href;
+        // PRIORITY 1a: Check links.thumbnail first (highest priority)
+        if (item.links) {
+            const thumbnailLink = item.links.find(link => link.rel === 'thumbnail');
+            if (thumbnailLink && isUsableUrl(thumbnailLink.href)) {
+                thumbnailUrl = thumbnailLink.href;
+                hasThumbnail = true;
+            }
+        }
+
+        // PRIORITY 1b: Check assets.rendered_preview (prioritized over links.preview)
+        if (!hasThumbnail && item.assets && item.assets.rendered_preview && isUsableUrl(item.assets.rendered_preview.href)) {
+            thumbnailUrl = item.assets.rendered_preview.href;
+            hasThumbnail = true;
+        }
+
+        // PRIORITY 1c: Check links.preview (after rendered_preview)
+        if (!hasThumbnail && item.links) {
+            const previewLink = item.links.find(link => link.rel === 'preview');
+            if (previewLink && isUsableUrl(previewLink.href)) {
+                thumbnailUrl = previewLink.href;
+                hasThumbnail = true;
+            }
+        }
+
+        // PRIORITY 2: Check remaining assets only if no thumbnail found yet
+        if (!hasThumbnail && item.assets) {
+            if (item.assets.thumbnail && isUsableUrl(item.assets.thumbnail.href)) {
+                thumbnailUrl = item.assets.thumbnail.href;
+                hasThumbnail = true;
+            } else if (item.assets.preview && isUsableUrl(item.assets.preview.href)) {
+                thumbnailUrl = item.assets.preview.href;
+                hasThumbnail = true;
+            } else if (item.assets.overview && isUsableUrl(item.assets.overview.href)) {
+                thumbnailUrl = item.assets.overview.href;
+                hasThumbnail = true;
+            } else if (item.assets.visual && isUsableUrl(item.assets.visual.href)) {
+                thumbnailUrl = item.assets.visual.href;
+                hasThumbnail = true;
+            } else if (item.assets.true_color && isUsableUrl(item.assets.true_color.href)) {
+                thumbnailUrl = item.assets.true_color.href;
+                hasThumbnail = true;
+            }
+        }
+
+        return thumbnailUrl;
     }
     
     viewItem(item) {

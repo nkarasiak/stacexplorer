@@ -323,6 +323,22 @@ export class UnifiedRouter {
     async handleBrowserRootRoute() {
         console.log('📍 Handling browser root route - catalog selection');
         
+        // Ensure we're in browser mode and show the catalog browser
+        if (this.currentMode !== 'browser') {
+            this.currentMode = 'browser';
+            
+            // Show catalog browser directly
+            if (this.stateManager.catalogBrowser) {
+                this.stateManager.catalogBrowser.show(true); // Skip auto-load
+            }
+            
+            // Update UI state without triggering events that cause reloads
+            if (this.stateManager.viewModeToggle) {
+                this.stateManager.viewModeToggle.setMode('catalog', true); // silent mode
+            }
+        }
+        
+        // Navigate to root (catalog selection)
         if (this.stateManager.catalogBrowser) {
             this.stateManager.catalogBrowser.navigateToRoot();
         }

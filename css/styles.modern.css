@@ -1879,9 +1879,7 @@ html.dark-theme .collection-details-modal-overlay {
 html.dark-theme .collection-details-modal-dialog {
     background: var(--surface-elevated) !important;
     border-color: var(--border-primary) !important;
-    box-shadow: var(--elevated-shadow) !important;
-}
-    box-shadow: var(--shadow-xl);
+    box-shadow: var(--shadow-xl) !important;
     width: 90%;
     max-width: 800px;
     max-height: 90vh;

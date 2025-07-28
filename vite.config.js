@@ -1,11 +1,60 @@
 import { defineConfig } from 'vite'
 import legacy from '@vitejs/plugin-legacy'
+import { VitePWA } from 'vite-plugin-pwa'
+import { visualizer } from 'rollup-plugin-visualizer'
 import { resolve } from 'path'
 
 export default defineConfig({
   plugins: [
     legacy({
       targets: ['defaults', 'not IE 11']
+    }),
+    
+    // Bundle analyzer for optimization insights
+    visualizer({
+      filename: 'dist/stats.html',
+      open: false,
+      gzipSize: true,
+      brotliSize: true
+    }),
+    
+    // PWA for caching and offline support
+    VitePWA({
+      registerType: 'prompt',
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp}'],
+        maximumFileSizeToCacheInBytes: 3000000, // 3MB
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.element84\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'stac-api-cache',
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24 // 24 hours
+              }
+            }
+          }
+        ]
+      },
+      manifest: {
+        name: 'STAC Explorer',
+        short_name: 'STAC Explorer',
+        description: 'Modern STAC Catalog Explorer with ultra-fast browser mode',
+        theme_color: '#667eea',
+        background_color: '#ffffff',
+        display: 'standalone',
+        scope: '/',
+        start_url: '/',
+        icons: [
+          {
+            src: '/favicon.svg',
+            sizes: 'any',
+            type: 'image/svg+xml'
+          }
+        ]
+      }
     })
   ],
   
@@ -31,9 +80,19 @@ export default defineConfig({
 
   // Build configuration
   build: {
-    outDir: '.',
+    outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: true,
+    
+    // Optimize for faster loading
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false, // Keep console logs for debugging
+        drop_debugger: true,
+        pure_funcs: ['console.debug'], // Remove debug logs only
+      }
+    },
     
     // Code splitting configuration
     rollupOptions: {
@@ -45,6 +104,21 @@ export default defineConfig({
           // Vendor libraries
           'vendor-maps': ['@deck.gl/core', '@deck.gl/geo-layers', '@deck.gl/layers'],
           'vendor-loaders': ['@loaders.gl/core', '@loaders.gl/tiles'],
+          
+          // Browser mode components (for fast loading)
+          'browser-core': [
+            './js/components/search/CatalogBrowserPanel.js',
+            './js/components/ui/ViewModeToggle.js',
+            './js/utils/UnifiedRouter.js'
+          ],
+          
+          // Search and map components (can be lazy loaded)
+          'search-components': [
+            './js/components/search/CardSearchPanel.js',
+            './js/components/search/CollectionManagerEnhanced.js',
+            './js/components/search/FilterManager.js',
+            './js/components/map/MapManager.js'
+          ],
           
           // Large components that can be lazy loaded
           'visualization': [
@@ -73,7 +147,10 @@ export default defineConfig({
       '@': resolve(__dirname, './js'),
       '@components': resolve(__dirname, './js/components'),
       '@utils': resolve(__dirname, './js/utils'),
-      '@css': resolve(__dirname, './css')
+      '@css': resolve(__dirname, './css'),
+      '@browser': resolve(__dirname, './js/components/search'),
+      '@ui': resolve(__dirname, './js/components/ui'),
+      '@api': resolve(__dirname, './js/components/api')
     }
   },
 
@@ -81,6 +158,12 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       // Add any CSS preprocessing if needed
+    },
+    devSourcemap: true,
+    postcss: {
+      plugins: [
+        // Add PostCSS plugins for optimization if needed
+      ]
     }
   },
 
@@ -92,6 +175,26 @@ export default defineConfig({
       '@deck.gl/layers',
       '@loaders.gl/core',
       '@loaders.gl/tiles'
+    ],
+    
+    // Pre-bundle browser mode dependencies for faster loading
+    force: false,
+    
+    // Exclude heavy dependencies that should be lazy loaded
+    exclude: [
+      'visualization',
+      'performance'
     ]
+  },
+  
+  // Environment variables
+  define: {
+    __VITE_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __VITE_VERSION__: JSON.stringify(process.env.npm_package_version || '2.8.0')
+  },
+  
+  // Enable experimental features for better performance  
+  experimental: {
+    // renderBuiltUrl for CDN support if needed
   }
 })

@@ -124,7 +124,7 @@ export class SatelliteAnimation {
         
         // Create satellite image
         this.satellite = document.createElement('img');
-        this.satellite.src = 'static/images/earthdaily_satellite.webp';
+        this.satellite.src = '/static/images/earthdaily_satellite.webp';
         this.satellite.className = 'satellite hidden';
         this.satellite.alt = 'Satellite';
         

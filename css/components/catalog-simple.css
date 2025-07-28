@@ -799,12 +799,9 @@
 
 .collection-card-title {
     margin: 0 0 1rem 0;
-    font-size: 1.2rem;
-    font-weight: 700;
-    background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    font-size: 1rem;
+    font-weight: 400;
+    color: #1f2937;
     line-height: 1.4;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -816,10 +813,7 @@
 }
 
 .collection-card:hover .collection-card-title {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #4f46e5;
     transform: translateY(-1px);
 }
 
@@ -1001,7 +995,11 @@
 }
 
 [data-theme="dark"] .collection-card-title {
-    color: #f1f5f9;
+    color: #e2e8f0;
+}
+
+[data-theme="dark"] .collection-card:hover .collection-card-title {
+    color: #8b5cf6;
 }
 
 [data-theme="dark"] .collection-card-description {

@@ -182,8 +182,8 @@
 
 .collection-card-title {
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 700;
+    font-size: 1rem;
+    font-weight: 400;
     color: #1a202c;
     line-height: 1.3;
     flex: 1;
@@ -388,7 +388,7 @@
 }
 
 [data-theme="dark"] .collection-card-title {
-    color: #f1f5f9;
+    color: #e2e8f0;
 }
 
 [data-theme="dark"] .collection-card-description {

@@ -487,8 +487,8 @@
 
 .collection-card-title {
     margin: 0;
-    font-size: 1.1rem;
-    font-weight: 600;
+    font-size: 0.95rem;
+    font-weight: 400;
     color: var(--text-color, #1f2937);
     line-height: 1.3;
     flex: 1;
@@ -694,6 +694,18 @@ html.light-theme .collection-card-title {
 .light-theme .collection-card.priority-collection .collection-card-title,
 html.light-theme .collection-card.priority-collection .collection-card-title {
     color: var(--text-color, #1f2937) !important;
+}
+
+[data-theme="dark"] .collection-card-title,
+.dark-theme .collection-card-title,
+html.dark-theme .collection-card-title {
+    color: var(--text-color-dark, #e2e8f0);
+}
+
+[data-theme="dark"] .collection-card.priority-collection .collection-card-title,
+.dark-theme .collection-card.priority-collection .collection-card-title,
+html.dark-theme .collection-card.priority-collection .collection-card-title {
+    color: var(--text-color-dark, #e2e8f0) !important;
 }
 
 [data-theme="light"] .collection-card-description,

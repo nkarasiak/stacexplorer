@@ -29,90 +29,113 @@ export class CatalogBrowserPanel {
         panel.className = 'catalog-browser-panel hidden';
         
         panel.innerHTML = `
-            <div class="catalog-browser-header">
-                <div class="header-left">
-                    <h3>
+            <!-- Sidebar - Matching Main App Layout -->
+            <aside class="catalog-browser-sidebar">
+                <div class="sidebar-header">
+                    <h1 id="app-logo" style="cursor: pointer;" title="Return to Homepage">
+                        <i class="material-icons">satellite_alt</i> 
+                        <span>STAC Explorer</span>
+                    </h1>
+                    <div class="header-actions">
+                        <button id="catalog-browser-close" title="Close Browser">
+                            <i class="material-icons">close</i>
+                        </button>
+                    </div>
+                </div>
+                <div class="browser-section-header">
+                    <h2>
                         <i class="material-icons">folder_open</i>
-                        STAC Catalog Browser
-                    </h3>
-                </div>
-                <div class="header-right">
-                    <button id="return-to-map" class="btn btn-primary" title="Return to Map View">
-                        <i class="material-icons">map</i>
-                        Return to Map
-                    </button>
-                    <button id="catalog-browser-close" class="btn-icon" title="Close Browser">
-                        <i class="material-icons">close</i>
-                    </button>
-                </div>
-            </div>
-            
-            <div class="catalog-breadcrumb">
-                <div id="breadcrumb-container"></div>
-            </div>
-            
-            <!-- Collections header below breadcrumb -->
-            <div class="collections-header" id="collections-header-main" style="display: none;">
-                <div class="header-info">
-                    <h2 id="collections-title">Collections Available</h2>
-                </div>
-                <div class="header-controls">
-                    <div class="search-container">
-                        <input 
-                            type="text" 
-                            id="collections-search" 
-                            placeholder="Search collections..." 
-                            class="search-input"
-                        >
-                        <button class="clear-search-btn" id="clear-collections-search" style="display: none;">
-                            ✕
-                        </button>
-                    </div>
-                    <div class="view-toggle">
-                        <button class="view-btn active" id="grid-view" title="Grid View">
-                            <i class="material-icons">grid_view</i>
-                        </button>
-                        <button class="view-btn" id="list-view" title="List View">
-                            <i class="material-icons">view_list</i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="catalog-browser-content">
-                <div id="catalog-loading" class="loading-state hidden">
-                    <div class="loading-spinner"></div>
-                    <span>Loading catalog...</span>
+                        <span>Browser</span>
+                    </h2>
                 </div>
                 
-                <div id="catalog-tree-view" class="catalog-tree">
-                    <div class="catalog-section">
-                        <h4>Collections</h4>
-                        <div id="collections-list" class="catalog-items-list"></div>
-                    </div>
-                    
-                    <div class="catalog-section" id="items-section" style="display: none;">
-                        <h4>Items</h4>
-                        <div class="catalog-view-controls">
-                            <select id="items-sort" class="form-control">
-                                <option value="datetime">Sort by Date</option>
-                                <option value="id">Sort by ID</option>
-                                <option value="properties.title">Sort by Title</option>
-                            </select>
-                            <div class="items-count">
-                                <span id="items-count-display">0 items</span>
+                <div class="catalog-breadcrumb">
+                    <div id="breadcrumb-container"></div>
+                </div>
+                
+                <div class="catalog-browser-sidebar-content">
+                    <!-- Search Interface Card -->
+                    <div class="catalog-card-container" id="search-card" style="display: none;">
+                        <div class="catalog-card-header">
+                            <h2>
+                                <i class="material-icons">search</i>
+                                Search Collections
+                            </h2>
+                        </div>
+                        <div class="catalog-card-body">
+                            <div class="catalog-search-interface">
+                                <div class="search-input-container">
+                                    <i class="material-icons">search</i>
+                                    <input 
+                                        type="text" 
+                                        id="collections-search" 
+                                        placeholder="Search collections..." 
+                                    >
+                                    <button class="clear-search-btn" id="clear-collections-search" style="display: none;">
+                                        <i class="material-icons">close</i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                        <div id="items-list" class="catalog-items-list"></div>
+                    </div>
+                    
+                    <!-- Collections Card -->
+                    <div class="catalog-card-container" id="collections-card" style="display: none;">
+                        <div class="catalog-card-header">
+                            <h2>
+                                <i class="material-icons">layers</i>
+                                <span id="collections-title">Collections</span>
+                            </h2>
+                        </div>
+                        <div class="catalog-card-body">
+                            <div id="collections-count-display">0 collections</div>
+                        </div>
+                    </div>
+                    
+                    <!-- Items Card -->
+                    <div class="catalog-card-container" id="items-card" style="display: none;">
+                        <div class="catalog-card-header">
+                            <h2>
+                                <i class="material-icons">image</i>
+                                Items
+                            </h2>
+                            <div class="catalog-view-controls">
+                                <select id="items-sort" class="form-control">
+                                    <option value="datetime">Sort by Date</option>
+                                    <option value="id">Sort by ID</option>
+                                    <option value="properties.title">Sort by Title</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="catalog-card-body">
+                            <div id="items-count-display">0 items</div>
+                        </div>
                     </div>
                 </div>
-                
-                <div id="catalog-error" class="error-state hidden">
-                    <i class="material-icons">error</i>
-                    <span id="error-message">Failed to load catalog</span>
-                    <button id="retry-catalog" class="btn btn-primary">Retry</button>
+            </aside>
+            
+            <!-- Main Content Area -->
+            <main class="catalog-browser-main">
+                <div class="catalog-content-container">
+                    <!-- Loading State -->
+                    <div id="catalog-loading" class="loading-state hidden">
+                        <div class="loading-spinner"></div>
+                        <span>Loading catalog...</span>
+                    </div>
+                    
+                    <!-- Main Content -->
+                    <div id="catalog-tree-view">
+                        <!-- Collections will be rendered here -->
+                    </div>
+                    
+                    <!-- Error State -->
+                    <div id="catalog-error" class="error-state hidden">
+                        <i class="material-icons">error</i>
+                        <span id="error-message">Failed to load catalog</span>
+                        <button id="retry-catalog" class="catalog-connect-btn">Retry</button>
+                    </div>
                 </div>
-            </div>
+            </main>
         `;
         
         document.body.appendChild(panel);
@@ -124,22 +147,22 @@ export class CatalogBrowserPanel {
             this.hide();
         });
         
-        document.getElementById('return-to-map').addEventListener('click', () => {
-            // Switch back to map mode using the view mode toggle
-            if (window.stacExplorer?.viewModeToggle) {
-                window.stacExplorer.viewModeToggle.setMode('map');
-            } else {
-                this.hide();
-            }
+        // Add click handler for the STAC Explorer logo to return to homepage
+        document.getElementById('app-logo').addEventListener('click', () => {
+            window.location.href = '/view';
         });
         
         document.getElementById('retry-catalog').addEventListener('click', () => {
             this.loadCurrentLevel();
         });
         
-        document.getElementById('items-sort').addEventListener('change', (e) => {
-            this.sortItems(e.target.value);
-        });
+        // Items sort might not exist initially, so check for it
+        const itemsSort = document.getElementById('items-sort');
+        if (itemsSort) {
+            itemsSort.addEventListener('change', (e) => {
+                this.sortItems(e.target.value);
+            });
+        }
     }
     
     show(skipAutoLoad = false) {
@@ -151,7 +174,13 @@ export class CatalogBrowserPanel {
         
         // Only load root catalogs if not skipping auto-load (for direct deep links)
         if (!skipAutoLoad) {
-            this.loadRootCatalogs();
+            // Check if we have API endpoints configured
+            if (!this.apiClient.endpoints.collections && !this.apiClient.endpoints.root) {
+                // Show catalog selection immediately if no endpoints
+                this.showCatalogSelection();
+            } else {
+                this.loadRootCatalogs();
+            }
         }
         
         this.notifyStateChange();
@@ -167,15 +196,14 @@ export class CatalogBrowserPanel {
         // Force remove any stuck states with aggressive CSS
         if (loadingEl) {
             loadingEl.classList.add('hidden');
-            loadingEl.style.cssText = 'display: none !important; height: 0 !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important;';
+            loadingEl.style.display = 'none';
         }
         if (treeEl) {
-            treeEl.classList.remove('hidden');
-            treeEl.style.cssText = 'display: flex !important;';
+            treeEl.style.display = 'block';
         }
         if (errorEl) {
             errorEl.classList.add('hidden');
-            errorEl.style.cssText = 'display: none !important; height: 0 !important; padding: 0 !important; margin: 0 !important; overflow: hidden !important;';
+            errorEl.style.display = 'none';
         }
         
         // Force DOM repaint
@@ -247,128 +275,32 @@ export class CatalogBrowserPanel {
         
         console.log(`📚 Displaying ${this.allCollections.length} collections`);
         
-        // Show and update the header below breadcrumb
-        const headerMain = document.getElementById('collections-header-main');
+        // Show sidebar cards and update counts
+        document.getElementById('search-card').style.display = 'block';
+        document.getElementById('collections-card').style.display = 'block';
+        
         const collectionsTitle = document.getElementById('collections-title');
-        if (headerMain && collectionsTitle) {
-            headerMain.style.display = 'block';
-            collectionsTitle.textContent = `${this.allCollections.length} Collections Available`;
+        const collectionsCountDisplay = document.getElementById('collections-count-display');
+        if (collectionsTitle && collectionsCountDisplay) {
+            collectionsTitle.textContent = 'Collections';
+            collectionsCountDisplay.textContent = `${this.allCollections.length} collections available`;
         }
         
-        // Create simple full-width collection display with pagination
+        // Create collections grid in main content area
         const catalogTree = document.getElementById('catalog-tree-view');
         catalogTree.innerHTML = `
-            <!-- Collections grid (full width) -->
-            <div class="collections-grid grid-view" id="collections-grid">
+            <div class="collections-grid" id="collections-grid">
                 <!-- Collections will be rendered here -->
-            </div>
-            
-            <!-- Pagination controls -->
-            <div class="pagination-controls" id="pagination-controls">
-                <button id="prev-page" class="btn btn-secondary">
-                    <i class="material-icons">chevron_left</i> Previous
-                </button>
-                <span id="page-info" class="page-info">Page 1 of 1</span>
-                <button id="next-page" class="btn btn-secondary">
-                    Next <i class="material-icons">chevron_right</i>
-                </button>
-                <select id="collections-per-page-select" class="form-control">
-                    <option value="20">20 per page</option>
-                    <option value="50">50 per page</option>
-                    <option value="100">100 per page</option>
-                </select>
-            </div>
-            
-            <!-- Items section (hidden by default) -->
-            <div class="items-section" id="items-section" style="display: none;">
-                <div class="items-header">
-                    <h3>Items</h3>
-                    <div class="items-controls">
-                        <select id="items-sort">
-                            <option value="datetime">Sort by Date</option>
-                            <option value="id">Sort by ID</option>
-                            <option value="properties.title">Sort by Title</option>
-                        </select>
-                        <span id="items-count-display">0 items</span>
-                    </div>
-                </div>
-                <div id="items-list" class="items-grid"></div>
             </div>
         `;
         
-        // Re-setup the items sort event listener
-        const itemsSort = document.getElementById('items-sort');
-        if (itemsSort) {
-            itemsSort.addEventListener('change', (e) => {
-                this.sortItems(e.target.value);
-            });
-        }
-        
-        // Initialize view mode
-        this.viewMode = 'grid'; // 'grid' or 'list'
-        
-        // Setup collections search and view toggle
+        // Setup collections search
         this.setupCollectionsSearch();
-        this.setupViewToggle();
         
-        // Initialize pagination
-        this.collectionsPerPage = 20; // Reduced from default
-        this.currentPage = 1;
-        
-        // Render collections with pagination
-        this.renderCollectionsPage();
-        
-        // Set initial view mode
-        this.setViewMode('grid');
-        
-        document.getElementById('items-section').style.display = 'none';
+        // Render all collections
+        this.renderAllCollections();
     }
     
-    /**
-     * Render collections page with pagination for performance
-     */
-    renderCollectionsPage() {
-        const grid = document.getElementById('collections-grid');
-        
-        if (!grid) {
-            console.error('Collections grid element not found!');
-            return;
-        }
-        
-        // Calculate pagination
-        const startIndex = (this.currentPage - 1) * this.collectionsPerPage;
-        const endIndex = startIndex + this.collectionsPerPage;
-        const pageCollections = this.filteredCollections.slice(startIndex, endIndex);
-        
-        console.log(`📄 Rendering page ${this.currentPage}: ${pageCollections.length} collections (${startIndex}-${endIndex} of ${this.filteredCollections.length})`);
-        
-        // Ensure grid has proper classes
-        grid.className = `collections-grid ${this.viewMode}-view`;
-        
-        // Render collections for current page only
-        if (pageCollections.length === 0) {
-            grid.innerHTML = `
-                <div class="empty-state">
-                    <p>No collections found${this.searchTerm ? ' matching your search' : ''}</p>
-                    ${this.searchTerm ? '<button onclick="document.getElementById(\'collections-search\').value = \'\'; document.getElementById(\'collections-search\').dispatchEvent(new Event(\'input\'));">Clear Search</button>' : ''}
-                </div>
-            `;
-        } else {
-            grid.innerHTML = pageCollections.map(collection => this.renderCollectionCard(collection)).join('');
-            
-            // Attach event listeners
-            this.attachCollectionCardEventListeners(pageCollections);
-        }
-        
-        // Update header count and pagination
-        this.updateHeaderAndPagination();
-        
-        // Setup lazy loading for images
-        this.setupImageLazyLoading();
-        
-        // Scroll to top of grid
-        grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
     
     /**
      * Render all collections (fallback method)
@@ -414,38 +346,6 @@ export class CatalogBrowserPanel {
         console.log(`Grid children: ${grid.children.length}`);
     }
 
-    /**
-     * Setup pagination event listeners
-     */
-    setupPagination() {
-        const prevBtn = document.getElementById('prev-page');
-        const nextBtn = document.getElementById('next-page');
-        const perPageSelect = document.getElementById('collections-per-page-select');
-        
-        prevBtn.addEventListener('click', () => {
-            if (this.currentPage > 1) {
-                this.currentPage--;
-                this.renderCollectionsPage();
-                this.scrollToTop();
-            }
-        });
-        
-        nextBtn.addEventListener('click', () => {
-            const totalPages = Math.ceil(this.filteredCollections.length / this.collectionsPerPage);
-            if (this.currentPage < totalPages) {
-                this.currentPage++;
-                this.renderCollectionsPage();
-                this.scrollToTop();
-            }
-        });
-        
-        perPageSelect.addEventListener('change', (e) => {
-            this.collectionsPerPage = parseInt(e.target.value);
-            this.currentPage = 1; // Reset to first page
-            this.renderCollectionsPage();
-            console.log(`📄 Changed to ${this.collectionsPerPage} collections per page`);
-        });
-    }
     
     /**
      * Setup collections search functionality
@@ -545,76 +445,13 @@ export class CatalogBrowserPanel {
             });
         }
         
-        // Reset to first page and re-render
-        this.currentPage = 1;
-        this.renderCollectionsPage();
+        // Re-render all collections
+        this.renderAllCollections();
         
         console.log(`🔍 Filtered ${this.filteredCollections.length} of ${this.allCollections.length} collections for "${this.searchTerm}"`);
     }
     
-    /**
-     * Setup pagination event listeners
-     */
-    setupPagination() {
-        const prevBtn = document.getElementById('prev-page');
-        const nextBtn = document.getElementById('next-page');
-        const perPageSelect = document.getElementById('collections-per-page-select');
-        
-        prevBtn.addEventListener('click', () => {
-            if (this.currentPage > 1) {
-                this.currentPage--;
-                this.renderCollectionsPage();
-                this.scrollToTop();
-            }
-        });
-        
-        nextBtn.addEventListener('click', () => {
-            const totalPages = Math.ceil(this.filteredCollections.length / this.collectionsPerPage);
-            if (this.currentPage < totalPages) {
-                this.currentPage++;
-                this.renderCollectionsPage();
-                this.scrollToTop();
-            }
-        });
-        
-        perPageSelect.addEventListener('change', (e) => {
-            this.collectionsPerPage = parseInt(e.target.value);
-            this.currentPage = 1; // Reset to first page
-            this.renderCollectionsPage();
-        });
-    }
     
-    /**
-     * Update header count and pagination controls
-     */
-    updateHeaderAndPagination() {
-        // Update header count in the main header
-        const collectionsTitle = document.getElementById('collections-title');
-        if (collectionsTitle) {
-            const count = this.searchTerm ? this.filteredCollections.length : this.allCollections.length;
-            const total = this.allCollections.length;
-            collectionsTitle.textContent = this.searchTerm ? `${count} of ${total} Collections` : `${total} Collections Available`;
-        }
-        
-        // Update pagination controls
-        const pageInfo = document.getElementById('page-info');
-        const prevBtn = document.getElementById('prev-page');
-        const nextBtn = document.getElementById('next-page');
-        const paginationControls = document.getElementById('pagination-controls');
-        
-        if (pageInfo && prevBtn && nextBtn) {
-            const totalPages = Math.ceil(this.filteredCollections.length / this.collectionsPerPage);
-            
-            pageInfo.textContent = `Page ${this.currentPage} of ${totalPages}`;
-            prevBtn.disabled = this.currentPage <= 1;
-            nextBtn.disabled = this.currentPage >= totalPages;
-            
-            // Show/hide pagination if needed
-            if (paginationControls) {
-                paginationControls.style.display = totalPages > 1 ? 'flex' : 'none';
-            }
-        }
-    }
     
     /**
      * Scroll to top of page
@@ -688,6 +525,14 @@ export class CatalogBrowserPanel {
         const title = collection.title || collection.id;
         const description = collection.description || 'No description available';
         
+        console.log('[BROWSER] Rendering collection card:', {
+            id: collection.id,
+            title: title,
+            description: description.substring(0, 100) + '...',
+            hasTitle: !!collection.title,
+            hasDescription: !!collection.description
+        });
+        
         // Get temporal extent
         let temporalInfo = '';
         if (collection.extent?.temporal?.interval?.[0]?.[0]) {
@@ -727,12 +572,8 @@ export class CatalogBrowserPanel {
                 
                 <div class="collection-card-content">
                     <h3 class="collection-card-title" title="${title}">
-                        ${title}
+                        ${title || collection.id || 'Untitled Collection'}
                     </h3>
-                    
-                    <p class="collection-card-description">
-                        ${description.length > 150 ? description.substring(0, 150) + '...' : description}
-                    </p>
                     
                     <div class="collection-card-meta">
                         ${temporalInfo ? `
@@ -1332,35 +1173,17 @@ export class CatalogBrowserPanel {
     }
     
     displayItems(items) {
-        const itemsList = document.getElementById('items-list');
-        const itemsSection = document.getElementById('items-section');
+        // Hide collections card, show items card
+        document.getElementById('collections-card').style.display = 'none';
+        document.getElementById('items-card').style.display = 'block';
+        
         const countDisplay = document.getElementById('items-count-display');
-        const collectionsSection = document.querySelector('.catalog-section:not(#items-section)');
-        const headerMain = document.getElementById('collections-header-main');
-        
-        // Hide collections header and section, show items section
-        if (headerMain) {
-            headerMain.style.display = 'none';
-        }
-        if (collectionsSection) {
-            collectionsSection.style.display = 'none';
-            console.log('✅ Hidden collections section, showing items');
-        } else {
-            console.log('⚠️ Collections section not found');
-        }
-        
-        itemsList.innerHTML = '';
-        itemsSection.style.display = 'block';
         
         // Enhanced item count display with performance info
         const loadTime = performance.now() - (this.loadStartTime || performance.now());
-        countDisplay.innerHTML = `
-            <span class="items-count-number">${items.length}</span> items
-            <span class="load-time">loaded in ${Math.round(loadTime)}ms</span>
-        `;
-        
-        // Set item count for CSS styling
-        itemsList.setAttribute('data-item-count', items.length);
+        if (countDisplay) {
+            countDisplay.innerHTML = `${items.length} items loaded in ${Math.round(loadTime)}ms`;
+        }
         
         if (!items || items.length === 0) {
             // Get the current collection info for better error message
@@ -1368,48 +1191,27 @@ export class CatalogBrowserPanel {
             const collectionName = currentCollection?.data?.title || currentCollection?.data?.id || 'this collection';
             
             console.warn('⚠️ No items to display for collection:', collectionName);
-            console.warn('⚠️ Items array received:', items);
             
-            itemsList.innerHTML = `
-                <div class="no-items">
+            const catalogTree = document.getElementById('catalog-tree-view');
+            catalogTree.innerHTML = `
+                <div class="loading-state">
                     <i class="material-icons">search_off</i>
                     <p>No items found in ${collectionName}</p>
-                    <small>This collection may be empty, or there might be an issue with the API request. Check the browser console for more details.</small>
-                    <div class="debug-info" style="margin-top: 1rem; padding: 0.5rem; background: var(--bg-tertiary); border-radius: 0.3rem; font-family: monospace; font-size: 0.8rem;">
-                        <strong>Debug info:</strong><br>
-                        Collection ID: ${currentCollection?.data?.id || 'unknown'}<br>
-                        Collection Title: ${currentCollection?.data?.title || 'unknown'}<br>
-                        API Search Endpoint: ${this.apiClient?.endpoints?.search || 'not configured'}<br>
-                        API Collections Endpoint: ${this.apiClient?.endpoints?.collections || 'not configured'}<br>
-                        Items received: ${items ? items.length : 'null/undefined'}<br>
-                        <br>
-                        <strong>Troubleshooting:</strong><br>
-                        • Some collections require geographic (bbox) or temporal (datetime) constraints<br>
-                        • Check browser console for detailed API logs<br>
-                        • Collection might be available but empty for the current parameters<br>
-                        <br>
-                        <button onclick="
-                            fetch('${this.apiClient?.endpoints?.collections}')
-                                .then(r => r.json())
-                                .then(data => {
-                                    const allIds = data.collections.map(c => c.id);
-                                    const sentinelIds = data.collections
-                                        .filter(c => c.id.toLowerCase().includes('sentinel'))
-                                        .map(c => c.id);
-                                    console.log('📋 All collection IDs:', allIds);
-                                    console.log('🛰️ Sentinel collection IDs:', sentinelIds);
-                                    alert('Check console for collection IDs');
-                                });
-                        " style="margin-top: 0.5rem; padding: 0.3rem 0.6rem; background: var(--primary-color); color: white; border: none; border-radius: 0.3rem; cursor: pointer; font-size: 0.7rem;">
-                            Show Available Collections
-                        </button>
-                    </div>
+                    <small>This collection may be empty, or there might be an issue with the API request.</small>
                 </div>
             `;
             return;
         }
         
         this.currentItems = items;
+        
+        // Create items grid in main content area
+        const catalogTree = document.getElementById('catalog-tree-view');
+        catalogTree.innerHTML = `
+            <div class="items-grid" id="items-list">
+                <!-- Items will be rendered here -->
+            </div>
+        `;
         
         // Progressive loading for better performance with large collections
         if (items.length > 50) {
@@ -1927,9 +1729,17 @@ export class CatalogBrowserPanel {
         const treeEl = document.getElementById('catalog-tree-view');
         const errorEl = document.getElementById('catalog-error');
         
-        if (loadingEl) loadingEl.classList.remove('hidden');
-        if (treeEl) treeEl.classList.add('hidden');
-        if (errorEl) errorEl.classList.add('hidden');
+        if (loadingEl) {
+            loadingEl.classList.remove('hidden');
+            loadingEl.style.display = 'flex';
+        }
+        if (treeEl) {
+            treeEl.style.display = 'none';
+        }
+        if (errorEl) {
+            errorEl.classList.add('hidden');
+            errorEl.style.display = 'none';
+        }
     }
     
     hideLoading() {
@@ -1945,14 +1755,16 @@ export class CatalogBrowserPanel {
         
         if (loadingEl) {
             loadingEl.classList.add('hidden');
+            loadingEl.style.display = 'none';
             console.log('✅ Loading element hidden');
         }
         if (treeEl) {
-            treeEl.classList.remove('hidden');
+            treeEl.style.display = 'flex';
             console.log('✅ Tree view shown');
         }
         if (errorEl) {
             errorEl.classList.add('hidden');
+            errorEl.style.display = 'none';
             console.log('✅ Error element hidden');
         }
         
@@ -2116,6 +1928,11 @@ export class CatalogBrowserPanel {
         this.showLoading();
         
         try {
+            // Hide sidebar cards for catalog selection
+            document.getElementById('search-card').style.display = 'none';
+            document.getElementById('collections-card').style.display = 'none';
+            document.getElementById('items-card').style.display = 'none';
+            
             const catalogTree = document.getElementById('catalog-tree-view');
             
             // Get available catalogs with real STAC IDs
@@ -2132,46 +1949,6 @@ export class CatalogBrowserPanel {
             console.log('📝 Generated HTML length:', catalogsHTML.length);
             
             catalogTree.innerHTML = `
-                <!-- Loading state -->
-                <div class="catalog-loading-state" id="catalog-loading-state" style="display: none;">
-                    <div class="loading-spinner">
-                        <i class="material-icons spinning">refresh</i>
-                    </div>
-                    <p>Loading catalogs...</p>
-                </div>
-                
-                <!-- Empty state -->
-                <div class="catalog-empty-state" id="catalog-empty-state" style="display: none;">
-                    <div class="empty-state-icon">
-                        <i class="material-icons">cloud_off</i>
-                    </div>
-                    <h4>No catalogs available</h4>
-                    <p>Please check your configuration or network connection</p>
-                </div>
-                
-                <!-- Catalogs stats with integrated search -->
-                <div class="catalog-stats" id="catalog-stats">
-                    <span class="stats-text">
-                        <span id="catalog-count">${availableCatalogs.length}</span> STAC catalogs available
-                    </span>
-                    <div class="stats-controls">
-                        <div class="catalog-search-container">
-                            <div class="search-input-wrapper">
-                                <i class="material-icons search-icon">search</i>
-                                <input 
-                                    type="text" 
-                                    id="catalog-search" 
-                                    placeholder="Search catalogs..." 
-                                    class="catalog-search-input"
-                                >
-                                <button class="clear-search-btn" id="clear-catalog-search" style="display: none;">
-                                    <i class="material-icons">close</i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
                 <!-- Catalogs grid -->
                 <div class="catalog-grid" id="catalog-grid">
                     ${catalogsHTML}
@@ -2184,20 +1961,11 @@ export class CatalogBrowserPanel {
                 if (cardElement) {
                     // Add click handler for the entire card
                     cardElement.addEventListener('click', (e) => {
-                        // Prevent event if clicking on the connect button specifically
-                        if (!e.target.closest('.catalog-connect-btn')) {
+                        // Prevent card selection if clicking on the URL link
+                        if (!e.target.closest('.catalog-url')) {
                             this.selectCatalog(catalog);
                         }
                     });
-                    
-                    // Add specific handler for the connect button
-                    const connectBtn = cardElement.querySelector('.catalog-connect-btn');
-                    if (connectBtn) {
-                        connectBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            this.selectCatalog(catalog);
-                        });
-                    }
                     
                     // Add keyboard support
                     cardElement.addEventListener('keydown', (e) => {
@@ -2206,22 +1974,15 @@ export class CatalogBrowserPanel {
                             this.selectCatalog(catalog);
                         }
                     });
-                    
-                    // Add hover effects
-                    cardElement.addEventListener('mouseenter', () => {
-                        cardElement.classList.add('catalog-card-hover');
-                    });
-                    
-                    cardElement.addEventListener('mouseleave', () => {
-                        cardElement.classList.remove('catalog-card-hover');
-                    });
                 }
             });
             
-            // Add search functionality
-            this.setupCatalogSearch();
-            
             this.hideLoading();
+            
+            console.log('[BROWSER] Success: Catalog selection loaded with', availableCatalogs.length, 'catalogs');
+            
+            // Load live metadata for each catalog
+            this.loadCatalogMetadata(availableCatalogs);
             
         } catch (error) {
             console.error('❌ Failed to load catalog selection:', error);
@@ -2232,8 +1993,8 @@ export class CatalogBrowserPanel {
     async getAvailableCatalogs() {
         const catalogs = [];
         
-        console.log('🔍 Config object:', this.config);
-        console.log('📊 STAC Endpoints:', this.config?.stacEndpoints);
+        console.log('[BROWSER] Config object:', this.config);
+        console.log('[BROWSER] STAC Endpoints:', this.config?.stacEndpoints);
         
         if (this.config?.stacEndpoints) {
             const entries = Object.entries(this.config.stacEndpoints);
@@ -2291,10 +2052,14 @@ export class CatalogBrowserPanel {
             catalogs.push(...results.filter(catalog => catalog !== null));
             
         } else {
-            console.log('❌ No config or stacEndpoints found');
+            console.log('[BROWSER] Error: No config or stacEndpoints found');
         }
         
-        console.log('📚 Final catalogs list with real STAC IDs:', catalogs);
+        console.log('[BROWSER] Final catalogs list with real STAC IDs:', catalogs);
+        console.log('[BROWSER] Info: Returning', catalogs.length, 'catalogs');
+        if (catalogs.length === 0) {
+            console.warn('[BROWSER] Warning: No catalogs returned! This will cause empty display.');
+        }
         return catalogs;
     }
     
@@ -2319,55 +2084,131 @@ export class CatalogBrowserPanel {
     }
     
     createCatalogSelectionItem(catalog) {
-        console.log('🔧 Creating HTML item for:', catalog);
+        console.log('[BROWSER] Creating enhanced HTML item for:', catalog.name);
         
-        // Create a modern card-based layout similar to collection grid
+        // Get catalog-specific icon
+        const icon = this.getCatalogIcon(catalog.id);
+        const statusBadge = this.getCatalogStatusBadge(catalog);
+        
+        // Create enhanced card layout with dynamic metadata
         const html = `
             <div id="catalog-${catalog.id}" class="catalog-card" role="button" tabindex="0" 
-                 aria-label="Connect to ${catalog.name}">
-                <div class="catalog-card-header">
-                    <div class="catalog-icon">
-                        <i class="material-icons">cloud</i>
-                    </div>
-                    <div class="catalog-badge">
-                        <span class="catalog-type">STAC API</span>
-                    </div>
-                </div>
+                 aria-label="Connect to ${catalog.name}" data-catalog-id="${catalog.id}">
+                ${statusBadge}
                 
                 <div class="catalog-card-content">
                     <h3 class="catalog-title">${catalog.name}</h3>
                     <p class="catalog-description">${catalog.description}</p>
                     
                     <div class="catalog-metadata">
-                        <div class="catalog-meta-item">
-                            <i class="material-icons">link</i>
-                            <span class="catalog-url">${this.formatUrlForDisplay(catalog.url)}</span>
+                        <div class="catalog-meta-row">
+                            <div class="catalog-meta-item">
+                                <span class="catalog-collections" id="collections-count-${catalog.id}">
+                                    <span class="loading-dots">Loading...</span>
+                                </span>
+                            </div>
+                            <div class="catalog-meta-item">
+                                <span class="catalog-id">${catalog.id}</span>
+                            </div>
                         </div>
-                        <div class="catalog-meta-item">
-                            <i class="material-icons">fingerprint</i>
-                            <span class="catalog-id">ID: ${catalog.id}</span>
+                        <div class="catalog-meta-item catalog-url-item">
+                            <a href="${catalog.url}" target="_blank" rel="noopener noreferrer" class="catalog-url" 
+                               title="Open ${catalog.url} in new tab">
+                                ${this.formatUrlForDisplay(catalog.url)}
+                            </a>
                         </div>
                     </div>
                 </div>
                 
-                <div class="catalog-card-footer">
-                    <button class="catalog-connect-btn" aria-label="Connect to ${catalog.name}">
-                        <i class="material-icons">play_arrow</i>
-                        <span>Connect</span>
-                    </button>
-                </div>
-                
-                <div class="catalog-card-hover-overlay">
-                    <div class="hover-content">
-                        <i class="material-icons">touch_app</i>
-                        <span>Click to connect</span>
-                    </div>
-                </div>
             </div>
         `;
         
-        console.log('📄 Generated HTML for', catalog.name, ':', html.length, 'characters');
+        console.log('[BROWSER] Generated enhanced HTML for', catalog.name, ':', html.length, 'characters');
         return html;
+    }
+    
+    getCatalogIcon(catalogId) {
+        const icons = {
+            'cdse-stac': 'satellite',
+            'copernicus': 'satellite', 
+            'earth-search-aws': 'public',
+            'element84': 'public',
+            'microsoft-pc': 'computer',
+            'planetary': 'computer',
+            'planetlabs': 'camera_alt',
+            'planet': 'camera_alt'
+        };
+        return icons[catalogId] || 'cloud_queue';
+    }
+    
+    getCatalogStatusBadge(catalog) {
+        const badges = {
+            'cdse-stac': '<div class="catalog-badge european"><span>European Space Agency</span></div>',
+            'copernicus': '<div class="catalog-badge european"><span>European Space Agency</span></div>',
+            'earth-search-aws': '<div class="catalog-badge commercial"><span>AWS Open Data</span></div>',
+            'element84': '<div class="catalog-badge commercial"><span>AWS Open Data</span></div>',
+            'microsoft-pc': '<div class="catalog-badge microsoft"><span>Microsoft</span></div>',
+            'planetary': '<div class="catalog-badge microsoft"><span>Microsoft</span></div>',
+            'planetlabs': '<div class="catalog-badge planet"><span>Planet Labs</span></div>',
+            'planet': '<div class="catalog-badge planet"><span>Planet Labs</span></div>'
+        };
+        return badges[catalog.id] || '<div class="catalog-badge generic"><span>STAC API</span></div>';
+    }
+    
+    /**
+     * Load live metadata for all catalogs (collections count, status)
+     */
+    async loadCatalogMetadata(catalogs) {
+        console.log('[BROWSER] Loading live metadata for', catalogs.length, 'catalogs');
+        
+        // Load metadata for each catalog in parallel
+        const metadataPromises = catalogs.map(catalog => this.loadSingleCatalogMetadata(catalog));
+        await Promise.allSettled(metadataPromises);
+    }
+    
+    /**
+     * Load metadata for a single catalog
+     */
+    async loadSingleCatalogMetadata(catalog) {
+        try {
+            console.log('[BROWSER] Fetching metadata for:', catalog.name);
+            
+            // Set up temporary API client for this catalog
+            const tempApiClient = {
+                setEndpoints: (endpoints) => {
+                    tempApiClient.endpoints = endpoints;
+                },
+                async getCollections() {
+                    const response = await fetch(tempApiClient.endpoints.collections || tempApiClient.endpoints.root + '/collections');
+                    const data = await response.json();
+                    return data.collections || [];
+                }
+            };
+            
+            tempApiClient.setEndpoints(catalog.endpoint);
+            
+            // Fetch collections count
+            const collections = await tempApiClient.getCollections();
+            
+            // Update collections count
+            const collectionsEl = document.getElementById(`collections-count-${catalog.id}`);
+            if (collectionsEl) {
+                collectionsEl.innerHTML = `${collections.length} collections`;
+                collectionsEl.classList.add('loaded');
+            }
+            
+            console.log('[BROWSER] Metadata loaded for', catalog.name, ':', collections.length, 'collections');
+            
+        } catch (error) {
+            console.warn('[BROWSER] Failed to load metadata for', catalog.name, ':', error.message);
+            
+            // Update with error state
+            const collectionsEl = document.getElementById(`collections-count-${catalog.id}`);
+            if (collectionsEl) {
+                collectionsEl.innerHTML = '<span class="error">Unable to load</span>';
+                collectionsEl.classList.add('error');
+            }
+        }
     }
     
     /**

@@ -339,53 +339,64 @@ class MapManager {
      * Initialize drawing controls and event handlers
      */
     initializeDrawing() {
-        // Add sources for drawing
-        this.map.addSource('drawing-source', {
-            type: 'geojson',
-            data: {
-                type: 'FeatureCollection',
-                features: []
+        try {
+            // Check if source already exists (avoid duplicates)
+            if (this.map.getSource('drawing-source')) {
+                console.log('🎯 Drawing source already exists, skipping initialization');
+                return;
             }
-        });
 
-        // Add layer for drawing polygons
-        this.map.addLayer({
-            id: 'drawing-layer',
-            type: 'fill',
-            source: 'drawing-source',
-            paint: {
-                'fill-color': '#2196F3',
-                'fill-opacity': 0.2
-            },
-            filter: ['==', '$type', 'Polygon']
-        });
+            // Add sources for drawing
+            this.map.addSource('drawing-source', {
+                type: 'geojson',
+                data: {
+                    type: 'FeatureCollection',
+                    features: []
+                }
+            });
 
-        // Add layer for drawing outlines
-        this.map.addLayer({
-            id: 'drawing-outline',
-            type: 'line',
-            source: 'drawing-source',
-            paint: {
-                'line-color': '#2196F3',
-                'line-width': 2
-            },
-            filter: ['in', '$type', 'Polygon', 'LineString']
-        });
+            // Add layer for drawing polygons
+            this.map.addLayer({
+                id: 'drawing-layer',
+                type: 'fill',
+                source: 'drawing-source',
+                paint: {
+                    'fill-color': '#2196F3',
+                    'fill-opacity': 0.2
+                },
+                filter: ['==', '$type', 'Polygon']
+            });
 
-        // Add layer for drawing points (first corner marker)
-        this.map.addLayer({
-            id: 'drawing-points',
-            type: 'circle',
-            source: 'drawing-source',
-            paint: {
-                'circle-radius': 6,
-                'circle-color': '#2196F3',
-                'circle-stroke-width': 2,
-                'circle-stroke-color': '#FFFFFF'
-            },
-            filter: ['==', '$type', 'Point']
-        });
+            // Add layer for drawing outlines
+            this.map.addLayer({
+                id: 'drawing-outline',
+                type: 'line',
+                source: 'drawing-source',
+                paint: {
+                    'line-color': '#2196F3',
+                    'line-width': 2
+                },
+                filter: ['in', '$type', 'Polygon', 'LineString']
+            });
 
+            // Add layer for drawing points (first corner marker)
+            this.map.addLayer({
+                id: 'drawing-points',
+                type: 'circle',
+                source: 'drawing-source',
+                paint: {
+                    'circle-radius': 6,
+                    'circle-color': '#2196F3',
+                    'circle-stroke-width': 2,
+                    'circle-stroke-color': '#FFFFFF'
+                },
+                filter: ['==', '$type', 'Point']
+            });
+
+            console.log('✅ Drawing functionality initialized successfully');
+        } catch (error) {
+            console.error('❌ Failed to initialize drawing functionality:', error);
+        }
     }
 
     /**
@@ -465,10 +476,10 @@ class MapManager {
                     }
                 };
                 
-                this.map.getSource('drawing-source').setData({
+                this.updateDrawingSource({
                     type: 'FeatureCollection',
                     features: [marker]
-                });
+                }, 'first click marker');
                 
             } else {
                 // Second click - complete the rectangle
@@ -556,6 +567,39 @@ class MapManager {
     }
 
     /**
+     * Safely update drawing source data with auto-initialization
+     * @param {Object} data - GeoJSON data to set
+     * @param {string} context - Context for logging (e.g., 'bbox preview', 'marker')
+     */
+    updateDrawingSource(data, context = 'drawing') {
+        const drawingSource = this.map.getSource('drawing-source');
+        if (drawingSource) {
+            drawingSource.setData(data);
+            return true;
+        } else {
+            console.warn(`⚠️ Drawing source not available for ${context}, attempting to initialize...`);
+            try {
+                // Try to initialize drawing if it hasn't been done yet
+                this.initializeDrawing();
+                
+                // Try again after initialization
+                const retryDrawingSource = this.map.getSource('drawing-source');
+                if (retryDrawingSource) {
+                    retryDrawingSource.setData(data);
+                    console.log(`✅ Drawing source initialized and ${context} updated`);
+                    return true;
+                } else {
+                    console.warn(`⚠️ Failed to initialize drawing source, skipping ${context}`);
+                    return false;
+                }
+            } catch (error) {
+                console.error(`❌ Error initializing drawing source for ${context}:`, error);
+                return false;
+            }
+        }
+    }
+
+    /**
      * Update bbox preview during drawing
      */
     updateBboxPreview(startPoint, endPoint) {
@@ -586,10 +630,10 @@ class MapManager {
             }
         });
 
-        this.map.getSource('drawing-source').setData({
+        this.updateDrawingSource({
             type: 'FeatureCollection',
             features: features
-        });
+        }, 'bbox preview');
     }
 
     /**

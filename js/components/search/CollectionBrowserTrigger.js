@@ -229,8 +229,7 @@ export class CollectionBrowserTrigger {
                 console.warn('⚠️ UIManager not available, falling back to modal');
                 // Fallback to opening the modal directly
                 if (this.modal) {
-                    this.showModal();
-                    await this.loadAllCollections();
+                    await this.modal.open();
                     return;
                 } else {
                     console.error('❌ Neither UIManager nor modal available');

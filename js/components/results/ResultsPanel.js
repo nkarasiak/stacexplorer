@@ -1523,24 +1523,19 @@ export class ResultsPanel {
                         // Show loading indicator
                         document.getElementById('loading').style.display = 'flex';
                         
-                        // Display item on map using best available preview asset
+                        // Mark the item as active
+                        document.querySelectorAll('.dataset-item').forEach(el => {
+                            el.classList.remove('active');
+                        });
+                        li.classList.add('active');
+                        
+                        // Use the new method that dispatches itemActivated event
+                        this.displayItemWithEvent(item, null);
+                        
+                        // Hide loading indicator after a short delay
                         setTimeout(() => {
-                            this.mapManager.displayItemOnMap(item, null, true)
-                                .then(() => {
-                                    // Mark the item as active
-                                    document.querySelectorAll('.dataset-item').forEach(el => {
-                                        el.classList.remove('active');
-                                    });
-                                    li.classList.add('active');
-                                    
-                                    // Hide loading indicator
-                                    document.getElementById('loading').style.display = 'none';
-                                })
-                                .catch(error => {
-                                    console.error('❌ Error displaying item on map:', error);
-                                    document.getElementById('loading').style.display = 'none';
-                                });
-                        }, 100);
+                            document.getElementById('loading').style.display = 'none';
+                        }, 500);
                     });
                 }
             };
@@ -1578,11 +1573,18 @@ export class ResultsPanel {
                         });
                         element.classList.add('active');
                         
-                        // Dispatch item activated event
+                        // Dispatch item activated event with catalog and collection context
+                        const catalogId = this.getCurrentCatalogId();
+                        const collectionId = this.getCurrentCollectionId();
+                        console.log('📍 Context for item activation - catalogId:', catalogId, 'collectionId:', collectionId);
+                        
                         document.dispatchEvent(new CustomEvent('itemActivated', {
                             detail: { 
                                 itemId: item.id,
-                                assetKey: 'thumbnail'
+                                assetKey: 'thumbnail',
+                                item: item,
+                                catalogId: catalogId,
+                                collectionId: collectionId
                             }
                         }));
                         
@@ -2422,6 +2424,99 @@ export class ResultsPanel {
         } else {
             console.log('❌ No saved view to restore');
         }
+    }
+    
+    /**
+     * Get current catalog ID from the API client or state
+     */
+    getCurrentCatalogId() {
+        try {
+            // Try to get from API client endpoints
+            if (this.apiClient && this.apiClient.endpoints) {
+                const currentEndpoint = this.apiClient.endpoints.root;
+                
+                // Map endpoints to catalog IDs
+                const endpointMappings = {
+                    'https://planetarycomputer.microsoft.com/api/stac/v1': 'microsoft-pc',
+                    'https://earth-search.aws.element84.com/v1': 'earth-search-aws',
+                    'https://stac.dataspace.copernicus.eu/v1': 'cdse-stac'
+                };
+                
+                const catalogId = endpointMappings[currentEndpoint];
+                if (catalogId) {
+                    console.log('📍 Current catalog ID from API client:', catalogId);
+                    return catalogId;
+                }
+            }
+            
+            // Try to get from global state manager if available
+            if (window.stacExplorer?.stateManager?.getCurrentCatalogId) {
+                const catalogId = window.stacExplorer.stateManager.getCurrentCatalogId();
+                if (catalogId) {
+                    console.log('📍 Current catalog ID from state manager:', catalogId);
+                    return catalogId;
+                }
+            }
+            
+            console.log('📍 No current catalog ID found in ResultsPanel');
+            return null;
+        } catch (error) {
+            console.warn('📍 Error getting current catalog ID:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Get current collection ID from the UI state
+     */
+    getCurrentCollectionId() {
+        try {
+            // Try to get from collection selector
+            const collectionSelect = document.getElementById('collection-select');
+            if (collectionSelect && collectionSelect.value && collectionSelect.value !== 'Everything') {
+                console.log('📍 Current collection ID from selector:', collectionSelect.value);
+                return collectionSelect.value;
+            }
+            
+            // Try to get from global state manager if available
+            if (window.stacExplorer?.stateManager?.getCurrentCollectionId) {
+                const collectionId = window.stacExplorer.stateManager.getCurrentCollectionId();
+                if (collectionId) {
+                    console.log('📍 Current collection ID from state manager:', collectionId);
+                    return collectionId;
+                }
+            }
+            
+            console.log('📍 No current collection ID found in ResultsPanel');
+            return null;
+        } catch (error) {
+            console.warn('📍 Error getting current collection ID:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Display item with proper itemActivated event dispatch
+     */
+    displayItemWithEvent(item, assetKey = null) {
+        console.log('🔥 Displaying item with event dispatch:', item.id);
+        
+        // Get current catalog and collection context
+        const catalogId = this.getCurrentCatalogId();
+        const collectionId = this.getCurrentCollectionId();
+        
+        console.log('📍 Context for item activation - catalogId:', catalogId, 'collectionId:', collectionId);
+        
+        // Dispatch itemActivated event with proper context
+        document.dispatchEvent(new CustomEvent('itemActivated', {
+            detail: { 
+                itemId: item.id, 
+                assetKey: assetKey,
+                item: item,
+                catalogId: catalogId,
+                collectionId: collectionId
+            }
+        }));
     }
     
 }

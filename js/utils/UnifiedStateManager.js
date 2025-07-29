@@ -806,6 +806,20 @@ export class UnifiedStateManager {
             
             this.updateUIForActiveItem(activeItem);
             
+            // Dispatch itemActivated event with proper context for URL routing
+            const catalogId = this.getCurrentCatalogId();
+            const collectionId = this.getCurrentCollectionId();
+            
+            document.dispatchEvent(new CustomEvent('itemActivated', {
+                detail: { 
+                    itemId: activeItem.id, 
+                    assetKey: this.activeAssetKey,
+                    item: activeItem,
+                    catalogId: catalogId,
+                    collectionId: collectionId
+                }
+            }));
+            
         } catch (error) {
             console.error('[ERROR] Failed to display active item:', error);
         }
@@ -1333,6 +1347,76 @@ export class UnifiedStateManager {
         };
         
         return reverseProviderMappings[providerName] || null;
+    }
+    
+    /**
+     * Get current catalog ID from the API client or state
+     */
+    getCurrentCatalogId() {
+        try {
+            // Try to get from the router first (most reliable)
+            if (this.router && this.router.getCurrentCatalogIdSync) {
+                const catalogId = this.router.getCurrentCatalogIdSync();
+                if (catalogId) {
+                    return catalogId;
+                }
+            }
+            
+            // Fallback: try to determine from API client endpoints
+            if (this.apiClient && this.apiClient.endpoints) {
+                const currentEndpoint = this.apiClient.endpoints.root;
+                
+                // Map endpoints to catalog IDs
+                const endpointMappings = {
+                    'https://planetarycomputer.microsoft.com/api/stac/v1': 'microsoft-pc',
+                    'https://earth-search.aws.element84.com/v1': 'earth-search-aws',
+                    'https://stac.dataspace.copernicus.eu/v1': 'cdse-stac'
+                };
+                
+                const catalogId = endpointMappings[currentEndpoint];
+                if (catalogId) {
+                    return catalogId;
+                }
+            }
+            
+            console.log('📍 No current catalog ID found in UnifiedStateManager');
+            return null;
+        } catch (error) {
+            console.warn('📍 Error getting current catalog ID:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Get current collection ID from the UI state
+     */
+    getCurrentCollectionId() {
+        try {
+            // Try to get from router first
+            if (this.router && this.router.getCurrentCollectionIdSync) {
+                const collectionId = this.router.getCurrentCollectionIdSync();
+                if (collectionId) {
+                    return collectionId;
+                }
+            }
+            
+            // Try to get from current state
+            if (this.currentState && this.currentState.collection && this.currentState.collection !== 'Everything') {
+                return this.currentState.collection;
+            }
+            
+            // Try to get from collection selector
+            const collectionSelect = document.getElementById('collection-select');
+            if (collectionSelect && collectionSelect.value && collectionSelect.value !== 'Everything') {
+                return collectionSelect.value;
+            }
+            
+            console.log('📍 No current collection ID found in UnifiedStateManager');
+            return null;
+        } catch (error) {
+            console.warn('📍 Error getting current collection ID:', error);
+            return null;
+        }
     }
 }
 

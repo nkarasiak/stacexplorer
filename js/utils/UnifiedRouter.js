@@ -109,12 +109,33 @@ export class UnifiedRouter {
         
         // Listen for item activation in view mode
         document.addEventListener('itemActivated', (event) => {
-            if (!this.isProcessingRoute && this.currentMode === 'view') {
-                this.updateViewPath({
-                    type: 'item',
-                    itemId: event.detail.itemId,
-                    assetKey: event.detail.assetKey
-                });
+            console.log('🔄 itemActivated event received:', event.detail);
+            console.log('🔄 isProcessingRoute:', this.isProcessingRoute, 'currentMode:', this.currentMode);
+            
+            if (this.currentMode === 'view') {
+                // Allow URL updates during route processing if we're upgrading from legacy item format
+                const currentPath = window.location.pathname;
+                const isLegacyItemURL = currentPath.includes('/viewer/item/');
+                const hasContext = event.detail.catalogId && event.detail.collectionId;
+                
+                console.log('🔄 currentPath:', currentPath);
+                console.log('🔄 isLegacyItemURL:', isLegacyItemURL);
+                console.log('🔄 hasContext:', hasContext);
+                
+                if (!this.isProcessingRoute || (isLegacyItemURL && hasContext)) {
+                    console.log('🔄 Updating view path for item activation');
+                    this.updateViewPath({
+                        type: 'item',
+                        itemId: event.detail.itemId,
+                        assetKey: event.detail.assetKey,
+                        catalogId: event.detail.catalogId,
+                        collectionId: event.detail.collectionId
+                    });
+                } else {
+                    console.log('🚫 Ignoring item activation - route processing and not legacy upgrade');
+                }
+            } else {
+                console.log('🚫 Ignoring item activation - not in view mode');
             }
         });
         
@@ -500,7 +521,13 @@ export class UnifiedRouter {
                         
                         // Dispatch event to notify other components
                         document.dispatchEvent(new CustomEvent('itemActivated', {
-                            detail: { itemId: item.id, assetKey, item }
+                            detail: { 
+                                itemId: item.id, 
+                                assetKey, 
+                                item, 
+                                catalogId: catalogId, 
+                                collectionId: collectionId 
+                            }
                         }));
                     } else {
                         console.error('📍 Map manager not available - cannot display item on map');
@@ -825,7 +852,20 @@ export class UnifiedRouter {
         
         // Determine specific viewer path
         if (stateChange.type === 'item' && stateChange.itemId) {
-            newPath = this.createPath(`/viewer/item/${encodeURIComponent(stateChange.itemId)}`);
+            // Try to preserve catalog and collection context for items
+            const catalogId = stateChange.catalogId || this.getCurrentCatalogIdSync();
+            const collectionId = stateChange.collectionId || this.getCurrentCollectionIdSync();
+            
+            if (catalogId && collectionId) {
+                // Use catalog+collection+item format: /viewer/{catalogId}/{collectionId}/{itemId}
+                newPath = this.createPath(`/viewer/${encodeURIComponent(catalogId)}/${encodeURIComponent(collectionId)}/${encodeURIComponent(stateChange.itemId)}`);
+                console.log('📍 Generated catalog+collection+item URL:', newPath);
+            } else {
+                // Fallback to legacy item-only format
+                newPath = this.createPath(`/viewer/item/${encodeURIComponent(stateChange.itemId)}`);
+                console.log('📍 Generated legacy item URL (no catalog/collection context):', newPath);
+            }
+            
             if (stateChange.assetKey) {
                 params.set('asset_key', stateChange.assetKey);
             }
@@ -864,7 +904,22 @@ export class UnifiedRouter {
         
         if (fullUrl !== window.location.pathname + window.location.search) {
             console.log('📍 Updating view path to:', fullUrl);
-            window.history.pushState({}, '', fullUrl);
+            
+            // Check if we're upgrading from legacy item format to hierarchical format
+            const currentPath = window.location.pathname;
+            const isLegacyUpgrade = stateChange.type === 'item' && 
+                                   currentPath.includes('/viewer/item/') && 
+                                   stateChange.catalogId && 
+                                   stateChange.collectionId &&
+                                   newPath.includes(`/viewer/${stateChange.catalogId}/${stateChange.collectionId}/`);
+            
+            if (isLegacyUpgrade) {
+                console.log('📍 Using replaceState for legacy URL upgrade');
+                window.history.replaceState({}, '', fullUrl);
+            } else {
+                console.log('📍 Using pushState for new navigation');
+                window.history.pushState({}, '', fullUrl);
+            }
         } else {
             console.log('📍 URL unchanged, not updating');
         }
@@ -1230,6 +1285,35 @@ export class UnifiedRouter {
             return null;
         } catch (error) {
             console.warn('📍 Error getting current catalog ID:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Get current collection ID from the UI state (synchronous version)
+     */
+    getCurrentCollectionIdSync() {
+        try {
+            // Try to get from collection selector
+            const collectionSelect = document.getElementById('collection-select');
+            if (collectionSelect && collectionSelect.value && collectionSelect.value !== 'Everything') {
+                console.log('📍 Current collection ID from selector:', collectionSelect.value);
+                return collectionSelect.value;
+            }
+            
+            // Try to get from collection manager if available
+            if (this.stateManager.collectionManager && this.stateManager.collectionManager.getSelectedCollection) {
+                const selectedCollection = this.stateManager.collectionManager.getSelectedCollection();
+                if (selectedCollection) {
+                    console.log('📍 Current collection ID from manager:', selectedCollection);
+                    return selectedCollection;
+                }
+            }
+            
+            console.log('📍 No current collection ID found');
+            return null;
+        } catch (error) {
+            console.warn('📍 Error getting current collection ID:', error);
             return null;
         }
     }

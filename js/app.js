@@ -923,6 +923,65 @@ function setupLocationInputs(inlineDropdownManager) {
         inlineDropdownManager.closeCurrentDropdown();
     });
     
+    // Add event handler for the draw bbox button
+    const drawBboxBtn = document.getElementById('draw-bbox-inline');
+    if (drawBboxBtn) {
+        drawBboxBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            console.log('🎯 Draw bbox button clicked');
+            
+            // Get the map manager
+            const mapManager = window.stacExplorer?.mapManager;
+            if (!mapManager || typeof mapManager.startDrawingBbox !== 'function') {
+                console.error('❌ Map drawing not available - MapManager or startDrawingBbox method not found');
+                return;
+            }
+            
+            // Update the location display to show drawing in progress
+            inlineDropdownManager.updateSearchSummary('location', '🖊️ Drawing...');
+            
+            // Show instruction notification
+            const notificationService = window.stacExplorer?.notificationService;
+            if (notificationService) {
+                notificationService.showNotification('🖊️ Click two points on the map to draw a bounding box', 'info');
+            }
+            
+            // Start drawing with callback
+            mapManager.startDrawingBbox((bbox) => {
+                if (bbox && Array.isArray(bbox) && bbox.length === 4) {
+                    console.log('✅ Bbox drawn:', bbox);
+                    
+                    // Update location inputs with the drawn area
+                    locationInputs.forEach(input => {
+                        input.value = 'Custom Area';
+                    });
+                    
+                    // Update the search summary
+                    inlineDropdownManager.updateSearchSummary('location', '📍 CUSTOM AREA');
+                    
+                    // Dispatch geometry selected event for the router
+                    document.dispatchEvent(new CustomEvent('geometrySelected', {
+                        detail: {
+                            bbox: bbox,
+                            name: 'Custom Area'
+                        }
+                    }));
+                    
+                    // Show success notification
+                    if (notificationService) {
+                        notificationService.showNotification('✅ Area selected successfully', 'success');
+                    }
+                } else {
+                    console.warn('⚠️ Invalid bbox received:', bbox);
+                    // Reset the location display
+                    inlineDropdownManager.updateSearchSummary('location', 'THE WORLD');
+                }
+            });
+        });
+    } else {
+        console.warn('⚠️ Draw bbox button not found in DOM');
+    }
+    
 }
 
 // Manual test function for location search (dev/debug use only)

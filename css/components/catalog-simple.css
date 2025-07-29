@@ -21,7 +21,7 @@
     align-items: center;
     flex-wrap: wrap;
     gap: 1.5rem;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
 }
@@ -64,7 +64,7 @@
     letter-spacing: -0.04em;
     line-height: 1.2;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     position: relative;
 }
 
@@ -116,7 +116,7 @@
     box-shadow: 
         0 4px 16px rgba(0, 0, 0, 0.06),
         inset 0 1px 0 rgba(255, 255, 255, 0.8);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     position: relative;
     overflow: hidden;
 }
@@ -130,7 +130,7 @@
     height: 100%;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 0.75rem;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all 0.2s ease;
     transform: translateX(0);
     opacity: 0;
 }
@@ -152,7 +152,7 @@
     border-radius: 0.75rem;
     cursor: pointer;
     color: #64748b;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -173,8 +173,8 @@
     color: white;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     transform: scale(1.02);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
 }
 
 .view-btn .material-icons {
@@ -188,7 +188,7 @@
     border-radius: 1.25rem;
     font-size: 1rem;
     outline: none;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all 0.2s ease;
     background: 
         linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.8) 100%);
     backdrop-filter: blur(12px);
@@ -206,7 +206,7 @@
 .search-input::placeholder {
     color: #94a3b8;
     font-weight: 400;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .search-input:focus {
@@ -819,13 +819,13 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-    filter: brightness(1.05) contrast(1.05) saturate(1.1);
+    transition: none;
+    filter: none;
 }
 
 .collection-card:hover .collection-card-image img {
-    transform: scale(1.1) rotate(1deg);
-    filter: brightness(1.1) contrast(1.1) saturate(1.2);
+    transform: none;
+    filter: none;
 }
 
 .collection-card-overlay {
@@ -839,9 +839,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border-radius: 1.5rem 1.5rem 0 0;
 }
 
@@ -861,7 +861,7 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: all 0.2s ease;
     box-shadow: 
         0 8px 24px rgba(0, 0, 0, 0.15),
         0 1px 0 rgba(255, 255, 255, 0.8),
@@ -908,8 +908,8 @@
     padding: 1.5rem;
     background: 
         linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.7) 100%);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     position: relative;
     flex: 1;
     border-radius: 0 0 1.5rem 1.5rem;
@@ -940,7 +940,7 @@
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     letter-spacing: -0.02em;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .collection-card:hover .collection-card-title {
@@ -960,7 +960,7 @@
     -webkit-box-orient: vertical;
     font-weight: 400;
     opacity: 0.9;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
 }
 
 .collection-card:hover .collection-card-description {
@@ -991,7 +991,7 @@
     background: rgba(102, 126, 234, 0.08);
     border-radius: 0.6rem;
     border: 1px solid rgba(102, 126, 234, 0.15);
-    transition: all 0.3s ease;
+    transition: all 0.2s ease;
     font-weight: 500;
 }
 

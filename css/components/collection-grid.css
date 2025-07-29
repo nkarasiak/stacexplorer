@@ -99,8 +99,8 @@
     background: rgba(255, 255, 255, 0.1);
     color: white;
     font-size: 0.95rem;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+    backdrop-filter: none;
+    transition: all 0.2s ease;
 }
 
 .stats-controls .collection-search-input {
@@ -168,8 +168,8 @@
     color: white;
     font-size: 0.95rem;
     cursor: pointer;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
+    backdrop-filter: none;
+    transition: all 0.2s ease;
 }
 
 .stats-controls .source-filter-select {
@@ -398,15 +398,16 @@
     border-radius: 12px;
     overflow: hidden;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
     position: relative;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    will-change: transform;
 }
 
 .collection-card:hover {
     border-color: var(--primary-color, #667eea);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-    transform: translateY(-2px);
+    transform: scale(1.02);
 }
 
 .collection-card.selected {
@@ -433,11 +434,11 @@
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
+    transition: none;
 }
 
 .collection-card:hover .collection-card-image img {
-    transform: scale(1.05);
+    transform: none;
 }
 
 .collection-card-overlay {
@@ -446,7 +447,7 @@
     right: 0;
     padding: 0.5rem;
     opacity: 0;
-    transition: opacity 0.3s ease;
+    transition: opacity 0.2s ease;
 }
 
 .collection-card:hover .collection-card-overlay {
@@ -625,7 +626,7 @@
     z-index: 10;
     font-size: 14px;
     box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
-    backdrop-filter: blur(10px);
+    backdrop-filter: none;
 }
 
 .priority-badge .material-icons {

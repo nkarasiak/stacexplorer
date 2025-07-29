@@ -22,6 +22,37 @@ export class ResultsPanel {
         this.modal = null;
         this.currentAssetKey = null;
         
+        // Map view state management for hover functionality
+        this.savedMapView = null;
+        this.currentHoveredItem = null;
+        this.hoverTimeout = null;
+        this.restoreTimeout = null;
+        this.currentBboxLayer = null;
+        
+        // Debug methods for testing restore functionality
+        window.testMapRestore = () => {
+            console.log('🧪 Testing map restore functionality...');
+            if (this.savedMapView) {
+                console.log('📍 Saved view exists, attempting restore...');
+                this.restoreMapView();
+            } else {
+                console.log('❌ No saved view to test with');
+            }
+        };
+        
+        window.clearHoverState = () => this.clearHoverState();
+        window.forceRestoreMapView = () => this.forceRestoreMapView();
+        
+        window.debugHoverState = () => {
+            console.log('🔍 Current hover state:', {
+                savedMapView: this.savedMapView,
+                currentHoveredItem: this.currentHoveredItem,
+                hasHoverTimeout: !!this.hoverTimeout,
+                hasRestoreTimeout: !!this.restoreTimeout,
+                hasBboxLayer: !!this.currentBboxLayer
+            });
+        };
+        
         // Initialize pagination controls
         this.initPagination();
         
@@ -1515,15 +1546,94 @@ export class ResultsPanel {
                 displayOnMap();
             });
             
-            // Add hover effects
+            // Add hover effects with bbox zoom preview
             clickableCard.addEventListener('mouseenter', () => {
+                // Visual hover effect
                 clickableCard.style.transform = 'translateY(-2px)';
                 clickableCard.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                
+                // Clear any existing timeouts
+                if (this.hoverTimeout) {
+                    clearTimeout(this.hoverTimeout);
+                }
+                if (this.restoreTimeout) {
+                    clearTimeout(this.restoreTimeout);
+                }
+                
+                // Small delay to prevent rapid firing on mouse movement
+                this.hoverTimeout = setTimeout(() => {
+                    console.log('🎯 Hover timeout triggered for item:', item.id);
+                    
+                    // Save current map view if not already saved or if different item
+                    if (!this.savedMapView || this.currentHoveredItem !== item.id) {
+                        console.log('💾 Saving map view for hover preview...');
+                        this.saveMapView();
+                        this.currentHoveredItem = item.id;
+                    }
+                    
+                    // Zoom to item bbox
+                    this.zoomToItemBbox(item);
+                    
+                    // Add visual feedback to the card
+                    clickableCard.classList.add('map-preview-active');
+                    console.log('✨ Added map-preview-active class to card');
+                }, 400); // 400ms delay to prevent rapid triggering
             });
             
-            clickableCard.addEventListener('mouseleave', () => {
+            clickableCard.addEventListener('mouseleave', (e) => {
+                console.log('🖱️ Mouse LEAVE detected on item:', item.id);
+                console.log('🖱️ Leave event details:', {
+                    target: e.target.className,
+                    relatedTarget: e.relatedTarget?.className || 'none',
+                    currentItem: this.currentHoveredItem
+                });
+                
+                // Visual hover effect reset
                 clickableCard.style.transform = '';
                 clickableCard.style.boxShadow = '';
+                
+                // Clear hover timeout if mouse leaves quickly
+                if (this.hoverTimeout) {
+                    console.log('⏰ Clearing hover timeout');
+                    clearTimeout(this.hoverTimeout);
+                    this.hoverTimeout = null;
+                }
+                
+                // Clear any existing restore timeout
+                if (this.restoreTimeout) {
+                    console.log('⏰ Clearing existing restore timeout');
+                    clearTimeout(this.restoreTimeout);
+                    this.restoreTimeout = null;
+                }
+                
+                // Remove visual feedback immediately
+                clickableCard.classList.remove('map-preview-active');
+                console.log('✨ Removed map-preview-active class');
+                
+                // Only restore if we actually have a saved view and this was the active item
+                if (this.savedMapView && this.currentHoveredItem === item.id) {
+                    console.log('💾 Valid restore conditions met, starting restore timer...');
+                    
+                    // Restore view with slight delay
+                    this.restoreTimeout = setTimeout(() => {
+                        console.log('🔄 Restore timeout triggered, restoring map view...');
+                        console.log('📍 About to restore to saved view:', this.savedMapView);
+                        
+                        const restored = this.restoreMapView();
+                        this.removeBboxFromMap();
+                        
+                        if (restored) {
+                            this.currentHoveredItem = null;
+                            // Clear saved view after successful restore
+                            // this.savedMapView = null; // Keep it for subsequent hovers
+                            console.log('✅ Map view restore process completed');
+                        } else {
+                            console.error('❌ Map view restore failed');
+                        }
+                    }, 600); // 600ms delay to allow user to hover other items
+                } else {
+                    console.log('ℹ️ Skipping restore - no saved view or different item');
+                }
             });
         }
         
@@ -1774,6 +1884,469 @@ export class ResultsPanel {
         } catch (error) {
             console.error('❌ [BBOX] Error extracting bbox from geometry:', error);
             return null;
+        }
+    }
+    
+    /**
+     * Save current map view state
+     */
+    saveMapView() {
+        if (!this.mapManager || !this.mapManager.map) {
+            console.warn('⚠️ Cannot save map view - map not available');
+            return;
+        }
+        
+        try {
+            const map = this.mapManager.map;
+            console.log('🔍 Map object type detection:', {
+                constructor: map.constructor.name,
+                hasSetView: typeof map.setView,
+                hasGetCenter: typeof map.getCenter,
+                hasGetZoom: typeof map.getZoom,
+                hasFitBounds: typeof map.fitBounds,
+                properties: Object.getOwnPropertyNames(map).slice(0, 10),
+                methods: Object.getOwnPropertyNames(Object.getPrototypeOf(map)).slice(0, 20)
+            });
+            
+            const center = map.getCenter();
+            const zoom = map.getZoom();
+            
+            this.savedMapView = {
+                center: center,
+                zoom: zoom,
+                lat: center.lat,
+                lng: center.lng,
+                mapType: map.constructor.name
+            };
+            
+            console.log('📍 Saved map view:', {
+                center: `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`,
+                zoom: zoom.toFixed(2),
+                mapType: map.constructor.name
+            });
+        } catch (error) {
+            console.error('❌ Error saving map view:', error);
+        }
+    }
+    
+    /**
+     * Restore saved map view state
+     */
+    restoreMapView() {
+        console.log('🔄 Starting map view restore...');
+        console.log('📊 Saved map view state:', this.savedMapView);
+        
+        if (!this.mapManager || !this.mapManager.map) {
+            console.warn('⚠️ Cannot restore map view - map not available');
+            return false;
+        }
+        
+        if (!this.savedMapView) {
+            console.warn('⚠️ No saved map view to restore');
+            return false;
+        }
+        
+        try {
+            const map = this.mapManager.map;
+            const currentCenter = map.getCenter();
+            const currentZoom = map.getZoom();
+            
+            console.log('🗺️ Current map state:', {
+                center: `${currentCenter.lat.toFixed(4)}, ${currentCenter.lng.toFixed(4)}`,
+                zoom: currentZoom.toFixed(2)
+            });
+            
+            console.log('🎯 Target map state:', {
+                center: `${this.savedMapView.lat.toFixed(4)}, ${this.savedMapView.lng.toFixed(4)}`,
+                zoom: this.savedMapView.zoom.toFixed(2)
+            });
+            
+            // Detect map type and use appropriate API
+            console.log('🔍 Map restoration - available methods:', {
+                hasSetView: typeof map.setView,
+                hasSetZoom: typeof map.setZoom,
+                hasPanTo: typeof map.panTo,
+                hasSetCenter: typeof map.setCenter,
+                hasFlyTo: typeof map.flyTo,
+                constructor: map.constructor.name
+            });
+            
+            let restored = false;
+            
+            // Try different restoration methods based on available APIs
+            if (typeof map.flyTo === 'function') {
+                // MapLibre GL JS API
+                console.log('📍 Using MapLibre flyTo API');
+                map.flyTo({
+                    center: [this.savedMapView.lng, this.savedMapView.lat], // MapLibre uses [lng, lat]
+                    zoom: this.savedMapView.zoom,
+                    duration: 600 // Duration in milliseconds for MapLibre
+                });
+                restored = true;
+                
+            } else if (typeof map.jumpTo === 'function') {
+                // MapLibre instant jump (no animation)
+                console.log('📍 Using MapLibre jumpTo API');
+                map.jumpTo({
+                    center: [this.savedMapView.lng, this.savedMapView.lat], // MapLibre uses [lng, lat]
+                    zoom: this.savedMapView.zoom
+                });
+                restored = true;
+                
+            } else if (typeof map.setCenter === 'function' && typeof map.setZoom === 'function') {
+                // Split center and zoom for MapLibre
+                console.log('📍 Using MapLibre setCenter + setZoom API');
+                map.setCenter([this.savedMapView.lng, this.savedMapView.lat]);
+                map.setZoom(this.savedMapView.zoom);
+                restored = true;
+                
+            } else if (typeof map.setView === 'function') {
+                // Standard Leaflet API (fallback)
+                console.log('📍 Using Leaflet setView API');
+                map.setView([this.savedMapView.lat, this.savedMapView.lng], this.savedMapView.zoom, {
+                    animate: true,
+                    duration: 0.6
+                });
+                restored = true;
+                
+            } else if (typeof map.panTo === 'function' && typeof map.setZoom === 'function') {
+                // Split pan and zoom (Leaflet fallback)
+                console.log('📍 Using panTo + setZoom API');
+                map.panTo([this.savedMapView.lat, this.savedMapView.lng]);
+                map.setZoom(this.savedMapView.zoom);
+                restored = true;
+                
+            } else if (this.mapManager.fitToBounds) {
+                // Use MapManager's fitToBounds as fallback
+                console.log('📍 Using MapManager fitToBounds as fallback');
+                const buffer = 0.001; // Small buffer around the point
+                this.mapManager.fitToBounds([
+                    this.savedMapView.lng - buffer,
+                    this.savedMapView.lat - buffer,
+                    this.savedMapView.lng + buffer,
+                    this.savedMapView.lat + buffer
+                ]);
+                restored = true;
+                
+            } else {
+                console.error('❌ No compatible map restoration API found');
+                return false;
+            }
+            
+            if (restored) {
+                console.log('✅ Map view restore command executed successfully');
+                
+                // Verify the restore worked after animation
+                setTimeout(() => {
+                    try {
+                        const newCenter = map.getCenter();
+                        const newZoom = map.getZoom();
+                        console.log('🔍 Post-restore map state:', {
+                            center: `${newCenter.lat.toFixed(4)}, ${newCenter.lng.toFixed(4)}`,
+                            zoom: newZoom.toFixed(2)
+                        });
+                    } catch (e) {
+                        console.log('ℹ️ Could not verify post-restore state:', e.message);
+                    }
+                }, 700);
+            }
+            
+            return restored;
+            
+        } catch (error) {
+            console.error('❌ Error restoring map view:', error);
+            return false;
+        }
+    }
+    
+    /**
+     * Zoom to item's bounding box with smooth animation
+     * @param {Object} item - STAC item with bbox or geometry
+     */
+    zoomToItemBbox(item) {
+        console.log('🔍 Starting zoom to item bbox for:', item.id);
+        
+        if (!this.mapManager || !this.mapManager.map) {
+            console.warn('⚠️ Cannot zoom - map not available');
+            return;
+        }
+        
+        // Get bbox from item
+        let bbox = item.bbox;
+        if (!bbox && item.geometry) {
+            console.log('📐 No direct bbox, extracting from geometry...');
+            bbox = this.extractBboxFromGeometry(item.geometry);
+        }
+        
+        if (bbox && bbox.length >= 4) {
+            const [west, south, east, north] = bbox;
+            console.log('🔍 Zooming to item bbox:', { 
+                item: item.id,
+                west: west.toFixed(4), 
+                south: south.toFixed(4), 
+                east: east.toFixed(4), 
+                north: north.toFixed(4)
+            });
+            
+            // Add visual indicator on map for the bbox first
+            this.showBboxOnMap(bbox);
+            
+            // Then fit map to bbox with padding
+            try {
+                const map = this.mapManager.map;
+                
+                if (typeof map.fitBounds === 'function') {
+                    // Check if it's MapLibre (uses [lng, lat] order)
+                    if (typeof map.addSource === 'function') {
+                        console.log('📍 Using MapLibre fitBounds');
+                        map.fitBounds(
+                            [west, south, east, north], // MapLibre uses [west, south, east, north]
+                            { 
+                                padding: 40,
+                                maxZoom: 14,
+                                duration: 400 // milliseconds for MapLibre
+                            }
+                        );
+                    } else {
+                        console.log('📍 Using Leaflet fitBounds');
+                        map.fitBounds(
+                            [[south, west], [north, east]], // Leaflet uses [[lat, lng], [lat, lng]]
+                            { 
+                                padding: 40,
+                                maxZoom: 14,
+                                animate: true,
+                                duration: 0.4
+                            }
+                        );
+                    }
+                } else if (this.mapManager.fitToBounds) {
+                    console.log('📍 Using MapManager fitToBounds');
+                    this.mapManager.fitToBounds([west, south, east, north]);
+                } else {
+                    console.warn('⚠️ No fitBounds method available');
+                }
+                
+                console.log('✅ Map fitted to bbox successfully');
+            } catch (error) {
+                console.error('❌ Error fitting map to bbox:', error);
+            }
+        } else {
+            console.warn('⚠️ No valid bbox available for item:', item.id, {
+                hasBbox: !!item.bbox,
+                hasGeometry: !!item.geometry,
+                bbox: bbox
+            });
+        }
+    }
+    
+    /**
+     * Show bounding box rectangle on map
+     * @param {Array} bbox - [west, south, east, north]
+     */
+    showBboxOnMap(bbox) {
+        console.log('🔍 Attempting to show bbox on map:', bbox);
+        
+        // Check if map manager is available
+        if (!this.mapManager || !this.mapManager.map) {
+            console.warn('⚠️ Map manager or map not available');
+            return;
+        }
+        
+        const map = this.mapManager.map;
+        console.log('🗺️ Map type for bbox:', map.constructor.name);
+        
+        // Remove existing bbox layer
+        this.removeBboxFromMap();
+        
+        const [west, south, east, north] = bbox;
+        console.log('📐 Bbox coordinates:', { west, south, east, north });
+        
+        try {
+            // Check if this is MapLibre (has addSource method)
+            if (typeof map.addSource === 'function' && typeof map.addLayer === 'function') {
+                console.log('📍 Using MapLibre GL JS for bbox display');
+                
+                // Create unique source ID
+                const sourceId = `bbox-source-${Date.now()}`;
+                const layerId = `bbox-layer-${Date.now()}`;
+                
+                // Create GeoJSON for the bbox rectangle
+                const bboxGeoJSON = {
+                    type: 'Feature',
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[
+                            [west, south],
+                            [east, south],
+                            [east, north],
+                            [west, north],
+                            [west, south]
+                        ]]
+                    },
+                    properties: {}
+                };
+                
+                // Add source
+                map.addSource(sourceId, {
+                    type: 'geojson',
+                    data: bboxGeoJSON
+                });
+                
+                // Add layer for stroke
+                map.addLayer({
+                    id: layerId,
+                    type: 'line',
+                    source: sourceId,
+                    paint: {
+                        'line-color': '#667eea',
+                        'line-width': 3,
+                        'line-opacity': 0.8,
+                        'line-dasharray': [5, 5]
+                    }
+                });
+                
+                // Add layer for fill
+                map.addLayer({
+                    id: layerId + '-fill',
+                    type: 'fill',
+                    source: sourceId,
+                    paint: {
+                        'fill-color': '#667eea',
+                        'fill-opacity': 0.1
+                    }
+                });
+                
+                // Store layer info for removal
+                this.currentBboxLayer = {
+                    sourceId: sourceId,
+                    layerId: layerId,
+                    fillLayerId: layerId + '-fill',
+                    mapType: 'maplibre'
+                };
+                
+                console.log('✅ Added MapLibre bbox layers successfully');
+                
+            } else if (window.L) {
+                console.log('📍 Using Leaflet for bbox display');
+                
+                // Create bounds in [lat, lng] format for Leaflet
+                const bounds = [[south, west], [north, east]];
+                
+                // Create a rectangle overlay
+                this.currentBboxLayer = window.L.rectangle(bounds, {
+                    color: '#667eea',
+                    weight: 3,
+                    fillColor: '#667eea',
+                    fillOpacity: 0.2,
+                    opacity: 0.8,
+                    dashArray: '5, 5',
+                    className: 'item-bbox-highlight',
+                    mapType: 'leaflet'
+                });
+                
+                this.currentBboxLayer.addTo(map);
+                this.currentBboxLayer.bringToFront();
+                
+                console.log('✅ Added Leaflet bbox rectangle successfully');
+                
+            } else {
+                console.warn('⚠️ No supported mapping library found for bbox display');
+            }
+            
+        } catch (error) {
+            console.error('❌ Error creating bbox rectangle:', error);
+        }
+    }
+    
+    /**
+     * Remove bbox rectangle from map
+     */
+    removeBboxFromMap() {
+        if (!this.currentBboxLayer) {
+            console.log('ℹ️ No bbox layer to remove');
+            return;
+        }
+        
+        if (!this.mapManager || !this.mapManager.map) {
+            console.warn('⚠️ Cannot remove bbox - map not available');
+            return;
+        }
+        
+        const map = this.mapManager.map;
+        
+        try {
+            // Handle MapLibre layers
+            if (this.currentBboxLayer.mapType === 'maplibre') {
+                console.log('🗑️ Removing MapLibre bbox layers...');
+                
+                // Remove layers first
+                if (map.getLayer(this.currentBboxLayer.layerId)) {
+                    map.removeLayer(this.currentBboxLayer.layerId);
+                }
+                if (map.getLayer(this.currentBboxLayer.fillLayerId)) {
+                    map.removeLayer(this.currentBboxLayer.fillLayerId);
+                }
+                
+                // Remove source
+                if (map.getSource(this.currentBboxLayer.sourceId)) {
+                    map.removeSource(this.currentBboxLayer.sourceId);
+                }
+                
+                console.log('✅ Removed MapLibre bbox layers successfully');
+                
+            } else {
+                // Handle Leaflet layers
+                console.log('🗑️ Removing Leaflet bbox layer...');
+                map.removeLayer(this.currentBboxLayer);
+                console.log('✅ Removed Leaflet bbox layer successfully');
+            }
+            
+            this.currentBboxLayer = null;
+            
+        } catch (error) {
+            console.error('❌ Error removing bbox rectangle:', error);
+            // Still reset the reference
+            this.currentBboxLayer = null;
+        }
+    }
+    
+    /**
+     * Clear all hover-related timeouts and reset state (for debugging)
+     */
+    clearHoverState() {
+        console.log('🧹 Clearing all hover state...');
+        
+        if (this.hoverTimeout) {
+            clearTimeout(this.hoverTimeout);
+            this.hoverTimeout = null;
+        }
+        
+        if (this.restoreTimeout) {
+            clearTimeout(this.restoreTimeout);
+            this.restoreTimeout = null;
+        }
+        
+        this.removeBboxFromMap();
+        this.currentHoveredItem = null;
+        
+        // Remove visual feedback from all cards
+        document.querySelectorAll('.map-preview-active').forEach(card => {
+            card.classList.remove('map-preview-active');
+        });
+        
+        console.log('✅ Hover state cleared');
+    }
+    
+    /**
+     * Force restore map view (for debugging)
+     */
+    forceRestoreMapView() {
+        console.log('🔧 Force restoring map view...');
+        this.clearHoverState();
+        if (this.savedMapView) {
+            this.restoreMapView();
+        } else {
+            console.log('❌ No saved view to restore');
         }
     }
     

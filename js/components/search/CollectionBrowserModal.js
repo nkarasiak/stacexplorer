@@ -100,13 +100,12 @@ export class CollectionBrowserModal {
                 width: 100%;
                 height: 100%;
                 background: rgba(0, 0, 0, 0.6);
-                backdrop-filter: blur(4px);
                 display: none;
                 justify-content: center;
                 align-items: center;
                 z-index: 2000;
                 opacity: 0;
-                transition: all 0.3s ease;
+                transition: opacity 0.2s ease;
                 pointer-events: auto;
             }
             
@@ -126,9 +125,10 @@ export class CollectionBrowserModal {
                 display: flex;
                 flex-direction: column;
                 transform: scale(0.95);
-                transition: transform 0.3s ease;
+                transition: transform 0.2s ease;
                 overflow: hidden;
                 color: var(--text-color, #1f2937);
+                will-change: transform;
             }
             
             .collection-browser-modal-overlay.open .collection-browser-modal-dialog {
@@ -365,9 +365,12 @@ export class CollectionBrowserModal {
     async open() {
         console.log('🔍 Attempting to open modal. Current state:', { isOpen: this.isOpen });
         
+        // Force reset modal state if it's stuck
         if (this.isOpen) {
-            console.warn('⚠️ Modal already open, aborting open attempt');
-            return;
+            console.warn('⚠️ Modal state was stuck open, forcing reset...');
+            this.close();
+            // Brief delay to ensure clean state
+            await new Promise(resolve => setTimeout(resolve, 50));
         }
         
         console.log('✅ Opening modal...');
@@ -573,6 +576,8 @@ export class CollectionBrowserModal {
         const uiManager = window.stacExplorer?.uiManager;
         if (uiManager) {
             uiManager.hideBrowseCollectionsPanel();
+            // Ensure modal state is reset even when using panel
+            this.close();
         } else {
             // Fallback to closing modal if UIManager not available
             this.close();

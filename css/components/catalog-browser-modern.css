@@ -18,16 +18,7 @@
 @media (hover: hover) and (pointer: fine) {
     .catalog-card:hover,
     .collection-card:hover {
-        transform: 
-            translateY(var(--hover-y)) 
-            scale(var(--hover-scale)) 
-            rotateX(var(--hover-rotation));
-        
-        /* Dynamic lighting effect */
-        background: 
-            radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), 
-                rgba(255, 255, 255, 0.95) 0%, 
-                rgba(255, 255, 255, 0.8) 100%);
+        transform: scale(1.02);
     }
 }
 
@@ -40,23 +31,12 @@
 
 .catalog-card::before,
 .collection-card::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: radial-gradient(
-        circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
-        rgba(var(--primary-color-rgb), 0.1) 0%,
-        transparent 50%
-    );
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    border-radius: inherit;
+    display: none;
 }
 
 .catalog-card:hover::before,
 .collection-card:hover::before {
-    opacity: 1;
+    display: none;
 }
 
 /* Advanced loading states with skeleton screens */
@@ -175,8 +155,8 @@
 /* Progressive enhancement for newer CSS features */
 @supports (backdrop-filter: blur(10px)) {
     .catalog-browser-panel {
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: var(--glass-backdrop);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: none;
     }
 }
 

@@ -37,8 +37,8 @@
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
     
     /* Glass Effects - Reduced for better contrast */
-    --glass-blur: blur(12px);
-    --glass-blur-sm: blur(8px);
+    --glass-blur: none;
+    --glass-blur-sm: none;
     
     /* Transitions */
     --transition-all: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -176,8 +176,8 @@ html.dark-theme {
     --active-overlay: rgba(60, 70, 90, 0.28);       /* Darker active state */
     
     /* Glass Effects - Premium dark theme styling */
-    --glass-blur: blur(20px);                       /* Enhanced blur for luxury feel */
-    --glass-blur-sm: blur(12px);                    /* Refined small blur */
+    --glass-blur: none;                       /* Enhanced blur for luxury feel */
+    --glass-blur-sm: none;                    /* Refined small blur */
     --glass-border: 1px solid rgba(60, 75, 95, 0.30); /* Darker sophisticated border */
     --glass-saturate: saturate(120%);               /* Balanced saturation */
     --glass-brightness: brightness(1.05);           /* Subtle brightness enhancement */
@@ -4774,6 +4774,37 @@ html.dark-theme .modal-body .info-group div {
     box-shadow: var(--shadow-md);
 }
 
+/* Map preview hover functionality for result cards */
+.clickable-card.map-preview-active {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.3) !important;
+    position: relative;
+}
+
+.clickable-card.map-preview-active::after {
+    content: '🔍 Map Preview';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(102, 126, 234, 0.9);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    pointer-events: none;
+    opacity: 0.9;
+    z-index: 10;
+}
+
+/* Bbox highlight styles */
+.item-bbox-highlight {
+    pointer-events: none;
+    z-index: 1000;
+}
+
 .asset-header {
     display: flex;
     justify-content: space-between;
@@ -5323,6 +5354,12 @@ html.dark-theme .browse-collections-panel .panel-header {
 
 html.dark-theme .browse-collections-panel .panel-header h2 {
     color: var(--text-dark, #f9fafb);
+}
+
+/* Hide inline dropdown containers when browse collections panel is active */
+.browse-collections-panel ~ * .inline-dropdown-container[data-field="collection"],
+body:has(.browse-collections-panel[style*="block"]) .inline-dropdown-container[data-field="collection"] {
+    display: none !important;
 }
 
 html.dark-theme .settings-header h2 {

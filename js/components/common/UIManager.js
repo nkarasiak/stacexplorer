@@ -529,6 +529,13 @@ export class UIManager {
             mapDiv.style.display = 'block';
             
             console.log('🔧 Browse collections panel hidden, map restored');
+            
+            // Ensure trigger button is properly reset
+            const trigger = document.querySelector('.collection-browser-trigger');
+            if (trigger) {
+                trigger.classList.remove('loading');
+                console.log('🔧 Trigger button reset after panel close');
+            }
         }
     }
     

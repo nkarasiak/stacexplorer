@@ -62,6 +62,12 @@ export class CollectionBrowserTrigger {
         summarySource.setAttribute('tabindex', '0');
         summarySource.setAttribute('title', 'Click to browse collections');
         
+        // Remove data-field attribute to prevent inline dropdown interference
+        summarySource.removeAttribute('data-field');
+        
+        // Add a flag to indicate this is handled by browse collections
+        summarySource.setAttribute('data-browse-collections', 'true');
+        
         // Store reference to the existing element
         this.triggerButton = summarySource;
         
@@ -157,6 +163,7 @@ export class CollectionBrowserTrigger {
         this.triggerButton.addEventListener('click', (e) => {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation(); // Prevent any other handlers from running
             console.log('🖱️ Collection browser trigger clicked');
             
             // Ensure button is not disabled
@@ -164,6 +171,9 @@ export class CollectionBrowserTrigger {
                 console.warn('⚠️ Button clicked while in loading state, ignoring');
                 return;
             }
+            
+            // Prevent any inline dropdown from appearing
+            this.preventInlineDropdown();
             
             this.openPanel();
         });
@@ -184,8 +194,9 @@ export class CollectionBrowserTrigger {
                 // Ensure button is re-enabled after selection
                 setTimeout(() => {
                     this.setLoadingState(false);
+                    this.ensureButtonClickable();
                     console.log('✅ Trigger re-enabled after collection selection');
-                }, 200);
+                }, 100);
             }
         });
         
@@ -280,6 +291,32 @@ export class CollectionBrowserTrigger {
     }
     
     /**
+     * Prevent inline dropdown from appearing
+     */
+    preventInlineDropdown() {
+        try {
+            // Remove any existing inline dropdown containers
+            const existingDropdowns = document.querySelectorAll('.inline-dropdown-container[data-field="collection"]');
+            existingDropdowns.forEach(dropdown => {
+                if (dropdown.parentNode) {
+                    dropdown.parentNode.removeChild(dropdown);
+                }
+            });
+            
+            // Temporarily disable inline dropdown manager if available
+            const inlineDropdownManager = window.stacExplorer?.inlineDropdownManager;
+            if (inlineDropdownManager && typeof inlineDropdownManager.temporarilyDisableClickOutside !== 'undefined') {
+                inlineDropdownManager.temporarilyDisableClickOutside = true;
+                setTimeout(() => {
+                    inlineDropdownManager.temporarilyDisableClickOutside = false;
+                }, 500);
+            }
+        } catch (error) {
+            console.warn('⚠️ Error preventing inline dropdown:', error);
+        }
+    }
+    
+    /**
      * Update the trigger button with selected collection
      * @param {Object} collection - Selected collection object
      */
@@ -341,6 +378,11 @@ export class CollectionBrowserTrigger {
         if (this.triggerButton) {
             // Remove any loading or disabled states
             this.triggerButton.classList.remove('loading');
+            
+            // Ensure modal state is also reset
+            if (this.modal) {
+                this.modal.isOpen = false;
+            }
             this.triggerButton.disabled = false;
             this.triggerButton.style.pointerEvents = '';
             this.triggerButton.style.opacity = '';

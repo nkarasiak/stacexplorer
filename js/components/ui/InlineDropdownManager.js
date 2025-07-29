@@ -1014,6 +1014,11 @@ export class InlineDropdownManager {
                 e.preventDefault();
                 e.stopPropagation();
                 
+                // Skip if this item is handled by Browse Collections
+                if (item.hasAttribute('data-browse-collections')) {
+                    return;
+                }
+                
                 // Prevent reopening immediately after preset selection
                 if (this.presetJustSelected) {
                     return;
@@ -1025,6 +1030,12 @@ export class InlineDropdownManager {
                 }
                 
                 const field = item.dataset.field;
+                
+                // Skip if no field type is defined
+                if (!field) {
+                    console.warn('⚠️ No field type defined for element:', item);
+                    return;
+                }
                 
                 this.showInlineDropdown(field, item);
             });

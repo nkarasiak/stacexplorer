@@ -226,8 +226,16 @@ export class CollectionBrowserTrigger {
             // Get UIManager instance from global scope
             const uiManager = window.stacExplorer?.uiManager;
             if (!uiManager) {
-                console.error('❌ UIManager not available for opening panel');
-                return;
+                console.warn('⚠️ UIManager not available, falling back to modal');
+                // Fallback to opening the modal directly
+                if (this.modal) {
+                    this.showModal();
+                    await this.loadAllCollections();
+                    return;
+                } else {
+                    console.error('❌ Neither UIManager nor modal available');
+                    return;
+                }
             }
             
             // Show the panel using UIManager

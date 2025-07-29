@@ -1525,7 +1525,7 @@ export class ResultsPanel {
                         
                         // Display item on map using best available preview asset
                         setTimeout(() => {
-                            this.mapManager.displayItemOnMap(item, null)
+                            this.mapManager.displayItemOnMap(item, null, true)
                                 .then(() => {
                                     // Mark the item as active
                                     document.querySelectorAll('.dataset-item').forEach(el => {
@@ -1570,7 +1570,7 @@ export class ResultsPanel {
             
             // Display item on map using best available preview asset
             setTimeout(() => {
-                this.mapManager.displayItemOnMap(item, null)
+                this.mapManager.displayItemOnMap(item, null, true)
                     .then(() => {
                         // Mark the item as active
                         document.querySelectorAll('.dataset-item').forEach(el => {

@@ -7,7 +7,17 @@
 .collection-grid-selector {
     margin: 1rem 0;
     padding: 0;
-    background: var(--background-color, #ffffff);
+    background: var(--background-color, var(--background-dark, #ffffff));
+    border: 1px solid var(--border-color, var(--border-dark, transparent));
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+/* Collection grid container */
+#collection-grid-container {
+    background: var(--background-color, var(--background-dark, #ffffff));
+    border: 1px solid var(--border-color, var(--border-dark, transparent));
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
@@ -685,8 +695,11 @@
 
 /* Light theme support */
 [data-theme="light"] .collection-grid-selector,
+[data-theme="light"] #collection-grid-container,
 .light-theme .collection-grid-selector,
-html.light-theme .collection-grid-selector {
+.light-theme #collection-grid-container,
+html.light-theme .collection-grid-selector,
+html.light-theme #collection-grid-container {
     background: var(--background-color, #ffffff);
     border-color: var(--border-color, #e5e7eb);
     color: var(--text-color, #1f2937);
@@ -756,8 +769,11 @@ html.light-theme .source-filter-select:focus {
 
 /* Dark mode support */
 [data-theme="dark"] .collection-grid-selector,
+[data-theme="dark"] #collection-grid-container,
+[data-theme="dark"] .collection-stats,
 @media (prefers-color-scheme: dark) {
-    .collection-grid-selector {
+    .collection-grid-selector,
+    #collection-grid-container {
         background: var(--background-dark, #1f2937);
         border-color: var(--border-dark, #374151);
     }

@@ -779,21 +779,85 @@ function setupLocationInputs(inlineDropdownManager) {
             }
         });
         
-        // Add input event for real-time search
+        // Add input event for real-time search directly in the original input
         input.addEventListener('input', (e) => {
             const query = e.target.value.trim();
             
-            if (query.length >= 2) {
-                // Trigger search with debouncing via the dropdown
-                const dropdown = document.querySelector('.ai-dropdown-container');
-                if (dropdown) {
-                    const searchInput = dropdown.querySelector('.location-search-input');
-                    if (searchInput) {
-                        searchInput.value = query;
-                        searchInput.dispatchEvent(new Event('input'));
-                    }
-                }
+            // Get the results container from the current dropdown
+            const dropdown = document.querySelector('.inline-dropdown-container');
+            const resultsContainer = dropdown?.querySelector('.location-results');
+            
+            if (!resultsContainer) return;
+            
+            if (query.length < 2) {
+                resultsContainer.innerHTML = '';
+                resultsContainer.style.display = 'none';
+                return;
             }
+            
+            resultsContainer.style.display = 'block';
+            resultsContainer.innerHTML = '<div style="padding: 12px; color: #666; text-align: center;">Searching...</div>';
+            
+            // Import and use the geocoding service
+            import('./utils/GeocodingService.js').then(module => {
+                const { defaultGeocodingService } = module;
+                
+                defaultGeocodingService.searchLocations(query, (results, error) => {
+                    if (error) {
+                        resultsContainer.style.display = 'block';
+                        resultsContainer.innerHTML = '<div style="padding: 8px; color: #666;">Error searching locations</div>';
+                        return;
+                    }
+                    
+                    if (results.length === 0) {
+                        resultsContainer.style.display = 'block';
+                        resultsContainer.innerHTML = '<div style="padding: 8px; color: #666;">No locations found</div>';
+                        return;
+                    }
+                    
+                    resultsContainer.style.display = 'block';
+                    
+                    // Display results
+                    resultsContainer.innerHTML = results.map(location => {
+                        return `
+                            <div class="location-result-item" data-bbox="${location.bbox ? location.bbox.join(',') : ''}" 
+                                 data-name="${location.formattedName}" style="
+                                padding: 8px 12px;
+                                cursor: pointer;
+                                border-bottom: 1px solid #eee;
+                                transition: background-color 0.2s;
+                            " onmouseover="this.style.backgroundColor='#f5f5f5'" 
+                               onmouseout="this.style.backgroundColor='transparent'">
+                                <div style="font-weight: 500; margin-bottom: 2px;">${location.formattedName}</div>
+                                <div style="font-size: 12px; color: #666;">${location.category} • ${location.shortName}</div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    // Add click handlers to result items
+                    resultsContainer.querySelectorAll('.location-result-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            const locationName = item.dataset.name;
+                            const bbox = item.dataset.bbox;
+                            
+                            // Update the original input value
+                            input.value = locationName;
+                            
+                            // Trigger location selection (emit custom event)
+                            const locationEvent = new CustomEvent('locationSelected', {
+                                detail: { 
+                                    name: locationName, 
+                                    bbox: bbox ? bbox.split(',').map(Number) : null 
+                                }
+                            });
+                            document.dispatchEvent(locationEvent);
+                        });
+                    });
+                });
+            }).catch(error => {
+                console.error('Failed to load GeocodingService:', error);
+                resultsContainer.innerHTML = '<div style="padding: 8px; color: #999;">Location search unavailable</div>';
+            });
         });
     });
     

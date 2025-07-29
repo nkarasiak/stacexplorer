@@ -1157,6 +1157,19 @@ export class ResultsPanel {
     }
     
     /**
+     * Check if we should show collection ID in search results
+     * @returns {boolean} True if collection ID should be shown
+     */
+    shouldShowCollectionInResults() {
+        // Show collection ID when no specific collection is selected
+        const collectionSelect = document.getElementById('collection-select');
+        if (!collectionSelect) return true; // Default to showing if we can't determine
+        
+        // If "All datasets" is selected (empty value) or no specific collection, show collection ID
+        return !collectionSelect.value || collectionSelect.value === '';
+    }
+
+    /**
      * Create a dataset item element
      * @param {Object} item - STAC item
      * @returns {HTMLElement} List item element
@@ -1309,6 +1322,36 @@ export class ResultsPanel {
             }
         }
         
+        // Check if we should show collection ID (when no specific collection is selected)
+        const shouldShowCollection = this.shouldShowCollectionInResults();
+        
+        // Prepare collection display for bottom layer
+        let collectionBottomLayer = '';
+        if (shouldShowCollection && collectionId !== 'Unknown') {
+            collectionBottomLayer = `
+                <div class="dataset-metadata bottom-left" style="
+                    position: absolute;
+                    bottom: 8px;
+                    left: 8px;
+                    z-index: 10;
+                ">
+                    <div class="dataset-collection">
+                        <span class="collection-id" style="
+                            background: rgba(59, 130, 246, 0.9);
+                            color: white;
+                            padding: 3px 8px;
+                            border-radius: 4px;
+                            font-size: 0.7rem;
+                            font-weight: 600;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+                        ">${collectionId}</span>
+                    </div>
+                </div>
+            `;
+        }
+        
         // Get the title
         const title = item.properties && item.properties.title ? 
             item.properties.title : (item.title || item.id);
@@ -1355,6 +1398,7 @@ export class ResultsPanel {
                             <div class="dataset-date"><i class="material-icons">event</i>${itemDate}${cloudIcon}</div>
                         </div>
                         <img data-src="${thumbnailUrl}" alt="Dataset thumbnail" class="dataset-thumbnail lazy-loading">
+                        ${collectionBottomLayer}
                         <div class="thumbnail-overlay">
                             <button class="info-btn details-btn" title="Show details">
                                 <i class="material-icons">info</i>
@@ -1383,6 +1427,21 @@ export class ResultsPanel {
                             </button>
                         </div>
                         <div class="dataset-title">${title}</div>
+                        ${shouldShowCollection && collectionId !== 'Unknown' ? `
+                            <div class="dataset-collection-no-thumb" style="margin-top: 8px;">
+                                <span class="collection-id" style="
+                                    background: rgba(59, 130, 246, 0.9);
+                                    color: white;
+                                    padding: 3px 8px;
+                                    border-radius: 4px;
+                                    font-size: 0.7rem;
+                                    font-weight: 600;
+                                    text-transform: uppercase;
+                                    letter-spacing: 0.5px;
+                                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+                                ">${collectionId}</span>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             `;
@@ -1411,6 +1470,21 @@ export class ResultsPanel {
                                 </button>
                             </div>
                             <div class="dataset-title">${title}</div>
+                            ${shouldShowCollection && collectionId !== 'Unknown' ? `
+                                <div class="dataset-collection-no-thumb" style="margin-top: 8px;">
+                                    <span class="collection-id" style="
+                                        background: rgba(59, 130, 246, 0.9);
+                                        color: white;
+                                        padding: 3px 8px;
+                                        border-radius: 4px;
+                                        font-size: 0.7rem;
+                                        font-weight: 600;
+                                        text-transform: uppercase;
+                                        letter-spacing: 0.5px;
+                                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+                                    ">${collectionId}</span>
+                                </div>
+                            ` : ''}
                         </div>
                     `;
                     

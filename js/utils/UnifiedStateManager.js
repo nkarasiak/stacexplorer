@@ -883,25 +883,16 @@ export class UnifiedStateManager {
      */
     setupStateListeners() {
         
-        // Listen for inline dropdown changes
-        document.addEventListener('searchParameterChanged', (event) => {
-            if (!this.isUpdatingFromURL && !this.isApplyingState) {
-                this.updateURLFromState(event.detail);
-            }
-        });
+        // URL updates are now handled by UnifiedRouter
+        // document.addEventListener('searchParameterChanged', (event) => {
+        //     if (!this.isUpdatingFromURL && !this.isApplyingState) {
+        //         this.updateURLFromState(event.detail);
+        //     }
+        // });
         
         // AI search functionality removed
         
-        // Listen for geometry selection
-        document.addEventListener('geometrySelected', (event) => {
-            if (!this.isUpdatingFromURL && !this.isApplyingState) {
-                this.updateURLFromState({
-                    type: 'location',
-                    locationBbox: event.detail.bbox,
-                    locationName: event.detail.name || 'Map Selection'
-                });
-            }
-        });
+        // Geometry selection is now handled by UnifiedRouter
         
         // Active item changes are now handled by UnifiedRouter
         document.addEventListener('itemActivated', (event) => {
@@ -1044,6 +1035,9 @@ export class UnifiedStateManager {
      * Update URL with current application state (for form elements)
      */
     updateURL() {
+        console.log('🔍 UnifiedStateManager.updateURL() called');
+        console.log('🔍 Call stack:', new Error().stack);
+        
         if (this.isRestoringFromUrl || this.isUpdatingFromURL || this.isApplyingState) {
             console.log('🚫 Skipping URL update during restoration/update process');
             return;
@@ -1078,8 +1072,23 @@ export class UnifiedStateManager {
             }
         }
         
+        // Only add collection parameter if we're not using clean path structure
         if (collectionSelect && collectionSelect.value) {
-            params.set(this.urlKeys.collection, collectionSelect.value);
+            // Check if we're in a catalog/collection view that has clean URLs
+            const path = window.location.pathname;
+            const isCleanCatalogCollectionPath = /\/viewer\/[^\/]+\/[^\/]+/.test(path);
+            
+            console.log('🔍 UnifiedStateManager.updateURL: collection check');
+            console.log('🔍 Path:', path);
+            console.log('🔍 Collection value:', collectionSelect.value);
+            console.log('🔍 Is clean path:', isCleanCatalogCollectionPath);
+            
+            if (!isCleanCatalogCollectionPath) {
+                console.log('🔍 Adding cn parameter');
+                params.set(this.urlKeys.collection, collectionSelect.value);
+            } else {
+                console.log('🔍 Skipping cn parameter due to clean path structure');
+            }
         }
         
         const searchInput = document.getElementById('search-input');

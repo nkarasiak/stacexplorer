@@ -96,10 +96,14 @@ export class UnifiedRouter {
             }
         });
         
-        // Listen for search state changes
+        // Listen for search state changes (includes date changes)
         document.addEventListener('searchParameterChanged', (event) => {
+            console.log('🔄 searchParameterChanged event received:', event.detail);
             if (!this.isProcessingRoute && this.currentMode === 'view') {
+                console.log('🔄 Updating view path for search parameter change');
                 this.updateViewPath(event.detail);
+            } else {
+                console.log('🚫 Ignoring search parameter change - route processing or wrong mode');
             }
         });
         
@@ -128,6 +132,30 @@ export class UnifiedRouter {
                 console.log('🚫 Ignoring collection selection - route processing or wrong mode');
             }
         });
+        
+        // Listen for geometry/bbox selection in view mode
+        document.addEventListener('geometrySelected', (event) => {
+            console.log('🔄 geometrySelected event received:', event.detail);
+            console.log('🔄 Current processing route:', this.isProcessingRoute);
+            console.log('🔄 Current mode:', this.currentMode);
+            console.log('🔄 Event bbox:', event.detail.bbox);
+            
+            if (!this.isProcessingRoute && this.currentMode === 'view') {
+                console.log('🔄 Updating view path for geometry selection');
+                console.log('🔄 Calling updateViewPath with:', {
+                    type: 'location',
+                    locationBbox: event.detail.bbox,
+                    locationName: event.detail.name || 'Map Selection'
+                });
+                this.updateViewPath({
+                    type: 'location',
+                    locationBbox: event.detail.bbox,
+                    locationName: event.detail.name || 'Map Selection'
+                });
+            } else {
+                console.log('🚫 Ignoring geometry selection - route processing:', this.isProcessingRoute, 'mode:', this.currentMode);
+            }
+        });
     }
     
     setupPopStateHandler() {
@@ -136,6 +164,7 @@ export class UnifiedRouter {
             this.processCurrentPath();
         });
     }
+    
     
     /**
      * Process the current URL path and route appropriately
@@ -772,8 +801,27 @@ export class UnifiedRouter {
      * Update path for view mode (search/visualization)
      */
     updateViewPath(stateChange) {
+        console.log('🔧 updateViewPath() called with stateChange:', stateChange);
+        console.log('🔧 Current window.location.pathname:', window.location.pathname);
+        console.log('🔧 Current window.location.search:', window.location.search);
+        
         let newPath = this.createPath('/viewer');
-        const params = new URLSearchParams(window.location.search);
+        const params = new URLSearchParams();
+        
+        // Only preserve specific parameters that should be kept across URL updates
+        const currentParams = new URLSearchParams(window.location.search);
+        const paramsToPreserve = ['mapCenter', 'mapZoom', 'bbox', 'ln', 'dt', 'ds', 'de', 'cc', 'search', 'asset_key'];
+        
+        paramsToPreserve.forEach(param => {
+            if (currentParams.has(param)) {
+                params.set(param, currentParams.get(param));
+            }
+        });
+        
+        console.log('🔧 Initial newPath:', newPath);
+        console.log('🔧 Initial params:', Array.from(params.entries()));
+        
+        const urlKeys = this.stateManager.urlKeys;
         
         // Determine specific viewer path
         if (stateChange.type === 'item' && stateChange.itemId) {
@@ -793,8 +841,13 @@ export class UnifiedRouter {
                 newPath = this.createPath(`/viewer/collection/${encodeURIComponent(stateChange.collection)}`);
                 console.log('📍 Generated legacy collection URL (no catalog):', newPath);
             }
-        } else if (stateChange.search || stateChange.locationBbox || stateChange.dateStart) {
+        } else if (stateChange.search || (stateChange.locationBbox && !this.isCurrentlyInCatalogCollectionView()) || (stateChange.dateStart && !this.isCurrentlyInCatalogCollectionView())) {
             newPath = this.createPath('/viewer/search');
+        } else {
+            // Preserve current path structure if we're already in a catalog/collection view
+            if (this.isCurrentlyInCatalogCollectionView()) {
+                newPath = window.location.pathname;
+            }
         }
         
         // Update query parameters for view state
@@ -804,9 +857,16 @@ export class UnifiedRouter {
         const queryString = params.toString();
         const fullUrl = queryString ? `${newPath}?${queryString}` : newPath;
         
+        console.log('🔧 Final newPath:', newPath);
+        console.log('🔧 Final queryString:', queryString);
+        console.log('🔧 Final fullUrl:', fullUrl);
+        console.log('🔧 Current URL:', window.location.pathname + window.location.search);
+        
         if (fullUrl !== window.location.pathname + window.location.search) {
             console.log('📍 Updating view path to:', fullUrl);
             window.history.pushState({}, '', fullUrl);
+        } else {
+            console.log('📍 URL unchanged, not updating');
         }
     }
     
@@ -845,16 +905,33 @@ export class UnifiedRouter {
      * Update query parameters for view mode
      */
     updateViewQueryParams(params, stateChange) {
+        console.log('🔧 updateViewQueryParams called with stateChange:', stateChange);
+        console.log('🔧 Params before processing:', Array.from(params.entries()));
+        
         // Map state changes to URL parameters
         const urlKeys = this.stateManager.urlKeys;
+        console.log('🔧 urlKeys.collection:', urlKeys.collection);
         
         Object.entries(stateChange).forEach(([key, value]) => {
+            console.log('🔧 Processing stateChange entry:', key, '=', value);
             switch (key) {
                 case 'collection':
-                    if (value) {
-                        params.set(urlKeys.collection, value);
+                    console.log('🔧 Processing collection case');
+                    console.log('🔧 collection value:', value);
+                    console.log('🔧 stateChange.catalogId:', stateChange.catalogId);
+                    
+                    // If we have a catalogId in the stateChange, we're using clean URL structure
+                    // so we should NOT add the cn parameter at all
+                    if (!stateChange.catalogId) {
+                        console.log('🔧 No catalogId - using legacy URL structure with cn parameter');
+                        if (value) {
+                            params.set(urlKeys.collection, value);
+                        } else {
+                            params.delete(urlKeys.collection);
+                        }
                     } else {
-                        params.delete(urlKeys.collection);
+                        console.log('🔧 Has catalogId - using clean URL structure, NOT adding cn parameter');
+                        // Don't add cn parameter when using clean path structure
                     }
                     break;
                     
@@ -863,10 +940,13 @@ export class UnifiedRouter {
                     break;
                     
                 case 'locationBbox':
+                    console.log('🔧 Processing locationBbox:', value);
                     if (Array.isArray(value)) {
                         params.set(urlKeys.locationBbox, value.join(','));
+                        console.log('🔧 Set bbox parameter:', urlKeys.locationBbox, '=', value.join(','));
                     } else if (value) {
                         params.set(urlKeys.locationBbox, value);
+                        console.log('🔧 Set bbox parameter:', urlKeys.locationBbox, '=', value);
                     }
                     break;
                     
@@ -912,7 +992,10 @@ export class UnifiedRouter {
             const zoom = this.stateManager.mapManager.map.getZoom();
             params.set(urlKeys.mapCenter, `${center.lat.toFixed(6)},${center.lng.toFixed(6)}`);
             params.set(urlKeys.mapZoom, zoom.toString());
+            console.log('🔧 Added map state to params');
         }
+        
+        console.log('🔧 Final params after processing:', Array.from(params.entries()));
     }
     
     // === REDIRECT METHODS ===
@@ -986,6 +1069,30 @@ export class UnifiedRouter {
     }
     
     // === UTILITY METHODS ===
+    
+    /**
+     * Check if currently in a catalog/collection view
+     */
+    isCurrentlyInCatalogCollectionView() {
+        const path = window.location.pathname;
+        const base = this.basePath.replace(/\/$/, '');
+        
+        console.log('🔍 isCurrentlyInCatalogCollectionView check:');
+        console.log('🔍 path:', path);
+        console.log('🔍 base:', base);
+        
+        // Check if path matches /viewer/{catalogId}/{collectionId} pattern
+        const catalogCollectionPattern = new RegExp(`^${base}/viewer/([^/]+)/([^/]+)/?$`);
+        const catalogCollectionItemPattern = new RegExp(`^${base}/viewer/([^/]+)/([^/]+)/([^/]+)/?$`);
+        
+        console.log('🔍 catalogCollectionPattern:', catalogCollectionPattern);
+        console.log('🔍 catalogCollectionItemPattern:', catalogCollectionItemPattern);
+        
+        const result = catalogCollectionPattern.test(path) || catalogCollectionItemPattern.test(path);
+        console.log('🔍 Result:', result);
+        
+        return result;
+    }
     
     /**
      * Wait for the application to be fully initialized

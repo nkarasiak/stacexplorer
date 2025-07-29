@@ -238,6 +238,13 @@ class MapManager {
                 
                 // Update URL parameters
                 const url = new URL(window.location);
+                
+                // Remove cn parameter if we're in catalog/collection view (clean URL structure)
+                const isCleanCatalogCollectionPath = /\/viewer\/[^\/]+\/[^\/]+/.test(url.pathname);
+                if (isCleanCatalogCollectionPath && url.searchParams.has('cn')) {
+                    url.searchParams.delete('cn');
+                }
+                
                 url.searchParams.set('mapCenter', `${center.lat.toFixed(6)},${center.lng.toFixed(6)}`);
                 url.searchParams.set('mapZoom', zoom.toFixed(2));
                 
@@ -629,10 +636,58 @@ class MapManager {
         // Clear any existing search bbox since we're drawing a new one
         this.clearSearchBbox();
         
+        // Call the callback if provided
         if (this.drawingCallback) {
             this.drawingCallback(geometry);
         }
         
+        // Always dispatch geometrySelected event for URL handling
+        let bbox;
+        let geometryName = 'Custom Area';
+        
+        console.log('🎯 MapManager: Processing geometry for event dispatch');
+        console.log('🎯 MapManager: drawingType:', this.drawingType);
+        console.log('🎯 MapManager: geometry type:', typeof geometry);
+        console.log('🎯 MapManager: geometry isArray:', Array.isArray(geometry));
+        console.log('🎯 MapManager: geometry:', geometry);
+        
+        if (Array.isArray(geometry) && geometry.length === 4) {
+            // This is a bbox array [west, south, east, north] - round to 6 decimal places
+            bbox = geometry.map(coord => parseFloat(coord.toFixed(6)));
+            console.log('🎯 MapManager: Using geometry as bbox array');
+        } else if (geometry && geometry.type === 'Polygon') {
+            // Convert polygon to bbox
+            const coordinates = geometry.coordinates[0];
+            const lngs = coordinates.map(coord => coord[0]);
+            const lats = coordinates.map(coord => coord[1]);
+            bbox = [
+                parseFloat(Math.min(...lngs).toFixed(6)), // west
+                parseFloat(Math.min(...lats).toFixed(6)), // south
+                parseFloat(Math.max(...lngs).toFixed(6)), // east
+                parseFloat(Math.max(...lats).toFixed(6))  // north
+            ];
+            console.log('🎯 MapManager: Converted polygon to bbox');
+        } else {
+            console.error('🎯 MapManager: Unknown geometry format:', geometry);
+        }
+        
+        if (bbox) {
+            console.log('🎯 MapManager: Dispatching geometrySelected event with bbox:', bbox);
+            console.log('🎯 MapManager: Drawing type was:', this.drawingType);
+            console.log('🎯 MapManager: Original geometry:', geometry);
+            
+            const event = new CustomEvent('geometrySelected', {
+                detail: {
+                    bbox: bbox,
+                    name: geometryName
+                }
+            });
+            console.log('🎯 MapManager: Event created:', event);
+            document.dispatchEvent(event);
+            console.log('🎯 MapManager: Event dispatched');
+        } else {
+            console.error('🎯 MapManager: No bbox generated from geometry:', geometry);
+        }
     }
 
     /**

@@ -52,7 +52,6 @@ export class GeocodingService {
                 const results = await this.geocodeLocation(query, options);
                 callback(results, null);
             } catch (error) {
-                console.error('❌ Geocoding search error:', error);
                 callback([], error);
             }
         }, this.debounceDelay);
@@ -86,7 +85,6 @@ export class GeocodingService {
             
             return processedResults;
         } catch (error) {
-            console.error('❌ Error geocoding location:', error);
             throw error;
         }
     }
@@ -123,7 +121,7 @@ export class GeocodingService {
         
         const url = `${this.baseUrl}/search?${params}`;
         
-        
+        console.log('🌍 Geocoding API request:', url);
         const response = await fetch(url, {
             headers: {
                 'User-Agent': this.userAgent
@@ -378,7 +376,6 @@ export class GeocodingService {
             
             return this.processNominatimResults([data])[0] || null;
         } catch (error) {
-            console.error('❌ Reverse geocoding error:', error);
             throw error;
         }
     }
@@ -421,7 +418,6 @@ export class GeocodingService {
             
             return null;
         } catch (error) {
-            console.error('❌ Error getting location bbox:', error);
             throw error;
         }
     }

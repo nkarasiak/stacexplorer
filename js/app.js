@@ -775,7 +775,7 @@ function setupLocationInputs(inlineDropdownManager) {
             try {
                 await inlineDropdownManager.showInlineDropdown('location', e.target);
             } catch (error) {
-                console.error('Error showing location dropdown:', error);
+                // Silently handle dropdown errors
             }
         });
         
@@ -855,7 +855,6 @@ function setupLocationInputs(inlineDropdownManager) {
                     });
                 });
             }).catch(error => {
-                console.error('Failed to load GeocodingService:', error);
                 resultsContainer.innerHTML = '<div style="padding: 8px; color: #999;">Location search unavailable</div>';
             });
         });
@@ -883,7 +882,7 @@ function setupLocationInputs(inlineDropdownManager) {
                     mapManager.map.fitBounds(bounds, { padding: 20 });
                 }
             } catch (error) {
-                console.error('Error zooming to location bbox:', error);
+                // Silently handle map zoom errors
             }
         }
         
@@ -893,53 +892,11 @@ function setupLocationInputs(inlineDropdownManager) {
     
 }
 
-// Add global debug function to test location search manually
+// Manual test function for location search (dev/debug use only)
 window.testLocationSearch = function() {
-    console.log('🧪 Testing location search manually...');
     const input = document.querySelector('.mini-location-input') || document.querySelector('#summary-location-input');
-    if (input) {
-        console.log('✅ Found location input:', input);
+    if (input && window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
         input.focus();
-        console.log('🎯 Focused on input');
-        
-        if (window.stacExplorer && window.stacExplorer.inlineDropdownManager) {
-            console.log('✅ Found dropdown manager');
-            window.stacExplorer.inlineDropdownManager.showInlineDropdown('location', input)
-                .then(() => {
-                    console.log('✅ Dropdown should be showing');
-                    // Check if dropdown elements exist in DOM
-                    const dropdowns = document.querySelectorAll('.inline-dropdown-container, .ai-dropdown-container');
-                    console.log('🔍 Found dropdown containers:', dropdowns.length, dropdowns);
-                    
-                    const realDropdown = document.querySelector('.inline-dropdown-container');
-                    console.log('🌍 Real dropdown container:', realDropdown);
-                    
-                    if (realDropdown) {
-                        console.log('📐 Real dropdown styles:', {
-                            display: getComputedStyle(realDropdown).display,
-                            visibility: getComputedStyle(realDropdown).visibility,
-                            position: getComputedStyle(realDropdown).position,
-                            zIndex: getComputedStyle(realDropdown).zIndex,
-                            top: getComputedStyle(realDropdown).top,
-                            left: getComputedStyle(realDropdown).left,
-                            width: getComputedStyle(realDropdown).width,
-                            height: getComputedStyle(realDropdown).height
-                        });
-                        
-                        const searchInput = realDropdown.querySelector('.location-search-input');
-                        console.log('🔍 Location search input inside dropdown:', searchInput);
-                        
-                        if (!searchInput) {
-                            console.log('📝 Dropdown content:', realDropdown.innerHTML);
-                        }
-                    }
-                })
-                .catch(error => console.error('❌ Error showing dropdown:', error));
-        } else {
-            console.error('❌ No dropdown manager found');
-        }
-    } else {
-        console.error('❌ No location input found');
-        console.log('Available inputs:', document.querySelectorAll('input'));
+        window.stacExplorer.inlineDropdownManager.showInlineDropdown('location', input);
     }
 };	

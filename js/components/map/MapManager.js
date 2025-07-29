@@ -1406,6 +1406,109 @@ let geojson;
     }
     
     /**
+     * Add a bounding box visualization to the map
+     * @param {Array} bbox - Bounding box [west, south, east, north]
+     * @param {string} sourceId - Optional source ID for the bbox (default: 'location-bbox')
+     */
+    addBoundingBoxVisualization(bbox, sourceId = 'location-bbox') {
+        if (!this.map || !bbox || bbox.length !== 4) {
+            console.warn('Cannot add bbox visualization: invalid map or bbox');
+            return;
+        }
+        
+        try {
+            // Create GeoJSON polygon for the bounding box
+            const bboxPolygon = {
+                type: 'FeatureCollection',
+                features: [{
+                    type: 'Feature',
+                    properties: {
+                        type: 'location-search-bbox'
+                    },
+                    geometry: {
+                        type: 'Polygon',
+                        coordinates: [[
+                            [bbox[0], bbox[1]], // southwest
+                            [bbox[2], bbox[1]], // southeast
+                            [bbox[2], bbox[3]], // northeast
+                            [bbox[0], bbox[3]], // northwest
+                            [bbox[0], bbox[1]]  // close
+                        ]]
+                    }
+                }]
+            };
+            
+            // Remove existing bbox source/layer if it exists
+            if (this.map.getSource(sourceId)) {
+                if (this.map.getLayer(`${sourceId}-fill`)) {
+                    this.map.removeLayer(`${sourceId}-fill`);
+                }
+                if (this.map.getLayer(`${sourceId}-outline`)) {
+                    this.map.removeLayer(`${sourceId}-outline`);
+                }
+                this.map.removeSource(sourceId);
+            }
+            
+            // Add source
+            this.map.addSource(sourceId, {
+                type: 'geojson',
+                data: bboxPolygon
+            });
+            
+            // Add fill layer
+            this.map.addLayer({
+                id: `${sourceId}-fill`,
+                type: 'fill',
+                source: sourceId,
+                paint: {
+                    'fill-color': '#007cbf',
+                    'fill-opacity': 0.1
+                }
+            });
+            
+            // Add outline layer
+            this.map.addLayer({
+                id: `${sourceId}-outline`,
+                type: 'line',
+                source: sourceId,
+                paint: {
+                    'line-color': '#007cbf',
+                    'line-width': 2,
+                    'line-opacity': 0.8
+                }
+            });
+            
+            console.log('✅ Added bounding box visualization for bbox:', bbox);
+            
+        } catch (error) {
+            console.error('❌ Error adding bounding box visualization:', error);
+        }
+    }
+    
+    /**
+     * Remove bounding box visualization from the map
+     * @param {string} sourceId - Source ID of the bbox to remove (default: 'location-bbox')
+     */
+    removeBoundingBoxVisualization(sourceId = 'location-bbox') {
+        if (!this.map) return;
+        
+        try {
+            if (this.map.getLayer(`${sourceId}-fill`)) {
+                this.map.removeLayer(`${sourceId}-fill`);
+            }
+            if (this.map.getLayer(`${sourceId}-outline`)) {
+                this.map.removeLayer(`${sourceId}-outline`);
+            }
+            if (this.map.getSource(sourceId)) {
+                this.map.removeSource(sourceId);
+            }
+            console.log('✅ Removed bounding box visualization');
+        } catch (error) {
+            console.error('❌ Error removing bounding box visualization:', error);
+        }
+    }
+    
+    /**
      * Add asset overlay to map
      * @param {Object} asset - Asset object
      * @param {Object} item - STAC item

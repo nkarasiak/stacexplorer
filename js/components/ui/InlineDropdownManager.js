@@ -1128,9 +1128,10 @@ export class InlineDropdownManager {
                     dropdownContent = this.aiSearchHelper.createDateDropdown();
                     break;
                 case 'location':
-                    // Re-enable location dropdown functionality with basic implementation
-                    dropdownContent = this.createBasicLocationDropdown();
-                    break;
+                    // Location dropdown functionality handled by setupLocationInputs in app.js
+                    // This prevents duplicate dropdowns
+                    console.log('Location dropdown handled by setupLocationInputs, skipping InlineDropdownManager creation');
+                    return; // Exit early to prevent creating duplicate dropdown
                 default:
                     console.warn(`Unknown field type: ${fieldType}`);
                     throw new Error(`Unknown field type: ${fieldType}`);
@@ -2863,31 +2864,7 @@ export class InlineDropdownManager {
         }
     }
     
-    /**
-     * Create basic location dropdown functionality - just results container
-     * @returns {HTMLElement} Location dropdown content
-     */
-    createBasicLocationDropdown() {
-        const container = document.createElement('div');
-        container.className = 'location-dropdown-content';
-        
-        // Only create results container - no additional input field
-        const resultsContainer = document.createElement('div');
-        resultsContainer.className = 'location-results';
-        resultsContainer.style.cssText = `
-            max-height: 200px;
-            overflow-y: auto;
-            border-radius: 4px;
-            border: 1px solid #ddd;
-            background: white;
-            display: none;
-        `;
-        
-        // Show empty initially
-        resultsContainer.innerHTML = '';
-        
-        container.appendChild(resultsContainer);
-        
-        return container;
-    }
+    // REMOVED: createBasicLocationDropdown() method
+    // Location dropdown functionality is now handled by setupLocationInputs in app.js
+    // This eliminates duplicate dropdowns
 }

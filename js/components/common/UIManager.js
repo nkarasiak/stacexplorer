@@ -114,6 +114,17 @@ export class UIManager {
             console.warn('🔧 Browse Collections close button not found');
         }
         
+        // ESC key to close Browse Collections panel
+        this.handleBrowseCollectionsPanelEscape = (e) => {
+            if (e.key === 'Escape') {
+                const browsePanel = document.getElementById('browse-collections-panel');
+                if (browsePanel && browsePanel.style.display !== 'none') {
+                    this.hideBrowseCollectionsPanel();
+                }
+            }
+        };
+        document.addEventListener('keydown', this.handleBrowseCollectionsPanelEscape);
+        
         // Sidebar toggle
         document.getElementById('sidebar-toggle').addEventListener('click', () => {
             this.toggleSidebar();
@@ -485,6 +496,24 @@ export class UIManager {
             mapDiv.style.display = 'block';
             
             console.log('🔧 Settings panel hidden, map restored');
+        }
+    }
+    
+    /**
+     * Hide Browse Collections panel
+     */
+    hideBrowseCollectionsPanel() {
+        console.log('🔧 hideBrowseCollectionsPanel called');
+        
+        const browsePanel = document.getElementById('browse-collections-panel');
+        
+        if (browsePanel) {
+            // Hide browse collections panel
+            browsePanel.style.display = 'none';
+            
+            console.log('🔧 Browse Collections panel hidden');
+        } else {
+            console.warn('🔧 Browse Collections panel not found');
         }
         
         // Remove escape key handler

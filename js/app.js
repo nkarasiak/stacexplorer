@@ -184,7 +184,7 @@ async function initAppForBrowserMode() {
         window.stacExplorer.filterManager = filterManager;
         window.stacExplorer.searchForm = searchForm;
         
-        // Set up location input event listeners
+        // Set up location input event listeners for both browser and viewer modes
         setTimeout(() => {
             setupLocationInputs(inlineDropdownManager);
         }, 100);
@@ -662,6 +662,11 @@ async function initAppNormal() {
         
         // Debug offline manager status
         
+        // Set up location input event listeners for both browser and viewer modes
+        setTimeout(() => {
+            setupLocationInputs(inlineDropdownManager);
+        }, 100);
+        
         // Expose key objects to the global scope for developer console access
         // Preserve existing window.stacExplorer properties if they exist
         window.stacExplorer = {
@@ -783,6 +788,11 @@ function setupLocationInputs(inlineDropdownManager) {
         input.addEventListener('input', async (e) => {
             const query = e.target.value.trim();
             
+            // Clear any existing location bbox when user starts typing
+            if (window.stacExplorer?.mapManager?.removeBoundingBoxVisualization) {
+                window.stacExplorer.mapManager.removeBoundingBoxVisualization('location-bbox');
+            }
+            
             // Ensure dropdown is open first
             try {
                 await inlineDropdownManager.showInlineDropdown('location', e.target);
@@ -882,17 +892,30 @@ function setupLocationInputs(inlineDropdownManager) {
         // Update the search summary
         inlineDropdownManager.updateSearchSummary('location', name.toUpperCase());
         
-        // If we have a bbox, zoom the map to it
+        // If we have a bbox, zoom the map to it and show the bounding box
         if (bbox && window.stacExplorer && window.stacExplorer.mapManager) {
             try {
                 const mapManager = window.stacExplorer.mapManager;
+                
+                // Clear any existing location bbox visualization
+                if (typeof mapManager.removeBoundingBoxVisualization === 'function') {
+                    mapManager.removeBoundingBoxVisualization('location-bbox');
+                }
+                
+                // Add bounding box visualization
+                if (typeof mapManager.addBoundingBoxVisualization === 'function') {
+                    mapManager.addBoundingBoxVisualization(bbox, 'location-bbox');
+                }
+                
+                // Zoom to the location
                 if (mapManager.map && mapManager.map.fitBounds) {
-                    // Convert bbox format: [west, south, east, north] to [[south, west], [north, east]]
-                    const bounds = [[bbox[1], bbox[0]], [bbox[3], bbox[2]]];
+                    // Convert bbox format: [west, south, east, north] to [[west, south], [east, north]]
+                    const bounds = [[bbox[0], bbox[1]], [bbox[2], bbox[3]]];
                     mapManager.map.fitBounds(bounds, { padding: 20 });
                 }
             } catch (error) {
                 // Silently handle map zoom errors
+                console.warn('Error handling location selection:', error);
             }
         }
         

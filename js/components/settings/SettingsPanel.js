@@ -77,6 +77,14 @@ export class SettingsPanel {
             this.saveSettings();
         });
         
+        // ESC key to close settings
+        this.escKeyHandler = (e) => {
+            if (e.key === 'Escape' && this.isOpen) {
+                this.close();
+            }
+        };
+        document.addEventListener('keydown', this.escKeyHandler);
+        
         // Provider toggles
         this.panel.querySelector('#provider-list').addEventListener('change', (e) => {
             if (e.target.type === 'checkbox') {
@@ -147,6 +155,18 @@ export class SettingsPanel {
             enabledProviders: [...(this.config.appSettings.enabledProviders || [])]
         };
         this.populateProviders();
+    }
+    
+    /**
+     * Cleanup event listeners (call when destroying the component)
+     */
+    destroy() {
+        if (this.escKeyHandler) {
+            document.removeEventListener('keydown', this.escKeyHandler);
+        }
+        if (this.panel && this.panel.parentNode) {
+            this.panel.parentNode.removeChild(this.panel);
+        }
     }
     
     /**

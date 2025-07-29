@@ -542,6 +542,11 @@ export class VisualizationPanel {
             
             // Hide thumbnail when visualization is selected
             this.hideThumbnailForCurrentItem();
+            
+            // Remove thumbnail/preview layers from both MapLibre and Deck.gl
+            console.log(`🎨 [PRESET] Removing thumbnail/preview layers (MapLibre + Deck.gl) before loading ${presetKey}`);
+            this.removeOnlyThumbnailLayers();
+            this.removeDeckGLThumbnailLayers();
 
             console.log(`📡 [LOADING] Adding STAC item layer for item: ${this.currentItem.id}`);
             console.log(`📡 [LOADING] Collection: ${this.currentItem.collection}`);
@@ -566,10 +571,10 @@ export class VisualizationPanel {
                 this.rasterManager.removeLayer(this.currentLayerId);
             }
             
-            // Remove any preview layer created by mapManager.displayItemOnMap
-            if (newLayerId && this.rasterManager.mapManager && typeof this.rasterManager.mapManager.removeCurrentLayer === 'function') {
-                console.log(`🗑️ [LOADING] Removing preview layer`);
-                this.rasterManager.mapManager.removeCurrentLayer();
+            // Don't remove thumbnail layers - instead ensure high-res layer is on top
+            if (newLayerId) {
+                console.log(`🎨 [PRESET] Ensuring high-resolution layer ${newLayerId} is rendered above thumbnails`);
+                this.ensureHighResLayerOnTop(newLayerId);
             }
 
             this.currentLayerId = newLayerId;
@@ -939,4 +944,688 @@ export class VisualizationPanel {
         
         console.log('🖼️ Thumbnails restored for all items');
     }
+    
+    /**
+     * Remove ONLY thumbnail/preview layers, preserve high-resolution visualization layers
+     */
+    removeOnlyThumbnailLayers() {
+        if (!this.rasterManager.mapManager || !this.rasterManager.mapManager.map) {
+            return;
+        }
+        
+        const map = this.rasterManager.mapManager.map;
+        
+        try {
+            console.log('🗑️ [TARGETED] Removing only thumbnail/preview layers from map');
+            
+            const style = map.getStyle();
+            if (!style || !style.layers) {
+                console.log('🗑️ [TARGETED] No map style or layers found');
+                return;
+            }
+            
+            const layersToRemove = [];
+            const sourcesToRemove = [];
+            
+            console.log('🔍 [TARGETED] Analyzing layers for thumbnail/preview removal:');
+            
+            // Check ALL layers but only remove thumbnail/preview ones
+            style.layers.forEach((layer, index) => {
+                const layerId = layer.id;
+                const sourceId = layer.source;
+                const layerType = layer.type;
+                
+                console.log(`  ${index + 1}. ${layerId} (type: ${layerType}, source: ${sourceId})`);
+                
+                // Identify thumbnail/preview layers (but NOT high-resolution visualization layers)
+                const isThumbnailLayer = (
+                    // Image overlay layers (thumbnails/previews from MapManager)
+                    (layerId.includes('image-overlay-') && layerId.endsWith('-layer')) ||
+                    (sourceId && sourceId.includes('image-overlay-')) ||
+                    layerId === 'thumbnail-layer' ||
+                    layerId === 'image-overlay-layer' ||
+                    
+                    // Geometry layers (item boundaries)
+                    layerId === 'item-geometry-layer' ||
+                    layerId === 'item-geometry-layer-stroke' ||
+                    layerId.includes('item-geometry') ||
+                    
+                    // Other potential thumbnail patterns
+                    layerId.includes('preview-') ||
+                    layerId.includes('thumbnail-')
+                );
+                
+                // Preserve high-resolution layers (from RasterVisualizationManager)
+                const isHighResLayer = (
+                    layerId.includes('stac-') ||  // High-res layers from RasterVisualizationManager
+                    (sourceId && sourceId.includes('stac-')) ||
+                    layerId.includes('raster-viz-') ||
+                    layerId.includes('visualization-')
+                );
+                
+                if (isThumbnailLayer && !isHighResLayer) {
+                    console.log(`    → REMOVING: Thumbnail/preview layer`);
+                    layersToRemove.push(layerId);
+                    
+                    if (sourceId) {
+                        sourcesToRemove.push(sourceId);
+                    }
+                } else if (isHighResLayer) {
+                    console.log(`    → KEEPING: High-resolution visualization layer`);
+                } else {
+                    console.log(`    → KEEPING: Base map or other layer`);
+                }
+            });
+            
+            // Also check sources for thumbnail patterns
+            Object.keys(style.sources || {}).forEach(sourceId => {
+                const isThumbnailSource = (
+                    sourceId.includes('image-overlay-') ||
+                    sourceId === 'thumbnail-source' ||
+                    sourceId === 'image-overlay-source' ||
+                    sourceId === 'item-geometry' ||
+                    sourceId.includes('preview-') ||
+                    sourceId.includes('thumbnail-')
+                );
+                
+                const isHighResSource = (
+                    sourceId.includes('stac-') ||
+                    sourceId.includes('raster-viz-') ||
+                    sourceId.includes('visualization-')
+                );
+                
+                if (isThumbnailSource && !isHighResSource && !sourcesToRemove.includes(sourceId)) {
+                    console.log(`🔍 [TARGETED] Found additional thumbnail source: ${sourceId}`);
+                    sourcesToRemove.push(sourceId);
+                }
+            });
+            
+            console.log(`🗑️ [TARGETED] Will remove ${layersToRemove.length} thumbnail layers:`, layersToRemove);
+            console.log(`🗑️ [TARGETED] Will remove ${[...new Set(sourcesToRemove)].length} thumbnail sources:`, [...new Set(sourcesToRemove)]);
+            
+            // Remove layers first
+            layersToRemove.forEach(layerId => {
+                try {
+                    if (map.getLayer(layerId)) {
+                        console.log(`🗑️ [TARGETED] Removing thumbnail layer: ${layerId}`);
+                        map.removeLayer(layerId);
+                    }
+                } catch (error) {
+                    console.warn(`⚠️ [TARGETED] Error removing layer ${layerId}:`, error);
+                }
+            });
+            
+            // Remove sources
+            [...new Set(sourcesToRemove)].forEach(sourceId => {
+                try {
+                    if (map.getSource(sourceId)) {
+                        console.log(`🗑️ [TARGETED] Removing thumbnail source: ${sourceId}`);
+                        map.removeSource(sourceId);
+                    }
+                } catch (error) {
+                    console.warn(`⚠️ [TARGETED] Error removing source ${sourceId}:`, error);
+                }
+            });
+            
+            console.log(`✅ [TARGETED] Removed ${layersToRemove.length} thumbnail layers and ${[...new Set(sourcesToRemove)].length} sources`);
+            
+            // Show remaining layers
+            const remainingStyle = map.getStyle();
+            console.log('🔍 [TARGETED] Remaining layers after thumbnail cleanup:');
+            remainingStyle.layers.forEach((layer, index) => {
+                if (!layer.id.includes('mapbox-') && !layer.id.includes('background') && 
+                    !layer.id.includes('land') && !layer.id.includes('water')) {
+                    console.log(`  ${index + 1}. ${layer.id} (type: ${layer.type}, source: ${layer.source})`);
+                }
+            });
+            
+        } catch (error) {
+            console.error('❌ [TARGETED] Error in targeted thumbnail removal:', error);
+        }
+    }
+    
+    /**
+     * Remove thumbnail/preview layers from Deck.gl
+     */
+    removeDeckGLThumbnailLayers() {
+        if (!this.rasterManager.mapManager || !this.rasterManager.mapManager.deckGLIntegration) {
+            console.log('🗑️ [DECKGL] No Deck.gl integration found');
+            return;
+        }
+        
+        const deckGLIntegration = this.rasterManager.mapManager.deckGLIntegration;
+        
+        try {
+            console.log('🗑️ [DECKGL] Removing Deck.gl thumbnail/preview layers');
+            
+            // Check if Deck.gl is available and has layers
+            if (!deckGLIntegration.isAvailable()) {
+                console.log('🗑️ [DECKGL] Deck.gl not available');
+                return;
+            }
+            
+            // Remove STAC item layers from Deck.gl (these are likely the thumbnails)
+            if (typeof deckGLIntegration.removeStacLayer === 'function') {
+                console.log('🗑️ [DECKGL] Removing STAC layers from Deck.gl');
+                deckGLIntegration.removeStacLayer();
+            }
+            
+            // If there's a method to remove all layers, use it
+            if (typeof deckGLIntegration.removeAllLayers === 'function') {
+                console.log('🗑️ [DECKGL] Removing all Deck.gl layers');
+                deckGLIntegration.removeAllLayers();
+            }
+            
+            // If there's a method to clear Deck.gl, use it
+            if (typeof deckGLIntegration.clear === 'function') {
+                console.log('🗑️ [DECKGL] Clearing Deck.gl');
+                deckGLIntegration.clear();
+            }
+            
+            console.log('✅ [DECKGL] Deck.gl thumbnail removal completed');
+            
+        } catch (error) {
+            console.warn('⚠️ [DECKGL] Error removing Deck.gl layers:', error);
+        }
+    }
+    
+    /**
+     * AGGRESSIVE: Remove ALL overlay layers (thumbnails, previews, etc.) from the map
+     * This ensures a clean slate before adding high-resolution visualizations
+     */
+    removeAllOverlayLayers() {
+        if (!this.rasterManager.mapManager || !this.rasterManager.mapManager.map) {
+            return;
+        }
+        
+        const map = this.rasterManager.mapManager.map;
+        
+        try {
+            console.log('🗑️ [AGGRESSIVE] Removing ALL overlay layers from map');
+            
+            const style = map.getStyle();
+            if (!style || !style.layers) {
+                console.log('🗑️ [AGGRESSIVE] No map style or layers found');
+                return;
+            }
+            
+            // Get base map layer patterns that we should NOT remove
+            const basemapPatterns = [
+                /^mapbox-/,           // Mapbox base layers
+                /^background$/,       // Background layer
+                /^land$/,            // Land layer
+                /^water$/,           // Water layer
+                /^admin-/,           // Admin boundaries
+                /^road-/,            // Road layers
+                /^building/,         // Building layers
+                /^label-/,           // Label layers
+                /^poi-/,             // Points of interest
+                /^transit-/,         // Transit layers
+                /^landuse-/,         // Land use layers
+                /^waterway-/,        // Waterway layers
+                /^tunnel-/,          // Tunnel layers
+                /^bridge-/,          // Bridge layers
+                /^hillshade/,        // Hillshade layers
+                /^contour/,          // Contour layers
+                /^satellite$/,       // Satellite base layer
+                /^raster-source$/    // Base raster source
+            ];
+            
+            const layersToRemove = [];
+            const sourcesToRemove = [];
+            
+            console.log('🔍 [AGGRESSIVE] Analyzing all layers:');
+            
+            // Check ALL layers
+            style.layers.forEach((layer, index) => {
+                const layerId = layer.id;
+                const sourceId = layer.source;
+                const layerType = layer.type;
+                
+                console.log(`  ${index + 1}. ${layerId} (type: ${layerType}, source: ${sourceId})`);
+                
+                // Check if this is a base map layer we should keep
+                const isBasemapLayer = basemapPatterns.some(pattern => pattern.test(layerId));
+                
+                if (!isBasemapLayer) {
+                    // This looks like an overlay layer - remove it
+                    console.log(`    → REMOVING: Not a base map layer`);
+                    layersToRemove.push(layerId);
+                    
+                    if (sourceId && !basemapPatterns.some(pattern => pattern.test(sourceId))) {
+                        sourcesToRemove.push(sourceId);
+                    }
+                } else {
+                    console.log(`    → KEEPING: Base map layer`);
+                }
+            });
+            
+            // Also check all sources for non-basemap sources
+            Object.keys(style.sources || {}).forEach(sourceId => {
+                const isBasemapSource = basemapPatterns.some(pattern => pattern.test(sourceId)) || 
+                                       sourceId === 'mapbox' || 
+                                       sourceId.startsWith('mapbox://');
+                
+                if (!isBasemapSource && !sourcesToRemove.includes(sourceId)) {
+                    console.log(`🔍 [AGGRESSIVE] Found additional non-basemap source: ${sourceId}`);
+                    sourcesToRemove.push(sourceId);
+                }
+            });
+            
+            console.log(`🗑️ [AGGRESSIVE] Will remove ${layersToRemove.length} layers:`, layersToRemove);
+            console.log(`🗑️ [AGGRESSIVE] Will remove ${[...new Set(sourcesToRemove)].length} sources:`, [...new Set(sourcesToRemove)]);
+            
+            // Remove layers first
+            layersToRemove.forEach(layerId => {
+                try {
+                    if (map.getLayer(layerId)) {
+                        console.log(`🗑️ [AGGRESSIVE] Removing layer: ${layerId}`);
+                        map.removeLayer(layerId);
+                    }
+                } catch (error) {
+                    console.warn(`⚠️ [AGGRESSIVE] Error removing layer ${layerId}:`, error);
+                }
+            });
+            
+            // Remove sources
+            [...new Set(sourcesToRemove)].forEach(sourceId => {
+                try {
+                    if (map.getSource(sourceId)) {
+                        console.log(`🗑️ [AGGRESSIVE] Removing source: ${sourceId}`);
+                        map.removeSource(sourceId);
+                    }
+                } catch (error) {
+                    console.warn(`⚠️ [AGGRESSIVE] Error removing source ${sourceId}:`, error);
+                }
+            });
+            
+            console.log(`✅ [AGGRESSIVE] Removed ${layersToRemove.length} layers and ${[...new Set(sourcesToRemove)].length} sources`);
+            
+            // Show remaining layers
+            const remainingStyle = map.getStyle();
+            console.log('🔍 [AGGRESSIVE] Remaining layers after cleanup:');
+            remainingStyle.layers.forEach((layer, index) => {
+                console.log(`  ${index + 1}. ${layer.id} (type: ${layer.type}, source: ${layer.source})`);
+            });
+            
+        } catch (error) {
+            console.error('❌ [AGGRESSIVE] Error in aggressive layer removal:', error);
+        }
+    }
+    
+    /**
+     * Ensure thumbnail layers stay below high-resolution layers
+     */
+    ensureThumbnailLayersBelow() {
+        if (!this.rasterManager.mapManager || !this.rasterManager.mapManager.map) {
+            return;
+        }
+        
+        const map = this.rasterManager.mapManager.map;
+        
+        try {
+            console.log('🎨 [LAYER-ORDER] Preparing thumbnail layers to stay below high-resolution');
+            
+            // Get all layers on the map
+            const style = map.getStyle();
+            if (!style || !style.layers) {
+                return;
+            }
+            
+            // Find thumbnail/preview layers
+            const thumbnailLayers = [];
+            style.layers.forEach(layer => {
+                const layerId = layer.id;
+                const layerType = layer.type;
+                const sourceId = layer.source;
+                
+                // Identify thumbnail/preview layers
+                if ((layerType === 'raster' && sourceId && 
+                     (layerId.includes('image-overlay-') || 
+                      sourceId.includes('image-overlay-') ||
+                      layerId === 'thumbnail-layer' ||
+                      layerId === 'image-overlay-layer')) ||
+                    layerId === 'item-geometry-layer' ||
+                    layerId === 'item-geometry-layer-stroke') {
+                    
+                    thumbnailLayers.push(layerId);
+                }
+            });
+            
+            console.log(`🎨 [LAYER-ORDER] Found ${thumbnailLayers.length} thumbnail layers:`, thumbnailLayers);
+            
+            // Store reference for later use
+            this.thumbnailLayerIds = thumbnailLayers;
+            
+        } catch (error) {
+            console.warn('⚠️ [LAYER-ORDER] Error identifying thumbnail layers:', error);
+        }
+    }
+    
+    /**
+     * Ensure high-resolution layer is rendered on top of thumbnail layers
+     */
+    ensureHighResLayerOnTop(highResLayerId) {
+        if (!this.rasterManager.mapManager || !this.rasterManager.mapManager.map) {
+            return;
+        }
+        
+        const map = this.rasterManager.mapManager.map;
+        
+        try {
+            console.log(`🎨 [LAYER-ORDER] Ensuring high-res layer ${highResLayerId} is on top`);
+            
+            // Get current layer order
+            const style = map.getStyle();
+            if (!style || !style.layers) {
+                return;
+            }
+            
+            // Find the high-res layer
+            const highResLayer = style.layers.find(layer => layer.id === highResLayerId);
+            if (!highResLayer) {
+                console.warn(`⚠️ [LAYER-ORDER] High-res layer ${highResLayerId} not found`);
+                return;
+            }
+            
+            // Check if there are any layers above the high-res layer that look like thumbnails
+            const layerIndex = style.layers.findIndex(layer => layer.id === highResLayerId);
+            const layersAbove = style.layers.slice(layerIndex + 1);
+            
+            // Find thumbnail layers that are above the high-res layer
+            const thumbnailLayersAbove = layersAbove.filter(layer => {
+                const layerId = layer.id;
+                const layerType = layer.type;
+                const sourceId = layer.source;
+                
+                return (layerType === 'raster' && sourceId && 
+                        (layerId.includes('image-overlay-') || 
+                         sourceId.includes('image-overlay-') ||
+                         layerId === 'thumbnail-layer' ||
+                         layerId === 'image-overlay-layer')) ||
+                       layerId === 'item-geometry-layer' ||
+                       layerId === 'item-geometry-layer-stroke';
+            });
+            
+            if (thumbnailLayersAbove.length > 0) {
+                console.log(`🎨 [LAYER-ORDER] Found ${thumbnailLayersAbove.length} thumbnail layers above high-res, moving high-res to top`);
+                
+                // Remove and re-add the high-res layer to put it on top
+                const highResSource = map.getSource(highResLayer.source);
+                const layerConfig = {
+                    id: highResLayer.id,
+                    type: highResLayer.type,
+                    source: highResLayer.source,
+                    paint: highResLayer.paint,
+                    layout: highResLayer.layout
+                };
+                
+                // Remove the layer
+                map.removeLayer(highResLayerId);
+                
+                // Re-add it (this puts it on top)
+                map.addLayer(layerConfig);
+                
+                console.log(`✅ [LAYER-ORDER] Moved high-res layer ${highResLayerId} to top`);
+            } else {
+                console.log(`✅ [LAYER-ORDER] High-res layer ${highResLayerId} is already on top`);
+            }
+            
+        } catch (error) {
+            console.warn('⚠️ [LAYER-ORDER] Error ensuring high-res layer on top:', error);
+        }
+    }
+    
+    /**
+     * Remove thumbnail/preview layer from the basemap
+     */
+    removeThumbnailFromBasemap() {
+        if (!this.rasterManager.mapManager || !this.rasterManager.mapManager.map) {
+            return;
+        }
+        
+        const map = this.rasterManager.mapManager.map;
+        
+        try {
+            console.log('🗑️ [THUMBNAIL] Removing thumbnail/preview layers from basemap');
+            
+            // Get all layers and sources on the map
+            const style = map.getStyle();
+            if (!style || !style.layers) {
+                console.log('🗑️ [THUMBNAIL] No map style or layers found');
+                return;
+            }
+            
+            // DEBUG: List all current layers and sources
+            console.log('🔍 [DEBUG] All current layers on map:', style.layers.map(l => `${l.id} (source: ${l.source}, type: ${l.type})`));
+            console.log('🔍 [DEBUG] All current sources on map:', Object.keys(style.sources || {}));
+            
+            // Find and remove all image overlay layers (they have dynamic IDs like image-overlay-123456789-layer)
+            const layersToRemove = [];
+            const sourcesToRemove = [];
+            
+            // Check all layers for thumbnail/preview patterns
+            style.layers.forEach(layer => {
+                const layerId = layer.id;
+                const sourceId = layer.source;
+                const layerType = layer.type;
+                
+                // Match patterns for thumbnail/preview layers
+                if (layerId.includes('image-overlay-') && layerId.endsWith('-layer') ||
+                    layerId === 'thumbnail-layer' ||
+                    layerId === 'image-overlay-layer' ||
+                    layerId === 'item-geometry-layer' ||
+                    layerId === 'item-geometry-layer-stroke') {
+                    
+                    layersToRemove.push(layerId);
+                    
+                    // Also track corresponding sources
+                    if (sourceId && sourceId.includes('image-overlay-')) {
+                        sourcesToRemove.push(sourceId);
+                    }
+                }
+                
+                // AGGRESSIVE APPROACH: Remove ALL raster layers that aren't base map layers
+                // This catches any thumbnail/preview layers we might have missed
+                if (layerType === 'raster' && sourceId && 
+                    !layerId.includes('mapbox://') && 
+                    !layerId.includes('basemap') &&
+                    !sourceId.includes('mapbox://') &&
+                    !sourceId.includes('raster-source') &&
+                    !sourceId.includes('basemap')) {
+                    
+                    console.log(`🔍 [DEBUG] Found raster layer that might be thumbnail: ${layerId} (source: ${sourceId})`);
+                    layersToRemove.push(layerId);
+                    sourcesToRemove.push(sourceId);
+                }
+            });
+            
+            // Also check for common source patterns
+            Object.keys(map.getStyle().sources || {}).forEach(sourceId => {
+                if (sourceId.includes('image-overlay-') ||
+                    sourceId === 'thumbnail-source' ||
+                    sourceId === 'image-overlay-source' ||
+                    sourceId === 'item-geometry') {
+                    sourcesToRemove.push(sourceId);
+                }
+            });
+            
+            // Remove layers first
+            layersToRemove.forEach(layerId => {
+                if (map.getLayer(layerId)) {
+                    console.log(`🗑️ [THUMBNAIL] Removing layer: ${layerId}`);
+                    map.removeLayer(layerId);
+                } else {
+                    console.log(`🗑️ [THUMBNAIL] Layer not found: ${layerId}`);
+                }
+            });
+            
+            // Remove sources
+            [...new Set(sourcesToRemove)].forEach(sourceId => {
+                if (map.getSource(sourceId)) {
+                    console.log(`🗑️ [THUMBNAIL] Removing source: ${sourceId}`);
+                    map.removeSource(sourceId);
+                } else {
+                    console.log(`🗑️ [THUMBNAIL] Source not found: ${sourceId}`);
+                }
+            });
+            
+            console.log(`✅ [THUMBNAIL] Removed ${layersToRemove.length} layers and ${[...new Set(sourcesToRemove)].length} sources from basemap`);
+            
+            // DEBUG: List remaining layers after removal
+            const remainingStyle = map.getStyle();
+            console.log('🔍 [DEBUG] Remaining layers after removal:', remainingStyle.layers.map(l => `${l.id} (source: ${l.source}, type: ${l.type})`));
+            console.log('🔍 [DEBUG] Remaining sources after removal:', Object.keys(remainingStyle.sources || {}));
+            
+        } catch (error) {
+            console.warn('⚠️ [THUMBNAIL] Error removing thumbnail layers:', error);
+        }
+    }
 }
+
+// Global helper functions for debugging layer ordering
+window.debugLayerOrder = function() {
+    if (window.stacExplorer && window.stacExplorer.mapManager && window.stacExplorer.mapManager.map) {
+        const map = window.stacExplorer.mapManager.map;
+        const style = map.getStyle();
+        console.log('🔧 [DEBUG] Current layer order (bottom to top):');
+        style.layers.forEach((layer, index) => {
+            console.log(`  ${index + 1}. ${layer.id} (type: ${layer.type}, source: ${layer.source})`);
+        });
+        
+        // Identify thumbnail and high-res layers
+        const thumbnailLayers = [];
+        const highResLayers = [];
+        
+        style.layers.forEach(layer => {
+            if (layer.type === 'raster' && layer.source) {
+                if (layer.id.includes('image-overlay-') || layer.source.includes('image-overlay-')) {
+                    thumbnailLayers.push(layer.id);
+                } else if (layer.id.includes('stac-')) {
+                    highResLayers.push(layer.id);
+                }
+            }
+        });
+        
+        console.log('🔧 [DEBUG] Thumbnail layers:', thumbnailLayers);
+        console.log('🔧 [DEBUG] High-res layers:', highResLayers);
+    } else {
+        console.error('🔧 [DEBUG] Map not available');
+    }
+};
+
+window.debugThumbnailRemoval = function() {
+    if (window.stacExplorer && window.stacExplorer.visualizationPanel) {
+        const vizPanel = window.stacExplorer.visualizationPanel;
+        console.log('🔧 [DEBUG] Testing targeted thumbnail removal (preserves high-res)');
+        
+        // Show layers before removal
+        console.log('🔧 [DEBUG] BEFORE removal:');
+        window.debugLayerOrder();
+        
+        // Test targeted removal
+        vizPanel.removeOnlyThumbnailLayers();
+        
+        // Show layers after removal
+        console.log('🔧 [DEBUG] AFTER removal:');
+        window.debugLayerOrder();
+    } else {
+        console.error('🔧 [DEBUG] Visualization panel not available');
+        window.debugLayerOrder();
+    }
+};
+
+// Additional debug function for aggressive removal (removes everything)
+window.debugAggressiveRemoval = function() {
+    if (window.stacExplorer && window.stacExplorer.visualizationPanel) {
+        const vizPanel = window.stacExplorer.visualizationPanel;
+        console.log('🔧 [DEBUG] Testing aggressive removal (removes ALL overlays)');
+        
+        // Show layers before removal
+        console.log('🔧 [DEBUG] BEFORE removal:');
+        window.debugLayerOrder();
+        
+        // Test aggressive removal
+        vizPanel.removeAllOverlayLayers();
+        
+        // Show layers after removal
+        console.log('🔧 [DEBUG] AFTER removal:');
+        window.debugLayerOrder();
+    } else {
+        console.error('🔧 [DEBUG] Visualization panel not available');
+        window.debugLayerOrder();
+    }
+};
+
+// Debug function to simulate clicking on a result item
+window.simulateItemClick = function() {
+    console.log('🔧 [DEBUG] Simulating item click to see what layers are created...');
+    
+    // Find the first result item and simulate clicking it
+    const firstItem = document.querySelector('.dataset-item .clickable-card');
+    if (firstItem) {
+        console.log('🔧 [DEBUG] Found result item, simulating click...');
+        
+        // Show layers before click
+        console.log('🔧 [DEBUG] BEFORE item click:');
+        window.debugLayerOrder();
+        
+        // Simulate click
+        firstItem.click();
+        
+        // Show layers after click (with a delay to let the async operation complete)
+        setTimeout(() => {
+            console.log('🔧 [DEBUG] AFTER item click (thumbnail should be visible):');
+            window.debugLayerOrder();
+        }, 2000);
+    } else {
+        console.error('🔧 [DEBUG] No result items found - search for some items first');
+    }
+};
+
+// Debug function to inspect Deck.gl layers
+window.debugDeckGLLayers = function() {
+    console.log('🔧 [DEBUG] Inspecting Deck.gl layers...');
+    
+    if (window.stacExplorer && window.stacExplorer.mapManager && window.stacExplorer.mapManager.deckGLIntegration) {
+        const deckGL = window.stacExplorer.mapManager.deckGLIntegration;
+        
+        console.log('🔧 [DEBUG] Deck.gl integration found:', deckGL);
+        console.log('🔧 [DEBUG] Deck.gl available:', deckGL.isAvailable ? deckGL.isAvailable() : 'unknown');
+        
+        // Try to get layer information
+        if (deckGL.deck) {
+            console.log('🔧 [DEBUG] Deck.gl instance:', deckGL.deck);
+            console.log('🔧 [DEBUG] Deck.gl layers:', deckGL.deck.props.layers);
+        }
+        
+        // Try to get performance stats or other info
+        if (typeof deckGL.getPerformanceStats === 'function') {
+            console.log('🔧 [DEBUG] Deck.gl performance stats:', deckGL.getPerformanceStats());
+        }
+        
+    } else {
+        console.log('🔧 [DEBUG] No Deck.gl integration found');
+    }
+};
+
+// Combined debug function to test Deck.gl removal
+window.debugDeckGLRemoval = function() {
+    console.log('🔧 [DEBUG] Testing Deck.gl thumbnail removal');
+    
+    // Show Deck.gl state before
+    console.log('🔧 [DEBUG] BEFORE Deck.gl removal:');
+    window.debugDeckGLLayers();
+    
+    // Test Deck.gl removal
+    if (window.stacExplorer && window.stacExplorer.visualizationPanel) {
+        const vizPanel = window.stacExplorer.visualizationPanel;
+        vizPanel.removeDeckGLThumbnailLayers();
+    }
+    
+    // Show Deck.gl state after
+    setTimeout(() => {
+        console.log('🔧 [DEBUG] AFTER Deck.gl removal:');
+        window.debugDeckGLLayers();
+    }, 500);
+};

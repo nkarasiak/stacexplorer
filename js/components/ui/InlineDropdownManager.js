@@ -1127,11 +1127,11 @@ export class InlineDropdownManager {
                     // Date dropdown doesn't need to wait for collections
                     dropdownContent = this.aiSearchHelper.createDateDropdown();
                     break;
+                case 'location':
+                    // Re-enable location dropdown functionality with basic implementation
+                    dropdownContent = this.createBasicLocationDropdown();
+                    break;
                 default:
-                    // Silently ignore location fields (dropdown disabled)
-                    if (fieldType === 'location') {
-                        return;
-                    }
                     console.warn(`Unknown field type: ${fieldType}`);
                     throw new Error(`Unknown field type: ${fieldType}`);
             }
@@ -2861,5 +2861,113 @@ export class InlineDropdownManager {
             console.warn('[WARN] Error converting GeoJSON to WKT:', error);
             return null;
         }
+    }
+    
+    /**
+     * Create basic location dropdown functionality
+     * @returns {HTMLElement} Location dropdown content
+     */
+    createBasicLocationDropdown() {
+        const container = document.createElement('div');
+        container.className = 'location-dropdown-content';
+        
+        // Create search input
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.className = 'location-search-input';
+        searchInput.placeholder = 'Search for a location...';
+        searchInput.style.cssText = `
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            margin-bottom: 8px;
+            box-sizing: border-box;
+        `;
+        
+        // Create results container
+        const resultsContainer = document.createElement('div');
+        resultsContainer.className = 'location-results';
+        resultsContainer.style.cssText = `
+            max-height: 200px;
+            overflow-y: auto;
+            border-radius: 4px;
+        `;
+        
+        // Import and use the geocoding service
+        import('../../utils/GeocodingService.js').then(module => {
+            const { defaultGeocodingService } = module;
+            
+            // Add search functionality
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                
+                if (query.length < 2) {
+                    resultsContainer.innerHTML = '';
+                    return;
+                }
+                
+                defaultGeocodingService.searchLocations(query, (results, error) => {
+                    if (error) {
+                        resultsContainer.innerHTML = '<div style="padding: 8px; color: #666;">Error searching locations</div>';
+                        return;
+                    }
+                    
+                    if (results.length === 0) {
+                        resultsContainer.innerHTML = '<div style="padding: 8px; color: #666;">No locations found</div>';
+                        return;
+                    }
+                    
+                    // Display results
+                    resultsContainer.innerHTML = results.map(location => {
+                        return `
+                            <div class="location-result-item" data-bbox="${location.bbox ? location.bbox.join(',') : ''}" 
+                                 data-name="${location.formattedName}" style="
+                                padding: 8px 12px;
+                                cursor: pointer;
+                                border-bottom: 1px solid #eee;
+                                transition: background-color 0.2s;
+                            " onmouseover="this.style.backgroundColor='#f5f5f5'" 
+                               onmouseout="this.style.backgroundColor='transparent'">
+                                <div style="font-weight: 500; margin-bottom: 2px;">${location.formattedName}</div>
+                                <div style="font-size: 12px; color: #666;">${location.category} • ${location.shortName}</div>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    // Add click handlers to result items
+                    resultsContainer.querySelectorAll('.location-result-item').forEach(item => {
+                        item.addEventListener('click', () => {
+                            const locationName = item.dataset.name;
+                            const bbox = item.dataset.bbox;
+                            
+                            // Update the input value
+                            searchInput.value = locationName;
+                            
+                            // Trigger location selection (emit custom event)
+                            const locationEvent = new CustomEvent('locationSelected', {
+                                detail: { 
+                                    name: locationName, 
+                                    bbox: bbox ? bbox.split(',').map(Number) : null 
+                                }
+                            });
+                            container.dispatchEvent(locationEvent);
+                            
+                            // Clear results
+                            resultsContainer.innerHTML = '';
+                        });
+                    });
+                });
+            });
+        }).catch(error => {
+            console.error('Failed to load GeocodingService:', error);
+            resultsContainer.innerHTML = '<div style="padding: 8px; color: #999;">Location search unavailable</div>';
+        });
+        
+        container.appendChild(searchInput);
+        container.appendChild(resultsContainer);
+        
+        return container;
     }
 }

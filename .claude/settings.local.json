@@ -45,7 +45,8 @@
       "Bash(timeout:*)",
       "Bash(del test_server.py simple_test.py)",
       "WebFetch(domain:stac.dataspace.copernicus.eu)",
-      "Bash(powershell:*)"
+      "Bash(powershell:*)",
+      "Bash(pkill:*)"
     ],
     "deny": []
   }

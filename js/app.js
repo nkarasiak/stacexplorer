@@ -184,6 +184,13 @@ async function initAppForBrowserMode() {
         window.stacExplorer.filterManager = filterManager;
         window.stacExplorer.searchForm = searchForm;
         
+        // Set up location input event listeners
+        console.log('🔧 Setting up location inputs...');
+        // Wait a bit for DOM to be fully ready
+        setTimeout(() => {
+            setupLocationInputs(inlineDropdownManager);
+        }, 100);
+        
         // Set up view mode change handlers to show/hide UI elements in browser mode
         viewModeToggle.onModeChange = (mode) => {
             const mapContainer = document.getElementById('map');
@@ -754,4 +761,78 @@ window.toggleDeckGLMode = function() {
         // Reload the page to apply the change
         window.location.reload();
     }
-};	
+};
+
+/**
+ * Set up location input event listeners to connect with InlineDropdownManager
+ * @param {InlineDropdownManager} inlineDropdownManager - The dropdown manager instance
+ */
+function setupLocationInputs(inlineDropdownManager) {
+    console.log('🔍 Looking for location inputs...');
+    // Find all location input elements
+    const locationInputs = document.querySelectorAll('.mini-location-input');
+    console.log('📍 Found location inputs:', locationInputs.length, locationInputs);
+    
+    locationInputs.forEach((input, index) => {
+        console.log(`🎯 Setting up input ${index}:`, input);
+        // Add focus event to show location dropdown
+        input.addEventListener('focus', async (e) => {
+            console.log('🌍 Location input focused, showing dropdown');
+            try {
+                await inlineDropdownManager.showInlineDropdown('location', e.target);
+            } catch (error) {
+                console.error('Error showing location dropdown:', error);
+            }
+        });
+        
+        // Add input event for real-time search
+        input.addEventListener('input', (e) => {
+            const query = e.target.value.trim();
+            
+            if (query.length >= 2) {
+                // Trigger search with debouncing via the dropdown
+                const dropdown = document.querySelector('.ai-dropdown-container');
+                if (dropdown) {
+                    const searchInput = dropdown.querySelector('.location-search-input');
+                    if (searchInput) {
+                        searchInput.value = query;
+                        searchInput.dispatchEvent(new Event('input'));
+                    }
+                }
+            }
+        });
+    });
+    
+    // Listen for location selection events from the dropdown
+    document.addEventListener('locationSelected', (e) => {
+        const { name, bbox } = e.detail;
+        console.log('📍 Location selected:', name, bbox);
+        
+        // Update all location inputs with the selected location
+        locationInputs.forEach(input => {
+            input.value = name;
+        });
+        
+        // Update the search summary
+        inlineDropdownManager.updateSearchSummary('location', name.toUpperCase());
+        
+        // If we have a bbox, zoom the map to it
+        if (bbox && window.stacExplorer && window.stacExplorer.mapManager) {
+            try {
+                const mapManager = window.stacExplorer.mapManager;
+                if (mapManager.map && mapManager.map.fitBounds) {
+                    // Convert bbox format: [west, south, east, north] to [[south, west], [north, east]]
+                    const bounds = [[bbox[1], bbox[0]], [bbox[3], bbox[2]]];
+                    mapManager.map.fitBounds(bounds, { padding: 20 });
+                }
+            } catch (error) {
+                console.error('Error zooming to location bbox:', error);
+            }
+        }
+        
+        // Close the dropdown
+        inlineDropdownManager.closeCurrentDropdown();
+    });
+    
+    console.log('✅ Location input event listeners set up for', locationInputs.length, 'inputs');
+}	

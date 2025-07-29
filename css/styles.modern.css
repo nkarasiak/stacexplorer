@@ -4781,23 +4781,6 @@ html.dark-theme .modal-body .info-group div {
     position: relative;
 }
 
-.clickable-card.map-preview-active::after {
-    content: '🔍 Map Preview';
-    position: absolute;
-    top: 8px;
-    right: 8px;
-    background: rgba(102, 126, 234, 0.9);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 10px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    pointer-events: none;
-    opacity: 0.9;
-    z-index: 10;
-}
 
 /* Bbox highlight styles */
 .item-bbox-highlight {

@@ -75,6 +75,9 @@ export class VisualizationPanel {
         this.container.classList.remove('active');
         this.isVisible = false;
         
+        // Show thumbnails again when visualization panel is closed
+        this.showThumbnailsForAllItems();
+        
         // Keep the high resolution preview layer visible on map
         // Don't remove the layer when hiding the panel
         
@@ -536,6 +539,9 @@ export class VisualizationPanel {
             console.log(`🔄 [LOADING] Starting to load preset: ${presetKey}`);
             this.showLoading();
             this.showPresetLoading(presetKey);
+            
+            // Hide thumbnail when visualization is selected
+            this.hideThumbnailForCurrentItem();
 
             console.log(`📡 [LOADING] Adding STAC item layer for item: ${this.currentItem.id}`);
             console.log(`📡 [LOADING] Collection: ${this.currentItem.collection}`);
@@ -883,5 +889,54 @@ export class VisualizationPanel {
             );
             tab.style.display = hasPresets ? 'block' : 'none';
         });
+    }
+    
+    /**
+     * Hide thumbnail for the current item when visualization is selected
+     */
+    hideThumbnailForCurrentItem() {
+        if (!this.currentItem || !this.currentItem.id) {
+            return;
+        }
+        
+        // Find the result item by ID and hide its thumbnail
+        const resultItems = document.querySelectorAll('.result-item');
+        
+        resultItems.forEach(item => {
+            // Get the item data from the element (usually stored in a data attribute or can be found by context)
+            const itemCard = item.querySelector('.clickable-card');
+            const thumbnail = item.querySelector('.dataset-thumbnail');
+            
+            if (thumbnail && itemCard) {
+                // Check if this is the current item by looking for the item ID in the content
+                // Since we can't easily match by ID, we'll hide all thumbnails when any visualization is active
+                // This is a simpler approach that ensures thumbnails are hidden during visualization
+                thumbnail.style.display = 'none';
+                
+                // Add a class to indicate thumbnail is hidden for styling
+                itemCard.classList.add('thumbnail-hidden');
+            }
+        });
+        
+        console.log(`🖼️ Thumbnails hidden for visualization of item: ${this.currentItem.id}`);
+    }
+    
+    /**
+     * Show thumbnails again (call when visualization panel is closed)
+     */
+    showThumbnailsForAllItems() {
+        const resultItems = document.querySelectorAll('.result-item');
+        
+        resultItems.forEach(item => {
+            const thumbnail = item.querySelector('.dataset-thumbnail');
+            const itemCard = item.querySelector('.clickable-card');
+            
+            if (thumbnail && itemCard) {
+                thumbnail.style.display = '';
+                itemCard.classList.remove('thumbnail-hidden');
+            }
+        });
+        
+        console.log('🖼️ Thumbnails restored for all items');
     }
 }

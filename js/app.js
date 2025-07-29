@@ -780,8 +780,15 @@ function setupLocationInputs(inlineDropdownManager) {
         });
         
         // Add input event for real-time search directly in the original input
-        input.addEventListener('input', (e) => {
+        input.addEventListener('input', async (e) => {
             const query = e.target.value.trim();
+            
+            // Ensure dropdown is open first
+            try {
+                await inlineDropdownManager.showInlineDropdown('location', e.target);
+            } catch (error) {
+                return;
+            }
             
             // Get the results container from the current dropdown
             const dropdown = document.querySelector('.inline-dropdown-container');
@@ -803,6 +810,8 @@ function setupLocationInputs(inlineDropdownManager) {
                 const { defaultGeocodingService } = module;
                 
                 defaultGeocodingService.searchLocations(query, (results, error) => {
+                    console.log('DEBUG - Search callback:', 'Results:', results?.length, 'Error:', !!error);
+                    
                     if (error) {
                         resultsContainer.style.display = 'block';
                         resultsContainer.innerHTML = '<div style="padding: 8px; color: #666;">Error searching locations</div>';
@@ -815,6 +824,7 @@ function setupLocationInputs(inlineDropdownManager) {
                         return;
                     }
                     
+                    console.log('DEBUG - Showing results container');
                     resultsContainer.style.display = 'block';
                     
                     // Display results

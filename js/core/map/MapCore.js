@@ -86,19 +86,48 @@ export class MapCore {
             this.map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
             await new Promise((resolve, reject) => {
+                let resolved = false;
+                
                 this.map.on('load', () => {
-                    resolve();
-                });
-                this.map.on('error', (error) => {
-                    console.error('❌ Map load error:', error);
-                    reject(error);
+                    if (!resolved) {
+                        resolved = true;
+                        resolve();
+                    }
                 });
                 
-                // Timeout after 30 seconds with more descriptive error
-                setTimeout(() => {
-                    console.error('❌ Map load timeout - check network connection and map style URL');
-                    reject(new Error('Map load timeout - check network connection and map style URL'));
-                }, 30000);
+                this.map.on('error', async (error) => {
+                    console.warn('⚠️ Map style load error, trying fallback:', error);
+                    if (!resolved) {
+                        try {
+                            // Use fallback style when primary style fails
+                            const fallbackStyle = this.createFallbackStyle(this.currentTheme);
+                            this.map.setStyle(fallbackStyle);
+                            resolved = true;
+                            resolve();
+                        } catch (fallbackError) {
+                            console.error('❌ Fallback style also failed:', fallbackError);
+                            resolved = true;
+                            reject(fallbackError);
+                        }
+                    }
+                });
+                
+                // Timeout after 10 seconds and try fallback
+                setTimeout(async () => {
+                    if (!resolved) {
+                        console.warn('⚠️ Map load timeout, trying fallback style...');
+                        try {
+                            const fallbackStyle = this.createFallbackStyle(this.currentTheme);
+                            this.map.setStyle(fallbackStyle);
+                            resolved = true;
+                            resolve();
+                        } catch (fallbackError) {
+                            console.error('❌ Fallback style failed:', fallbackError);
+                            resolved = true;
+                            reject(new Error('Map load timeout and fallback failed - check network connection'));
+                        }
+                    }
+                }, 10000); // Reduced timeout to 10 seconds
             });
 
             // Set up theme observer
@@ -125,41 +154,34 @@ export class MapCore {
      * Get the map style URL based on theme
      */
     getMapStyle(theme) {
-        // If using configuration with tile-based maps
-        if (this.config.mapSettings?.basemapOptions) {
-            // For tile-based maps, we need to create a MapLibre style object
-            const basemapOption = theme === 'dark' 
-                ? this.config.mapSettings.basemapOptions.Dark 
-                : this.config.mapSettings.basemapOptions.Light;
-            
-            if (basemapOption) {
-                return {
-                    version: 8,
-                    sources: {
-                        'carto-tiles': {
-                            type: 'raster',
-                            tiles: [basemapOption.url.replace('{s}', 'a')],
-                            tileSize: 256,
-                            attribution: basemapOption.attribution
-                        }
-                    },
-                    layers: [{
-                        id: 'carto-tiles-layer',
-                        type: 'raster',
-                        source: 'carto-tiles',
-                        minzoom: 0,
-                        maxzoom: 22
-                    }]
-                };
-            }
-        }
+        // Try OpenStreetMap tiles first as they're more reliable
+        const osmTiles = theme === 'dark' 
+            ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+            : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
         
-        // Fallback to vector styles with backup options
-        if (theme === 'dark') {
-            return 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json';
-        } else {
-            return 'https://basemaps.cartocdn.com/gl/positron-gl-style/style.json';
-        }
+        return {
+            version: 8,
+            sources: {
+                'osm-tiles': {
+                    type: 'raster',
+                    tiles: [
+                        osmTiles.replace('{s}', 'a'),
+                        osmTiles.replace('{s}', 'b'), 
+                        osmTiles.replace('{s}', 'c'),
+                        osmTiles.replace('{s}', 'd')
+                    ],
+                    tileSize: 256,
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+                }
+            },
+            layers: [{
+                id: 'osm-tiles-layer',
+                type: 'raster',
+                source: 'osm-tiles',
+                minzoom: 0,
+                maxzoom: 19
+            }]
+        };
     }
 
     /**

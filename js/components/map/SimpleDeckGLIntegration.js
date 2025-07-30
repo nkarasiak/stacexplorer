@@ -169,7 +169,7 @@ class SimpleDeckGLIntegration {
             }
 
             // Get bounding box
-            const bbox = this.mapManager.getBoundingBox(item);
+            const bbox = this.mapManager.mapLayers.getBoundingBox(item);
             if (!bbox) {
                 console.warn('No bounding box available for item');
                 return false;

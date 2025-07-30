@@ -6,7 +6,7 @@
 // Import core modules
 import { UIManager } from './components/common/UIManager.js';
 import { NotificationService } from './components/common/NotificationService.js';
-import { MapManager, getMapManager } from './components/map/MapManager.js';
+import { MapManager, getMapManager, setMapManager } from './components/map/MapManager.js';
 import { STACApiClient } from './components/api/StacApiClient.js';
 import { UnifiedStateManager } from './utils/UnifiedStateManager.js';
 import { UnifiedRouter } from './utils/UnifiedRouter.js';
@@ -261,8 +261,12 @@ async function initAppNormal() {
         // Initialize UI manager first to set theme before map initialization
         const uiManager = new UIManager();
         
-        // Use the global MapManager instance to prevent duplicates
-        const mapManager = getMapManager('map', CONFIG);
+        // Create MapManager instance if it doesn't exist
+        let mapManager = getMapManager();
+        if (!mapManager) {
+            mapManager = new MapManager('map', CONFIG);
+            setMapManager(mapManager);
+        }
         
         const apiClient = new STACApiClient(); // Initialize without any endpoint
         

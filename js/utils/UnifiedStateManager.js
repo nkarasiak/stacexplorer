@@ -624,13 +624,8 @@ export class UnifiedStateManager {
      */
     applyStateToInlineDropdowns(state) {
         try {
-            const aiHelper = this.inlineDropdownManager.aiSearchHelper;
-            
             // Collection state
             if (state.collection !== undefined) {
-                aiHelper.selectedCollection = state.collection;
-                aiHelper.selectedCollectionSource = state.collectionSource;
-                
                 const displayName = state.collection ? 
                     this.getCollectionDisplayName(state.collection, state.collectionSource) : 'EVERYTHING';
                 this.inlineDropdownManager.updateSearchSummary('collection', displayName);
@@ -638,28 +633,12 @@ export class UnifiedStateManager {
             
             // Location state
             if (state.locationBbox || state.locationName) {
-                aiHelper.selectedLocation = state.locationBbox || 'everywhere';
-                if (state.locationBbox) {
-                    aiHelper.selectedLocationResult = {
-                        formattedName: state.locationName || 'Custom Location',
-                        shortName: state.locationName || 'Custom Location',
-                        bbox: state.locationBbox,
-                        category: 'restored'
-                    };
-                }
-                
                 const displayName = state.locationName || 'THE WORLD';
                 this.inlineDropdownManager.updateSearchSummary('location', displayName.toUpperCase());
             }
             
             // Date state
             if (state.dateType) {
-                aiHelper.selectedDate = {
-                    type: state.dateType,
-                    start: state.dateStart,
-                    end: state.dateEnd,
-                    preset: state.dateType !== 'custom' ? state.dateType : null
-                };
                 
                 // Also update the form inputs for custom dates
                 if (state.dateType === 'custom' && state.dateStart && state.dateEnd) {
@@ -691,10 +670,7 @@ export class UnifiedStateManager {
                 this.inlineDropdownManager.updateSearchSummary('date', displayText);
             }
             
-            // Cloud cover
-            if (state.cloudCover !== undefined) {
-                aiHelper.cloudCover = state.cloudCover;
-            }
+            // Cloud cover state (no UI update needed for now)
             
         } catch (error) {
             console.error('[ERROR] Error applying state to inline dropdowns:', error);

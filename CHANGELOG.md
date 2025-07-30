@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2025-07-30
+
+### ✨ Features
+- **Modern Date Picker**: Completely redesigned date input system with custom YYYY-MM-DD text inputs
+- **Locale-Independent Dates**: Date inputs now consistently display YYYY-MM-DD format regardless of browser locale
+- **Stylized Date Presets**: Beautiful new dropdown with gradient icons and card-based preset selection
+- **Auto-formatting**: Date inputs automatically format while typing (e.g., 20250630 → 2025-06-30)
+
+### 🔧 Improved
+- **Simplified Date Interface**: Removed complex glassmorphism modal system for better reliability
+- **Enhanced Date Validation**: Real-time validation with error styling for invalid dates  
+- **Better URL Sync**: Fixed bidirectional sync between URL parameters (ds/de) and visible input fields
+- **Streamlined Presets**: Removed "Any Time" option and "Custom Range" section for cleaner interface
+- **Modern UI Design**: Card-style preset buttons with hover effects and professional styling
+
+### 🐛 Fixed
+- **Date Display Issues**: Resolved French DD-MM-YYYY format showing instead of YYYY-MM-DD
+- **Input Field Sync**: Fixed date preset selection not updating visible input fields
+- **URL Parameter Mapping**: Corrected parameter names for proper date synchronization
+- **Cross-System Compatibility**: Ensured consistent behavior across SearchSummaryManager and InlineDropdownManager
+
+### 🗑️ Removed
+- **Native Date Inputs**: Replaced HTML `<input type="date">` elements to bypass locale limitations
+- **Complex Modal System**: Simplified architecture for better maintainability
+- **Redundant Options**: Cleaned up duplicate and unnecessary date selection methods
+
 ## [2.9.4] - 2025-07-26
 
 ### 🐛 Fixed

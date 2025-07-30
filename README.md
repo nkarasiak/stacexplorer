@@ -3,7 +3,7 @@
 > A modern, interactive web application for exploring SpatioTemporal Asset Catalog (STAC) datasets with advanced search capabilities and beautiful visualizations.
 
 ![STAC Explorer](https://img.shields.io/badge/STAC-Explorer-blue?style=for-the-badge&logo=satellite)
-![Version](https://img.shields.io/badge/version-2.8.0-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.10.0-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 
 ## ✨ Features
@@ -12,7 +12,8 @@
 - **AI-Enhanced Search**: Intelligent location and dataset discovery
 - **🆕 Search History**: Recent searches dropdown for quick re-execution
 - **Advanced Filters**: Date ranges, cloud cover, collections, and spatial filters  
-- **Modern Calendar**: Professional Flatpickr date range picker with presets
+- **🆕 Modern Date Picker**: Custom YYYY-MM-DD inputs with locale-independent display
+- **✨ Stylized Presets**: Beautiful gradient-icon dropdown for quick date selection
 - **Enhanced Collection Selection**: Taller dropdown for easier browsing
 - **Real-time Results**: Instant feedback with modern UI components
 

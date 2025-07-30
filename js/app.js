@@ -106,6 +106,9 @@ async function initAppForBrowserMode() {
             notificationService
         );
         
+        // Initialize inline dropdowns
+        inlineDropdownManager.initializeInlineDropdowns();
+        
         // Update results panel with inline dropdown manager
         resultsPanel.inlineDropdownManager = inlineDropdownManager;
         
@@ -145,7 +148,8 @@ async function initAppForBrowserMode() {
             inlineDropdownManager,
             catalogBrowser,
             viewModeToggle,
-            notificationService
+            notificationService,
+            apiClient
         });
         
         // For browser mode, hide map initially but allow toggling
@@ -345,6 +349,9 @@ async function initAppNormal() {
             notificationService
         );
         
+        // Initialize inline dropdowns
+        inlineDropdownManager.initializeInlineDropdowns();
+        
         // Initialize collection selector integration after UI components are ready
         collectionSelectorIntegration = new CollectionSelectorIntegration(
             collectionManager, 
@@ -417,7 +424,8 @@ async function initAppNormal() {
             inlineDropdownManager,
             notificationService,
             catalogBrowser,
-            viewModeToggle
+            viewModeToggle,
+            apiClient
         });
         
         // Initialize unified router for clean URLs

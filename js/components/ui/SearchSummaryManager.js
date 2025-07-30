@@ -67,11 +67,20 @@ export class SearchSummaryManager {
                     
                     summaryElement.innerHTML = `
                         <div class="mini-date-inputs" id="mini-date-container">
-                            <input type="date" id="summary-start-date" class="mini-date-input" value="${oneMonthAgoStr}" max="${todayStr}">
+                            <input type="text" id="summary-start-date" class="mini-date-input" placeholder="YYYY-MM-DD" maxlength="10" value="${oneMonthAgoStr}">
                             <span class="date-separator">to</span>
-                            <input type="date" id="summary-end-date" class="mini-date-input" value="${todayStr}" max="${todayStr}">
+                            <input type="text" id="summary-end-date" class="mini-date-input" placeholder="YYYY-MM-DD" maxlength="10" value="${todayStr}">
                         </div>
                     `;
+                    
+                    // Setup simple date input listeners
+                    const startInput = document.getElementById('summary-start-date');
+                    const endInput = document.getElementById('summary-end-date');
+                    if (startInput && endInput) {
+                        this.setupSimpleDateInputListeners(startInput);
+                        this.setupSimpleDateInputListeners(endInput);
+                    }
+                    
                     console.log('✅ Mini date inputs restored');
                     return;
                 }
@@ -146,5 +155,98 @@ export class SearchSummaryManager {
         Object.entries(updates).forEach(([fieldType, value]) => {
             this.updateSearchSummary(fieldType, value);
         });
+    }
+
+    /**
+     * Setup simple date input listeners with YYYY-MM-DD formatting
+     */
+    setupSimpleDateInputListeners(input) {
+        // Input event for typing with YYYY-MM-DD formatting
+        input.addEventListener('input', (e) => {
+            const formatted = this.formatDateInput(e.target.value);
+            e.target.value = formatted;
+            
+            // Validate and sync with main form
+            if (formatted.length === 10 && this.isValidDateFormat(formatted)) {
+                e.target.classList.remove('error');
+                this.syncToMainForm();
+            } else if (formatted.length === 10) {
+                e.target.classList.add('error');
+            } else {
+                e.target.classList.remove('error');
+            }
+        });
+        
+        // Change event to sync with main form
+        input.addEventListener('change', () => {
+            this.syncToMainForm();
+        });
+    }
+
+    /**
+     * Format input as YYYY-MM-DD while typing
+     */
+    formatDateInput(input) {
+        let value = input.replace(/\D/g, ''); // Remove non-digits
+        
+        if (value.length >= 4) {
+            value = value.substring(0, 4) + '-' + value.substring(4);
+        }
+        if (value.length >= 7) {
+            value = value.substring(0, 7) + '-' + value.substring(7, 9);
+        }
+        
+        return value;
+    }
+
+    /**
+     * Validate date format YYYY-MM-DD
+     */
+    isValidDateFormat(dateString) {
+        const regex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!regex.test(dateString)) return false;
+        
+        // Check if it's a valid date
+        const date = new Date(dateString);
+        return date instanceof Date && !isNaN(date) && dateString === date.toISOString().split('T')[0];
+    }
+
+    /**
+     * Sync summary inputs to main form inputs
+     */
+    syncToMainForm() {
+        const startInput = document.getElementById('summary-start-date');
+        const endInput = document.getElementById('summary-end-date');
+        const formStartInput = document.getElementById('date-start');
+        const formEndInput = document.getElementById('date-end');
+        
+        if (startInput && endInput && formStartInput && formEndInput) {
+            formStartInput.value = startInput.value;
+            formEndInput.value = endInput.value;
+            
+            // Update URL parameters
+            const url = new URL(window.location);
+            if (startInput.value) {
+                url.searchParams.set('ds', startInput.value);
+            } else {
+                url.searchParams.delete('ds');
+            }
+            if (endInput.value) {
+                url.searchParams.set('de', endInput.value);
+            } else {
+                url.searchParams.delete('de');
+            }
+            window.history.pushState({}, '', url);
+            
+            // Trigger search parameter change event
+            document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+                detail: {
+                    type: 'date',
+                    dateType: 'custom',
+                    dateStart: startInput.value,
+                    dateEnd: endInput.value
+                }
+            }));
+        }
     }
 }

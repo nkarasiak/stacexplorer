@@ -1898,9 +1898,9 @@
                                             <div class="search-summary-label">TIME:</div>
                                             <div class="search-summary-value">
                                                 <div class="mini-date-inputs" id="mini-date-container">
-                                                    <input type="date" id="summary-start-date" class="mini-date-input" value="">
+                                                    <input type="text" id="summary-start-date" class="mini-date-input" placeholder="YYYY-MM-DD" maxlength="10" value="">
                                                     <span class="date-separator">to</span>
-                                                    <input type="date" id="summary-end-date" class="mini-date-input" value="">
+                                                    <input type="text" id="summary-end-date" class="mini-date-input" placeholder="YYYY-MM-DD" maxlength="10" value="">
                                                 </div>
                                                 <script>
                                                     // Immediate date initialization and protection
@@ -1921,6 +1921,14 @@
                                                             endInput.value = todayStr;
                                                             startInput.max = todayStr;
                                                             endInput.max = todayStr;
+                                                            
+                                                            // Apply date format enforcement (will be defined later in the document)
+                                                            setTimeout(() => {
+                                                                if (window.enforceDateFormat) {
+                                                                    window.enforceDateFormat(startInput);
+                                                                    window.enforceDateFormat(endInput);
+                                                                }
+                                                            }, 100);
                                                         }
                                                         
                                                         // Add mutation observer to restore date inputs if they get replaced
@@ -1932,11 +1940,21 @@
                                                                         // Restore the mini date inputs
                                                                         summaryValueDiv.innerHTML = `
                                                                             <div class="mini-date-inputs" id="mini-date-container">
-                                                                                <input type="date" id="summary-start-date" class="mini-date-input" value="${oneMonthAgoStr}" max="${todayStr}">
+                                                                                <input type="text" id="summary-start-date" class="mini-date-input" placeholder="YYYY-MM-DD" maxlength="10" value="${oneMonthAgoStr}">
                                                                                 <span class="date-separator">to</span>
-                                                                                <input type="date" id="summary-end-date" class="mini-date-input" value="${todayStr}" max="${todayStr}">
+                                                                                <input type="text" id="summary-end-date" class="mini-date-input" placeholder="YYYY-MM-DD" maxlength="10" value="${todayStr}">
                                                                             </div>
                                                                         `;
+                                                                        
+                                                                        // Setup simple date input listeners for restored inputs
+                                                                        setTimeout(() => {
+                                                                            const startInput = document.getElementById('summary-start-date');
+                                                                            const endInput = document.getElementById('summary-end-date');
+                                                                            if (startInput && endInput && window.searchSummaryManager) {
+                                                                                window.searchSummaryManager.setupSimpleDateInputListeners(startInput);
+                                                                                window.searchSummaryManager.setupSimpleDateInputListeners(endInput);
+                                                                            }
+                                                                        }, 50);
                                                                     }
                                                                 });
                                                             });
@@ -3613,6 +3631,34 @@
             // Ensure body doesn't have modal-open class
             document.body.classList.remove('modal-open');
             
+            // Global function to force YYYY-MM-DD format on date inputs
+            window.enforceDateFormat = function(inputElement) {
+                if (inputElement && inputElement.type === 'date') {
+                    // Set locale-specific attributes
+                    inputElement.setAttribute('lang', 'en-US');
+                    inputElement.setAttribute('data-format', 'yyyy-mm-dd');
+                    
+                    // Force text direction
+                    inputElement.style.direction = 'ltr';
+                    inputElement.style.unicodeBidi = 'embed';
+                    
+                    // Try to force the locale through JavaScript
+                    // This creates a hidden date input to check browser behavior
+                    const testDate = new Date('2025-01-15');
+                    const expectedFormat = '2025-01-15';
+                    inputElement.setAttribute('data-expected-format', expectedFormat);
+                    
+                    // Add event listener to ensure value stays in correct format
+                    inputElement.addEventListener('input', function(e) {
+                        // The browser should automatically handle this, but we can add validation
+                        const value = e.target.value;
+                        if (value && !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+                            console.warn('Date input format may not be YYYY-MM-DD:', value);
+                        }
+                    });
+                }
+            };
+            
             // Initialize date input handlers with retry logic
             const initializeDateInputs = () => {
                 const startDateInput = document.getElementById('summary-start-date');
@@ -3675,48 +3721,72 @@
                 
             };
             
-            // FORCE RESTORE mini date inputs - replace any text that's there
+            // FORCE RESTORE mini date inputs - but preserve existing values
             const forceRestoreDateInputs = () => {
+                console.log('[DATE INPUT] 🔄 forceRestoreDateInputs called');
                 const summaryValueDiv = document.querySelector('[data-field="date"] .search-summary-value');
-                if (summaryValueDiv) {
+                if (summaryValueDiv && !summaryValueDiv.querySelector('.mini-date-inputs')) {
+                    console.log('[DATE INPUT] 🔧 forceRestoreDateInputs creating new inputs');
+                    // Only create new inputs if they don't exist
                     const today = new Date();
                     const oneMonthAgo = new Date(today);
                     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
                     const todayStr = today.toISOString().split('T')[0];
                     const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
                     
+                    // Check if there are existing values from form inputs
+                    const existingStartInput = document.getElementById('date-start');
+                    const existingEndInput = document.getElementById('date-end');
+                    const startValue = existingStartInput?.value || oneMonthAgoStr;
+                    const endValue = existingEndInput?.value || todayStr;
+                    
+                    console.log('[DATE INPUT] 🔧 forceRestoreDateInputs using values:', { startValue, endValue });
+                    
                     summaryValueDiv.innerHTML = `
                         <div class="mini-date-inputs" id="mini-date-container">
-                            <input type="date" id="summary-start-date" class="mini-date-input" value="${oneMonthAgoStr}" max="${todayStr}">
+                            <input type="text" id="summary-start-date" class="mini-date-input" placeholder="YYYY-MM-DD" maxlength="10" value="${startValue}">
                             <span class="date-separator">to</span>
-                            <input type="date" id="summary-end-date" class="mini-date-input" value="${todayStr}" max="${todayStr}">
+                            <input type="text" id="summary-end-date" class="mini-date-input" placeholder="YYYY-MM-DD" maxlength="10" value="${endValue}">
                         </div>
                     `;
+                    
+                    // Setup simple date input listeners
+                    const startInput = document.getElementById('summary-start-date');
+                    const endInput = document.getElementById('summary-end-date');
+                    if (startInput && endInput && window.searchSummaryManager) {
+                        window.searchSummaryManager.setupSimpleDateInputListeners(startInput);
+                        window.searchSummaryManager.setupSimpleDateInputListeners(endInput);
+                    }
+                } else {
+                    console.log('[DATE INPUT] 🔧 forceRestoreDateInputs skipped - inputs already exist');
                 }
             };
             
-            // Force restore immediately and repeatedly
+            // Force restore immediately and repeatedly - RE-ENABLED WITH CUSTOM INPUTS
             forceRestoreDateInputs();
             setTimeout(forceRestoreDateInputs, 10);
             setTimeout(forceRestoreDateInputs, 100);
             setTimeout(forceRestoreDateInputs, 500);
             setTimeout(forceRestoreDateInputs, 1000);
             
-            // Set up continuous monitoring every 2 seconds
+            // Set up continuous monitoring every 2 seconds - RE-ENABLED WITH CUSTOM INPUTS
             setInterval(() => {
                 const summaryValueDiv = document.querySelector('[data-field="date"] .search-summary-value');
                 if (summaryValueDiv && !summaryValueDiv.querySelector('.mini-date-inputs')) {
+                    console.log('🔄 forceRestoreDateInputs triggered by interval');
                     forceRestoreDateInputs();
                 }
             }, 2000);
             
-            // Start initialization immediately and also run it multiple times to ensure it works
+            // Start initialization immediately and also run it multiple times to ensure it works - TEMPORARILY DISABLED FOR DEBUGGING
+            /*
             initializeDateInputs();
             
             // Also try again after a short delay to ensure DOM is ready
             setTimeout(initializeDateInputs, 50);
             setTimeout(initializeDateInputs, 200);
             setTimeout(initializeDateInputs, 500);
+            */
             
             // Disable click handler on TIME button to prevent old dropdown
             const timeButton = document.getElementById('summary-date');
@@ -4128,6 +4198,8 @@
                 });
             }
         });
+        
+        // Simple date input initialization - no complex modal system needed
     </script>
     <!-- Leaflet JavaScript for mini maps -->
     <!-- Core JavaScript -->
@@ -4674,7 +4746,7 @@
             color: var(--text-primary, #ffffff);
         }
         
-        /* Mini Date Inputs Styling */
+        /* Mini Date Inputs Styling - Simple Text Inputs */
         .mini-date-inputs {
             display: flex;
             align-items: center;
@@ -4684,7 +4756,7 @@
         }
         
         .mini-date-input {
-            /* Default to light theme styles since light is the default */
+            /* Simple text input with YYYY-MM-DD format */
             background: #ffffff;
             border: 1px solid #d1d5db;
             border-radius: 6px;
@@ -4695,9 +4767,12 @@
             min-width: 70px;
             height: 28px;
             transition: all 0.2s ease;
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            font-family: 'Segoe UI', system-ui, -apple-system, monospace;
             box-sizing: border-box;
-            text-align: left;
+            text-align: center;
+            /* Always display YYYY-MM-DD format */
+            direction: ltr !important;
+            unicode-bidi: embed !important;
         }
         
         .mini-date-input:focus {
@@ -4712,11 +4787,142 @@
             background: #f9fafb;
         }
         
+        .mini-date-input.error {
+            border-color: #dc3545;
+            background-color: #ffeaea;
+        }
+        
         .date-separator {
             color: var(--text-secondary, #aaaaaa);
             font-size: 11px;
             font-weight: 500;
             padding: 0 2px;
+        }
+        
+        /* Modern Date Dropdown Styling */
+        .date-dropdown-modern {
+            padding: 12px;
+            background: var(--surface-elevated, #ffffff);
+            border-radius: 12px;
+            box-shadow: 
+                0 10px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            border: 1px solid var(--border-primary, rgba(0, 0, 0, 0.08));
+        }
+        
+        .date-presets-modern {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        
+        .date-preset-btn-modern {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border: 1px solid var(--border-secondary, rgba(0, 0, 0, 0.06));
+            background: var(--surface-primary, #ffffff);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            text-align: left;
+            min-height: 52px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .date-preset-btn-modern::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        
+        .date-preset-btn-modern:hover {
+            transform: translateY(-1px);
+            box-shadow: 
+                0 8px 20px -4px rgba(0, 0, 0, 0.1),
+                0 4px 8px -2px rgba(0, 0, 0, 0.04);
+            border-color: var(--primary-200, rgba(102, 126, 234, 0.2));
+        }
+        
+        .date-preset-btn-modern:hover::before {
+            opacity: 1;
+        }
+        
+        .date-preset-btn-modern:active {
+            transform: translateY(0);
+            box-shadow: 
+                0 4px 12px -2px rgba(0, 0, 0, 0.08),
+                0 2px 4px -1px rgba(0, 0, 0, 0.04);
+        }
+        
+        .preset-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 8px;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .preset-icon .material-icons {
+            font-size: 18px;
+        }
+        
+        .preset-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            flex: 1;
+        }
+        
+        .preset-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary, #1f2937);
+            line-height: 1.2;
+        }
+        
+        .preset-desc {
+            font-size: 12px;
+            color: var(--text-secondary, #6b7280);
+            line-height: 1.2;
+        }
+        
+        /* Dark theme adjustments for modern date dropdown */
+        .dark-theme .date-dropdown-modern {
+            background: var(--surface-elevated, #2a2a2a);
+            border-color: var(--border-primary, rgba(255, 255, 255, 0.1));
+        }
+        
+        .dark-theme .date-preset-btn-modern {
+            background: var(--surface-primary, #333333);
+            border-color: var(--border-secondary, rgba(255, 255, 255, 0.08));
+        }
+        
+        .dark-theme .date-preset-btn-modern:hover {
+            border-color: var(--primary-400, rgba(102, 126, 234, 0.4));
+            background: var(--surface-hover, #3a3a3a);
+        }
+        
+        .dark-theme .preset-title {
+            color: var(--text-primary, #ffffff);
+        }
+        
+        .dark-theme .preset-desc {
+            color: var(--text-secondary, #a0a0a0);
         }
 
         /* Mini Location Input Styling (matching mini date inputs) */
@@ -4854,6 +5060,11 @@
         .dark-theme .mini-date-input:hover {
             border-color: #555555 !important;
             background: #333333 !important;
+        }
+        
+        .dark-theme .mini-date-input.error {
+            border-color: #dc3545 !important;
+            background-color: #4a1a1a !important;
         }
         
         /* Light theme adjustments for location input */

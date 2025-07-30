@@ -1813,10 +1813,11 @@ export class ResultsPanel {
                 
                 // Restore previous view if saved
                 if (this.previousMapView) {
-                    this.mapManager.map.setCenter(this.previousMapView.center);
-                    this.mapManager.map.setZoom(this.previousMapView.zoom);
-                    this.mapManager.map.setBearing(this.previousMapView.bearing || 0);
-                    this.mapManager.map.setPitch(this.previousMapView.pitch || 0);
+                    const map = this.mapManager.getMap();
+                    map.setCenter(this.previousMapView.center);
+                    map.setZoom(this.previousMapView.zoom);
+                    map.setBearing(this.previousMapView.bearing || 0);
+                    map.setPitch(this.previousMapView.pitch || 0);
                 }
                 
                 // Clear centered state
@@ -1840,11 +1841,12 @@ export class ResultsPanel {
                 
                 // Save current view before centering (only if not already saved)
                 if (!this.centeredItem) {
+                    const map = this.mapManager.getMap();
                     this.previousMapView = {
-                        center: this.mapManager.map.getCenter(),
-                        zoom: this.mapManager.map.getZoom(),
-                        bearing: this.mapManager.map.getBearing(),
-                        pitch: this.mapManager.map.getPitch()
+                        center: map.getCenter(),
+                        zoom: map.getZoom(),
+                        bearing: map.getBearing(),
+                        pitch: map.getPitch()
                     };
                 }
                 
@@ -1852,10 +1854,10 @@ export class ResultsPanel {
                 this.clearHoverState();
                 
                 // Get item bounding box and center map
-                const bbox = this.mapManager.getBoundingBox(item);
+                const bbox = this.mapManager.mapLayers.getBoundingBox(item);
                 if (bbox) {
                     // Use fitBounds to center on the item
-                    this.mapManager.map.fitBounds(
+                    this.mapManager.getMap().fitBounds(
                         [[bbox[0], bbox[1]], [bbox[2], bbox[3]]], 
                         { 
                             padding: 50,

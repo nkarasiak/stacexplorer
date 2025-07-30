@@ -13,6 +13,7 @@ export class UnifiedStateManager {
         this.inlineDropdownManager = components.inlineDropdownManager;
         this.catalogBrowser = components.catalogBrowser;
         this.viewModeToggle = components.viewModeToggle;
+        this.apiClient = components.apiClient;
         this.notificationService = components.notificationService || {
             showNotification: (msg, type) => {}
         };
@@ -500,15 +501,23 @@ export class UnifiedStateManager {
         // Date parameters
         if (params.has(this.urlKeys.dateStart)) {
             const dateStartInput = document.getElementById('date-start');
+            const summaryStartInput = document.getElementById('summary-start-date');
             if (dateStartInput) {
                 dateStartInput.value = params.get(this.urlKeys.dateStart);
+            }
+            if (summaryStartInput) {
+                summaryStartInput.value = params.get(this.urlKeys.dateStart);
             }
         }
         
         if (params.has(this.urlKeys.dateEnd)) {
             const dateEndInput = document.getElementById('date-end');
+            const summaryEndInput = document.getElementById('summary-end-date');
             if (dateEndInput) {
                 dateEndInput.value = params.get(this.urlKeys.dateEnd);
+            }
+            if (summaryEndInput) {
+                summaryEndInput.value = params.get(this.urlKeys.dateEnd);
             }
         }
         
@@ -640,10 +649,12 @@ export class UnifiedStateManager {
             // Date state
             if (state.dateType) {
                 
-                // Also update the form inputs for custom dates
+                // Also update the form inputs and summary inputs for custom dates
                 if (state.dateType === 'custom' && state.dateStart && state.dateEnd) {
                     const dateStartInput = document.getElementById('date-start');
                     const dateEndInput = document.getElementById('date-end');
+                    const summaryStartInput = document.getElementById('summary-start-date');
+                    const summaryEndInput = document.getElementById('summary-end-date');
                     
                     if (dateStartInput && state.dateStart) {
                         // Extract just the date part for form inputs (YYYY-MM-DD)
@@ -655,6 +666,18 @@ export class UnifiedStateManager {
                         // Extract just the date part for form inputs (YYYY-MM-DD)
                         const endDateOnly = state.dateEnd.split('T')[0];
                         dateEndInput.value = endDateOnly;
+                    }
+                    
+                    if (summaryStartInput && state.dateStart) {
+                        // Extract just the date part for summary inputs (YYYY-MM-DD)
+                        const startDateOnly = state.dateStart.split('T')[0];
+                        summaryStartInput.value = startDateOnly;
+                    }
+                    
+                    if (summaryEndInput && state.dateEnd) {
+                        // Extract just the date part for summary inputs (YYYY-MM-DD)
+                        const endDateOnly = state.dateEnd.split('T')[0];
+                        summaryEndInput.value = endDateOnly;
                     }
                 }
                 

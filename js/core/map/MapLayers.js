@@ -50,6 +50,7 @@ export class MapLayers {
                 'stac-item-layer',
                 'stac-item-outline',
                 'stac-bounds-layer',
+                'stac-bounds-outline',
                 'current-item-layer',
                 'current-item-outline'
             ];

@@ -93,7 +93,17 @@ export class MapDrawing {
      */
     startDrawingBbox(callback) {
         if (!this.mapCore.isMapReady()) {
-            console.error('❌ Map not initialized');
+            console.warn('⚠️ Map not ready for drawing, waiting for initialization...');
+            // Wait for map to be ready and retry
+            const waitForMap = () => {
+                if (this.mapCore.isMapReady()) {
+                    console.log('✅ Map ready, starting drawing');
+                    this.startDrawingBbox(callback);
+                } else {
+                    setTimeout(waitForMap, 100);
+                }
+            };
+            setTimeout(waitForMap, 100);
             return;
         }
 

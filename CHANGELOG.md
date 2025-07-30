@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.0] - 2025-07-30
+
+### ✨ Features
+- **Custom STAC Catalog Support**: Full integration for user-defined STAC catalogs with localStorage persistence
+- **Terrascope Integration**: Added Belgian Terrascope STAC catalog as built-in data provider (https://stac.terrascope.be/)
+- **Enhanced Settings Management**: New dedicated SettingsPageManager component with improved provider management
+- **Catalog Browser Integration**: Custom catalogs now appear in Data Providers section with proper titles
+- **Browse Collections Filter**: Custom catalogs included in "All Sources" filter dropdown for collection browsing
+- **Dynamic Provider Management**: Toggle custom catalogs on/off alongside predefined data providers
+
+### 🔧 Improved
+- **Catalog Display Names**: Custom catalogs now show proper titles (e.g., "Terrascope") instead of generic "custom-catalog"
+- **Provider Settings UI**: Enhanced toggle functionality with real-time updates and proper event handling
+- **Collection Loading**: Improved integration between custom catalogs and existing collection management system
+- **Settings Page Architecture**: Modular component design with better separation of concerns
+- **Error Handling**: Better validation and user feedback for custom catalog operations
+
+### 🐛 Fixed
+- **Custom Catalog Visibility**: Fixed custom catalogs not appearing in catalog browser Data Providers section
+- **Source Filter Integration**: Resolved missing custom catalogs from Browse Collections source filter
+- **Display Name Consistency**: Fixed generic naming throughout the UI to use actual catalog titles
+- **Provider List Refresh**: Fixed settings not updating immediately after adding custom catalogs
+
+### 🏗️ Technical
+- **SettingsPageManager Component**: New dedicated component for settings page management and provider controls
+- **Enhanced CatalogBrowserPanel**: Added localStorage integration for custom catalog discovery
+- **CollectionManagerEnhanced Updates**: Improved display name resolution for custom catalogs
+- **CollectionGridSelector Integration**: Updated to use `loadAllCollections()` for comprehensive catalog support
+- **Provider Event Handling**: Enhanced event listener management with proper cleanup and re-attachment
+
 ## [2.11.0] - 2025-07-30
 
 ### ✨ Features

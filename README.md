@@ -3,7 +3,7 @@
 > A modern, interactive web application for exploring SpatioTemporal Asset Catalog (STAC) datasets with advanced search capabilities and beautiful visualizations.
 
 ![STAC Explorer](https://img.shields.io/badge/STAC-Explorer-blue?style=for-the-badge&logo=satellite)
-![Version](https://img.shields.io/badge/version-2.11.0-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.12.0-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 
 ## ✨ Features
@@ -33,10 +33,12 @@
 - **Copernicus Data Space**: European Space Agency satellite data
 - **Element84 Earth Search**: Comprehensive Earth observation datasets
 - **Microsoft Planetary Computer**: Enhanced support with fixed presigning API
+- **🆕 Terrascope**: Belgian Earth observation platform (https://stac.terrascope.be/)
 - **🆕 Static Catalog Support**: Automatic detection and handling of static STAC catalogs (*.json)
 - **🆕 Google Earth Engine**: Support for GEE STAC catalog with specialized collection handling
 - **🆕 Planet Labs**: Enhanced catalog traversal for Planet Labs STAC catalog
-- **Custom STAC Catalogs**: Connect to any STAC-compliant API or static catalog
+- **🆕 Custom STAC Catalogs**: Full integration for user-defined STAC catalogs with localStorage persistence
+- **🆕 Dynamic Provider Management**: Toggle custom catalogs on/off in settings alongside built-in providers
 - **Cross-Catalog Search**: Search across multiple data sources
 
 ### 📊 **Dataset Management & Visualization** 🧪 *EXPERIMENTAL*

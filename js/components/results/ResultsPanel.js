@@ -29,6 +29,10 @@ export class ResultsPanel {
         this.restoreTimeout = null;
         this.currentBboxLayer = null;
         
+        // Center/map functionality state
+        this.centeredItem = null;
+        this.previousMapView = null;
+        
         // Debug methods for testing restore functionality
         window.testMapRestore = () => {
             console.log('🧪 Testing map restore functionality...');
@@ -1406,6 +1410,9 @@ export class ResultsPanel {
                             <button class="info-btn viz-btn" title="High Resolution Preview">
                                 <i class="material-icons">visibility</i>
                             </button>
+                            <button class="info-btn center-map-btn" title="Center map on this item">
+                                <i class="material-icons">my_location</i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -1424,6 +1431,9 @@ export class ResultsPanel {
                             </button>
                             <button class="info-btn viz-btn" title="High Resolution Preview">
                                 <i class="material-icons">visibility</i>
+                            </button>
+                            <button class="info-btn center-map-btn" title="Center map on this item">
+                                <i class="material-icons">my_location</i>
                             </button>
                         </div>
                         <div class="dataset-title">${title}</div>
@@ -1467,6 +1477,9 @@ export class ResultsPanel {
                                 </button>
                                 <button class="info-btn viz-btn" title="High Resolution Preview">
                                     <i class="material-icons">visibility</i>
+                                </button>
+                                <button class="info-btn center-map-btn" title="Center map on this item">
+                                    <i class="material-icons">my_location</i>
                                 </button>
                             </div>
                             <div class="dataset-title">${title}</div>
@@ -1556,6 +1569,7 @@ export class ResultsPanel {
         const clickableCard = element.querySelector('.clickable-card');
         const detailsBtn = element.querySelector('.details-btn');
         const vizBtn = element.querySelector('.viz-btn');
+        const centerMapBtn = element.querySelector('.center-map-btn');
         const thumbnail = element.querySelector('.dataset-thumbnail');
         
         // Function to handle map display with loading indicator
@@ -1640,6 +1654,12 @@ export class ResultsPanel {
                 this.hoverTimeout = setTimeout(() => {
                     console.log('🎯 Hover timeout triggered for item:', item.id);
                     
+                    // Skip hover preview if center-map button is active for any item
+                    if (this.centeredItem) {
+                        console.log('🔒 Center-map is active, skipping hover preview');
+                        return;
+                    }
+                    
                     // Save current map view if not already saved or if different item
                     if (!this.savedMapView || this.currentHoveredItem !== item.id) {
                         console.log('💾 Saving map view for hover preview...');
@@ -1687,7 +1707,8 @@ export class ResultsPanel {
                 console.log('✨ Removed map-preview-active class');
                 
                 // Only restore if we actually have a saved view and this was the active item
-                if (this.savedMapView && this.currentHoveredItem === item.id) {
+                // AND center-map button is not active
+                if (this.savedMapView && this.currentHoveredItem === item.id && !this.centeredItem) {
                     console.log('💾 Valid restore conditions met, starting restore timer...');
                     
                     // Restore view with slight delay
@@ -1731,6 +1752,15 @@ export class ResultsPanel {
                 this.showVisualizationPanel(item);
             });
         }
+
+        // Add event listener to center map button
+        if (centerMapBtn) {
+            centerMapBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevent card click
+                console.log('Center map button clicked for item:', item.id);
+                this.centerMapOnItem(item, element);
+            });
+        }
     }
 
     /**
@@ -1753,6 +1783,117 @@ export class ResultsPanel {
             console.error('❌ Error showing visualization panel:', error);
             this.notificationService?.showNotification(
                 'Error opening visualization panel', 
+                'error'
+            );
+        }
+    }
+
+    /**
+     * Center map on item with toggle functionality
+     * @param {Object} item - STAC item to center on
+     * @param {HTMLElement} element - The item card element
+     */
+    async centerMapOnItem(item, element) {
+        try {
+            if (!this.mapManager || !this.mapManager.isMapReady()) {
+                this.notificationService?.showNotification('Map not available', 'warning');
+                return;
+            }
+
+            const centerMapBtn = element.querySelector('.center-map-btn');
+            const isCurrentlyCentered = this.centeredItem && this.centeredItem.id === item.id;
+
+            if (isCurrentlyCentered) {
+                // Toggle OFF - restore previous view
+                console.log('🔄 Restoring previous map view for item:', item.id);
+                
+                // Update button appearance
+                centerMapBtn.classList.remove('active');
+                centerMapBtn.title = 'Center map on this item';
+                
+                // Restore previous view if saved
+                if (this.previousMapView) {
+                    this.mapManager.map.setCenter(this.previousMapView.center);
+                    this.mapManager.map.setZoom(this.previousMapView.zoom);
+                    this.mapManager.map.setBearing(this.previousMapView.bearing || 0);
+                    this.mapManager.map.setPitch(this.previousMapView.pitch || 0);
+                }
+                
+                // Clear centered state
+                this.centeredItem = null;
+                this.previousMapView = null;
+                
+                // Clear hover-related state to prevent conflicts
+                this.savedMapView = null;
+                this.currentHoveredItem = null;
+                
+                // Remove active state from all items
+                document.querySelectorAll('.dataset-item').forEach(el => {
+                    el.classList.remove('map-centered');
+                });
+                
+                this.notificationService?.showNotification('Map view restored', 'info');
+                
+            } else {
+                // Toggle ON - center on item
+                console.log('🎯 Centering map on item:', item.id);
+                
+                // Save current view before centering (only if not already saved)
+                if (!this.centeredItem) {
+                    this.previousMapView = {
+                        center: this.mapManager.map.getCenter(),
+                        zoom: this.mapManager.map.getZoom(),
+                        bearing: this.mapManager.map.getBearing(),
+                        pitch: this.mapManager.map.getPitch()
+                    };
+                }
+                
+                // Clear hover-related state to prevent conflicts
+                this.clearHoverState();
+                
+                // Get item bounding box and center map
+                const bbox = this.mapManager.getBoundingBox(item);
+                if (bbox) {
+                    // Use fitBounds to center on the item
+                    this.mapManager.map.fitBounds(
+                        [[bbox[0], bbox[1]], [bbox[2], bbox[3]]], 
+                        { 
+                            padding: 50,
+                            maxZoom: 12 
+                        }
+                    );
+                } else {
+                    this.notificationService?.showNotification('Unable to determine item location', 'warning');
+                    return;
+                }
+                
+                // Update button states - remove active from all, add to current
+                document.querySelectorAll('.center-map-btn').forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.title = 'Center map on this item';
+                });
+                document.querySelectorAll('.dataset-item').forEach(el => {
+                    el.classList.remove('map-centered');
+                });
+                
+                // Set current button as active
+                centerMapBtn.classList.add('active');
+                centerMapBtn.title = 'Restore previous view';
+                element.classList.add('map-centered');
+                
+                // Update centered state
+                this.centeredItem = item;
+                
+                this.notificationService?.showNotification(
+                    `Centered map on ${item.properties?.title || item.id}`, 
+                    'success'
+                );
+            }
+            
+        } catch (error) {
+            console.error('❌ Error centering map on item:', error);
+            this.notificationService?.showNotification(
+                'Error centering map on item', 
                 'error'
             );
         }
@@ -2404,6 +2545,7 @@ export class ResultsPanel {
         
         this.removeBboxFromMap();
         this.currentHoveredItem = null;
+        this.savedMapView = null;
         
         // Remove visual feedback from all cards
         document.querySelectorAll('.map-preview-active').forEach(card => {

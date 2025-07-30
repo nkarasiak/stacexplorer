@@ -140,6 +140,43 @@
     font-size: 1.2rem;
 }
 
+/* Info overlay buttons for dataset items */
+.info-btn {
+    background: rgba(255, 255, 255, 0.95);
+    border: none;
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    backdrop-filter: none;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    color: white;
+    margin-left: 8px;
+}
+
+.info-btn:hover {
+    transform: scale(1.15) rotateZ(5deg);
+    background: white;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+    color: #333;
+}
+
+.info-btn .material-icons {
+    font-size: 1.2rem;
+}
+
+/* Active state for center-map button */
+.info-btn.center-map-btn.active {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    color: white;
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.4);
+}
+
 /* Priority Badge */
 .collection-priority-badge {
     position: absolute;

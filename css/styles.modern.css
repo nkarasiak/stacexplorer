@@ -5373,3 +5373,21 @@ html.dark-theme .settings-content .settings-section h3 {
         padding: 1rem;
     }
 }
+
+/* Item card visual state when map is centered */
+.dataset-item.map-centered {
+    background: linear-gradient(135deg, 
+        rgba(99, 102, 241, 0.05) 0%, 
+        rgba(139, 92, 246, 0.05) 100%);
+    border: 1px solid rgba(99, 102, 241, 0.2);
+    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.1);
+}
+
+/* Dark theme support */
+[data-theme="dark"] .dataset-item.map-centered {
+    background: linear-gradient(135deg, 
+        rgba(59, 130, 246, 0.08) 0%, 
+        rgba(139, 92, 246, 0.08) 100%);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
+}

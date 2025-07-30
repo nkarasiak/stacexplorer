@@ -3,6 +3,7 @@
  */
 
 import { offlineManager } from '../../utils/OfflineManager.js';
+import { getCollectionName } from '../../utils/CollectionConfig.js';
 
 export class STACApiClient {
     /**
@@ -142,40 +143,65 @@ export class STACApiClient {
                 throw new Error('Invalid STAC catalog: missing required fields');
             }
             
-            // For Planet Labs catalog, store the root catalog data directly
-            if (normalizedUrl.includes('planet.com')) {
-                this.planetLabsCatalogData = rootCatalog;
-                // Set empty endpoints since Planet doesn't have API endpoints
+            // Check if this is a static catalog (URL ends with .json)
+            if (normalizedUrl.endsWith('.json')) {
+                console.log('📂 Static catalog detected (URL ends with .json)');
+                
+                // Store catalog data for special handling based on provider
+                if (normalizedUrl.includes('planet.com')) {
+                    this.planetLabsCatalogData = rootCatalog;
+                } else if (normalizedUrl.includes('earthengine-stac.storage.googleapis.com')) {
+                    this.geeCatalogData = rootCatalog;
+                } else {
+                    // Generic static catalog handling
+                    this.staticCatalogData = rootCatalog;
+                }
+                
+                // Set empty endpoints since static catalogs don't have API endpoints
                 this.setEndpoints({
                     root: normalizedUrl,
                     collections: '', // Will be handled specially
-                    search: ''
+                    search: '',
+                    type: 'catalog'
                 });
             } else {
-                // Find collections and search endpoints for regular STAC APIs
-                let collectionsUrl = `${normalizedUrl}/collections`;
-                let searchUrl = `${normalizedUrl}/search`;
-                
-                // Try to find links in the root catalog
-                const collectionsLink = rootCatalog.links.find(link => 
-                    link.rel === 'data' || link.rel === 'collections');
-                const searchLink = rootCatalog.links.find(link => 
-                    link.rel === 'search');
-                
-                if (collectionsLink && collectionsLink.href) {
-                    collectionsUrl = new URL(collectionsLink.href, normalizedUrl).href;
+                // Check if endpoints are already set with empty collections (catalog-type)
+                // If so, don't override them
+                if (this.endpoints.collections === '' && this.endpoints.search === '') {
+                    console.log('📂 Catalog-type endpoint detected - preserving empty collections/search URLs');
+                    // Just update the root, keep collections and search empty
+                    this.setEndpoints({
+                        root: normalizedUrl,
+                        collections: '',
+                        search: '',
+                        type: 'catalog'
+                    });
+                } else {
+                    // Find collections and search endpoints for regular STAC APIs
+                    let collectionsUrl = `${normalizedUrl}/collections`;
+                    let searchUrl = `${normalizedUrl}/search`;
+                    
+                    // Try to find links in the root catalog
+                    const collectionsLink = rootCatalog.links.find(link => 
+                        link.rel === 'data' || link.rel === 'collections');
+                    const searchLink = rootCatalog.links.find(link => 
+                        link.rel === 'search');
+                    
+                    if (collectionsLink && collectionsLink.href) {
+                        collectionsUrl = new URL(collectionsLink.href, normalizedUrl).href;
+                    }
+                    
+                    if (searchLink && searchLink.href) {
+                        searchUrl = new URL(searchLink.href, normalizedUrl).href;
+                    }
+                    
+                    // Set endpoints
+                    this.setEndpoints({
+                        root: normalizedUrl,
+                        collections: collectionsUrl,
+                        search: searchUrl
+                    });
                 }
-                
-                if (searchLink && searchLink.href) {
-                    searchUrl = new URL(searchLink.href, normalizedUrl).href;
-                }
-                
-                // Set endpoints
-                this.setEndpoints({
-                    root: normalizedUrl,
-                    collections: collectionsUrl,
-                    search: searchUrl
-                });
             }
             
             return rootCatalog;
@@ -199,6 +225,16 @@ export class STACApiClient {
             // Handle Planet Labs catalog specially
             if (this.planetLabsCatalogData) {
                 return await this.fetchPlanetLabsCollections();
+            }
+            
+            // Handle Google Earth Engine catalog specially
+            if (this.geeCatalogData) {
+                return await this.fetchGEECollections();
+            }
+            
+            // Handle generic static catalog
+            if (this.staticCatalogData) {
+                return await this.fetchStaticCatalogCollections();
             }
             
             if (!this.endpoints.collections) {
@@ -299,6 +335,120 @@ export class STACApiClient {
     }
     
     /**
+     * Fetch collections from Google Earth Engine catalog structure
+     * @returns {Promise<Array>} - Promise resolving to an array of collections
+     */
+    async fetchGEECollections() {
+        try {
+            const collections = [];
+            
+            // Find child links that point to collections or sub-catalogs
+            const childLinks = this.geeCatalogData.links.filter(link => 
+                link.rel === 'child' || link.rel === 'catalog'
+            );
+            
+            // Fetch each child to see if it's a collection or contains collections
+            for (const link of childLinks) {
+                try {
+                    const childUrl = new URL(link.href, this.endpoints.root).href;
+                    const proxyUrl = this.getProxyUrl(childUrl);
+                    const response = await this.fetchWithRetry(proxyUrl);
+                    
+                    if (response.ok) {
+                        const childData = await response.json();
+                        
+                        // If it's a collection, add it directly
+                        if (childData.type === 'Collection') {
+                            collections.push({
+                                ...childData,
+                                sourceLabel: 'Google Earth Engine',
+                                source: 'gee'
+                            });
+                        } else if (childData.type === 'Catalog') {
+                            // Create a simplified collection entry for sub-catalogs
+                            collections.push({
+                                id: childData.id || link.title || 'unknown',
+                                title: childData.title || link.title || childData.id,
+                                description: childData.description || 'Google Earth Engine catalog',
+                                type: 'Collection',
+                                sourceLabel: 'Google Earth Engine',
+                                source: 'gee',
+                                stac_version: childData.stac_version,
+                                links: childData.links
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Failed to fetch GEE child catalog: ${link.href}`, error);
+                }
+            }
+            
+            return collections;
+            
+        } catch (error) {
+            console.error('❌ Error fetching GEE collections:', error);
+            throw new Error(`Failed to fetch GEE collections: ${error.message}`);
+        }
+    }
+    
+    /**
+     * Fetch collections from generic static catalog structure
+     * @returns {Promise<Array>} - Promise resolving to an array of collections
+     */
+    async fetchStaticCatalogCollections() {
+        try {
+            const collections = [];
+            
+            // Find child links that point to collections or sub-catalogs
+            const childLinks = this.staticCatalogData.links.filter(link => 
+                link.rel === 'child' || link.rel === 'catalog'
+            );
+            
+            // Fetch each child to see if it's a collection or contains collections
+            for (const link of childLinks) {
+                try {
+                    const childUrl = new URL(link.href, this.endpoints.root).href;
+                    const proxyUrl = this.getProxyUrl(childUrl);
+                    const response = await this.fetchWithRetry(proxyUrl);
+                    
+                    if (response.ok) {
+                        const childData = await response.json();
+                        
+                        // If it's a collection, add it directly
+                        if (childData.type === 'Collection') {
+                            collections.push({
+                                ...childData,
+                                sourceLabel: 'Static Catalog',
+                                source: 'static'
+                            });
+                        } else if (childData.type === 'Catalog') {
+                            // Create a simplified collection entry for sub-catalogs
+                            collections.push({
+                                id: childData.id || link.title || 'unknown',
+                                title: childData.title || link.title || childData.id,
+                                description: childData.description || 'Static catalog',
+                                type: 'Collection',
+                                sourceLabel: 'Static Catalog',
+                                source: 'static',
+                                stac_version: childData.stac_version,
+                                links: childData.links
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`Failed to fetch static catalog child: ${link.href}`, error);
+                }
+            }
+            
+            return collections;
+            
+        } catch (error) {
+            console.error('❌ Error fetching static catalog collections:', error);
+            throw new Error(`Failed to fetch static catalog collections: ${error.message}`);
+        }
+    }
+    
+    /**
      * Fetch a specific collection
      * @param {string} collectionId - ID of the collection to fetch
      * @returns {Promise<Object>} - Promise resolving to the collection
@@ -327,19 +477,16 @@ export class STACApiClient {
      * Get current catalog display name
      * @returns {string} - Display name of current catalog
      */
-    getCurrentCatalogName() {
+    async getCurrentCatalogName() {
         const catalogSelect = document.getElementById('catalog-select');
         const selectedCatalog = catalogSelect?.value || '';
         
-        const catalogNames = {
-            'copernicus': 'Copernicus Data Space',
-            'element84': 'Element84 Earth Search', 
-            'planetary': 'Microsoft Planetary Computer',
-            'planetlabs': 'Planet Labs Open Data',
-            'custom': 'Custom STAC Catalog'
-        };
+        if (selectedCatalog === 'custom') {
+            return 'Custom STAC Catalog';
+        }
         
-        return catalogNames[selectedCatalog] || 'STAC Catalog';
+        const catalogName = await getCollectionName(selectedCatalog);
+        return catalogName || 'STAC Catalog';
     }
 
     /**

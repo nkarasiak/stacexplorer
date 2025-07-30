@@ -1,45 +1,41 @@
 {
   "collections": [
     {
-      "id": "copernicus",
+      "id": "cdse-stac",
       "name": "Copernicus Data Space",
+      "description": "European Space Agency satellite data",
       "enabled": true,
-      "endpoints": {
-        "root": "https://stac.dataspace.copernicus.eu/v1",
-        "collections": "https://stac.dataspace.copernicus.eu/v1/collections",
-        "search": "https://stac.dataspace.copernicus.eu/v1/search"
-      }
+      "endpoint": "https://stac.dataspace.copernicus.eu/v1"
     },
     {
-      "id": "element84",
+      "id": "earth-search-aws",
       "name": "AWS Earth Search",
+      "description": "Comprehensive Earth observation datasets",
       "enabled": true,
-      "endpoints": {
-        "root": "https://earth-search.aws.element84.com/v1",
-        "collections": "https://earth-search.aws.element84.com/v1/collections",
-        "search": "https://earth-search.aws.element84.com/v1/search"
-      }
+      "endpoint": "https://earth-search.aws.element84.com/v1"
     },
     {
-      "id": "planetary",
+      "id": "microsoft-pc",
       "name": "Microsoft Planetary Computer",
+      "description": "Enhanced support with presigning API",
       "enabled": true,
-      "endpoints": {
-        "root": "https://planetarycomputer.microsoft.com/api/stac/v1",
-        "collections": "https://planetarycomputer.microsoft.com/api/stac/v1/collections",
-        "search": "https://planetarycomputer.microsoft.com/api/stac/v1/search"
-      }
+      "endpoint": "https://planetarycomputer.microsoft.com/api/stac/v1"
     },
     {
       "id": "planetlabs",
       "name": "Planet Labs",
+      "description": "High-resolution commercial satellite imagery",
       "enabled": false,
-      "endpoints": {
-        "root": "https://www.planet.com/data/stac/catalog.json",
-        "collections": "",
-        "search": "",
-        "type": "catalog"
-      }
+      "endpoint": "https://www.planet.com/data/stac/catalog.json",
+      "type": "catalog"
+    },
+    {
+      "id": "gee",
+      "name": "Google Earth Engine",
+      "description": "Google's planetary-scale Earth observation platform",
+      "enabled": false,
+      "endpoint": "https://earthengine-stac.storage.googleapis.com/catalog/catalog.json",
+      "type": "catalog"
     }
   ]
 }

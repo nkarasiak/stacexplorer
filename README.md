@@ -3,7 +3,7 @@
 > A modern, interactive web application for exploring SpatioTemporal Asset Catalog (STAC) datasets with advanced search capabilities and beautiful visualizations.
 
 ![STAC Explorer](https://img.shields.io/badge/STAC-Explorer-blue?style=for-the-badge&logo=satellite)
-![Version](https://img.shields.io/badge/version-2.10.0-green?style=for-the-badge)
+![Version](https://img.shields.io/badge/version-2.11.0-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/license-MIT-yellow?style=for-the-badge)
 
 ## ✨ Features
@@ -33,7 +33,10 @@
 - **Copernicus Data Space**: European Space Agency satellite data
 - **Element84 Earth Search**: Comprehensive Earth observation datasets
 - **Microsoft Planetary Computer**: Enhanced support with fixed presigning API
-- **Custom STAC Catalogs**: Connect to any STAC-compliant API
+- **🆕 Static Catalog Support**: Automatic detection and handling of static STAC catalogs (*.json)
+- **🆕 Google Earth Engine**: Support for GEE STAC catalog with specialized collection handling
+- **🆕 Planet Labs**: Enhanced catalog traversal for Planet Labs STAC catalog
+- **Custom STAC Catalogs**: Connect to any STAC-compliant API or static catalog
 - **Cross-Catalog Search**: Search across multiple data sources
 
 ### 📊 **Dataset Management & Visualization** 🧪 *EXPERIMENTAL*
@@ -125,22 +128,25 @@ npm run serve  # Serve static files
 npm run proxy  # Development proxy only
 ```
 
-## 🌟 What's New in v2.8.0
+## 🌟 What's New in v2.11.0
 
-### 🛰️ Satellite Animation & Offline Enhancements
-- **Restored Satellite Animation**: Fixed CSS positioning issues that were hiding the satellite animation
-- **Improved Offline Detection**: Enhanced connectivity monitoring with visual satellite indicator
-- **Better Offline Experience**: Smooth transitions between online/offline modes
+### 🛰️ Static Catalog Support
+- **Automatic Detection**: Smart detection of static STAC catalogs by URL pattern (*.json)
+- **Google Earth Engine**: Full support for GEE STAC catalog with specialized collection traversal
+- **Planet Labs Enhancement**: Improved catalog handling for Planet Labs STAC structure
+- **Generic Static Catalogs**: Universal support for any STAC-compliant static catalog
+- **Fixed 404 Errors**: Resolved issues with catalog-type endpoints trying to access API routes
 
-### 🔍 SEO & Performance Improvements
-- **Enhanced SEO**: Improved metadata, structured data, and search engine optimization
-- **Better Performance**: Optimized asset loading and rendering performance
-- **Modern CSS Positioning**: Updated CSS architecture for better layout stability
+### 🔧 Technical Improvements
+- **Enhanced Endpoint Detection**: Improved logic to distinguish between APIs and static catalogs
+- **Better Error Handling**: More graceful handling of catalog connection failures
+- **Configuration Priority**: Fixed localStorage override issues for disabled catalogs
+- **Catalog Traversal**: Robust child link following for complex catalog structures
 
-### 🔧 UI/UX Polish
-- **Refined Animation System**: Smoother satellite animations with proper z-index management
-- **Enhanced Visual Feedback**: Better offline/online state indicators
-- **Improved Accessibility**: Better screen reader support and keyboard navigation
+### 🐛 Bug Fixes
+- **Fixed GEE 404 Error**: Resolved HTTP 404 errors when trying to load Google Earth Engine collections
+- **Catalog Override Fix**: Fixed issue where connectToCustomCatalog was overriding correct empty endpoints
+- **localStorage Conflicts**: Resolved conflicts between configuration file and browser storage settings
 
 ## 📋 Browser Support
 

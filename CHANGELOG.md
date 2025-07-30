@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0] - 2025-07-30
+
+### ✨ Features
+- **Static Catalog Support**: Automatic detection and handling of static STAC catalogs (URLs ending with `.json`)
+- **Google Earth Engine Integration**: Full support for GEE STAC catalog with specialized collection traversal
+- **Planet Labs Enhancement**: Improved catalog handling for Planet Labs STAC structure
+- **Generic Static Catalogs**: Universal support for any STAC-compliant static catalog
+- **Enhanced Catalog Detection**: Smart endpoint detection to distinguish between APIs and static catalogs
+
+### 🔧 Improved
+- **Endpoint Configuration**: Better logic for handling catalog-type vs API-type endpoints
+- **Error Handling**: More graceful handling of catalog connection failures
+- **Configuration Priority**: Fixed localStorage override issues for disabled catalogs
+- **Catalog Traversal**: Robust child link following for complex catalog structures
+
+### 🐛 Fixed
+- **GEE 404 Error**: Resolved HTTP 404 errors when trying to load Google Earth Engine collections
+- **Catalog Override Bug**: Fixed issue where `connectToCustomCatalog` was overriding correct empty endpoints
+- **localStorage Conflicts**: Resolved conflicts between configuration file and browser storage settings
+- **Static Catalog URLs**: Fixed malformed URLs for catalog-type endpoints (no more `/collections` appended)
+
+### 🏗️ Technical
+- **STACApiClient Enhancements**: Added `fetchGEECollections()` and `fetchStaticCatalogCollections()` methods
+- **Catalog Data Storage**: Proper storage and handling of catalog root data for different providers
+- **Collection Manager**: Enhanced `getEnabledCatalogs()` to respect configuration file settings
+
 ## [2.10.0] - 2025-07-30
 
 ### ✨ Features

@@ -2,30 +2,24 @@
  * Configuration settings for STAC Catalog Explorer
  */
 
+import { loadCollections } from './utils/CollectionConfig.js';
+
 export const CONFIG = {
-    // STAC API Endpoints
-    stacEndpoints: {
-        copernicus: {
-            root: 'https://stac.dataspace.copernicus.eu/v1',
-            collections: 'https://stac.dataspace.copernicus.eu/v1/collections',
-            search: 'https://stac.dataspace.copernicus.eu/v1/search'
-        },
-        element84: {
-            root: 'https://earth-search.aws.element84.com/v1',
-            collections: 'https://earth-search.aws.element84.com/v1/collections',
-            search: 'https://earth-search.aws.element84.com/v1/search'
-        },
-        planetary: {
-            root: 'https://planetarycomputer.microsoft.com/api/stac/v1',
-            collections: 'https://planetarycomputer.microsoft.com/api/stac/v1/collections',
-            search: 'https://planetarycomputer.microsoft.com/api/stac/v1/search'
-        },
-        planetlabs: {
-            root: 'https://www.planet.com/data/stac/catalog.json',
-            collections: '',
-            search: '',
-            type: 'catalog'
-        }
+    // Load STAC API Endpoints from collections.json
+    async getStacEndpoints() {
+        const collections = await loadCollections();
+        const endpoints = {};
+        
+        collections.forEach(collection => {
+            endpoints[collection.id] = {
+                root: collection.endpoints.root,
+                collections: collection.endpoints.collections,
+                search: collection.endpoints.search,
+                type: collection.endpoints.type || 'stac'
+            };
+        });
+        
+        return endpoints;
     },
     
     // Map settings
@@ -62,6 +56,11 @@ export const CONFIG = {
     appSettings: {
         defaultDateRange: 0, // Default date range in days (0 means no default)
         itemsPerPage: 10, // Number of items per page in results
-        enabledProviders: ['copernicus', 'element84', 'planetary', 'planetlabs'] // Default enabled providers
+        async getEnabledProviders() {
+            const collections = await loadCollections();
+            return collections
+                .filter(collection => collection.enabled !== false)
+                .map(collection => collection.id);
+        }
     }
 };

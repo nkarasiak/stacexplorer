@@ -3,6 +3,8 @@
  * Displays collections as cards with images, descriptions, and search functionality
  */
 
+import { loadCollections } from '../../utils/CollectionConfig.js';
+
 export class CollectionGridSelector {
     /**
      * Create a new CollectionGridSelector
@@ -97,10 +99,6 @@ export class CollectionGridSelector {
                         <div class="collection-source-filter">
                             <select id="collection-source-filter" class="source-filter-select" disabled>
                                 <option value="all">Loading sources...</option>
-                                <option value="copernicus">Copernicus</option>
-                                <option value="element84">Element84</option>
-                                <option value="planetary">Microsoft Planetary Computer</option>
-                                <option value="planetlabs">Planet Labs Open Data</option>
                             </select>
                         </div>
                         
@@ -356,10 +354,10 @@ export class CollectionGridSelector {
      */
     isPriorityCollection(collection) {
         const priorityCollections = {
-            'sentinel-1-rtc': 'planetary',
-            'sentinel-2-c1-l2a': 'element84',
-            'sentinel-3-olci-1-efr-nrt': 'copernicus',
-            'cop-dem-glo-30': 'planetary'
+            'sentinel-1-rtc': 'microsoft-pc',
+            'sentinel-2-c1-l2a': 'earth-search-aws',
+            'sentinel-3-olci-1-efr-nrt': 'cdse-stac',
+            'cop-dem-glo-30': 'microsoft-pc'
         };
         
         // Only mark as priority if it's the correct collection from the preferred provider
@@ -373,10 +371,10 @@ export class CollectionGridSelector {
      */
     getCollectionSortOrder(collection) {
         const priorityOrder = {
-            'sentinel-1-rtc': { order: 1, source: 'planetary' },
-            'sentinel-2-c1-l2a': { order: 2, source: 'element84' },
-            'sentinel-3-olci-1-efr-nrt': { order: 3, source: 'copernicus' },
-            'cop-dem-glo-30': { order: 4, source: 'planetary' }
+            'sentinel-1-rtc': { order: 1, source: 'microsoft-pc' },
+            'sentinel-2-c1-l2a': { order: 2, source: 'earth-search-aws' },
+            'sentinel-3-olci-1-efr-nrt': { order: 3, source: 'cdse-stac' },
+            'cop-dem-glo-30': { order: 4, source: 'microsoft-pc' }
         };
         
         const priorityInfo = priorityOrder[collection.id];
@@ -688,10 +686,34 @@ export class CollectionGridSelector {
     /**
      * Enable source filter after collections are loaded
      */
-    enableSourceFilter() {
+    async enableSourceFilter() {
+        // Populate source filter from collections.json
+        await this.populateSourceFilter();
+        
         this.elements.sourceFilter.disabled = false;
         this.elements.sourceFilter.querySelector('option[value="all"]').textContent = 'All Sources';
         this.collectionsLoaded = true;
+    }
+    
+    /**
+     * Populate source filter with collections from collections.json
+     */
+    async populateSourceFilter() {
+        const collections = await loadCollections();
+        const sourceFilter = this.elements.sourceFilter;
+        
+        // Clear existing options except 'all'
+        const allOption = sourceFilter.querySelector('option[value="all"]');
+        sourceFilter.innerHTML = '';
+        sourceFilter.appendChild(allOption);
+        
+        // Add options for each collection
+        collections.forEach(collection => {
+            const option = document.createElement('option');
+            option.value = collection.id;
+            option.textContent = collection.name;
+            sourceFilter.appendChild(option);
+        });
     }
     
     /**

@@ -4,6 +4,7 @@
  */
 
 import { searchHistoryManager } from '../../utils/SearchHistoryManager.js';
+import { getEnabledCollectionIds } from '../../utils/CollectionConfig.js';
 
 export class CardSearchPanel {
     /**
@@ -383,7 +384,7 @@ export class CardSearchPanel {
             
             // 2. Set catalog and trigger change
             const catalogSelect = document.getElementById('catalog-select');
-            catalogSelect.value = 'element84';
+            catalogSelect.value = 'earth-search-aws';
             catalogSelect.dispatchEvent(new Event('change'));
             
             console.log('📡 Switching to Element84 catalog...');
@@ -393,7 +394,7 @@ export class CardSearchPanel {
             await this.waitForCollectionAndSelect(targetCollection, 'S-2 Toulouse');
             
             // 4. Complete cards
-            this.completeCard('source-card', 'element84');
+            this.completeCard('source-card', 'earth-search-aws');
             this.completeCard('dataset-card', targetCollection);
             this.completeCard('time-card', { start: '2024-01-01', end: '2024-12-31' });
             this.completeCard('location-card', '1.3,43.5,1.5,43.7');
@@ -420,7 +421,7 @@ export class CardSearchPanel {
             
             // 2. Set catalog and trigger change
             const catalogSelect = document.getElementById('catalog-select');
-            catalogSelect.value = 'element84';
+            catalogSelect.value = 'earth-search-aws';
             catalogSelect.dispatchEvent(new Event('change'));
             
             console.log('📡 Switching to Element84 catalog...');
@@ -430,7 +431,7 @@ export class CardSearchPanel {
             await this.waitForCollectionAndSelect(targetCollection, 'S-1 Vancouver');
             
             // 4. Complete cards
-            this.completeCard('source-card', 'element84');
+            this.completeCard('source-card', 'earth-search-aws');
             this.completeCard('dataset-card', targetCollection);
             this.completeCard('time-card', { start: '2024-01-01', end: '2024-12-31' });
             this.completeCard('location-card', '-123.3,49.1,-123.0,49.4');

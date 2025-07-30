@@ -5,6 +5,7 @@
 
 import { CollectionDetailsModal } from './CollectionDetailsModal.js';
 import { cookieCache } from '../../utils/CookieCache.js';
+import { loadCollections, getEnabledCollectionIds, getCollectionEndpoints, getCollectionName } from '../../utils/CollectionConfig.js';
 
 export class CollectionManagerEnhanced {
     /**
@@ -75,26 +76,41 @@ export class CollectionManagerEnhanced {
     }
     
     /**
+     * Get collection display name for UI
+     */
+    getCollectionDisplayName(source) {
+        const displayNames = {
+            'cdse-stac': 'Copernicus Data Space',
+            'earth-search-aws': 'AWS Earth Search',  
+            'microsoft-pc': 'Microsoft Planetary Computer',
+            'planetlabs': 'Planet Labs',
+            'gee': 'Google Earth Engine'
+        };
+        return displayNames[source] || source;
+    }
+
+    /**
      * Get enabled catalogs from localStorage settings
      */
-    getEnabledCatalogs() {
-        const catalogs = ['copernicus', 'element84', 'microsoft-pc', 'planetlabs'];
+    async getEnabledCatalogs() {
+        const collections = await loadCollections();
         const enabledCatalogs = [];
         
-        catalogs.forEach(catalogKey => {
+        collections.forEach(collection => {
+            const catalogKey = collection.id;
             const savedState = localStorage.getItem(`catalog-${catalogKey}-enabled`);
-            const defaultState = catalogKey !== 'planetlabs'; // planetlabs default is false
+            const defaultState = collection.enabled !== false;
+            
+            // If collection is explicitly disabled in config, respect that regardless of localStorage
+            if (collection.enabled === false) {
+                console.log(`🚫 Catalog ${catalogKey} is disabled in configuration - ignoring localStorage setting`);
+                return;
+            }
+            
             const isEnabled = savedState !== null ? savedState === 'true' : defaultState;
             
             if (isEnabled) {
-                // Map the localStorage keys to actual source keys
-                const sourceMapping = {
-                    'copernicus': 'copernicus',
-                    'element84': 'element84', 
-                    'microsoft-pc': 'planetary',
-                    'planetlabs': 'planetlabs'
-                };
-                enabledCatalogs.push(sourceMapping[catalogKey]);
+                enabledCatalogs.push(catalogKey);
             }
         });
         
@@ -120,7 +136,7 @@ export class CollectionManagerEnhanced {
             console.log('[DEBUG] localStorage keys:', Object.keys(localStorage).filter(k => k.includes('collections')));
             
             // Generate cache key based on enabled catalogs from settings
-            const dataSources = this.getEnabledCatalogs();
+            const dataSources = await this.getEnabledCatalogs();
             
             // If no catalogs are enabled, clear collections and return
             if (dataSources.length === 0) {
@@ -154,10 +170,7 @@ export class CollectionManagerEnhanced {
                 const groupedCollections = this.groupCollectionsBySource(cachedCollections);
                 const sourceInfo = Object.keys(groupedCollections).map(source => {
                     const count = groupedCollections[source].length;
-                    const label = source === 'copernicus' ? 'Copernicus' : 
-                                 source === 'element84' ? 'Element84' :
-                                 source === 'planetary' ? 'Microsoft Planetary Computer' :
-                                 source === 'planetlabs' ? 'Planet Labs Open Data' : source;
+                    const label = this.getCollectionDisplayName(source);
                     return `${label}: ${count}`;
                 }).join(', ');
                 
@@ -196,10 +209,7 @@ export class CollectionManagerEnhanced {
                 const groupedCollections = this.groupCollectionsBySource(allCollections);
                 const sourceInfo = Object.keys(groupedCollections).map(source => {
                     const count = groupedCollections[source].length;
-                    const label = source === 'copernicus' ? 'Copernicus' : 
-                                 source === 'element84' ? 'Element84' :
-                                 source === 'planetary' ? 'Microsoft Planetary Computer' :
-                                 source === 'planetlabs' ? 'Planet Labs Open Data' : source;
+                    const label = this.getCollectionDisplayName(source);
                     return `${label}: ${count}`;
                 }).join(', ');
                 
@@ -234,7 +244,7 @@ export class CollectionManagerEnhanced {
      */
     async loadAllCollections() {
         // Get enabled catalogs from settings
-        const dataSources = this.getEnabledCatalogs();
+        const dataSources = await this.getEnabledCatalogs();
         
         // If no catalogs are enabled, return empty array
         if (dataSources.length === 0) {
@@ -253,8 +263,8 @@ export class CollectionManagerEnhanced {
             try {
                 console.log(`🔍 Starting parallel load for ${source}...`);
                 
-                // Get endpoints for this source
-                const endpoints = this.config?.stacEndpoints?.[source];
+                // Get endpoints for this source from collections.json
+                const endpoints = await getCollectionEndpoints(source);
                 if (!endpoints) {
                     const error = `No endpoints configured for ${source}`;
                     console.warn(`⚠️ ${error}`);
@@ -264,8 +274,8 @@ export class CollectionManagerEnhanced {
                 
                 console.log(`🔗 ${source} endpoints:`, endpoints);
                 
-                // Test if endpoints are valid URLs (skip for Planet Labs which uses special handling)
-                if (source !== 'planetlabs') {
+                // Test if endpoints are valid URLs (skip for catalog-type collections)
+                if (endpoints.type !== 'catalog' && endpoints.collections) {
                     try {
                         new URL(endpoints.collections);
                     } catch (urlError) {
@@ -280,9 +290,9 @@ export class CollectionManagerEnhanced {
                 const sourceApiClient = Object.create(this.apiClient);
                 sourceApiClient.setEndpoints(endpoints);
                 
-                // For Planet Labs, connect to catalog first
-                if (source === 'planetlabs') {
-                    console.log(`🪐 Connecting to Planet Labs catalog...`);
+                // For catalog-type collections, connect to catalog first
+                if (endpoints.type === 'catalog') {
+                    console.log(`📂 Connecting to ${source} catalog...`);
                     await sourceApiClient.connectToCustomCatalog(endpoints.root);
                 }
                 
@@ -302,14 +312,8 @@ export class CollectionManagerEnhanced {
                     const collectionsWithSource = collections.map(collection => ({
                         ...collection,
                         source: source,
-                        sourceLabel: source === 'copernicus' ? 'Copernicus' : 
-                                   source === 'element84' ? 'Element84' :
-                                   source === 'planetary' ? 'Microsoft Planetary Computer' :
-                                   source === 'planetlabs' ? 'Planet Labs Open Data' : source,
-                        displayTitle: `${collection.title || collection.id} (${source === 'copernicus' ? 'Copernicus' : 
-                                                                           source === 'element84' ? 'Element84' :
-                                                                           source === 'planetary' ? 'Microsoft Planetary Computer' :
-                                                                           source === 'planetlabs' ? 'Planet Labs Open Data' : source})`
+                        sourceLabel: this.getCollectionDisplayName(source),
+                        displayTitle: `${collection.title || collection.id} (${this.getCollectionDisplayName(source)})`
                     }));
                     
                     console.log(`✅ Loaded ${collections.length} collections from ${source}`);
@@ -375,7 +379,7 @@ export class CollectionManagerEnhanced {
      * Handle collection selection
      * @param {string} collectionId - Selected collection ID
      */
-    handleCollectionSelection(collectionId) {
+    async handleCollectionSelection(collectionId) {
         this.selectedCollection = collectionId;
         
         // Trigger tutorial event for collection selection
@@ -401,7 +405,7 @@ export class CollectionManagerEnhanced {
                     catalogSelect.value = collection.source;
                     
                     // Update the API client to use the correct endpoints
-                    const endpoints = this.config.stacEndpoints[collection.source];
+                    const endpoints = await getCollectionEndpoints(collection.source);
                     if (endpoints) {
                         this.apiClient.setEndpoints(endpoints);
                     }
@@ -608,7 +612,7 @@ export class CollectionManagerEnhanced {
      * @param {string} collectionId - Collection ID to select
      * @param {string} source - Source of the collection
      */
-    setSelectedCollection(collectionId, source = null) {
+    async setSelectedCollection(collectionId, source = null) {
         const select = document.getElementById('collection-select');
         if (select) {
             select.value = collectionId;
@@ -621,7 +625,7 @@ export class CollectionManagerEnhanced {
                     catalogSelect.value = source;
                     
                     // Update API client endpoints
-                    const endpoints = this.config.stacEndpoints[source];
+                    const endpoints = await getCollectionEndpoints(source);
                     if (endpoints) {
                         this.apiClient.setEndpoints(endpoints);
                     }

@@ -4,6 +4,8 @@
  * Manages all application state via URL parameters with consistent naming
  */
 
+import { getCollectionEndpoints } from './CollectionConfig.js';
+
 export class UnifiedStateManager {
     constructor(components = {}) {
         // Component references
@@ -442,32 +444,8 @@ export class UnifiedStateManager {
     /**
      * Get catalog endpoint by ID
      */
-    getCatalogEndpoint(catalogId) {
-        // This should match the catalog IDs from the config
-        const catalogEndpoints = {
-            'copernicus': { 
-                root: 'https://stac.dataspace.copernicus.eu/v1',
-                collections: 'https://stac.dataspace.copernicus.eu/v1/collections',
-                search: 'https://stac.dataspace.copernicus.eu/v1/search'
-            },
-            'element84': { 
-                root: 'https://earth-search.aws.element84.com/v1',
-                collections: 'https://earth-search.aws.element84.com/v1/collections',
-                search: 'https://earth-search.aws.element84.com/v1/search'
-            },
-            'planetary': { 
-                root: 'https://planetarycomputer.microsoft.com/api/stac/v1',
-                collections: 'https://planetarycomputer.microsoft.com/api/stac/v1/collections',
-                search: 'https://planetarycomputer.microsoft.com/api/stac/v1/search'
-            },
-            'planetlabs': { 
-                root: 'https://api.planet.com/data/v1',
-                collections: 'https://api.planet.com/data/v1/collections',
-                search: 'https://api.planet.com/data/v1/search'
-            }
-        };
-        
-        return catalogEndpoints[catalogId] || null;
+    async getCatalogEndpoint(catalogId) {
+        return await getCollectionEndpoints(catalogId);
     }
     
     /**
@@ -1289,9 +1267,9 @@ export class UnifiedStateManager {
             
             // Map common STAC providers to friendly names
             const providerMappings = {
-                'earth-search.aws.element84.com': 'element84',
-                'planetarycomputer.microsoft.com': 'planetary-computer',
-                'stac.dataspace.copernicus.eu': 'copernicus',
+                'earth-search.aws.element84.com': 'earth-search-aws',
+                'planetarycomputer.microsoft.com': 'microsoft-pc',
+                'stac.dataspace.copernicus.eu': 'cdse-stac',
                 'stac.ceos.org': 'ceos',
                 'stacindex.org': 'stac-index',
                 'catalog.digitalearth.africa': 'digital-earth-africa',
@@ -1333,9 +1311,9 @@ export class UnifiedStateManager {
         
         // Reverse mapping for known providers
         const reverseProviderMappings = {
-            'element84': 'https://earth-search.aws.element84.com/v1',
-            'planetary-computer': 'https://planetarycomputer.microsoft.com/api/stac/v1',
-            'copernicus': 'https://stac.dataspace.copernicus.eu/v1',
+            'earth-search-aws': 'https://earth-search.aws.element84.com/v1',
+            'microsoft-pc': 'https://planetarycomputer.microsoft.com/api/stac/v1',
+            'cdse-stac': 'https://stac.dataspace.copernicus.eu/v1',
             'ceos': 'https://stac.ceos.org',
             'stac-index': 'https://stacindex.org',
             'digital-earth-africa': 'https://catalog.digitalearth.africa/stac',

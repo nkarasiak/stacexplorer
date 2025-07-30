@@ -2,6 +2,8 @@
  * UIManager.js - Core UI functionality handling global UI interactions
  */
 
+import { loadCollections, getCollectionName } from '../../utils/CollectionConfig.js';
+
 export class UIManager {
     constructor() {
         this.sidebarCollapsed = false;
@@ -100,8 +102,8 @@ export class UIManager {
             document.addEventListener('keydown', this.handleSettingsPanelEscape);
         }
         
-        // Initialize catalog toggles
-        this.initializeCatalogToggles();
+        // Initialize dynamic UI elements from collections.json
+        this.initializeDynamicUI();
         
         // Browse Collections panel
         const browseCollectionsCloseBtn = document.getElementById('browse-collections-close-btn');
@@ -473,7 +475,7 @@ export class UIManager {
             this.updateGPUStatus('panel');
             
             // Initialize catalog toggles for panel
-            this.initializeCatalogToggles('panel');
+            this.populateCatalogToggles('panel');
             
             console.log('🔧 Settings panel shown');
         } else {
@@ -569,38 +571,112 @@ export class UIManager {
     }
     
     /**
-     * Initialize catalog toggles with default states and event listeners
+     * Initialize dynamic UI elements from collections.json
      */
-    initializeCatalogToggles(context = 'modal') {
-        const suffix = context === 'panel' ? '-panel' : '';
-        const catalogs = {
-            [`catalog-copernicus-toggle${suffix}`]: { key: 'copernicus', default: true },
-            [`catalog-element84-toggle${suffix}`]: { key: 'element84', default: true },
-            [`catalog-microsoft-toggle${suffix}`]: { key: 'microsoft-pc', default: true },
-            [`catalog-planetlabs-toggle${suffix}`]: { key: 'planetlabs', default: false }
-        };
+    async initializeDynamicUI() {
+        await this.populateCatalogDropdown();
+        await this.populateCatalogToggles('modal');
+    }
+    
+    /**
+     * Populate catalog dropdown with collections from collections.json
+     */
+    async populateCatalogDropdown() {
+        const collections = await loadCollections();
+        const catalogSelect = document.getElementById('catalog-select');
         
-        // Load saved states or set defaults
-        Object.keys(catalogs).forEach(toggleId => {
+        if (!catalogSelect) return;
+        
+        // Get existing options (auto-detect and custom)
+        const autoDetectOption = catalogSelect.querySelector('option[value=""]');
+        const customOption = catalogSelect.querySelector('option[value="custom"]');
+        
+        // Clear all options
+        catalogSelect.innerHTML = '';
+        
+        // Re-add auto-detect option
+        if (autoDetectOption) {
+            catalogSelect.appendChild(autoDetectOption);
+        }
+        
+        // Add collection options
+        collections.forEach(collection => {
+            const option = document.createElement('option');
+            option.value = collection.id;
+            
+            // Add appropriate emoji/icon based on collection name
+            const icons = {
+                'cdse-stac': '🛰️',
+                'earth-search-aws': '🌍',
+                'microsoft-pc': '💻',
+                'planetlabs': '🪐',
+                'gee': '🌎'
+            };
+            
+            const icon = icons[collection.id] || '📊';
+            option.textContent = `${icon} ${collection.name}`;
+            catalogSelect.appendChild(option);
+        });
+        
+        // Re-add custom option
+        if (customOption) {
+            catalogSelect.appendChild(customOption);
+        }
+    }
+    
+    /**
+     * Populate catalog toggles with collections from collections.json
+     */
+    async populateCatalogToggles(context = 'modal') {
+        const suffix = context === 'panel' ? '-panel' : '';
+        const containerId = `catalog-toggles-${context}-container`;
+        const container = document.getElementById(containerId);
+        
+        if (!container) return;
+        
+        const collections = await loadCollections();
+        
+        // Clear existing content
+        container.innerHTML = '';
+        
+        // Create toggle for each collection
+        collections.forEach(collection => {
+            const toggleId = `catalog-${collection.id}-toggle${suffix}`;
+            const description = collection.description || 'STAC data catalog';
+            
+            // Create toggle HTML
+            const toggleHTML = `
+                <div class="setting-item">
+                    <div class="setting-content">
+                        <div class="setting-label">${collection.name}</div>
+                        <div class="setting-description">${description}</div>
+                    </div>
+                    <div class="setting-control">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="${toggleId}" ${collection.enabled !== false ? 'checked' : ''}>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', toggleHTML);
+            
+            // Add event listener
             const toggle = document.getElementById(toggleId);
             if (toggle) {
-                const catalogKey = catalogs[toggleId].key;
-                const defaultState = catalogs[toggleId].default;
-                
-                // Load from localStorage or use default
-                const savedState = localStorage.getItem(`catalog-${catalogKey}-enabled`);
+                // Load saved state
+                const savedState = localStorage.getItem(`catalog-${collection.id}-enabled`);
+                const defaultState = collection.enabled !== false;
                 const isEnabled = savedState !== null ? savedState === 'true' : defaultState;
                 
                 toggle.checked = isEnabled;
                 
-                // Add event listener
                 toggle.addEventListener('change', (e) => {
-                    this.handleCatalogToggle(catalogKey, e.target.checked);
+                    this.handleCatalogToggle(collection.id, e.target.checked);
                 });
             }
         });
-        
-        console.log('📊 Catalog toggles initialized with default states');
     }
     
     /**
@@ -622,29 +698,25 @@ export class UIManager {
         
         // Optional: Show a brief notification
         if (window.notificationService) {
-            const catalogNames = {
-                'copernicus': 'Copernicus Data Space',
-                'element84': 'Element84 Earth Search',
-                'microsoft-pc': 'Microsoft Planetary Computer',
-                'planetlabs': 'Planet Labs'
-            };
-            
-            const catalogName = catalogNames[catalogKey] || catalogKey;
-            const status = isEnabled ? 'enabled' : 'disabled';
-            window.notificationService.show(`${catalogName} ${status}`, 'info', 2000);
+            getCollectionName(catalogKey).then(catalogName => {
+                const displayName = catalogName || catalogKey;
+                const status = isEnabled ? 'enabled' : 'disabled';
+                window.notificationService.show(`${displayName} ${status}`, 'info', 2000);
+            });
         }
     }
     
     /**
      * Get current catalog enabled states
      */
-    getCatalogStates() {
+    async getCatalogStates() {
         const states = {};
-        const catalogs = ['copernicus', 'element84', 'microsoft-pc', 'planetlabs'];
+        const collections = await loadCollections();
         
-        catalogs.forEach(catalogKey => {
+        collections.forEach(collection => {
+            const catalogKey = collection.id;
             const savedState = localStorage.getItem(`catalog-${catalogKey}-enabled`);
-            const defaultState = catalogKey !== 'planetlabs'; // planetlabs default is false
+            const defaultState = collection.enabled !== false;
             states[catalogKey] = savedState !== null ? savedState === 'true' : defaultState;
         });
         

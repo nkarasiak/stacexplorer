@@ -806,6 +806,40 @@ html.light-theme .source-filter-select:focus {
     }
 }
 
+/* Additional dark theme support for html.dark-theme selector */
+html.dark-theme .collection-grid-selector,
+html.dark-theme #collection-grid-container {
+    background: var(--background-dark, #1f2937);
+    border-color: var(--border-dark, #374151);
+}
+
+html.dark-theme .collection-card {
+    background: var(--background-dark-secondary, #374151);
+    border-color: var(--border-dark, #4b5563);
+}
+
+html.dark-theme .collection-card-title {
+    color: var(--text-dark, #f9fafb);
+}
+
+html.dark-theme .collection-card.priority-collection .collection-card-title {
+    color: var(--text-dark, #f9fafb) !important;
+}
+
+html.dark-theme .collection-card-description {
+    color: var(--text-dark-secondary, #d1d5db);
+}
+
+html.dark-theme .collection-card-meta {
+    color: var(--text-dark-secondary, #d1d5db);
+}
+
+html.dark-theme .collection-stats {
+    background: var(--background-dark-secondary, #374151);
+    border-color: var(--border-dark, #4b5563);
+    color: var(--text-dark-secondary, #d1d5db);
+}
+
 /* Accessibility improvements */
 .collection-card:focus {
     outline: 2px solid var(--primary-color, #667eea);

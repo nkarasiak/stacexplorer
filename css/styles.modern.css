@@ -5315,6 +5315,12 @@ html.dark-theme .modal-body .info-group div {
     min-height: 0;
 }
 
+/* Dark theme for browse collections panel */
+html.dark-theme .browse-collections-panel #collection-grid-container {
+    background: var(--background-dark, #1f2937);
+    color: var(--text-dark, #f9fafb);
+}
+
 /* Dark theme for settings panel */
 html.dark-theme .settings-panel {
     background: var(--background-dark, #1f2937);

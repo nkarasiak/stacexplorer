@@ -1296,7 +1296,7 @@ export class UnifiedRouter {
         try {
             // Try to get from collection selector
             const collectionSelect = document.getElementById('collection-select');
-            if (collectionSelect && collectionSelect.value && collectionSelect.value !== 'Everything') {
+            if (collectionSelect && collectionSelect.value) {
                 console.log('📍 Current collection ID from selector:', collectionSelect.value);
                 return collectionSelect.value;
             }

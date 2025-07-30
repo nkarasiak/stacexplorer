@@ -1,13 +1,11 @@
 /**
  * InlineDropdownManagerModular - Modular dropdown manager
  * 
- * Combines DropdownCore, LocationDropdown, and other dropdown modules
+ * Manages date dropdown functionality using DropdownCore
  * This is the new modular version that replaces the monolithic InlineDropdownManager
  */
 
 import { DropdownCore } from '../../core/ui/dropdown/DropdownCore.js';
-import { LocationDropdown } from '../../core/ui/dropdown/LocationDropdown.js';
-import { defaultGeocodingService } from '../../utils/GeocodingService.js';
 
 export class InlineDropdownManager {
     constructor(apiClient, searchPanel, collectionManager, mapManager, notificationService) {
@@ -19,16 +17,9 @@ export class InlineDropdownManager {
         
         // Initialize modular components
         this.dropdownCore = new DropdownCore();
-        this.locationDropdown = new LocationDropdown(
-            defaultGeocodingService, 
-            mapManager, 
-            notificationService
-        );
         
         // State management
         this.selectedDate = { type: 'anytime', start: null, end: null };
-        this.selectedLocation = 'everywhere';
-        this.selectedCollection = null;
         this.cloudCover = 20;
         this.allAvailableCollections = [];
     }
@@ -39,11 +30,6 @@ export class InlineDropdownManager {
     initializeInlineDropdowns() {
         console.log('🎛️ Initializing modular inline dropdowns...');
         
-        // Set up source dropdown
-        this.setupSourceDropdown();
-        
-        // Set up location dropdown
-        this.setupLocationDropdown();
         
         // Set up date dropdown
         this.setupDateDropdown();
@@ -57,47 +43,7 @@ export class InlineDropdownManager {
         console.log('✅ Modular inline dropdowns initialized');
     }
 
-    /**
-     * Set up source dropdown
-     */
-    setupSourceDropdown() {
-        const sourceCard = document.getElementById('summary-source');
-        if (!sourceCard) return;
 
-        sourceCard.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            if (this.dropdownCore.isOpen()) {
-                this.dropdownCore.cleanupDropdown();
-                return;
-            }
-
-            const content = this.createSimpleCollectionDropdown();
-            const dropdown = this.dropdownCore.createDropdown(sourceCard, content);
-            this.setupCollectionDropdownHandlers(dropdown);
-        });
-    }
-
-    /**
-     * Set up location dropdown
-     */
-    setupLocationDropdown() {
-        const locationCard = document.getElementById('summary-location');
-        if (!locationCard) return;
-
-        locationCard.addEventListener('click', (e) => {
-            e.stopPropagation();
-            
-            if (this.dropdownCore.isOpen()) {
-                this.dropdownCore.cleanupDropdown();
-                return;
-            }
-
-            const content = this.locationDropdown.createLocationDropdownContent();
-            const dropdown = this.dropdownCore.createDropdown(locationCard, content);
-            this.locationDropdown.setupLocationDropdownHandlers(dropdown);
-        });
-    }
 
     /**
      * Set up date dropdown
@@ -120,48 +66,6 @@ export class InlineDropdownManager {
         });
     }
 
-    /**
-     * Create simple collection dropdown content
-     */
-    createSimpleCollectionDropdown() {
-        return `
-            <div class="dropdown-section">
-                <div class="dropdown-header">
-                    <h3>Data Sources</h3>
-                </div>
-                
-                <div class="collection-options">
-                    <div class="collection-option" data-collection="all">
-                        <div class="collection-info">
-                            <div class="collection-name">🌍 Everything</div>
-                            <div class="collection-description">Search across all available catalogs</div>
-                        </div>
-                    </div>
-                    
-                    <div class="collection-option" data-collection="copernicus">
-                        <div class="collection-info">
-                            <div class="collection-name">🛰️ Copernicus Data Space</div>
-                            <div class="collection-description">ESA satellite data (Sentinel-1, Sentinel-2, etc.)</div>
-                        </div>
-                    </div>
-                    
-                    <div class="collection-option" data-collection="planetary-computer">
-                        <div class="collection-info">
-                            <div class="collection-name">🌐 Planetary Computer</div>
-                            <div class="collection-description">Microsoft's Earth observation datasets</div>
-                        </div>
-                    </div>
-                    
-                    <div class="collection-option" data-collection="earth-search">
-                        <div class="collection-info">
-                            <div class="collection-name">🔍 Earth Search</div>
-                            <div class="collection-description">Element 84's Landsat and Sentinel-2 data</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
 
     /**
      * Create simple date dropdown content
@@ -211,20 +115,6 @@ export class InlineDropdownManager {
         `;
     }
 
-    /**
-     * Set up collection dropdown handlers
-     */
-    setupCollectionDropdownHandlers(dropdown) {
-        const options = dropdown.querySelectorAll('.collection-option');
-        
-        options.forEach(option => {
-            option.addEventListener('click', () => {
-                const collection = option.dataset.collection;
-                this.selectCollection(collection);
-                this.dropdownCore.cleanupDropdown();
-            });
-        });
-    }
 
     /**
      * Set up date dropdown handlers
@@ -241,26 +131,6 @@ export class InlineDropdownManager {
         });
     }
 
-    /**
-     * Select collection
-     */
-    selectCollection(collection) {
-        this.selectedCollection = collection;
-        
-        // Update UI
-        const sourceValue = document.querySelector('#summary-source .search-summary-value');
-        if (sourceValue) {
-            const collectionNames = {
-                'all': 'Everything',
-                'copernicus': 'Copernicus Data Space',
-                'planetary-computer': 'Planetary Computer',
-                'earth-search': 'Earth Search'
-            };
-            sourceValue.textContent = collectionNames[collection] || collection;
-        }
-        
-        console.log('Collection selected:', collection);
-    }
 
     /**
      * Select date preset
@@ -720,28 +590,20 @@ export class InlineDropdownManager {
      */
     getSelectedValues() {
         return {
-            collection: this.selectedCollection,
             date: this.selectedDate,
-            location: this.locationDropdown.getSelectedLocationResult(),
             cloudCover: this.cloudCover
         };
     }
 
     /**
      * Update search summary display
-     * @param {string} category - The category to update (collection, location, date)
+     * @param {string} category - The category to update (date)
      * @param {string} displayName - The display name to show
      */
     updateSearchSummary(category, displayName) {
         let elementId;
         
         switch (category) {
-            case 'collection':
-                elementId = 'summary-source';
-                break;
-            case 'location':
-                elementId = 'summary-location';
-                break;
             case 'date':
                 elementId = 'summary-date';
                 break;

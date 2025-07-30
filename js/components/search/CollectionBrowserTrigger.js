@@ -355,13 +355,13 @@ export class CollectionBrowserTrigger {
         
         // Reset the search summary value
         if (this.valueElement) {
-            this.valueElement.textContent = 'Everything';
+            this.valueElement.textContent = 'Select Source';
             this.triggerButton.classList.remove('has-selection');
         }
         
         // Update the inline dropdown manager if it exists
         if (this.inlineDropdownManager) {
-            this.inlineDropdownManager.updateSearchSummary('collection', '📂 Everything');
+            this.inlineDropdownManager.updateSearchSummary('collection', '📂 Select Source');
         }
         
         // Ensure button remains clickable after clearing

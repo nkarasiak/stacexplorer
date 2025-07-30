@@ -1400,13 +1400,13 @@ export class UnifiedStateManager {
             }
             
             // Try to get from current state
-            if (this.currentState && this.currentState.collection && this.currentState.collection !== 'Everything') {
+            if (this.currentState && this.currentState.collection) {
                 return this.currentState.collection;
             }
             
             // Try to get from collection selector
             const collectionSelect = document.getElementById('collection-select');
-            if (collectionSelect && collectionSelect.value && collectionSelect.value !== 'Everything') {
+            if (collectionSelect && collectionSelect.value) {
                 return collectionSelect.value;
             }
             

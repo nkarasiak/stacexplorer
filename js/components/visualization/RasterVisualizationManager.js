@@ -9,6 +9,9 @@ import { defaultBandEngine } from './BandCombinationEngine.js';
 
 export class RasterVisualizationManager {
     constructor(mapManager, bandEngine = defaultBandEngine) {
+        if (!mapManager) {
+            throw new Error('MapManager is required for RasterVisualizationManager');
+        }
         this.mapManager = mapManager;
         this.bandEngine = bandEngine;
         this.currentLayers = new Map();
@@ -128,8 +131,14 @@ export class RasterVisualizationManager {
 
         const sourceId = `${layerId}-source`;
 
+        // Check if map is available
+        const map = this.mapManager.getMap();
+        if (!map) {
+            throw new Error('Map is not available - MapManager may not be fully initialized');
+        }
+
         // Add raster source to MapLibre
-        this.mapManager.map.addSource(sourceId, {
+        map.addSource(sourceId, {
             type: 'raster',
             tiles: [urlTemplate],
             tileSize: 256,
@@ -139,7 +148,7 @@ export class RasterVisualizationManager {
         });
 
         // Add raster layer to MapLibre
-        this.mapManager.map.addLayer({
+        map.addLayer({
             id: layerId,
             type: 'raster',
             source: sourceId,
@@ -156,16 +165,16 @@ export class RasterVisualizationManager {
         
         // Debug: Check if layer was actually added
         setTimeout(() => {
-            const layerExists = this.mapManager.map.getLayer(layerId);
-            const sourceExists = this.mapManager.map.getSource(sourceId);
+            const layerExists = this.mapManager.getMap().getLayer(layerId);
+            const sourceExists = this.mapManager.getMap().getSource(sourceId);
             console.log(`🔍 [DEBUG] Layer exists: ${!!layerExists}, Source exists: ${!!sourceExists}`);
             if (layerExists) {
-                const opacity = this.mapManager.map.getPaintProperty(layerId, 'raster-opacity');
-                const visibility = this.mapManager.map.getLayoutProperty(layerId, 'visibility');
+                const opacity = this.mapManager.getMap().getPaintProperty(layerId, 'raster-opacity');
+                const visibility = this.mapManager.getMap().getLayoutProperty(layerId, 'visibility');
                 console.log(`🔍 [DEBUG] Layer opacity: ${opacity}, visibility: ${visibility}`);
             }
             if (sourceExists) {
-                const source = this.mapManager.map.getSource(sourceId);
+                const source = this.mapManager.getMap().getSource(sourceId);
                 console.log(`🔍 [DEBUG] Source tiles:`, source.tiles);
             }
         }, 100);
@@ -191,7 +200,7 @@ export class RasterVisualizationManager {
         console.log(`🔗 [MAPLIBRE] Setting up events for layer: ${layerId}, source: ${sourceId}`);
 
         // Listen for source data events
-        this.mapManager.map.on('sourcedata', (e) => {
+        this.mapManager.getMap().on('sourcedata', (e) => {
             if (e.sourceId === sourceId) {
                 console.log(`📊 [MAPLIBRE] Source data event for ${sourceId}: type=${e.dataType}, loaded=${e.isSourceLoaded}`);
                 
@@ -203,7 +212,7 @@ export class RasterVisualizationManager {
         });
 
         // Listen for data loading events
-        this.mapManager.map.on('dataloading', (e) => {
+        this.mapManager.getMap().on('dataloading', (e) => {
             if (e.sourceId === sourceId) {
                 console.log(`⏳ [MAPLIBRE] Data loading for ${sourceId}, type: ${e.dataType}`);
                 this.updateLoadingStatus(layerId, 1, 1); // Simplified for MapLibre
@@ -211,7 +220,7 @@ export class RasterVisualizationManager {
         });
 
         // Listen for data events (when tiles load)
-        this.mapManager.map.on('data', (e) => {
+        this.mapManager.getMap().on('data', (e) => {
             if (e.sourceId === sourceId && e.dataType === 'source') {
                 console.log(`📋 [MAPLIBRE] Data loaded for ${sourceId}`);
                 this.updateLoadingStatus(layerId, 0, 1); // Mark as complete
@@ -219,7 +228,7 @@ export class RasterVisualizationManager {
         });
 
         // Listen for errors
-        this.mapManager.map.on('error', (e) => {
+        this.mapManager.getMap().on('error', (e) => {
             console.warn(`🔴 [MAPLIBRE] Error for source ${sourceId}:`, e.error);
             // Don't automatically remove layer on error, let user decide
         });
@@ -280,8 +289,8 @@ export class RasterVisualizationManager {
      */
     setLayerOpacity(layerId, opacity) {
         const layerInfo = this.currentLayers.get(layerId);
-        if (layerInfo && this.mapManager.map.getLayer(layerId)) {
-            this.mapManager.map.setPaintProperty(layerId, 'raster-opacity', opacity);
+        if (layerInfo && this.mapManager.getMap().getLayer(layerId)) {
+            this.mapManager.getMap().setPaintProperty(layerId, 'raster-opacity', opacity);
             this.layerOpacities.set(layerId, opacity);
             
             this.dispatchLayerEvent('layerOpacityChanged', { layerId, opacity });
@@ -296,9 +305,9 @@ export class RasterVisualizationManager {
      */
     setLayerVisibility(layerId, visible) {
         const layerInfo = this.currentLayers.get(layerId);
-        if (layerInfo && this.mapManager.map.getLayer(layerId)) {
+        if (layerInfo && this.mapManager.getMap().getLayer(layerId)) {
             const visibility = visible ? 'visible' : 'none';
-            this.mapManager.map.setLayoutProperty(layerId, 'visibility', visibility);
+            this.mapManager.getMap().setLayoutProperty(layerId, 'visibility', visibility);
             layerInfo.visible = visible;
             
             this.dispatchLayerEvent('layerVisibilityChanged', { layerId, visible });
@@ -315,11 +324,11 @@ export class RasterVisualizationManager {
             // Fade out before removing
             this.fadeOutMapLibreLayer(layerId, () => {
                 // Remove layer and source from MapLibre
-                if (this.mapManager.map.getLayer(layerId)) {
-                    this.mapManager.map.removeLayer(layerId);
+                if (this.mapManager.getMap().getLayer(layerId)) {
+                    this.mapManager.getMap().removeLayer(layerId);
                 }
-                if (this.mapManager.map.getSource(layerInfo.sourceId)) {
-                    this.mapManager.map.removeSource(layerInfo.sourceId);
+                if (this.mapManager.getMap().getSource(layerInfo.sourceId)) {
+                    this.mapManager.getMap().removeSource(layerInfo.sourceId);
                 }
                 
                 // Clean up references after MapLibre cleanup
@@ -381,7 +390,7 @@ export class RasterVisualizationManager {
                 [east + lngPadding, north + latPadding]
             ];
             
-            this.mapManager.map.fitBounds(paddedBounds, {
+            this.mapManager.getMap().fitBounds(paddedBounds, {
                 animate: true,
                 duration: 1.0
             });
@@ -394,7 +403,7 @@ export class RasterVisualizationManager {
      * @param {number} targetOpacity - Target opacity
      */
     fadeInMapLibreLayer(layerId, targetOpacity = 1.0) {
-        if (!this.mapManager.map.getLayer(layerId)) return;
+        if (!this.mapManager.getMap().getLayer(layerId)) return;
         
         const steps = 20;
         const stepSize = targetOpacity / steps;
@@ -407,8 +416,8 @@ export class RasterVisualizationManager {
                 clearInterval(interval);
             }
             
-            if (this.mapManager.map.getLayer(layerId)) {
-                this.mapManager.map.setPaintProperty(layerId, 'raster-opacity', currentOpacity);
+            if (this.mapManager.getMap().getLayer(layerId)) {
+                this.mapManager.getMap().setPaintProperty(layerId, 'raster-opacity', currentOpacity);
             } else {
                 clearInterval(interval);
             }
@@ -421,7 +430,7 @@ export class RasterVisualizationManager {
      * @param {Function} callback - Callback after fade completes
      */
     fadeOutMapLibreLayer(layerId, callback) {
-        if (!this.mapManager.map.getLayer(layerId)) {
+        if (!this.mapManager.getMap().getLayer(layerId)) {
             if (callback) callback();
             return;
         }
@@ -439,14 +448,14 @@ export class RasterVisualizationManager {
             opacity -= stepSize;
             if (opacity <= 0) {
                 opacity = 0;
-                if (this.mapManager.map.getLayer(layerId)) {
-                    this.mapManager.map.setPaintProperty(layerId, 'raster-opacity', opacity);
+                if (this.mapManager.getMap().getLayer(layerId)) {
+                    this.mapManager.getMap().setPaintProperty(layerId, 'raster-opacity', opacity);
                 }
                 clearInterval(interval);
                 if (callback) callback();
             } else {
-                if (this.mapManager.map.getLayer(layerId)) {
-                    this.mapManager.map.setPaintProperty(layerId, 'raster-opacity', opacity);
+                if (this.mapManager.getMap().getLayer(layerId)) {
+                    this.mapManager.getMap().setPaintProperty(layerId, 'raster-opacity', opacity);
                 } else {
                     clearInterval(interval);
                     if (callback) callback();

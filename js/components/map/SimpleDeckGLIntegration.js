@@ -10,6 +10,7 @@ class SimpleDeckGLIntegration {
         this.deck = null;
         this.isInitialized = false;
         this.currentLayer = null;
+        this.currentBlobUrl = null; // For cleanup of blob URLs
     }
 
     /**
@@ -175,10 +176,18 @@ class SimpleDeckGLIntegration {
                 return false;
             }
 
+            // Convert image URL to base64 to avoid CORS issues
+            const imageData = await this.getImageAsBase64(asset.href);
+            
+            // Store blob URL for cleanup
+            if (imageData && imageData.startsWith('blob:')) {
+                this.currentBlobUrl = imageData;
+            }
+
             // Create bitmap layer using global Deck.gl
             const layer = new window.deck.BitmapLayer({
                 id: `stac-item-${item.id}`,
-                image: asset.href,
+                image: imageData,
                 bounds: [bbox[0], bbox[1], bbox[2], bbox[3]], // [west, south, east, north]
                 
                 // Enhanced rendering options
@@ -207,8 +216,12 @@ class SimpleDeckGLIntegration {
                 layers: [layer]
             });
 
-            // Fit map to bounds
-            this.mapManager.fitMapToBbox(bbox);
+            // Fit map to bounds (only if preserveViewport is not set)
+            if (!options.preserveViewport) {
+                this.mapManager.mapLayers.fitMapToBbox(bbox);
+            } else {
+                console.log('🔒 Preserving viewport - not centering/zooming to item');
+            }
 
             console.log('✅ STAC layer added successfully with simple Deck.gl');
             return true;
@@ -225,6 +238,12 @@ class SimpleDeckGLIntegration {
      */
     removeStacLayer() {
         if (this.currentLayer) {
+            // Clean up blob URLs to prevent memory leaks
+            if (this.currentBlobUrl && this.currentBlobUrl.startsWith('blob:')) {
+                URL.revokeObjectURL(this.currentBlobUrl);
+                this.currentBlobUrl = null;
+            }
+            
             this.currentLayer = null;
             if (this.deck) {
                 this.deck.setProps({ layers: [] });
@@ -293,6 +312,75 @@ class SimpleDeckGLIntegration {
     }
 
     /**
+     * Convert image URL to usable format for Deck.gl, avoiding CORS issues
+     * @param {string} imageUrl - The image URL to convert
+     * @returns {Promise<string|Blob>} Base64 data URL or blob URL
+     */
+    async getImageAsBase64(imageUrl) {
+        try {
+            console.log('🖼️ Converting image to avoid CORS:', imageUrl);
+            
+            // First try to fetch as blob (like LazyImageLoader does)
+            const response = await fetch(imageUrl, {
+                mode: 'cors',
+                cache: 'force-cache'
+            });
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                
+                // Validate blob
+                if (blob && blob.size > 0 && blob.type.startsWith('image/')) {
+                    console.log('✅ Successfully fetched image as blob');
+                    return URL.createObjectURL(blob);
+                }
+            }
+            
+            throw new Error('Fetch failed or invalid blob');
+            
+        } catch (fetchError) {
+            console.warn('⚠️ Fetch failed, trying direct image loading with canvas conversion:', fetchError);
+            
+            // Fallback to canvas approach
+            return new Promise((resolve) => {
+                const img = new Image();
+                
+                img.onload = () => {
+                    try {
+                        // Create canvas
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        // Set canvas size to match image
+                        canvas.width = img.naturalWidth || img.width;
+                        canvas.height = img.naturalHeight || img.height;
+                        
+                        // Draw image to canvas
+                        ctx.drawImage(img, 0, 0);
+                        
+                        // Convert to base64
+                        const dataURL = canvas.toDataURL('image/jpeg', 0.8);
+                        console.log('✅ Converted image to base64 via canvas');
+                        resolve(dataURL);
+                        
+                    } catch (canvasError) {
+                        console.warn('❌ Canvas conversion failed, using original URL:', canvasError);
+                        resolve(imageUrl);
+                    }
+                };
+                
+                img.onerror = () => {
+                    console.warn('❌ Direct image loading failed, using original URL');
+                    resolve(imageUrl);
+                };
+                
+                // Try without crossOrigin first
+                img.src = imageUrl;
+            });
+        }
+    }
+
+    /**
      * Resize Deck.gl canvas
      */
     resize() {
@@ -310,6 +398,12 @@ class SimpleDeckGLIntegration {
     destroy() {
         if (this.cleanupSync) {
             this.cleanupSync();
+        }
+
+        // Clean up blob URLs
+        if (this.currentBlobUrl && this.currentBlobUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(this.currentBlobUrl);
+            this.currentBlobUrl = null;
         }
 
         if (this.deck) {

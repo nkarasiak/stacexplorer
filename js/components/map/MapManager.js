@@ -81,13 +81,16 @@ export class MapManager {
             return;
         }
         
+        // Pass preserveViewport in options for Deck.gl integration
+        const deckOptions = { ...options, preserveViewport };
+        
         // Try Deck.gl first if available
         if (this.deckGLIntegration && this.deckGLIntegration.isAvailable() && !options.forceMapLibre) {
             try {
                 const success = await this.deckGLIntegration.addStacItemLayer(
                     item, 
                     preferredAssetKey || 'rendered_preview',
-                    options
+                    deckOptions
                 );
                 
                 if (success) {
@@ -126,6 +129,8 @@ export class MapManager {
             // Fit map to item bounds (unless preserveViewport is true)
             if (!preserveViewport) {
                 this.mapLayers.fitMapToBbox(bbox);
+            } else {
+                console.log('🔒 Preserving viewport - not centering/zooming to item');
             }
             
             // For now, just show boundary (full implementation would handle asset loading)
@@ -225,7 +230,17 @@ export class MapManager {
      */
     displayBboxOnMap(bbox, label = 'Location') {
         if (!this.mapCore.isMapReady()) {
-            console.error('❌ Map not initialized');
+            console.warn('⚠️ Map not ready for bbox display, waiting for initialization...');
+            // Wait for map to be ready and retry
+            const waitForMap = () => {
+                if (this.mapCore.isMapReady()) {
+                    console.log('✅ Map ready, displaying bbox');
+                    this.displayBboxOnMap(bbox, label);
+                } else {
+                    setTimeout(waitForMap, 100);
+                }
+            };
+            setTimeout(waitForMap, 100);
             return;
         }
 
@@ -293,6 +308,17 @@ export class MapManager {
      */
     resize() {
         return this.mapCore.resize();
+    }
+
+    /**
+     * Start drawing bounding box
+     */
+    startDrawingBbox(callback) {
+        if (this.mapDrawing) {
+            return this.mapDrawing.startDrawingBbox(callback);
+        } else {
+            console.warn('MapDrawing not initialized');
+        }
     }
 
     /**

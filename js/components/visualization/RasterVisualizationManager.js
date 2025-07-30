@@ -21,7 +21,6 @@ export class RasterVisualizationManager {
         this.maxLayers = 3; // Prevent too many layers from slowing down the map
         this.defaultOpacity = 1.0;
         
-        console.log('🎨 RasterVisualizationManager initialized with TiTiler.xyz');
     }
 
     /**
@@ -37,7 +36,6 @@ export class RasterVisualizationManager {
             
             // Check layer limit
             if (this.currentLayers.size >= this.maxLayers) {
-                console.warn(`⚠️ Maximum ${this.maxLayers} layers reached. Removing oldest layer.`);
                 this.removeOldestLayer();
             }
 
@@ -52,7 +50,6 @@ export class RasterVisualizationManager {
             // Create MapLibre layer and source (use direct asset URLs, not STAC item URL)
             const { layerId: actualLayerId, sourceId } = this.createTiTilerLayer(null, selectedPreset, layerId, options, stacItem);
 
-            console.log(`🗺️ [LAYER] MapLibre layer created successfully with opacity: ${options.opacity || this.defaultOpacity}`);
 
             // Store layer information
             this.currentLayers.set(layerId, {
@@ -72,7 +69,6 @@ export class RasterVisualizationManager {
                 this.zoomToItem(stacItem, options.zoomPadding);
             }
 
-            console.log(`✅ Added STAC layer: ${selectedPreset.name} for ${stacItem.id}`);
             
             // Dispatch event for UI updates
             this.dispatchLayerEvent('layerAdded', { layerId, item: stacItem, preset, presetConfig: selectedPreset });
@@ -80,7 +76,6 @@ export class RasterVisualizationManager {
             return layerId;
 
         } catch (error) {
-            console.error('❌ Error adding STAC layer:', error);
             throw error;
         }
     }
@@ -95,9 +90,6 @@ export class RasterVisualizationManager {
      * @returns {Promise<string>} Layer ID for MapLibre
      */
     async createTiTilerLayer(stacItemUrl, presetConfig, layerId, options = {}, stacItem = null) {
-        console.log(`🗺️ [LAYER] Creating TiTiler MapLibre layer with ID: ${layerId}`);
-        console.log(`🗺️ [LAYER] STAC item:`, stacItem?.id || 'No item provided');
-        console.log(`🗺️ [LAYER] Preset config:`, presetConfig);
         // Build STAC item URL for multi-band composites or expressions
         let effectiveStacItemUrl = null;
         if ((presetConfig.assets && presetConfig.assets.length > 1) || presetConfig.expression) {
@@ -106,12 +98,9 @@ export class RasterVisualizationManager {
             const selfLink = stacItem.links?.find(link => link.rel === 'self');
             if (selfLink) {
                 effectiveStacItemUrl = selfLink.href;
-                console.log(`🗺️ [LAYER] Using STAC item URL from self link: ${effectiveStacItemUrl}`);
             } else {
-                console.log(`🗺️ [LAYER] No self link found - will use direct asset access for single band fallback`);
             }
         } else {
-            console.log(`🗺️ [LAYER] Single asset preset - using direct asset URLs`);
         }
         
         // Build the tile URL template (now async due to presigning support)
@@ -123,11 +112,9 @@ export class RasterVisualizationManager {
             { minScale: options.minScale, maxScale: options.maxScale }
         );
 
-        console.log(`🗺️ [LAYER] Tile URL template: ${urlTemplate}`);
         
         // Test a specific tile URL to see if it's valid
         const testTileUrl = urlTemplate.replace('{z}', '10').replace('{x}', '500').replace('{y}', '300');
-        console.log(`🧪 [TEST] Example tile URL: ${testTileUrl}`);
 
         const sourceId = `${layerId}-source`;
 
@@ -161,21 +148,17 @@ export class RasterVisualizationManager {
             }
         });
 
-        console.log(`✅ [LAYER] Added MapLibre source: ${sourceId} and layer: ${layerId}`);
         
         // Debug: Check if layer was actually added
         setTimeout(() => {
             const layerExists = this.mapManager.getMap().getLayer(layerId);
             const sourceExists = this.mapManager.getMap().getSource(sourceId);
-            console.log(`🔍 [DEBUG] Layer exists: ${!!layerExists}, Source exists: ${!!sourceExists}`);
             if (layerExists) {
                 const opacity = this.mapManager.getMap().getPaintProperty(layerId, 'raster-opacity');
                 const visibility = this.mapManager.getMap().getLayoutProperty(layerId, 'visibility');
-                console.log(`🔍 [DEBUG] Layer opacity: ${opacity}, visibility: ${visibility}`);
             }
             if (sourceExists) {
                 const source = this.mapManager.getMap().getSource(sourceId);
-                console.log(`🔍 [DEBUG] Source tiles:`, source.tiles);
             }
         }, 100);
 
@@ -184,7 +167,6 @@ export class RasterVisualizationManager {
 
         // Fallback: dispatch layerLoaded event after 3 seconds if not already dispatched
         setTimeout(() => {
-            console.log(`🔄 [FALLBACK] Dispatching layerLoaded event for ${layerId}`);
             this.dispatchLayerEvent('layerLoaded', { layerId });
         }, 3000);
 
@@ -197,15 +179,12 @@ export class RasterVisualizationManager {
      * @param {string} sourceId - Source identifier
      */
     setupMapLibreLayerEvents(layerId, sourceId) {
-        console.log(`🔗 [MAPLIBRE] Setting up events for layer: ${layerId}, source: ${sourceId}`);
 
         // Listen for source data events
         this.mapManager.getMap().on('sourcedata', (e) => {
             if (e.sourceId === sourceId) {
-                console.log(`📊 [MAPLIBRE] Source data event for ${sourceId}: type=${e.dataType}, loaded=${e.isSourceLoaded}`);
                 
                 if (e.isSourceLoaded) {
-                    console.log(`✅ [MAPLIBRE] Source ${sourceId} fully loaded - dispatching layerLoaded event`);
                     this.dispatchLayerEvent('layerLoaded', { layerId });
                 }
             }
@@ -214,7 +193,6 @@ export class RasterVisualizationManager {
         // Listen for data loading events
         this.mapManager.getMap().on('dataloading', (e) => {
             if (e.sourceId === sourceId) {
-                console.log(`⏳ [MAPLIBRE] Data loading for ${sourceId}, type: ${e.dataType}`);
                 this.updateLoadingStatus(layerId, 1, 1); // Simplified for MapLibre
             }
         });
@@ -222,14 +200,12 @@ export class RasterVisualizationManager {
         // Listen for data events (when tiles load)
         this.mapManager.getMap().on('data', (e) => {
             if (e.sourceId === sourceId && e.dataType === 'source') {
-                console.log(`📋 [MAPLIBRE] Data loaded for ${sourceId}`);
                 this.updateLoadingStatus(layerId, 0, 1); // Mark as complete
             }
         });
 
         // Listen for errors
         this.mapManager.getMap().on('error', (e) => {
-            console.warn(`🔴 [MAPLIBRE] Error for source ${sourceId}:`, e.error);
             // Don't automatically remove layer on error, let user decide
         });
     }
@@ -240,20 +216,16 @@ export class RasterVisualizationManager {
      * @returns {string} Full STAC item URL
      */
     buildSTACItemUrl(stacItem) {
-        console.log(`🔗 [STAC] Building STAC item URL for item:`, stacItem);
         
         // If the item has a self link, use that
         const selfLink = stacItem.links?.find(link => link.rel === 'self');
         if (selfLink?.href) {
-            console.log(`🔗 [STAC] Using self link: ${selfLink.href}`);
             return selfLink.href;
         }
 
         // For rio-tiler/cogeo.xyz, we need to pass the STAC item as base64 encoded JSON
-        console.log(`🔗 [STAC] Encoding STAC item as base64 for rio-tiler`);
         const jsonString = JSON.stringify(stacItem);
         const base64Encoded = btoa(jsonString);
-        console.log(`🔗 [STAC] Original JSON length: ${jsonString.length}, base64 length: ${base64Encoded.length}`);
         return `data:application/json;base64,${base64Encoded}`;
     }
 
@@ -335,7 +307,6 @@ export class RasterVisualizationManager {
                 this.currentLayers.delete(layerId);
                 this.layerOpacities.delete(layerId);
                 
-                console.log(`🗑️ Removed MapLibre layer: ${layerId} and source: ${layerInfo.sourceId}`);
                 this.dispatchLayerEvent('layerRemoved', { layerId });
             });
         }
@@ -367,7 +338,6 @@ export class RasterVisualizationManager {
         const layerIds = Array.from(this.currentLayers.keys());
         layerIds.forEach(layerId => this.removeLayer(layerId));
         
-        console.log('🧹 Cleared all STAC visualization layers');
         this.dispatchLayerEvent('allLayersCleared');
     }
 
@@ -473,7 +443,6 @@ export class RasterVisualizationManager {
     updateLoadingStatus(layerId, loadingTiles, totalTiles) {
         const progress = totalTiles > 0 ? ((totalTiles - loadingTiles) / totalTiles) * 100 : 100;
         
-        console.log(`📊 [TILES] Progress update for ${layerId}: ${progress.toFixed(1)}% (${totalTiles - loadingTiles}/${totalTiles} tiles loaded)`);
         
         this.dispatchLayerEvent('layerLoadProgress', { 
             layerId, 

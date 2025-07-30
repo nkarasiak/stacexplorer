@@ -17,10 +17,8 @@ async function initializeMap() {
         
         if (success) {
         } else {
-            console.warn('⚠️ No suitable map container found. Ensure you have an element with id="map"');
         }
     } catch (error) {
-        console.error('❌ Failed to initialize MapManager:', error);
     }
 }
 // Initialize when DOM is ready
@@ -40,6 +38,5 @@ window.addEventListener('load', () => {
             initializeMap();
         }
     } catch (error) {
-        console.warn('MapManager not available for retry check:', error);
     }
 });

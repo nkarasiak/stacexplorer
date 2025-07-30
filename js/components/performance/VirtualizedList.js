@@ -364,7 +364,6 @@ export class VirtualizedList extends BaseUIComponent {
      */
     renderItems() {
         if (!this.options.renderItem) {
-            console.warn('VirtualizedList: renderItem function not provided');
             return;
         }
         
@@ -442,10 +441,8 @@ export class VirtualizedList extends BaseUIComponent {
             } else if (content instanceof HTMLElement) {
                 itemElement.appendChild(content);
             } else {
-                console.warn('VirtualizedList: renderItem must return string or HTMLElement');
             }
         } catch (error) {
-            console.error('VirtualizedList: Error rendering item:', error);
             itemElement.innerHTML = `<div class="error">Error rendering item ${index}</div>`;
         }
         

@@ -121,7 +121,6 @@ export class GeocodingService {
         
         const url = `${this.baseUrl}/search?${params}`;
         
-        console.log('🌍 Geocoding API request:', url);
         const response = await fetch(url, {
             headers: {
                 'User-Agent': this.userAgent

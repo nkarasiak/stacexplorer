@@ -44,7 +44,6 @@ export function wktToGeoJSON(wkt) {
         const matches = wkt.match(/^(POINT|LINESTRING|POLYGON|MULTIPOINT|MULTILINESTRING|MULTIPOLYGON|GEOMETRYCOLLECTION)\s*\((.+)\)$/i);
         
         if (!matches || matches.length < 3) {
-            console.error('Invalid WKT format:', wkt);
             return null;
         }
         
@@ -95,17 +94,14 @@ export function wktToGeoJSON(wkt) {
                 
             case 'GEOMETRYCOLLECTION':
                 // GeometryCollection is more complex and not fully implemented
-                console.warn('GeometryCollection WKT is not fully supported');
                 return null;
                 
             default:
-                console.error('Unsupported WKT type:', type);
                 return null;
         }
         
         return geojson;
     } catch (error) {
-        console.error('Error parsing WKT:', error);
         return null;
     }
 }
@@ -324,7 +320,6 @@ export function parseGeoJSON(text) {
         // Return as-is for Feature or FeatureCollection
         return json;
     } catch (error) {
-        console.error('Error parsing GeoJSON:', error);
         return null;
     }
 }
@@ -432,7 +427,6 @@ export function geojsonToBbox(geojson) {
             Math.max(...ys)   // north
         ];
     } catch (error) {
-        console.error('Error extracting bbox from GeoJSON:', error);
         return null;
     }
 }

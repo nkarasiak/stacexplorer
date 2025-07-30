@@ -116,9 +116,7 @@ export class SearchForm {
                 }
             });
             
-            console.log('Clipboard listeners initialized for WKT/GeoJSON detection');
         } catch (error) {
-            console.error('Error setting up clipboard listeners:', error);
         }
     }
     
@@ -138,18 +136,15 @@ export class SearchForm {
             
             // Detect format and process accordingly
             if (isWKT(text)) {
-                console.log('WKT detected in clipboard:', text);
                 this.processGeometryInput(text, 'wkt');
                 return true;
             } else if (isGeoJSON(text)) {
-                console.log('GeoJSON detected in clipboard:', text);
                 this.processGeometryInput(text, 'geojson');
                 return true;
             }
             
             return false;
         } catch (error) {
-            console.error('Error detecting geometry format:', error);
             return false;
         }
     }
@@ -172,7 +167,6 @@ export class SearchForm {
             }
             
             if (!geojson) {
-                console.error('Failed to parse geometry input');
                 alert('Invalid geometry format. Please check your input.');
                 return;
             }
@@ -197,7 +191,6 @@ export class SearchForm {
                 // Display geometry on map
                 if (this.mapManager) {
                     try {
-                        console.log('🗺️ Displaying geometry on map from SearchForm');
                         
                         // Use a consistent source ID to replace previous geometry
                         const geometrySourceId = 'searchform-geometry';
@@ -222,9 +215,7 @@ export class SearchForm {
                             this.mapManager.fitMapToBbox(bbox);
                         }
                         
-                        console.log('✅ Geometry successfully displayed and zoomed on map');
                     } catch (mapError) {
-                        console.error('❌ Error displaying geometry on map:', mapError);
                         // Continue anyway - the bbox is still updated
                     }
                 }
@@ -232,11 +223,9 @@ export class SearchForm {
                 // Show notification
                 this.showGeometryNotification(geojson.geometry.type);
             } else {
-                console.error('Could not extract bbox from geometry');
                 alert('Could not determine the area of the geometry. Please check your input.');
             }
         } catch (error) {
-            console.error('Error processing geometry input:', error);
             alert('Error processing geometry. Please check your input format.');
         }
     }
@@ -310,7 +299,6 @@ export class SearchForm {
                 }
             }, 5000);
         } catch (error) {
-            console.error('Error showing geometry notification:', error);
         }
     }
     
@@ -327,7 +315,6 @@ export class SearchForm {
                         // Parse the bbox input and update map
                         const bboxValues = event.target.value.split(',').map(Number);
                         if (bboxValues.length === 4 && !bboxValues.some(isNaN)) {
-                            console.log('🗺️ Updating map from bbox input:', bboxValues);
                             
                             // Use the correct MapManager method
                             if (typeof this.mapManager.setBboxFromCoordinates === 'function') {
@@ -337,7 +324,6 @@ export class SearchForm {
                             }
                         }
                     } catch (error) {
-                        console.warn('⚠️ Error updating map from bbox input:', error);
                     }
                 }
             });
@@ -461,21 +447,15 @@ export class SearchForm {
             if (this.currentGeometry) {
                 // Use intersects with the current geometry if available
                 params.intersects = this.currentGeometry.geometry;
-                console.log('🔍 Using currentGeometry for intersects:', this.currentGeometry.geometry);
             } else {
                 // Otherwise use bbox if provided
                 const bboxInput = document.getElementById('bbox-input');
                 const bboxValue = bboxInput?.value.trim();
-                console.log('🔍 Checking bbox-input element:', bboxInput);
-                console.log('🔍 bbox-input value:', bboxValue);
                 if (bboxValue) {
                     const bbox = bboxValue.split(',').map(Number);
-                    console.log('🔍 Parsed bbox array:', bbox);
                     if (bbox.length === 4 && !bbox.some(isNaN)) {
                         params.bbox = bbox;
-                        console.log('✅ Added bbox to search params:', bbox);
                     } else {
-                        console.warn('⚠️ Invalid bbox format:', bbox);
                     }
                 } else {
                     // If no explicit bbox, check for URL location parameters (mapCenter + mapZoom)
@@ -501,7 +481,6 @@ export class SearchForm {
                                 params.bbox = mapBbox;
                             }
                         } catch (error) {
-                            console.warn('Error getting map bounds for search constraint:', error);
                         }
                     }
                 }
@@ -510,11 +489,8 @@ export class SearchForm {
             // Add filters from FilterManager (new system)
             if (window.stacExplorer?.filterManager) {
                 const filterParams = window.stacExplorer.filterManager.getSTACQueryParameters();
-                console.log('🔍 FilterManager query parameters:', filterParams);
                 Object.assign(params, filterParams);
-                console.log('🔍 Search parameters after applying filters:', params);
             } else {
-                console.warn('⚠️ FilterManager not available, using legacy cloud cover system');
                 // Fallback to legacy cloud cover system
                 const cloudCoverEnabled = document.getElementById('cloud-cover-enabled');
                 const cloudCoverInput = document.getElementById('cloud-cover');
@@ -529,9 +505,7 @@ export class SearchForm {
                         if (!isNonOpticalData) {
                             // Only apply cloud cover filter for optical data collections
                             params["eo:cloud_cover"] = { "lte": cloudCoverValue };
-                            console.log(`🌥️ Applying legacy cloud cover filter: <= ${cloudCoverValue}%`);
                         } else {
-                            console.log(`📡 Skipping cloud cover filter for non-optical data: ${collections}`);
                         }
                     }
                 }
@@ -546,10 +520,8 @@ export class SearchForm {
             // Update URL with current state
             this.updateUrl();
         } catch (error) {
-            console.error('Error getting search params:', error);
         }
         
-        console.log('🔍 Final search parameters being returned:', params);
         return params;
     }
 }

@@ -25,7 +25,6 @@ export class CollectionBrowserModal {
         this.currentSelection = null;
         this.modalId = 'modal_' + Math.random().toString(36).substr(2, 9);
         
-        console.log('🏗️ CollectionBrowserModal created with ID:', this.modalId);
         
         this.createModal();
         this.setupEventListeners();
@@ -83,7 +82,6 @@ export class CollectionBrowserModal {
         // Add CSS styles
         this.addModalStyles();
         
-        console.log('✅ Collection browser modal created');
     }
     
     /**
@@ -278,7 +276,6 @@ export class CollectionBrowserModal {
     setupEventListeners() {
         // Close button - ensure it works
         this.modal.closeBtn.addEventListener('click', (e) => {
-            console.log('🔍 Close button clicked');
             e.preventDefault();
             e.stopPropagation();
             this.close();
@@ -291,20 +288,17 @@ export class CollectionBrowserModal {
         
         // Overlay click to close or focus search
         this.modal.overlay.addEventListener('click', (e) => {
-            console.log(`🖱️ Modal ${this.modalId} overlay clicked:`, {
                 target: e.target.tagName + (e.target.className ? '.' + e.target.className : ''),
                 isOverlay: e.target === this.modal.overlay,
                 willClose: e.target === this.modal.overlay
             });
             
             if (e.target === this.modal.overlay) {
-                console.log(`🚪 Modal ${this.modalId} closing due to overlay click`);
                 this.close();
             } else if (e.target === this.modal.dialog || e.target.closest('.collection-browser-modal-body')) {
                 // Don't auto-focus if clicking on form controls
                 if (e.target.tagName === 'SELECT' || e.target.tagName === 'OPTION' || 
                     e.target.closest('select') || e.target.closest('.collection-source-filter')) {
-                    console.log('🖱️ Clicked on form control - skipping auto-focus');
                     return;
                 }
                 
@@ -316,7 +310,6 @@ export class CollectionBrowserModal {
         // Escape key to close - with higher priority
         this.escapeHandler = (e) => {
             if (e.key === 'Escape' && this.isOpen) {
-                console.log('📱 ESC key pressed in modal, closing...');
                 e.preventDefault();
                 e.stopPropagation();
                 this.close();
@@ -327,7 +320,6 @@ export class CollectionBrowserModal {
         
         // Listen for collection selection from grid
         document.addEventListener('collectionSelected', (e) => {
-            console.log(`🔍 Modal ${this.modalId} received collectionSelected event:`, {
                 modalId: this.modalId,
                 isOpen: this.isOpen,
                 hasDetail: !!e.detail,
@@ -337,17 +329,14 @@ export class CollectionBrowserModal {
             
             // Process selection immediately, even if modal thinks it's not open
             if (e.detail && e.detail.collection) {
-                console.log(`✅ Modal ${this.modalId} processing collection selection (forcing)`);
                 
                 // Force the modal to be open if it's not already
                 if (!this.isOpen) {
-                    console.warn(`⚠️ Modal ${this.modalId} was closed, forcing it to be open for selection processing`);
                     this.isOpen = true;
                 }
                 
                 this.onCollectionSelected(e.detail.collection);
             } else {
-                console.warn(`⚠️ Modal ${this.modalId} ignoring collection selection - missing data`);
             }
         });
         
@@ -363,19 +352,15 @@ export class CollectionBrowserModal {
      * Open the modal
      */
     async open() {
-        console.log('🔍 Attempting to open modal. Current state:', { isOpen: this.isOpen });
         
         // Force reset modal state if it's stuck
         if (this.isOpen) {
-            console.warn('⚠️ Modal state was stuck open, forcing reset...');
             this.close();
             // Brief delay to ensure clean state
             await new Promise(resolve => setTimeout(resolve, 50));
         }
         
-        console.log('✅ Opening modal...');
         this.isOpen = true;
-        console.log('📊 Modal state set to OPEN:', this.isOpen);
         
         // Initialize grid selector if not already done
         if (!this.gridSelector) {
@@ -391,7 +376,6 @@ export class CollectionBrowserModal {
             const selectedId = this.collectionManager.getSelectedCollection();
             if (selectedId) {
                 this.gridSelector.setSelectedCollection(selectedId);
-                console.log('✅ Synced current selection:', selectedId);
             }
         } else {
             // Try to load collections
@@ -402,7 +386,6 @@ export class CollectionBrowserModal {
                     await this.gridSelector.loadCollections(freshCollections);
                 }
             } catch (error) {
-                console.error('Error loading collections for modal:', error);
             }
         }
         
@@ -421,18 +404,14 @@ export class CollectionBrowserModal {
             this.focusSearchInput();
         }, 500); // Second attempt after animation
         
-        console.log('📖 Collection browser modal opened successfully');
     }
     
     /**
      * Close the modal
      */
     close() {
-        console.log('🔍 Attempting to close modal. Current state:', { isOpen: this.isOpen });
         
         // Always close regardless of state to ensure it works
-        console.log('✅ Closing modal...');
-        console.trace('📍 MODAL CLOSE STACK TRACE:'); // This will show us what's calling close()
         
         this.isOpen = false;
         this.isExpanded = false;
@@ -451,7 +430,6 @@ export class CollectionBrowserModal {
         // Reset selection
         this.currentSelection = null;
         
-        console.log('📕 Collection browser modal closed successfully');
     }
     
     /**
@@ -462,7 +440,6 @@ export class CollectionBrowserModal {
         this.modal.overlay.classList.toggle('expanded', this.isExpanded);
         this.updateExpandIcon();
         
-        console.log(`🔄 Modal ${this.isExpanded ? 'expanded to' : 'restored from'} full screen`);
     }
     
     /**
@@ -504,17 +481,14 @@ export class CollectionBrowserModal {
                 tempContainer.remove();
             }
             
-            console.log('✅ Grid selector initialized in modal');
             
             // Try to focus the search input immediately after initialization
             setTimeout(() => {
                 if (this.gridSelector?.elements?.searchInput) {
-                    console.log('🎯 Attempting focus after grid selector initialization');
                     this.focusSearchInput();
                 }
             }, 50);
         } catch (error) {
-            console.error('❌ Error initializing grid selector in modal:', error);
             this.notificationService.showNotification(
                 'Error initializing collection browser',
                 'error'
@@ -527,11 +501,9 @@ export class CollectionBrowserModal {
      * @param {Object} collection - Selected collection
      */
     onCollectionSelected(collection) {
-        console.log('🎯 onCollectionSelected called with:', collection?.id || collection);
         this.currentSelection = collection;
         
         // Immediately apply selection and close modal
-        console.log('🚀 Applying selection and closing modal...');
         this.applySelectionAndClose(collection);
     }
     
@@ -583,7 +555,6 @@ export class CollectionBrowserModal {
             this.close();
         }
         
-        console.log('✅ Collection selected and panel/modal closed:', collection.id);
     }
     
     /**
@@ -651,14 +622,12 @@ export class CollectionBrowserModal {
      */
     focusSearchInput() {
         try {
-            console.log('🔍 Attempting to focus search input...');
             
             // Method 1: Look for the search input in the modal
             const searchInput = this.modal.overlay.querySelector('#collection-search');
             if (searchInput && searchInput.offsetParent !== null) {
                 searchInput.focus();
                 searchInput.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                console.log('✅ Search input focused successfully via modal query');
                 return true;
             }
             
@@ -668,7 +637,6 @@ export class CollectionBrowserModal {
                 if (gridSearchInput.offsetParent !== null) {
                     gridSearchInput.focus();
                     gridSearchInput.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                    console.log('✅ Search input focused successfully via grid selector');
                     return true;
                 }
             }
@@ -678,12 +646,9 @@ export class CollectionBrowserModal {
             if (globalSearch && globalSearch.offsetParent !== null) {
                 globalSearch.focus();
                 globalSearch.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                console.log('✅ Search input focused successfully via global search');
                 return true;
             }
             
-            console.warn('⚠️ Search input not found or not visible');
-            console.log('Debug info:', {
                 modalSearchInput: !!searchInput,
                 modalSearchVisible: searchInput?.offsetParent !== null,
                 gridSelector: !!this.gridSelector,
@@ -694,7 +659,6 @@ export class CollectionBrowserModal {
             
             return false;
         } catch (error) {
-            console.error('❌ Error focusing search input:', error);
             return false;
         }
     }
@@ -740,7 +704,6 @@ export class CollectionBrowserModal {
             modal.style.display = 'none';
         });
         document.body.style.overflow = '';
-        console.log('🚫 Force closed all collection browser modals');
     }
 
     /**
@@ -754,23 +717,19 @@ export class CollectionBrowserModal {
             if (searchInput && searchInput.offsetParent !== null) {
                 searchInput.focus();
                 searchInput.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                console.log('✅ Focused search input in open modal');
                 return true;
             } else {
-                console.warn('⚠️ Search input found but not visible');
                 // Try alternative approach
                 const allSearchInputs = document.querySelectorAll('#collection-search');
                 for (const input of allSearchInputs) {
                     if (input.offsetParent !== null) {
                         input.focus();
                         input.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                        console.log('✅ Focused visible search input');
                         return true;
                     }
                 }
             }
         }
-        console.warn('⚠️ No open modal or search input found');
         return false;
     }
 }

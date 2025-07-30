@@ -79,41 +79,30 @@ export class UnifiedRouter {
     setupEventListeners() {
         // Listen for view mode changes
         document.addEventListener('viewModeChanged', (event) => {
-            console.log('🔄 viewModeChanged event received:', event.detail.mode, 'Processing route:', this.isProcessingRoute);
             if (!this.isProcessingRoute) {
-                console.log('🔄 Handling view mode change to:', event.detail.mode);
                 this.handleViewModeChange(event.detail.mode);
             } else {
-                console.log('🚫 Ignoring view mode change - route processing in progress');
             }
         });
         
         // Listen for catalog browser state changes
         document.addEventListener('catalogBrowserStateChanged', (event) => {
-            console.log('🔄 catalogBrowserStateChanged event received:', event.detail, 'Processing route:', this.isProcessingRoute, 'Current mode:', this.currentMode);
             if (!this.isProcessingRoute && this.currentMode === 'browser') {
-                console.log('🔄 Updating browser path from state change');
                 this.updateBrowserPath(event.detail);
             } else {
-                console.log('🚫 Ignoring catalog browser state change - route processing or wrong mode');
             }
         });
         
         // Listen for search state changes (includes date changes)
         document.addEventListener('searchParameterChanged', (event) => {
-            console.log('🔄 searchParameterChanged event received:', event.detail);
             if (!this.isProcessingRoute && this.currentMode === 'view') {
-                console.log('🔄 Updating view path for search parameter change');
                 this.updateViewPath(event.detail);
             } else {
-                console.log('🚫 Ignoring search parameter change - route processing or wrong mode');
             }
         });
         
         // Listen for item activation in view mode
         document.addEventListener('itemActivated', (event) => {
-            console.log('🔄 itemActivated event received:', event.detail);
-            console.log('🔄 isProcessingRoute:', this.isProcessingRoute, 'currentMode:', this.currentMode);
             
             if (this.currentMode === 'view') {
                 // Allow URL updates during route processing if we're upgrading from legacy item format
@@ -121,12 +110,8 @@ export class UnifiedRouter {
                 const isLegacyItemURL = currentPath.includes('/viewer/item/');
                 const hasContext = event.detail.catalogId && event.detail.collectionId;
                 
-                console.log('🔄 currentPath:', currentPath);
-                console.log('🔄 isLegacyItemURL:', isLegacyItemURL);
-                console.log('🔄 hasContext:', hasContext);
                 
                 if (!this.isProcessingRoute || (isLegacyItemURL && hasContext)) {
-                    console.log('🔄 Updating view path for item activation');
                     this.updateViewPath({
                         type: 'item',
                         itemId: event.detail.itemId,
@@ -135,38 +120,27 @@ export class UnifiedRouter {
                         collectionId: event.detail.collectionId
                     });
                 } else {
-                    console.log('🚫 Ignoring item activation - route processing and not legacy upgrade');
                 }
             } else {
-                console.log('🚫 Ignoring item activation - not in view mode');
             }
         });
         
         // Listen for collection selection in view mode
         document.addEventListener('collectionSelected', (event) => {
-            console.log('🔄 collectionSelected event received:', event.detail);
             if (!this.isProcessingRoute && this.currentMode === 'view') {
-                console.log('🔄 Updating view path for collection selection');
                 this.updateViewPath({
                     type: 'collection',
                     collection: event.detail.collection.id,
                     catalogId: event.detail.catalogId  // Pass catalog ID from event
                 });
             } else {
-                console.log('🚫 Ignoring collection selection - route processing or wrong mode');
             }
         });
         
         // Listen for geometry/bbox selection in view mode
         document.addEventListener('geometrySelected', (event) => {
-            console.log('🔄 geometrySelected event received:', event.detail);
-            console.log('🔄 Current processing route:', this.isProcessingRoute);
-            console.log('🔄 Current mode:', this.currentMode);
-            console.log('🔄 Event bbox:', event.detail.bbox);
             
             if (!this.isProcessingRoute && this.currentMode === 'view') {
-                console.log('🔄 Updating view path for geometry selection');
-                console.log('🔄 Calling updateViewPath with:', {
                     type: 'location',
                     locationBbox: event.detail.bbox,
                     locationName: event.detail.name || 'Map Selection'
@@ -177,14 +151,12 @@ export class UnifiedRouter {
                     locationName: event.detail.name || 'Map Selection'
                 });
             } else {
-                console.log('🚫 Ignoring geometry selection - route processing:', this.isProcessingRoute, 'mode:', this.currentMode);
             }
         });
     }
     
     setupPopStateHandler() {
         window.addEventListener('popstate', (event) => {
-            console.log('📍 Handling popstate navigation');
             this.processCurrentPath();
         });
     }
@@ -195,7 +167,6 @@ export class UnifiedRouter {
      */
     processCurrentPath() {
         const path = window.location.pathname;
-        console.log('📍 Processing path:', path);
         
         // Set processing flag immediately to prevent cascade events
         this.isProcessingRoute = true;
@@ -209,11 +180,9 @@ export class UnifiedRouter {
         
         // Try to match against route patterns
         const route = this.matchRoute(path);
-        console.log('📍 Route match result:', route);
         if (route) {
             this.handleRoute(route);
         } else {
-            console.warn('📍 No route matched, redirecting to view mode');
             this.isProcessingRoute = false;
             this.redirectToViewMode();
         }
@@ -244,17 +213,13 @@ export class UnifiedRouter {
         this.isProcessingRoute = true;
         
         try {
-            console.log('📍 Handling route:', route.name, 'Mode:', route.mode);
-            console.log('📍 isProcessingRoute set to true');
             
             // Set the current mode
             this.currentMode = route.mode;
-            console.log('📍 Current mode set to:', this.currentMode);
             
             // Ensure correct view mode is active
             if (this.stateManager.viewModeToggle) {
                 const toggleMode = route.mode === 'browser' ? 'catalog' : 'map';
-                console.log('📍 Setting view mode toggle to:', toggleMode, '(silent mode)');
                 this.stateManager.viewModeToggle.setMode(toggleMode, true); // Silent mode to prevent cascade
             }
             
@@ -296,7 +261,6 @@ export class UnifiedRouter {
                     break;
                     
                 case 'browserItem':
-                    console.log('📍 Browser item route matched:', route.matches);
                     await this.handleBrowserItemRoute(route.matches[0], route.matches[1], route.matches[2]);
                     break;
                 
@@ -316,9 +280,7 @@ export class UnifiedRouter {
             }
             
         } catch (error) {
-            console.error('📍 Error handling route:', error);
         } finally {
-            console.log('📍 Route handling complete, setting isProcessingRoute to false');
             this.isProcessingRoute = false;
         }
     }
@@ -326,18 +288,15 @@ export class UnifiedRouter {
     // === VIEW MODE ROUTE HANDLERS ===
     
     async handleViewRoute() {
-        console.log('📍 Handling view route - search/visualization mode');
         
         // Restore search state from query parameters
         const params = new URLSearchParams(window.location.search);
         if (params.toString()) {
-            console.log('📍 Restoring search state from query params');
             await this.stateManager.initFromUrl();
         }
     }
     
     async handleViewItemRoute(itemId) {
-        console.log('📍 Handling view item route:', itemId);
         
         // Set active item and restore other state from query params
         this.stateManager.activeItemId = itemId;
@@ -353,16 +312,13 @@ export class UnifiedRouter {
         try {
             // We need a collection ID to fetch the item, but we don't have it in this route
             // This route format may not be sufficient - user should use the catalog/collection/item format
-            console.warn('📍 Item route without collection context - item fetching not possible');
         } catch (error) {
-            console.error('📍 Error fetching item:', error);
         }
         
         await this.stateManager.initFromUrl();
     }
     
     async handleViewCollectionRoute(collectionId) {
-        console.log('📍 Handling view collection route:', collectionId);
         
         // Set collection and restore other state from query params
         const collectionSelect = document.getElementById('collection-select');
@@ -377,30 +333,25 @@ export class UnifiedRouter {
     }
     
     async handleViewCatalogCollectionRoute(catalogId, collectionId) {
-        console.log('📍 Handling view catalog+collection route:', catalogId, collectionId);
         
         try {
             // First, get the catalog configuration by its real STAC ID
             const catalog = await this.getCatalogConfig(catalogId);
             if (!catalog) {
-                console.warn('📍 Catalog not found for ID:', catalogId);
                 // Fallback to regular collection route
                 await this.handleViewCollectionRoute(collectionId);
                 return;
             }
             
-            console.log('📍 Found catalog for view mode:', catalog);
             
             // Set the API client to use this catalog
             if (this.stateManager.apiClient) {
-                console.log('📍 Setting API client endpoints to:', catalog.endpoint);
                 this.stateManager.apiClient.setEndpoints(catalog.endpoint);
             }
             
             // Update the collection source summary to show the selected catalog
             const sourceSummary = document.getElementById('summary-source');
             if (sourceSummary) {
-                console.log('📍 Updating source summary to show:', catalog.name);
                 sourceSummary.textContent = catalog.name;
                 sourceSummary.setAttribute('data-catalog-id', catalog.id);
                 sourceSummary.setAttribute('data-catalog-name', catalog.name);
@@ -409,10 +360,8 @@ export class UnifiedRouter {
             // Wait for collections to load from the new catalog, then set the collection
             const collectionSelect = document.getElementById('collection-select');
             if (collectionSelect) {
-                console.log('📍 Waiting for collections to load from catalog:', catalog.name);
                 await this.stateManager.waitForCollectionsLoaded();
                 
-                console.log('📍 Setting collection selector to:', collectionId);
                 collectionSelect.value = collectionId;
                 collectionSelect.dispatchEvent(new Event('change'));
             }
@@ -421,7 +370,6 @@ export class UnifiedRouter {
             await this.stateManager.initFromUrl();
             
         } catch (error) {
-            console.error('📍 Error handling view catalog+collection route:', error);
             // Fallback to regular collection route
             await this.handleViewCollectionRoute(collectionId);
         }
@@ -433,39 +381,27 @@ export class UnifiedRouter {
         collectionId = decodeURIComponent(collectionId);
         itemId = decodeURIComponent(itemId);
         
-        console.log('📍 Handling view catalog+collection+item route:');
-        console.log('  catalogId:', catalogId);
-        console.log('  collectionId:', collectionId);
-        console.log('  itemId:', itemId);
-        console.log('  itemId length:', itemId.length);
-        console.log('  original URL:', window.location.pathname);
         
         try {
             // First, get the catalog configuration by its real STAC ID
             const catalog = await this.getCatalogConfig(catalogId);
             if (!catalog) {
-                console.warn('📍 Catalog not found for ID:', catalogId);
                 // Fallback to regular item route
                 await this.handleViewItemRoute(itemId);
                 return;
             }
             
-            console.log('📍 Found catalog for view mode:', catalog);
             
             // Set the API client to use this catalog
             if (this.stateManager.apiClient) {
-                console.log('📍 Setting API client endpoints to:', catalog.endpoint);
                 this.stateManager.apiClient.setEndpoints(catalog.endpoint);
             } else {
-                console.error('📍 API client not available in state manager');
                 // Try to get it from global scope as fallback
                 const globalApiClient = window.stacExplorer?.apiClient;
                 if (globalApiClient) {
-                    console.log('📍 Using global API client as fallback');
                     this.stateManager.apiClient = globalApiClient;
                     this.stateManager.apiClient.setEndpoints(catalog.endpoint);
                 } else {
-                    console.error('📍 No API client available - cannot proceed');
                     return;
                 }
             }
@@ -473,7 +409,6 @@ export class UnifiedRouter {
             // Update the collection source summary to show the selected catalog
             const sourceSummary = document.getElementById('summary-source');
             if (sourceSummary) {
-                console.log('📍 Updating source summary to show:', catalog.name);
                 sourceSummary.textContent = catalog.name;
                 sourceSummary.setAttribute('data-catalog-id', catalog.id);
                 sourceSummary.setAttribute('data-catalog-name', catalog.name);
@@ -482,16 +417,13 @@ export class UnifiedRouter {
             // Wait for collections to load from the new catalog, then set the collection
             const collectionSelect = document.getElementById('collection-select');
             if (collectionSelect) {
-                console.log('📍 Waiting for collections to load from catalog:', catalog.name);
                 await this.stateManager.waitForCollectionsLoaded();
                 
-                console.log('📍 Setting collection selector to:', collectionId);
                 collectionSelect.value = collectionId;
                 collectionSelect.dispatchEvent(new Event('change'));
             }
             
             // Set the active item
-            console.log('📍 Setting active item ID to:', itemId);
             this.stateManager.activeItemId = itemId;
             
             // Get asset key from URL parameters if provided
@@ -506,25 +438,20 @@ export class UnifiedRouter {
             await this.stateManager.initFromUrl();
             
             // Wait for proper initialization before fetching item
-            console.log('📍 Waiting for components to be ready...');
             await this.waitForInitialization();
             
             // Fetch and display the specific item on the map
-            console.log('📍 Fetching and displaying item:', itemId, 'from collection:', collectionId);
             
             // Final check for API client before fetching
             if (!this.stateManager.apiClient) {
-                console.error('📍 API client still not available after initialization - cannot fetch item');
                 return;
             }
             
             try {
                 const item = await this.stateManager.apiClient.fetchItem(collectionId, itemId);
                 if (item) {
-                    console.log('📍 Item fetched successfully:', item.id);
                     
                     if (this.stateManager.mapManager) {
-                        console.log('📍 Displaying item on map:', item.id);
                         await this.stateManager.mapManager.displayItemOnMap(item, assetKey);
                         
                         // Dispatch event to notify other components
@@ -538,17 +465,13 @@ export class UnifiedRouter {
                             }
                         }));
                     } else {
-                        console.error('📍 Map manager not available - cannot display item on map');
                     }
                 } else {
-                    console.error('📍 Failed to fetch item:', itemId);
                 }
             } catch (error) {
-                console.error('📍 Error fetching and displaying item:', error);
             }
             
         } catch (error) {
-            console.error('📍 Error handling view catalog+collection+item route:', error);
             // Fallback to regular item route
             await this.handleViewItemRoute(itemId);
         }
@@ -557,7 +480,6 @@ export class UnifiedRouter {
     // === BROWSER MODE ROUTE HANDLERS ===
     
     async handleBrowserRootRoute() {
-        console.log('📍 Handling browser root route - catalog selection');
         
         // Ensure we're in browser mode and show the catalog browser
         if (this.currentMode !== 'browser') {
@@ -581,20 +503,17 @@ export class UnifiedRouter {
     }
     
     async handleBrowserCatalogRoute(catalogId) {
-        console.log('📍 Handling browser catalog route:', catalogId);
         
         if (this.stateManager.catalogBrowser) {
             const catalog = await this.getCatalogConfig(catalogId);
             if (catalog) {
                 await this.stateManager.catalogBrowser.selectCatalog(catalog);
             } else {
-                console.warn('📍 Catalog not found:', catalogId);
             }
         }
     }
     
     async handleBrowserCollectionRoute(catalogId, collectionId) {
-        console.log('📍 Handling browser collection route - direct load:', catalogId, collectionId);
         
         // Switch to browser mode and ensure catalog browser is ready
         if (this.currentMode !== 'browser') {
@@ -613,17 +532,14 @@ export class UnifiedRouter {
         
         // Wait for catalog browser to be ready
         if (!this.stateManager.catalogBrowser) {
-            console.warn('📍 Catalog browser not available');
             return;
         }
         
         try {
-            console.log('📍 Direct loading collection without intermediate steps');
             
             // Get catalog configuration
             const catalog = await this.getCatalogConfig(catalogId);
             if (!catalog) {
-                console.error('📍 Catalog configuration not found:', catalogId);
                 return;
             }
             
@@ -635,7 +551,6 @@ export class UnifiedRouter {
             const collection = collections.find(c => c.id === collectionId);
             
             if (collection) {
-                console.log('📍 Found collection, loading directly:', collectionId);
                 
                 // Set up the path manually without triggering intermediate displays
                 this.stateManager.catalogBrowser.currentPath = [
@@ -649,13 +564,11 @@ export class UnifiedRouter {
                 await this.stateManager.catalogBrowser.browseCollection(collection);
                 
             } else {
-                console.warn('📍 Collection not found:', collectionId);
                 // Show catalog collections as fallback
                 await this.stateManager.catalogBrowser.selectCatalog(catalog);
             }
             
         } catch (error) {
-            console.error('📍 Error in direct collection load:', error);
             // Minimal fallback - just show browser without navigation
             if (this.stateManager.catalogBrowser) {
                 this.stateManager.catalogBrowser.show(true); // Skip auto-load for fallback too
@@ -665,7 +578,6 @@ export class UnifiedRouter {
     
     async handleBrowserItemRoute(catalogId, collectionId, itemId) {
         const debugLog = (msg) => {
-            console.log(msg);
             // Store in localStorage for debugging
             const logs = JSON.parse(localStorage.getItem('itemRouteDebug') || '[]');
             logs.push(`${new Date().toISOString()}: ${msg}`);
@@ -681,26 +593,20 @@ export class UnifiedRouter {
         
         // Check if ItemViewPage is available - wait for it if needed
         let itemViewPage = window.stacExplorer?.itemViewPage;
-        console.log('📍 ItemViewPage available:', !!itemViewPage);
-        console.log('📍 window.stacExplorer:', window.stacExplorer);
         
         if (!itemViewPage) {
-            console.log('📍 ItemViewPage not available yet, waiting for initialization...');
             // Wait for the app to finish initializing
             await this.waitForAppInitialization();
             itemViewPage = window.stacExplorer?.itemViewPage;
             
             if (!itemViewPage) {
-                console.warn('📍 ItemViewPage still not available after waiting');
                 return;
             }
-            console.log('📍 ItemViewPage now available after waiting');
         }
         
         // Hide catalog browser if it's visible
         const catalogBrowser = window.stacExplorer?.catalogBrowser;
         if (catalogBrowser && catalogBrowser.isVisible) {
-            console.log('📍 Hiding catalog browser');
             catalogBrowser.hide();
         }
         
@@ -710,7 +616,6 @@ export class UnifiedRouter {
             // Get catalog configuration
             const catalog = await this.getCatalogConfig(catalogId);
             if (!catalog) {
-                console.error('📍 Catalog configuration not found:', catalogId);
                 return;
             }
             
@@ -719,7 +624,6 @@ export class UnifiedRouter {
             if (apiClient) {
                 apiClient.setEndpoints(catalog.endpoint);
             } else {
-                console.error('📍 No API client available');
                 return;
             }
             
@@ -728,19 +632,16 @@ export class UnifiedRouter {
             const collection = collections.find(c => c.id === collectionId);
             
             if (!collection) {
-                console.warn('📍 Collection not found:', collectionId);
                 // Fallback to browser mode
                 window.location.href = `/browser/${catalogId}/${collectionId}`;
                 return;
             }
             
             // Load items from the collection using searchItems
-            console.log('📍 Loading items from collection:', collectionId);
             const searchParams = {
                 collections: [collectionId],
                 limit: 50 // Get more items to increase chance of finding the specific item
             };
-            console.log('📍 Search parameters:', searchParams);
             const items = await apiClient.searchItems(searchParams);
             debugLog('📍 Items response type: ' + typeof items);
             debugLog('📍 Items response keys: ' + (items ? Object.keys(items).join(', ') : 'null'));
@@ -765,15 +666,11 @@ export class UnifiedRouter {
             debugLog('📍 Found item: ' + !!item + ' ID: ' + (item?.id || 'none'));
             
             if (item) {
-                console.log('📍 Found item, showing in ItemViewPage:', itemId);
-                console.log('📍 Item data:', item);
                 
                 try {
                     // Show the item in the dedicated page
                     await itemViewPage.show(item, catalogId, collectionId);
-                    console.log('📍 ItemViewPage.show() completed successfully');
                 } catch (showError) {
-                    console.error('📍 Error showing ItemViewPage:', showError);
                     // Don't redirect on show error, keep the page
                 }
                 
@@ -786,8 +683,6 @@ export class UnifiedRouter {
             }
             
         } catch (error) {
-            console.error('📍 Error loading item:', error);
-            console.error('📍 Error stack:', error.stack);
             alert(`Error loading item: ${error.message}\nCheck console for details`);
             // Show error on the item page instead of redirecting
             try {
@@ -805,7 +700,6 @@ export class UnifiedRouter {
                 await itemViewPage.show(errorItem, catalogId, collectionId);
                 itemViewPage.showError(`Failed to load item data: ${error.message}`);
             } catch (fallbackError) {
-                console.error('📍 Fallback error display failed:', fallbackError);
                 alert(`Fallback error: ${fallbackError.message}`);
                 // Temporarily disable redirect to debug
                 // window.location.href = `/browser/${catalogId}/${collectionId}`;
@@ -836,9 +730,6 @@ export class UnifiedRouter {
      * Update path for view mode (search/visualization)
      */
     updateViewPath(stateChange) {
-        console.log('🔧 updateViewPath() called with stateChange:', stateChange);
-        console.log('🔧 Current window.location.pathname:', window.location.pathname);
-        console.log('🔧 Current window.location.search:', window.location.search);
         
         let newPath = this.createPath('/viewer');
         const params = new URLSearchParams();
@@ -853,8 +744,6 @@ export class UnifiedRouter {
             }
         });
         
-        console.log('🔧 Initial newPath:', newPath);
-        console.log('🔧 Initial params:', Array.from(params.entries()));
         
         const urlKeys = this.stateManager.urlKeys;
         
@@ -867,11 +756,9 @@ export class UnifiedRouter {
             if (catalogId && collectionId) {
                 // Use catalog+collection+item format: /viewer/{catalogId}/{collectionId}/{itemId}
                 newPath = this.createPath(`/viewer/${encodeURIComponent(catalogId)}/${encodeURIComponent(collectionId)}/${encodeURIComponent(stateChange.itemId)}`);
-                console.log('📍 Generated catalog+collection+item URL:', newPath);
             } else {
                 // Fallback to legacy item-only format
                 newPath = this.createPath(`/viewer/item/${encodeURIComponent(stateChange.itemId)}`);
-                console.log('📍 Generated legacy item URL (no catalog/collection context):', newPath);
             }
             
             if (stateChange.assetKey) {
@@ -883,11 +770,9 @@ export class UnifiedRouter {
             if (catalogId) {
                 // Use new catalog+collection format: /viewer/{catalogId}/{collectionId}
                 newPath = this.createPath(`/viewer/${encodeURIComponent(catalogId)}/${encodeURIComponent(stateChange.collection)}`);
-                console.log('📍 Generated catalog+collection URL:', newPath);
             } else {
                 // Fallback to legacy collection-only format
                 newPath = this.createPath(`/viewer/collection/${encodeURIComponent(stateChange.collection)}`);
-                console.log('📍 Generated legacy collection URL (no catalog):', newPath);
             }
         } else if (stateChange.search || (stateChange.locationBbox && !this.isCurrentlyInCatalogCollectionView()) || (stateChange.dateStart && !this.isCurrentlyInCatalogCollectionView())) {
             newPath = this.createPath('/viewer/search');
@@ -905,13 +790,8 @@ export class UnifiedRouter {
         const queryString = params.toString();
         const fullUrl = queryString ? `${newPath}?${queryString}` : newPath;
         
-        console.log('🔧 Final newPath:', newPath);
-        console.log('🔧 Final queryString:', queryString);
-        console.log('🔧 Final fullUrl:', fullUrl);
-        console.log('🔧 Current URL:', window.location.pathname + window.location.search);
         
         if (fullUrl !== window.location.pathname + window.location.search) {
-            console.log('📍 Updating view path to:', fullUrl);
             
             // Check if we're upgrading from legacy item format to hierarchical format
             const currentPath = window.location.pathname;
@@ -922,14 +802,11 @@ export class UnifiedRouter {
                                    newPath.includes(`/viewer/${stateChange.catalogId}/${stateChange.collectionId}/`);
             
             if (isLegacyUpgrade) {
-                console.log('📍 Using replaceState for legacy URL upgrade');
                 window.history.replaceState({}, '', fullUrl);
             } else {
-                console.log('📍 Using pushState for new navigation');
                 window.history.pushState({}, '', fullUrl);
             }
         } else {
-            console.log('📍 URL unchanged, not updating');
         }
     }
     
@@ -937,30 +814,24 @@ export class UnifiedRouter {
      * Update path for browser mode (catalog browsing)
      */
     updateBrowserPath(state) {
-        console.log('🔧 updateBrowserPath() called with state:', state);
         
         let newPath = '/browser';
         
         if (state.catalogId) {
-            console.log('🔧 Using catalog ID for URL:', state.catalogId);
             newPath = `/browser/${encodeURIComponent(state.catalogId)}`;
             
             if (state.collectionId) {
-                console.log('🔧 Adding collection ID to URL:', state.collectionId);
                 newPath += `/${encodeURIComponent(state.collectionId)}`;
                 
                 if (state.itemId) {
-                    console.log('🔧 Adding item ID to URL:', state.itemId);
                     newPath += `/${encodeURIComponent(state.itemId)}`;
                 }
             }
         }
         
         if (newPath !== window.location.pathname) {
-            console.log('📍 Updating browser path from', window.location.pathname, 'to:', newPath);
             window.history.pushState({}, '', newPath);
         } else {
-            console.log('📍 Path unchanged:', newPath);
         }
     }
     
@@ -968,32 +839,23 @@ export class UnifiedRouter {
      * Update query parameters for view mode
      */
     updateViewQueryParams(params, stateChange) {
-        console.log('🔧 updateViewQueryParams called with stateChange:', stateChange);
-        console.log('🔧 Params before processing:', Array.from(params.entries()));
         
         // Map state changes to URL parameters
         const urlKeys = this.stateManager.urlKeys;
-        console.log('🔧 urlKeys.collection:', urlKeys.collection);
         
         Object.entries(stateChange).forEach(([key, value]) => {
-            console.log('🔧 Processing stateChange entry:', key, '=', value);
             switch (key) {
                 case 'collection':
-                    console.log('🔧 Processing collection case');
-                    console.log('🔧 collection value:', value);
-                    console.log('🔧 stateChange.catalogId:', stateChange.catalogId);
                     
                     // If we have a catalogId in the stateChange, we're using clean URL structure
                     // so we should NOT add the cn parameter at all
                     if (!stateChange.catalogId) {
-                        console.log('🔧 No catalogId - using legacy URL structure with cn parameter');
                         if (value) {
                             params.set(urlKeys.collection, value);
                         } else {
                             params.delete(urlKeys.collection);
                         }
                     } else {
-                        console.log('🔧 Has catalogId - using clean URL structure, NOT adding cn parameter');
                         // Don't add cn parameter when using clean path structure
                     }
                     break;
@@ -1003,13 +865,10 @@ export class UnifiedRouter {
                     break;
                     
                 case 'locationBbox':
-                    console.log('🔧 Processing locationBbox:', value);
                     if (Array.isArray(value)) {
                         params.set(urlKeys.locationBbox, value.join(','));
-                        console.log('🔧 Set bbox parameter:', urlKeys.locationBbox, '=', value.join(','));
                     } else if (value) {
                         params.set(urlKeys.locationBbox, value);
-                        console.log('🔧 Set bbox parameter:', urlKeys.locationBbox, '=', value);
                     }
                     break;
                     
@@ -1055,16 +914,13 @@ export class UnifiedRouter {
             const zoom = this.stateManager.mapManager.map.getZoom();
             params.set(urlKeys.mapCenter, `${center.lat.toFixed(6)},${center.lng.toFixed(6)}`);
             params.set(urlKeys.mapZoom, zoom.toString());
-            console.log('🔧 Added map state to params');
         }
         
-        console.log('🔧 Final params after processing:', Array.from(params.entries()));
     }
     
     // === REDIRECT METHODS ===
     
     redirectToViewMode() {
-        console.log('📍 Redirecting to view mode');
         this.currentMode = 'view';
         
         // Preserve any existing query parameters
@@ -1080,7 +936,6 @@ export class UnifiedRouter {
     }
     
     redirectToBrowserMode() {
-        console.log('📍 Redirecting to browser mode');
         this.currentMode = 'browser';
         
         window.history.replaceState({}, '', '/browser');
@@ -1092,7 +947,6 @@ export class UnifiedRouter {
     }
     
     redirectLegacyCatalogRoute(path) {
-        console.log('📍 Redirecting legacy catalog route:', path);
         
         // Convert old /catalog/... URLs to new simplified /browser/... format
         const newPath = path.replace(/^\/catalog/, '/browser');
@@ -1101,7 +955,6 @@ export class UnifiedRouter {
     }
     
     redirectLegacyBrowserRoute(matches) {
-        console.log('📍 Redirecting legacy verbose browser route:', matches);
         
         // Convert /browser/catalog/{id}/collection/{id}/item/{id} to /browser/{id}/{id}/{id}
         let newPath = '/browser';
@@ -1126,7 +979,6 @@ export class UnifiedRouter {
         const search = window.location.search;
         const fullNewPath = search ? `${newPath}${search}` : newPath;
         
-        console.log('📍 Redirecting to simplified path:', fullNewPath);
         window.history.replaceState({}, '', fullNewPath);
         this.processCurrentPath();
     }
@@ -1140,19 +992,13 @@ export class UnifiedRouter {
         const path = window.location.pathname;
         const base = this.basePath.replace(/\/$/, '');
         
-        console.log('🔍 isCurrentlyInCatalogCollectionView check:');
-        console.log('🔍 path:', path);
-        console.log('🔍 base:', base);
         
         // Check if path matches /viewer/{catalogId}/{collectionId} pattern
         const catalogCollectionPattern = new RegExp(`^${base}/viewer/([^/]+)/([^/]+)/?$`);
         const catalogCollectionItemPattern = new RegExp(`^${base}/viewer/([^/]+)/([^/]+)/([^/]+)/?$`);
         
-        console.log('🔍 catalogCollectionPattern:', catalogCollectionPattern);
-        console.log('🔍 catalogCollectionItemPattern:', catalogCollectionItemPattern);
         
         const result = catalogCollectionPattern.test(path) || catalogCollectionItemPattern.test(path);
-        console.log('🔍 Result:', result);
         
         return result;
     }
@@ -1167,7 +1013,6 @@ export class UnifiedRouter {
         
         while (Date.now() - startTime < maxWaitTime) {
             if (window.stacExplorer?.itemViewPage) {
-                console.log('📍 App initialization complete');
                 return;
             }
             
@@ -1175,7 +1020,6 @@ export class UnifiedRouter {
             await new Promise(resolve => setTimeout(resolve, checkInterval));
         }
         
-        console.warn('📍 Timeout waiting for app initialization');
     }
     
     /**
@@ -1212,17 +1056,13 @@ export class UnifiedRouter {
         // Always try to use the CatalogBrowserPanel's method first (most reliable)
         if (this.stateManager.catalogBrowser && typeof this.stateManager.catalogBrowser.getAvailableCatalogs === 'function') {
             try {
-                console.log('📋 Using CatalogBrowserPanel.getAvailableCatalogs() for real STAC IDs');
                 const catalogs = await this.stateManager.catalogBrowser.getAvailableCatalogs();
-                console.log('📋 Got catalogs from CatalogBrowserPanel:', catalogs);
                 return catalogs;
             } catch (error) {
-                console.warn('⚠️ Failed to get catalogs from CatalogBrowserPanel:', error);
             }
         }
         
         // Fallback: Direct config fetching (less reliable, should be avoided)
-        console.log('⚠️ Falling back to direct config fetching - real STAC IDs might not be available');
         if (window.stacExplorer?.config?.stacEndpoints) {
             const catalogs = [];
             
@@ -1239,7 +1079,6 @@ export class UnifiedRouter {
                         url: endpoint.root
                     });
                 } catch (error) {
-                    console.warn(`Failed to fetch catalog info for ${key}:`, error);
                     // Fallback to config-based catalog
                     catalogs.push({
                         id: key,
@@ -1254,7 +1093,6 @@ export class UnifiedRouter {
         }
         
         // Ultimate fallback - return empty array
-        console.warn('❌ No catalog sources available - returning empty array');
         return [];
     }
     
@@ -1266,13 +1104,11 @@ export class UnifiedRouter {
             // If we have an API client, try to determine which catalog it's using
             if (this.stateManager.apiClient && this.stateManager.apiClient.endpoints) {
                 const currentEndpoint = this.stateManager.apiClient.endpoints.root;
-                console.log('📍 Current API endpoint:', currentEndpoint);
                 
                 // Check against known catalog endpoints from config
                 if (window.stacExplorer?.config?.stacEndpoints) {
                     for (const [configKey, endpoint] of Object.entries(window.stacExplorer.config.stacEndpoints)) {
                         if (endpoint.root === currentEndpoint) {
-                            console.log('📍 Found matching catalog config key:', configKey);
                             
                             // Try to get the real STAC ID from cache or use legacy mapping
                             const legacyMapping = {
@@ -1282,17 +1118,14 @@ export class UnifiedRouter {
                             };
                             
                             const realId = legacyMapping[configKey] || configKey;
-                            console.log('📍 Using catalog ID:', realId);
                             return realId;
                         }
                     }
                 }
             }
             
-            console.log('📍 No current catalog ID found');
             return null;
         } catch (error) {
-            console.warn('📍 Error getting current catalog ID:', error);
             return null;
         }
     }
@@ -1305,7 +1138,6 @@ export class UnifiedRouter {
             // Try to get from collection selector
             const collectionSelect = document.getElementById('collection-select');
             if (collectionSelect && collectionSelect.value) {
-                console.log('📍 Current collection ID from selector:', collectionSelect.value);
                 return collectionSelect.value;
             }
             
@@ -1313,15 +1145,12 @@ export class UnifiedRouter {
             if (this.stateManager.collectionManager && this.stateManager.collectionManager.getSelectedCollection) {
                 const selectedCollection = this.stateManager.collectionManager.getSelectedCollection();
                 if (selectedCollection) {
-                    console.log('📍 Current collection ID from manager:', selectedCollection);
                     return selectedCollection;
                 }
             }
             
-            console.log('📍 No current collection ID found');
             return null;
         } catch (error) {
-            console.warn('📍 Error getting current collection ID:', error);
             return null;
         }
     }
@@ -1334,7 +1163,6 @@ export class UnifiedRouter {
             // If we have an API client, try to determine which catalog it's using
             if (this.stateManager.apiClient && this.stateManager.apiClient.endpoints) {
                 const currentEndpoint = this.stateManager.apiClient.endpoints.root;
-                console.log('📍 Current API endpoint:', currentEndpoint);
                 
                 // Get available catalogs and find the matching one
                 const availableCatalogs = await this.getAvailableCatalogs();
@@ -1343,15 +1171,12 @@ export class UnifiedRouter {
                 );
                 
                 if (matchingCatalog) {
-                    console.log('📍 Found matching catalog:', matchingCatalog.id);
                     return matchingCatalog.id;
                 }
             }
             
-            console.log('📍 No current catalog ID found');
             return null;
         } catch (error) {
-            console.warn('📍 Error getting current catalog ID:', error);
             return null;
         }
     }
@@ -1376,7 +1201,6 @@ export class UnifiedRouter {
             // Note: API client may be set up during route processing, so we mainly wait for mapManager
             if (this.stateManager && 
                 this.stateManager.mapManager) {
-                console.log('📍 Core components ready after', waited, 'ms');
                 return;
             }
             
@@ -1385,14 +1209,12 @@ export class UnifiedRouter {
             waited += checkInterval;
         }
         
-        console.warn('📍 Core components not fully ready after', maxWait, 'ms - proceeding anyway');
     }
 
     /**
      * Handle settings route
      */
     async handleSettingsRoute() {
-        console.log('📍 Handling settings route');
         
         try {
             // Dynamically import and initialize settings page manager
@@ -1404,10 +1226,8 @@ export class UnifiedRouter {
             if (!window.stacExplorer) window.stacExplorer = {};
             window.stacExplorer.settingsPageManager = settingsManager;
             
-            console.log('📍 Settings page loaded successfully');
             
         } catch (error) {
-            console.error('📍 Error loading settings page:', error);
             // Fallback to main app
             window.location.href = '/';
         }

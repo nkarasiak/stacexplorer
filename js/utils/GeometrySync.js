@@ -70,7 +70,6 @@ export class GeometrySync {
             });
             
         } else {
-            console.warn('⚠️ Main bbox input not found');
         }
         
         // Listen for map drawing events
@@ -185,7 +184,6 @@ export class GeometrySync {
                 throw new Error('Invalid coordinate format');
             }
         } catch (error) {
-            console.warn('⚠️ Failed to parse bbox coordinates:', error);
         }
     }
     
@@ -252,7 +250,6 @@ export class GeometrySync {
             }
             
         } catch (error) {
-            console.error('❌ Error parsing geometry:', error);
             
             // Show error notification
             if (this.notificationService) {
@@ -291,7 +288,6 @@ export class GeometrySync {
      */
     syncToAISearch(displayName, bbox, category, geojson = null) {
         if (!this.aiSmartSearch) {
-            console.warn('⚠️ AI Smart Search not available for sync');
             return;
         }
         
@@ -365,7 +361,6 @@ export const defaultGeometrySync = new GeometrySync({
     onGeometryParsed: (data) => {
     },
     onGeometryError: (error) => {
-        console.error('💥 Geometry parsing failed:', error);
     }
 });
 

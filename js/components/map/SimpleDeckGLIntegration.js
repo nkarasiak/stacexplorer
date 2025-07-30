@@ -33,7 +33,6 @@ class SimpleDeckGLIntegration {
                 throw new Error('MapLibre GL map not available');
             }
 
-            console.log('🎨 Initializing simple Deck.gl integration...');
 
             // Create simple Deck.gl instance
             this.deck = new window.deck.Deck({
@@ -53,10 +52,8 @@ class SimpleDeckGLIntegration {
             this.setupViewStateSync();
 
             this.isInitialized = true;
-            console.log('✅ Simple Deck.gl integration initialized successfully');
 
         } catch (error) {
-            console.error('❌ Failed to initialize simple Deck.gl integration:', error);
             throw error;
         }
     }
@@ -69,7 +66,6 @@ class SimpleDeckGLIntegration {
         
         while (Date.now() - start < timeout) {
             if (typeof window.deck !== 'undefined' && window.deck.Deck && window.deck.BitmapLayer) {
-                console.log('✅ Deck.gl is ready');
                 return true;
             }
             
@@ -158,21 +154,18 @@ class SimpleDeckGLIntegration {
         }
 
         try {
-            console.log(`🎨 Adding STAC item layer: ${item.id} (${assetKey})`);
 
             // Remove existing layer
             this.removeStacLayer();
 
             const asset = item.assets?.[assetKey];
             if (!asset) {
-                console.warn(`Asset '${assetKey}' not found in item ${item.id}`);
                 return false;
             }
 
             // Get bounding box
             const bbox = this.mapManager.mapLayers.getBoundingBox(item);
             if (!bbox) {
-                console.warn('No bounding box available for item');
                 return false;
             }
 
@@ -195,8 +188,6 @@ class SimpleDeckGLIntegration {
                 
                 // Error handling
                 onError: (error) => {
-                    console.warn('🔄 Deck.gl image loading failed (CORS/network issue), falling back to MapLibre:', asset.href);
-                    console.error('Error details:', error);
                     
                     // Remove the failed Deck.gl layer
                     this.removeStacLayer();
@@ -220,14 +211,11 @@ class SimpleDeckGLIntegration {
             if (!options.preserveViewport) {
                 this.mapManager.mapLayers.fitMapToBbox(bbox);
             } else {
-                console.log('🔒 Preserving viewport - not centering/zooming to item');
             }
 
-            console.log('✅ STAC layer added successfully with simple Deck.gl');
             return true;
 
         } catch (error) {
-            console.error('❌ Failed to add STAC layer with simple Deck.gl:', error);
             // Fallback to MapLibre rendering
             return this.mapManager._displayItemOnMapLibre(item, assetKey);
         }
@@ -248,7 +236,6 @@ class SimpleDeckGLIntegration {
             if (this.deck) {
                 this.deck.setProps({ layers: [] });
             }
-            console.log('🧹 Removed current STAC layer');
         }
     }
 
@@ -289,7 +276,6 @@ class SimpleDeckGLIntegration {
                     isWebGL2 = webglContext instanceof WebGL2RenderingContext;
                 }
             } catch (error) {
-                console.warn('Could not access WebGL context:', error);
             }
             
             return {
@@ -318,7 +304,6 @@ class SimpleDeckGLIntegration {
      */
     async getImageAsBase64(imageUrl) {
         try {
-            console.log('🖼️ Converting image to avoid CORS:', imageUrl);
             
             // First try to fetch as blob (like LazyImageLoader does)
             const response = await fetch(imageUrl, {
@@ -331,7 +316,6 @@ class SimpleDeckGLIntegration {
                 
                 // Validate blob
                 if (blob && blob.size > 0 && blob.type.startsWith('image/')) {
-                    console.log('✅ Successfully fetched image as blob');
                     return URL.createObjectURL(blob);
                 }
             }
@@ -339,7 +323,6 @@ class SimpleDeckGLIntegration {
             throw new Error('Fetch failed or invalid blob');
             
         } catch (fetchError) {
-            console.warn('⚠️ Fetch failed, trying direct image loading with canvas conversion:', fetchError);
             
             // Fallback to canvas approach
             return new Promise((resolve) => {
@@ -360,17 +343,14 @@ class SimpleDeckGLIntegration {
                         
                         // Convert to base64
                         const dataURL = canvas.toDataURL('image/jpeg', 0.8);
-                        console.log('✅ Converted image to base64 via canvas');
                         resolve(dataURL);
                         
                     } catch (canvasError) {
-                        console.warn('❌ Canvas conversion failed, using original URL:', canvasError);
                         resolve(imageUrl);
                     }
                 };
                 
                 img.onerror = () => {
-                    console.warn('❌ Direct image loading failed, using original URL');
                     resolve(imageUrl);
                 };
                 
@@ -414,7 +394,6 @@ class SimpleDeckGLIntegration {
         this.currentLayer = null;
         this.isInitialized = false;
 
-        console.log('🗑️ Simple Deck.gl integration destroyed');
     }
 }
 

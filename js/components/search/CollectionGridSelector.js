@@ -163,7 +163,6 @@ export class CollectionGridSelector {
         this.elements.sourceFilter.addEventListener('change', (e) => {
             // Only process if collections are loaded
             if (!this.collectionsLoaded) {
-                console.warn('Collections not yet loaded, ignoring source filter change');
                 return;
             }
             this.selectedSource = e.target.value;
@@ -231,10 +230,8 @@ export class CollectionGridSelector {
             this.updateStats();
             this.hideLoading();
             
-            console.log(`✅ Loaded ${this.collections.length} collections in grid view`);
             
         } catch (error) {
-            console.error('❌ Error loading collections:', error);
             this.showError(error.message);
         }
     }
@@ -454,20 +451,16 @@ export class CollectionGridSelector {
         ).join('');
         
         // Add click handlers to cards
-        console.log('🔧 Attaching click handlers to', grid.querySelectorAll('.collection-card').length, 'collection cards');
         grid.querySelectorAll('.collection-card').forEach((card, index) => {
             const collectionId = card.dataset.collectionId;
             const collection = this.filteredCollections.find(c => c.id === collectionId);
             
             if (!collection) {
-                console.warn('⚠️ No collection found for card:', collectionId);
                 return;
             }
             
-            console.log(`🔧 Attaching click handler ${index + 1} for:`, collection.id);
             card.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent event from bubbling to modal overlay
-                console.log('🖱️ Collection card clicked:', collection.id);
                 this.selectCollection(collection);
             });
             
@@ -555,12 +548,10 @@ export class CollectionGridSelector {
      * @param {Object} collection - Collection to select
      */
     selectCollection(collection) {
-        console.log('🎯 selectCollection called for:', collection.id);
         
         // Check modal state before and after each operation
         const checkModalState = (step) => {
             const modalOverlay = document.querySelector('.collection-browser-modal-overlay.open');
-            console.log(`📊 Modal state ${step}:`, {
                 modalExists: !!modalOverlay,
                 hasOpenClass: modalOverlay?.classList.contains('open')
             });
@@ -593,11 +584,9 @@ export class CollectionGridSelector {
                 'https://planetarycomputer.microsoft.com/api/stac/v1': 'microsoft-pc'
             };
             catalogId = legacyMapping[currentEndpoint];
-            console.log('📡 Determined catalog ID for collection event:', catalogId);
         }
         
         // Dispatch selection event
-        console.log('📡 Dispatching collectionSelected event for:', collection.id);
         document.dispatchEvent(new CustomEvent('collectionSelected', {
             detail: {
                 collection: collection,
@@ -607,7 +596,6 @@ export class CollectionGridSelector {
         }));
         
         // Note: Notification is shown by CollectionBrowserModal to avoid duplicates
-        console.log('✅ Collection selected and event dispatched:', collection.id);
     }
     
     /**
@@ -775,7 +763,6 @@ export class CollectionGridSelector {
      */
     loadMoreCollections() {
         // Implement pagination if needed
-        console.log('Load more collections requested');
     }
     
     /**
@@ -806,7 +793,6 @@ export class CollectionGridSelector {
      */
     async refresh() {
         // This would typically reload from the collection manager
-        console.log('Refreshing collections...');
         this.showLoading();
         
         // Trigger collection reload

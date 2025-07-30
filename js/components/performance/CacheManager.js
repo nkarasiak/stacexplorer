@@ -63,7 +63,6 @@ export class CacheManager extends BaseUIComponent {
 
                 this.db = await this.openIndexedDB();
             } catch (error) {
-                console.warn('Disk cache initialization failed:', error);
                 this.options.enableDiskCache = false;
             }
         }
@@ -106,7 +105,6 @@ export class CacheManager extends BaseUIComponent {
             
             registration.addEventListener('message', this.handleServiceWorkerMessage.bind(this));
         } catch (error) {
-            console.warn('Service Worker registration failed:', error);
         }
     }
 
@@ -212,7 +210,6 @@ export class CacheManager extends BaseUIComponent {
                 request.onerror = () => resolve(null);
             });
         } catch (error) {
-            console.warn('Disk cache read error:', error);
             return null;
         }
     }
@@ -353,7 +350,6 @@ export class CacheManager extends BaseUIComponent {
 
             this.state.diskCacheSize += entry.metadata.size;
         } catch (error) {
-            console.warn('Disk cache write error:', error);
         }
     }
 
@@ -415,7 +411,6 @@ export class CacheManager extends BaseUIComponent {
                 }
             };
         } catch (error) {
-            console.warn('Disk cache eviction error:', error);
         }
     }
 
@@ -513,7 +508,6 @@ export class CacheManager extends BaseUIComponent {
 
             return new Uint8Array(compressed.reduce((acc, chunk) => [...acc, ...chunk], []));
         } catch (error) {
-            console.warn('Compression failed:', error);
             return data;
         }
     }
@@ -529,7 +523,6 @@ export class CacheManager extends BaseUIComponent {
             // This is a simplified version - in practice you'd need to handle async decompression
             return data;
         } catch (error) {
-            console.warn('Decompression failed:', error);
             return data;
         }
     }
@@ -597,7 +590,6 @@ export class CacheManager extends BaseUIComponent {
             await this.get(prefetchItem.url, { prefetch: true });
             this.state.prefetchQueue = this.state.prefetchQueue.filter(item => item !== prefetchItem);
         } catch (error) {
-            console.warn('Prefetch failed:', error);
         }
     }
 
@@ -637,7 +629,6 @@ export class CacheManager extends BaseUIComponent {
 
             observer.observe({ entryTypes: ['resource'] });
         } catch (error) {
-            console.warn('Performance observer setup failed:', error);
         }
     }
 
@@ -699,7 +690,6 @@ export class CacheManager extends BaseUIComponent {
                 }
             };
         } catch (error) {
-            console.warn('Disk cache cleanup error:', error);
         }
     }
 
@@ -750,7 +740,6 @@ export class CacheManager extends BaseUIComponent {
                 }
             };
         } catch (error) {
-            console.warn('Pattern-based disk cache clear error:', error);
         }
     }
 

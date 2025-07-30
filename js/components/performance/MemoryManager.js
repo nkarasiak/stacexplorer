@@ -87,7 +87,6 @@ export class MemoryManager {
             this.log('Unhandled promise rejection detected:', event.reason);
             
             if (this.options.enableWarnings) {
-                console.warn('MemoryManager: Unhandled promise rejection could cause memory leaks', event.reason);
             }
         });
     }
@@ -646,7 +645,6 @@ export class MemoryManager {
             this.metrics.memoryLeaksDetected++;
             
             if (this.options.enableWarnings) {
-                console.warn('MemoryManager: Potential memory leak detected', {
                     trend,
                     currentUsage: recent[recent.length - 1].usedJSHeapSize,
                     resourceCounts: this.getResourceCounts()
@@ -662,7 +660,6 @@ export class MemoryManager {
         const currentUsage = recent[recent.length - 1].usedJSHeapSize;
         if (currentUsage > this.options.memoryThreshold) {
             if (this.options.enableWarnings) {
-                console.warn('MemoryManager: Memory threshold exceeded', {
                     current: currentUsage / 1024 / 1024 + 'MB',
                     threshold: this.options.memoryThreshold / 1024 / 1024 + 'MB'
                 });
@@ -905,7 +902,6 @@ export class MemoryManager {
             try {
                 callback();
             } catch (error) {
-                console.error('MemoryManager: Error in cleanup callback:', error);
             }
         }
         this.cleanupCallbacks.clear();
@@ -930,7 +926,6 @@ export class MemoryManager {
      */
     log(...args) {
         if (this.options.debugMode) {
-            console.log('[MemoryManager]', ...args);
         }
     }
 }

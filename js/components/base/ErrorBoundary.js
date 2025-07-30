@@ -251,7 +251,6 @@ export class ErrorBoundary extends BaseUIComponent {
             try {
                 this.options.onError(error, fullErrorInfo);
             } catch (handlerError) {
-                console.error('Error in custom error handler:', handlerError);
             }
         }
         
@@ -552,7 +551,6 @@ export class ErrorBoundary extends BaseUIComponent {
             try {
                 this.options.onRetry();
             } catch (retryError) {
-                console.error('Error in custom retry handler:', retryError);
             }
         }
         
@@ -626,7 +624,6 @@ export class ErrorBoundary extends BaseUIComponent {
             try {
                 this.options.onRecover();
             } catch (recoverError) {
-                console.error('Error in custom recovery handler:', recoverError);
             }
         }
         
@@ -641,7 +638,6 @@ export class ErrorBoundary extends BaseUIComponent {
     async reportError(errorInfo) {
         if (!this.options.reportUrl) {
             // Just log to console if no reporting URL
-            console.error('Error Report:', errorInfo);
             return;
         }
         
@@ -660,10 +656,8 @@ export class ErrorBoundary extends BaseUIComponent {
             });
             
             if (!response.ok) {
-                console.warn('Failed to report error:', response.statusText);
             }
         } catch (reportingError) {
-            console.error('Error reporting failed:', reportingError);
         }
     }
     
@@ -740,7 +734,6 @@ export class ErrorBoundaryManager {
      */
     createGlobal(options = {}) {
         if (this.globalBoundary) {
-            console.warn('Global error boundary already exists');
             return this.globalBoundary;
         }
         

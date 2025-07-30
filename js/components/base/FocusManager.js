@@ -23,7 +23,6 @@ export class FocusManager {
         // Initialize global keyboard handlers
         this.initGlobalKeyboardHandlers();
         
-        console.log('[FocusManager] Initialized');
     }
     
     /**
@@ -105,7 +104,6 @@ export class FocusManager {
         };
         
         if (!element || typeof element.focus !== 'function') {
-            console.warn('[FocusManager] Invalid element for focus:', element);
             return false;
         }
         
@@ -127,10 +125,8 @@ export class FocusManager {
                 this.announceToScreenReader(config.announce);
             }
             
-            console.log('[FocusManager] Focus set to:', element);
             return true;
         } catch (error) {
-            console.error('[FocusManager] Failed to set focus:', error);
             return false;
         }
     }
@@ -146,7 +142,6 @@ export class FocusManager {
             // Check if element is still in document and focusable
             if (document.contains(previousElement) && this.isElementVisible(previousElement)) {
                 previousElement.focus();
-                console.log('[FocusManager] Focus restored to:', previousElement);
                 return true;
             }
         }
@@ -155,7 +150,6 @@ export class FocusManager {
         const fallbackElements = this.getFocusableElements();
         if (fallbackElements.length > 0) {
             fallbackElements[0].focus();
-            console.log('[FocusManager] Focus restored to fallback element');
             return true;
         }
         
@@ -170,7 +164,6 @@ export class FocusManager {
      */
     trapFocus(container, options = {}) {
         if (!container) {
-            console.warn('[FocusManager] No container provided for focus trap');
             return null;
         }
         
@@ -185,7 +178,6 @@ export class FocusManager {
         const focusableElements = this.getFocusableElements(container);
         
         if (focusableElements.length === 0) {
-            console.warn('[FocusManager] No focusable elements found in trap container');
             return null;
         }
         
@@ -262,7 +254,6 @@ export class FocusManager {
                 container.setAttribute('aria-modal', 'true');
                 container.setAttribute('role', container.getAttribute('role') || 'dialog');
                 
-                console.log('[FocusManager] Focus trap activated for:', container);
             },
             
             deactivate() {
@@ -290,7 +281,6 @@ export class FocusManager {
                 // Remove ARIA attributes
                 container.removeAttribute('aria-modal');
                 
-                console.log('[FocusManager] Focus trap deactivated for:', container);
             },
             
             updateElements() {

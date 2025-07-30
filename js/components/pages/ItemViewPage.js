@@ -222,7 +222,6 @@ export class ItemViewPage {
             this.page.scrollTop = 0;
             
         } catch (error) {
-            console.error('Error in ItemViewPage.show():', error);
             this.showError(`Failed to display item: ${error.message}`);
         }
     }
@@ -276,7 +275,6 @@ export class ItemViewPage {
             this.populateLinks(item);
             
         } catch (error) {
-            console.error('Error populating item content:', error);
             this.showError('Failed to load item details: ' + error.message);
         }
     }
@@ -479,7 +477,6 @@ export class ItemViewPage {
         navigator.clipboard.writeText(url).then(() => {
             this.notificationService?.showNotification('Item URL copied to clipboard', 'success');
         }).catch(err => {
-            console.error('Failed to copy URL:', err);
             this.notificationService?.showNotification('Failed to copy URL', 'error');
         });
     }
@@ -493,7 +490,6 @@ export class ItemViewPage {
             navigator.clipboard.writeText(json).then(() => {
                 this.notificationService?.showNotification('Item JSON copied to clipboard', 'success');
             }).catch(err => {
-                console.error('Failed to copy JSON:', err);
                 this.notificationService?.showNotification('Failed to copy JSON', 'error');
             });
         }
@@ -506,7 +502,6 @@ export class ItemViewPage {
         // Get current URL and replace /browser/ with /viewer/
         const currentUrl = window.location.href;
         const viewerUrl = currentUrl.replace('/browser/', '/viewer/');
-        console.log('🔗 Navigating to viewer URL:', viewerUrl);
         window.location.href = viewerUrl;
     }
     

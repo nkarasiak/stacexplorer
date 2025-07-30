@@ -74,7 +74,6 @@ export class DropdownUIManager {
             
             
         } catch (error) {
-            console.error('❌ Error positioning dropdown:', error);
             this.applyEmergencyPositioning(dropdown);
         }
     }
@@ -109,7 +108,6 @@ export class DropdownUIManager {
         dropdown.style.borderRadius = '12px';
         dropdown.style.boxShadow = '0 12px 48px rgba(0, 0, 0, 0.5)';
         
-        console.warn('🚨 Applied emergency positioning for dropdown');
     }
     
     /**

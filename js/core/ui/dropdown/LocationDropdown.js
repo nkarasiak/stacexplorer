@@ -132,7 +132,6 @@ export class LocationDropdown {
             const results = await this.geocodingService.search(query);
             this.displayLocationSuggestions(results, suggestionsContainer);
         } catch (error) {
-            console.error('Error searching locations:', error);
             suggestionsContainer.innerHTML = '<div class="suggestion-error">Search failed. Please try again.</div>';
             suggestionsContainer.style.display = 'block';
         }
@@ -262,7 +261,6 @@ export class LocationDropdown {
             detail: { locationResult: result }
         }));
         
-        console.log('Location selected:', result);
     }
 
     /**

@@ -202,9 +202,6 @@ export class CollectionDetailsModal {
         // Setup modal event listeners
         this.setupModalEventListeners();
         
-        console.log('✅ CollectionDetailsModal created');
-        console.log('📍 Modal overlay classes:', modalOverlay.className);
-        console.log('📍 Modal dialog classes:', modalOverlay.querySelector('.collection-details-modal-dialog').className);
     }
     
     /**
@@ -287,11 +284,7 @@ export class CollectionDetailsModal {
             this.currentCollection = collection;
             
             // Show modal and loading state
-            console.log('🔍 Showing modal for collection:', collection.id);
-            console.log('📍 Modal overlay element:', this.modal.overlay);
-            console.log('📍 Adding active class...');
             this.modal.overlay.classList.add('active');
-            console.log('📍 Modal overlay classes after adding active:', this.modal.overlay.className);
             this.modal.loading.style.display = 'flex';
             this.modal.content.style.display = 'none';
             
@@ -309,10 +302,8 @@ export class CollectionDetailsModal {
             this.modal.loading.style.display = 'none';
             this.modal.content.style.display = 'block';
             
-            console.log('📄 Collection details displayed:', collection.id);
             
         } catch (error) {
-            console.error('❌ Error showing collection details:', error);
             this.notificationService.showNotification(
                 `Error loading collection details: ${error.message}`,
                 'error'
@@ -334,7 +325,6 @@ export class CollectionDetailsModal {
             }
             
             // Otherwise, fetch detailed info from API
-            console.log(`🔍 Fetching detailed info for collection: ${collection.id}`);
             
             // Set API client to correct source if needed
             if (collection.source && window.stacExplorer?.config?.stacEndpoints?.[collection.source]) {
@@ -352,7 +342,6 @@ export class CollectionDetailsModal {
             };
             
         } catch (error) {
-            console.error('❌ Error loading detailed collection:', error);
             // Return original collection if detailed fetch fails
             return collection;
         }
@@ -538,10 +527,8 @@ export class CollectionDetailsModal {
                 this.showOnMap();
             });
             
-            console.log('✅ Mini map created for collection');
             
         } catch (error) {
-            console.error('❌ Error creating mini map:', error);
             miniMapContainer.style.display = 'none';
         }
     }
@@ -748,7 +735,6 @@ export class CollectionDetailsModal {
             await navigator.clipboard.writeText(jsonText);
             this.notificationService.showNotification('JSON copied to clipboard!', 'success');
         } catch (error) {
-            console.error('❌ Error copying JSON:', error);
             this.notificationService.showNotification('Failed to copy JSON', 'error');
         }
     }
@@ -775,7 +761,6 @@ export class CollectionDetailsModal {
             
             this.notificationService.showNotification(`Downloaded ${filename}`, 'success');
         } catch (error) {
-            console.error('❌ Error downloading JSON:', error);
             this.notificationService.showNotification('Failed to download JSON', 'error');
         }
     }
@@ -797,7 +782,6 @@ export class CollectionDetailsModal {
                 'https://planetarycomputer.microsoft.com/api/stac/v1': 'microsoft-pc'
             };
             catalogId = legacyMapping[currentEndpoint];
-            console.log('📡 Determined catalog ID for collection modal event:', catalogId);
         }
         
         // Dispatch collection selection event
@@ -844,7 +828,6 @@ export class CollectionDetailsModal {
                 'success'
             );
         } catch (error) {
-            console.error('❌ Error copying collection info:', error);
             this.notificationService.showNotification(
                 'Failed to copy collection information', 
                 'error'
@@ -877,10 +860,8 @@ export class CollectionDetailsModal {
                 'success'
             );
             
-            console.log('📋 Share URL created:', shareUrl);
             
         } catch (error) {
-            console.error('❌ Error creating share URL:', error);
             this.notificationService.showNotification(
                 'Failed to create share URL', 
                 'error'
@@ -921,7 +902,6 @@ export class CollectionDetailsModal {
             this.close();
             
         } catch (error) {
-            console.error('❌ Error showing collection on map:', error);
             this.notificationService.showNotification(
                 'Failed to show collection on map', 
                 'error'
@@ -980,7 +960,6 @@ export class CollectionDetailsModal {
         const action = urlParams.get('action');
         
         if (collectionId && action === 'details') {
-            console.log('📋 Handling shared collection URL:', collectionId, source);
             
             // Wait for app to initialize, then show collection details
             setTimeout(() => {

@@ -56,7 +56,6 @@ export class STACApiClient {
                 return response;
                 
             } catch (error) {
-                console.warn(`❌ Attempt ${attempt} failed:`, error.message);
                 
                 if (attempt === retries) {
                     // Last attempt failed
@@ -145,7 +144,6 @@ export class STACApiClient {
             
             // Check if this is a static catalog (URL ends with .json)
             if (normalizedUrl.endsWith('.json')) {
-                console.log('📂 Static catalog detected (URL ends with .json)');
                 
                 // Store catalog data for special handling based on provider
                 if (normalizedUrl.includes('planet.com')) {
@@ -168,7 +166,6 @@ export class STACApiClient {
                 // Check if endpoints are already set with empty collections (catalog-type)
                 // If so, don't override them
                 if (this.endpoints.collections === '' && this.endpoints.search === '') {
-                    console.log('📂 Catalog-type endpoint detected - preserving empty collections/search URLs');
                     // Just update the root, keep collections and search empty
                     this.setEndpoints({
                         root: normalizedUrl,
@@ -206,7 +203,6 @@ export class STACApiClient {
             
             return rootCatalog;
         } catch (error) {
-            console.error('Error connecting to custom catalog:', error);
             throw new Error(`Failed to connect to STAC catalog: ${error.message}`);
         }
     }
@@ -271,7 +267,6 @@ export class STACApiClient {
             return collections;
             
         } catch (error) {
-            console.error('❌ Error fetching collections:', error);
             throw new Error(`Failed to fetch collections: ${error.message}`);
         }
     }
@@ -322,14 +317,12 @@ export class STACApiClient {
                         }
                     }
                 } catch (error) {
-                    console.warn(`Failed to fetch child catalog: ${link.href}`, error);
                 }
             }
             
             return collections;
             
         } catch (error) {
-            console.error('❌ Error fetching Planet Labs collections:', error);
             throw new Error(`Failed to fetch Planet Labs collections: ${error.message}`);
         }
     }
@@ -379,14 +372,12 @@ export class STACApiClient {
                         }
                     }
                 } catch (error) {
-                    console.warn(`Failed to fetch GEE child catalog: ${link.href}`, error);
                 }
             }
             
             return collections;
             
         } catch (error) {
-            console.error('❌ Error fetching GEE collections:', error);
             throw new Error(`Failed to fetch GEE collections: ${error.message}`);
         }
     }
@@ -436,14 +427,12 @@ export class STACApiClient {
                         }
                     }
                 } catch (error) {
-                    console.warn(`Failed to fetch static catalog child: ${link.href}`, error);
                 }
             }
             
             return collections;
             
         } catch (error) {
-            console.error('❌ Error fetching static catalog collections:', error);
             throw new Error(`Failed to fetch static catalog collections: ${error.message}`);
         }
     }
@@ -468,7 +457,6 @@ export class STACApiClient {
             
             return await response.json();
         } catch (error) {
-            console.error(`Error fetching collection ${collectionId}:`, error);
             throw new Error(`Failed to fetch collection: ${error.message}`);
         }
     }
@@ -546,7 +534,6 @@ export class STACApiClient {
             
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error('Search request failed:', {
                     status: response.status,
                     statusText: response.statusText,
                     responseText: errorText
@@ -579,7 +566,6 @@ export class STACApiClient {
                     });
                     
                     if (exceedsFilter.length > 0) {
-                        console.warn(`🚨 WARNING: Found ${exceedsFilter.length} items exceeding cloud cover filter (>${filterValue}%):`, 
                             exceedsFilter.slice(0, 3).map(item => ({
                                 id: item.id,
                                 cloudCover: item.properties?.['eo:cloud_cover']
@@ -601,7 +587,6 @@ export class STACApiClient {
                 return [];
             }
         } catch (error) {
-            console.error('Error searching items:', error);
             throw new Error(`Failed to search items: ${error.message}`);
         }
     }
@@ -629,7 +614,6 @@ export class STACApiClient {
             const presignedItems = await this.presignPlanetaryComputerUrls([item]);
             return presignedItems[0];
         } catch (error) {
-            console.error(`Error fetching item ${itemId}:`, error);
             throw new Error(`Failed to fetch item: ${error.message}`);
         }
     }
@@ -707,7 +691,6 @@ export class STACApiClient {
     async fetchToken(collection) {
         const tokenEndpoint = `https://planetarycomputer.microsoft.com/api/sas/v1/token/${collection}`;
         
-        console.log(`🔗 [PRESIGN-API] Fetching new token for collection: ${collection}`);
         
         try {
             const tokenResponse = await fetch(tokenEndpoint);
@@ -720,13 +703,11 @@ export class STACApiClient {
                     const now = Date.now();
                     this.tokenCache.set(collection, tokenData.token);
                     this.tokenCacheExpiry.set(collection, now + this.TOKEN_CACHE_DURATION);
-                    console.log(`🔗 [PRESIGN-API] Cached token for collection: ${collection} (expires in ${this.TOKEN_CACHE_DURATION/1000/60} minutes)`);
                     
                     return tokenData.token;
                 }
             } else {
                 const errorText = await tokenResponse.text();
-                console.warn(`🔗 [PRESIGN-API] Token request failed:`, {
                     status: tokenResponse.status,
                     statusText: tokenResponse.statusText,
                     responseText: errorText
@@ -736,7 +717,6 @@ export class STACApiClient {
                 if (tokenResponse.status === 429) {
                     const retryAfter = tokenResponse.headers.get('Retry-After') || '60';
                     const waitTime = parseInt(retryAfter) * 1000;
-                    console.warn(`🔗 [PRESIGN-API] Rate limited. Waiting ${waitTime}ms before retry.`);
                     await new Promise(resolve => setTimeout(resolve, waitTime));
                     return this.fetchToken(collection); // Retry once
                 }
@@ -744,7 +724,6 @@ export class STACApiClient {
                 throw new Error(`Token request failed: ${tokenResponse.status} ${tokenResponse.statusText}`);
             }
         } catch (error) {
-            console.error(`🔗 [PRESIGN-API] Error fetching token for ${collection}:`, error);
             throw error;
         }
     }
@@ -760,7 +739,6 @@ export class STACApiClient {
             // Extract collection from URL to determine the correct SAS token endpoint
             const collection = this.extractCollectionFromUrl(url);
             if (!collection) {
-                console.warn(`🔗 [PRESIGN-API] Could not extract collection from URL: ${url}`);
                 return url;
             }
             
@@ -770,13 +748,11 @@ export class STACApiClient {
             const cacheExpiry = this.tokenCacheExpiry.get(collection);
             
             if (cachedToken && cacheExpiry && now < cacheExpiry) {
-                console.log(`🔗 [PRESIGN-API] Using cached token for collection: ${collection}`);
                 return `${url}?${cachedToken}`;
             }
             
             // Check if there's already a pending request for this collection
             if (this.tokenRequestQueue.has(collection)) {
-                console.log(`🔗 [PRESIGN-API] Waiting for existing token request for collection: ${collection}`);
                 const token = await this.tokenRequestQueue.get(collection);
                 return `${url}?${token}`;
             }
@@ -786,7 +762,6 @@ export class STACApiClient {
             const timeSinceLastRequest = now - lastRequest;
             if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
                 const waitTime = this.MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-                console.log(`🔗 [PRESIGN-API] Rate limiting: waiting ${waitTime}ms before token request for ${collection}`);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
             }
             
@@ -804,7 +779,6 @@ export class STACApiClient {
             }
             
         } catch (error) {
-            console.warn('🔗 [PRESIGN-API] Error during presigning:', error);
         }
         
         // Fallback to original URL if presigning fails
@@ -902,7 +876,6 @@ export class STACApiClient {
             
             return null;
         } catch (error) {
-            console.warn('🔗 [PRESIGN-API] Error extracting collection from URL:', error);
             return null;
         }
     }
@@ -942,7 +915,6 @@ export class STACApiClient {
                             }
                         }
                     } catch (error) {
-                        console.warn(`Failed to search in catalog: ${link.href}`, error);
                     }
                 }
             } else {
@@ -962,7 +934,6 @@ export class STACApiClient {
                             items.push(...collectionItems);
                         }
                     } catch (error) {
-                        console.warn(`Failed to search in catalog: ${link.href}`, error);
                     }
                 }
             }
@@ -970,7 +941,6 @@ export class STACApiClient {
             return items;
             
         } catch (error) {
-            console.error('❌ Error searching Planet Labs items:', error);
             return [];
         }
     }
@@ -1007,7 +977,6 @@ export class STACApiClient {
                         items.push(itemData);
                     }
                 } catch (error) {
-                    console.warn(`Failed to fetch item: ${itemLink.href}`, error);
                 }
             }
             
@@ -1028,13 +997,11 @@ export class STACApiClient {
                             items.push(...childItems);
                         }
                     } catch (error) {
-                        console.warn(`Failed to fetch child catalog: ${childLink.href}`, error);
                     }
                 }
             }
             
         } catch (error) {
-            console.error('Error fetching items from catalog:', error);
         }
         
         return items;

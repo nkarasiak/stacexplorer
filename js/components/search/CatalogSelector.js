@@ -61,7 +61,6 @@ export class CatalogSelector {
             const config = window.stacExplorer?.config || this.config;
             if (!config || !config.stacEndpoints) {
                 if (retryCount < 5) {
-                    console.warn(`Config not yet available for ${catalogType}, retrying in 100ms... (attempt ${retryCount + 1}/5)`);
                     // Retry after a short delay to allow config to be set up
                     setTimeout(() => this.handleCatalogChange(catalogType, retryCount + 1), 100);
                     return;
@@ -104,7 +103,6 @@ export class CatalogSelector {
                 detail: { catalogType }
             }));
         } catch (error) {
-            console.error('Error changing catalog:', error);
             this.notificationService.showNotification(`Error connecting to ${catalogType} catalog: ${error.message}`, 'error');
             document.getElementById('loading').style.display = 'none';
         }
@@ -147,7 +145,6 @@ export class CatalogSelector {
                 detail: { catalogType: 'custom' }
             }));
         } catch (error) {
-            console.error('Error connecting to custom catalog:', error);
             this.notificationService.showNotification(`Error connecting to custom catalog: ${error.message}`, 'error');
             document.getElementById('loading').style.display = 'none';
         }

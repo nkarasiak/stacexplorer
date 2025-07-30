@@ -44,7 +44,6 @@ export async function loadCollections() {
         collectionsCache = data.collections || [];
         return collectionsCache;
     } catch (error) {
-        console.error('Error loading collections.json:', error);
         // Return empty array as fallback
         return [];
     }
@@ -92,7 +91,6 @@ export function getCustomCatalog() {
             return JSON.parse(savedCustomCatalog);
         }
     } catch (error) {
-        console.error('Error loading custom catalog:', error);
     }
     return null;
 }

@@ -5,7 +5,6 @@ export class CommandPalette extends BaseUIComponent {
         
         // Singleton pattern - prevent multiple instances
         if (CommandPalette.instance) {
-            console.warn('CommandPalette: Instance already exists, returning existing instance');
             return CommandPalette.instance;
         }
 
@@ -249,7 +248,6 @@ export class CommandPalette extends BaseUIComponent {
                 if (searchBtn) {
                     searchBtn.click();
                 } else {
-                    console.error('Search button not found!');
                     // Try alternative search trigger
                     const searchForm = document.getElementById('search-form');
                     if (searchForm) {
@@ -270,7 +268,6 @@ export class CommandPalette extends BaseUIComponent {
                 if (settingsBtn) {
                     settingsBtn.click();
                 } else {
-                    console.error('Settings button not found!');
                     // Alternative: try to open settings modal directly
                     const settingsModal = document.getElementById('settings-modal');
                     if (settingsModal) {
@@ -354,7 +351,6 @@ export class CommandPalette extends BaseUIComponent {
                 if (exportButton) {
                     exportButton.click();
                 } else {
-                    console.error('Export button not found');
                     alert('Export functionality not available');
                 }
             }
@@ -377,7 +373,6 @@ export class CommandPalette extends BaseUIComponent {
                         resultsPanel.classList.remove('collapsed');
                     }
                 } else {
-                    console.error('Results panel not found');
                 }
             }
         });
@@ -399,7 +394,6 @@ export class CommandPalette extends BaseUIComponent {
                         window.map.getContainer().focus();
                     }
                 } else {
-                    console.error('Map container not found');
                 }
             }
         });
@@ -415,7 +409,6 @@ export class CommandPalette extends BaseUIComponent {
                 if (themeToggle) {
                     themeToggle.click();
                 } else {
-                    console.error('Theme toggle button not found!');
                 }
             }
         });
@@ -499,7 +492,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                     locationInput.focus();
                     locationInput.select();
                 } else {
-                    console.error('Location input not found!');
                 }
             }
         });
@@ -515,7 +507,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                 if (sourceElement) {
                     sourceElement.click();
                 } else {
-                    console.error('Source element not found!');
                 }
             }
         });
@@ -531,7 +522,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                 if (startDateInput) {
                     startDateInput.focus();
                 } else {
-                    console.error('Start date input not found!');
                 }
             }
         });
@@ -547,7 +537,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                 if (endDateInput) {
                     endDateInput.focus();
                 } else {
-                    console.error('End date input not found!');
                 }
             }
         });
@@ -574,7 +563,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                         summaryDateElement.textContent = 'Anytime';
                     }
                 } else {
-                    console.error('Date inputs not found!');
                 }
             }
         });
@@ -605,7 +593,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                         window.updateSearchSummaryDisplay();
                     }
                 } else {
-                    console.error('Date inputs not found!');
                 }
             }
         });
@@ -635,7 +622,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                         window.updateSearchSummaryDisplay();
                     }
                 } else {
-                    console.error('Date inputs not found!');
                 }
             }
         });
@@ -665,7 +651,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                         window.updateSearchSummaryDisplay();
                     }
                 } else {
-                    console.error('Date inputs not found!');
                 }
             }
         });
@@ -684,7 +669,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                     locationInput.focus();
                     locationInput.dispatchEvent(new Event('input', { bubbles: true }));
                 } else {
-                    console.error('Location input not found!');
                 }
             }
         });
@@ -702,7 +686,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                     locationInput.focus();
                     locationInput.dispatchEvent(new Event('input', { bubbles: true }));
                 } else {
-                    console.error('Location input not found!');
                 }
             }
         });
@@ -720,7 +703,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                     locationInput.focus();
                     locationInput.dispatchEvent(new Event('input', { bubbles: true }));
                 } else {
-                    console.error('Location input not found!');
                 }
             }
         });
@@ -741,7 +723,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                         window.clearLocationPreview();
                     }
                 } else {
-                    console.error('Location input not found!');
                 }
             }
         });
@@ -764,7 +745,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                     if (sourceElement) {
                         sourceElement.click();
                     } else {
-                        console.error('Collection browser not found!');
                     }
                 }
             }
@@ -795,7 +775,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                             }
                         }, 500);
                     } else {
-                        console.error('Collection browser not found!');
                     }
                 }
             }
@@ -844,7 +823,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
     handleGlobalKeydown(event) {
         // Safety check to ensure we have a valid event
         if (!event) {
-            console.warn('Invalid event in handleGlobalKeydown');
             return;
         }
 
@@ -863,13 +841,11 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                 this.handlePaletteKeydown(event);
             }
         } catch (error) {
-            console.error('Error in handleGlobalKeydown:', error);
         }
     }
 
     handlePaletteKeydown(event) {
         if (!event) {
-            console.warn('Invalid event in handlePaletteKeydown');
             return;
         }
 
@@ -890,7 +866,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                 this.selectPrevious();
             }
         } catch (error) {
-            console.error('Error in handlePaletteKeydown:', error);
         }
     }
 
@@ -905,7 +880,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
             parts.push(event.key.toLowerCase());
         } else {
             // Fallback for when event.key is undefined
-            console.warn('Event key is undefined, using keyCode fallback');
             parts.push(String.fromCharCode(event.keyCode || event.which || 0).toLowerCase());
         }
         
@@ -921,7 +895,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
             this.addEventListener(this.input, 'input', this.handleInput.bind(this));
             this.addEventListener(this.input, 'keydown', this.handleInputKeydown.bind(this));
         } else {
-            console.error('Input element not found for event listeners');
         }
         
         if (this.backdrop) {
@@ -1269,7 +1242,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
         
         const selectedCommand = this.state.results[this.state.selectedIndex];
         if (!selectedCommand) {
-            console.error('No selected command found!');
             return;
         }
 
@@ -1279,7 +1251,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
             if (typeof selectedCommand.action === 'function') {
                 selectedCommand.action();
             } else {
-                console.error('Command action is not a function:', typeof selectedCommand.action);
             }
             
             this.emit('command-executed', { 
@@ -1287,7 +1258,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                 commandData: selectedCommand 
             });
         } catch (error) {
-            console.error('Command execution error:', error);
             this.emit('command-error', { 
                 command: selectedCommand.id, 
                 error 
@@ -1342,7 +1312,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
         this.state.selectedIndex = 0;
 
         if (!this.paletteContainer) {
-            console.error('No palette container found!');
             return;
         }
 
@@ -1381,7 +1350,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                     }
                 }, 250);
             } else {
-                console.error('Input element not found for focusing!');
             }
             
             
@@ -1435,7 +1403,6 @@ Built with modern web technologies for exploring STAC-compliant data catalogs.
                 this.paletteContainer.setAttribute('data-theme', preferences.theme);
             }
         } catch (error) {
-            console.warn('Failed to load command palette preferences:', error);
         }
     }
 

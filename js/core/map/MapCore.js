@@ -45,7 +45,6 @@ export class MapCore {
                 
                 // Check if this element already has a map and clean it up
                 if (element._maplibregl_map) {
-                    console.warn('🧽 Cleaning up existing map instance on container:', container);
                     const existingMap = element._maplibregl_map;
                     existingMap.remove();
                     // Small delay to ensure cleanup completes
@@ -66,7 +65,6 @@ export class MapCore {
             
             // Get the appropriate map style based on theme
             const styleUrl = this.getMapStyle(this.currentTheme);
-            console.log('🗺️ Loading map style:', styleUrl);
 
             // Initialize MapLibre GL map with proper config defaults
             const defaultCenter = [52.5, 28.5]; // Middle East / Central Asia region
@@ -88,17 +86,14 @@ export class MapCore {
 
             await new Promise((resolve, reject) => {
                 this.map.on('load', () => {
-                    console.log('✅ Map loaded successfully');
                     resolve();
                 });
                 this.map.on('error', (error) => {
-                    console.error('❌ Map load error:', error);
                     reject(error);
                 });
                 
                 // Timeout after 30 seconds with more descriptive error
                 setTimeout(() => {
-                    console.error('❌ Map load timeout - check network connection and map style URL');
                     reject(new Error('Map load timeout - check network connection and map style URL'));
                 }, 30000);
             });
@@ -117,7 +112,6 @@ export class MapCore {
             }));
             
         } catch (error) {
-            console.error('❌ Failed to initialize MapCore:', error);
             this.initializationPromise = null;
             throw error;
         }
@@ -247,7 +241,6 @@ export class MapCore {
                 // Update URL without refreshing the page
                 window.history.replaceState({}, '', url);
                 
-                console.log('🗺️ Updated map URL:', {
                     center: `${center.lat.toFixed(6)},${center.lng.toFixed(6)}`,
                     zoom: zoom.toFixed(2)
                 });
@@ -303,13 +296,11 @@ export class MapCore {
                     await this.initialize(containerId);
                     return true;
                 } catch (error) {
-                    console.warn(`⚠️ Failed to initialize with container ${containerId}:`, error);
                     continue;
                 }
             }
         }
         
-        console.error('❌ No suitable map container found. Tried:', commonContainerIds);
         return false;
     }
 

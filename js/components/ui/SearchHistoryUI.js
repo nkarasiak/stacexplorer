@@ -16,7 +16,6 @@ export class SearchHistoryUI {
      * Initialize the search history UI
      */
     init() {
-        console.log('🕒 Initializing Search History UI');
         
         // Get UI elements for header search history (now the primary interface)
         this.headerHistoryContainer = document.getElementById('header-search-history');
@@ -26,7 +25,6 @@ export class SearchHistoryUI {
         this.headerClearBtn = document.getElementById('header-clear-history-btn');
         
         if (!this.headerHistoryBtn || !this.headerHistoryMenu || !this.headerHistoryList) {
-            console.warn('⚠️ Search history UI elements not found');
             return;
         }
         
@@ -37,7 +35,6 @@ export class SearchHistoryUI {
         this.updateHistoryList();
         this.updateHeaderVisibility();
         
-        console.log('✅ Search History UI initialized');
     }
     
     /**
@@ -188,11 +185,9 @@ export class SearchHistoryUI {
      */
     reExecuteSearch(searchId) {
         try {
-            console.log('🔄 Re-executing search from history:', searchId);
             searchHistoryManager.reExecuteSearch(searchId);
             this.closeMenu();
         } catch (error) {
-            console.error('❌ Failed to re-execute search:', error);
         }
     }
     
@@ -202,10 +197,8 @@ export class SearchHistoryUI {
      */
     removeSearch(searchId) {
         try {
-            console.log('🗑️ Removing search from history:', searchId);
             searchHistoryManager.removeFromHistory(searchId);
         } catch (error) {
-            console.error('❌ Failed to remove search:', error);
         }
     }
     
@@ -215,7 +208,6 @@ export class SearchHistoryUI {
     clearHistory() {
         if (confirm('Are you sure you want to clear all search history?')) {
             searchHistoryManager.clearHistory();
-            console.log('🗑️ Search history cleared by user');
         }
     }
     

@@ -142,7 +142,6 @@ export class LazyImageLoader {
                         return;
                     }
                 } catch (urlError) {
-                    console.warn('Failed to use cached blob, trying direct loading:', urlError.message);
                     this.loadImageDirect(img, src);
                     return;
                 }
@@ -154,7 +153,6 @@ export class LazyImageLoader {
                 
                 // Validate blob before using it
                 if (!blob || blob.size === 0 || !blob.type.startsWith('image/')) {
-                    console.warn('Invalid blob received, trying direct loading:', src);
                     this.loadImageDirect(img, src);
                     return;
                 }
@@ -166,19 +164,16 @@ export class LazyImageLoader {
                 try {
                     img.src = URL.createObjectURL(blob);
                 } catch (urlError) {
-                    console.warn('Failed to create object URL, trying direct loading:', urlError.message);
                     this.loadImageDirect(img, src);
                     return;
                 }
                 
             } catch (fetchError) {
                 // If fetch fails (likely CORS), try direct image loading
-                console.warn('Fetch failed, trying direct image loading:', fetchError.message);
                 this.loadImageDirect(img, src);
             }
             
         } catch (error) {
-            console.warn('Failed to load image:', src, error);
             this.handleImageError(img);
         }
     }
@@ -191,7 +186,6 @@ export class LazyImageLoader {
     loadImageDirect(img, src) {
         // Set up error handling before setting src
         const errorHandler = () => {
-            console.warn('Direct image loading also failed:', src);
             this.imageCache.set(src, 'failed'); // Mark as failed in cache
             this.handleImageError(img);
         };

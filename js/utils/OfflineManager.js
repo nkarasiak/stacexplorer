@@ -283,7 +283,6 @@ export class OfflineManager {
             try {
                 callback(status, this.isOffline);
             } catch (error) {
-                console.error('Offline callback error:', error);
             }
         });
     }

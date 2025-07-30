@@ -289,7 +289,6 @@ export class DateUtils {
         const preset = DateUtils.DATE_PRESETS[presetType];
         
         if (!preset) {
-            console.warn(`Unknown date preset: ${presetType}`);
             return { start: null, end: null };
         }
 

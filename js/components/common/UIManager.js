@@ -36,7 +36,6 @@ export class UIManager {
     }
     
     setupEventListeners() {
-        console.log('🔧 Setting up event listeners...');
         
         // Custom catalog URL changed event
         document.addEventListener('customCatalogUrlChanged', async (e) => {
@@ -54,9 +53,7 @@ export class UIManager {
             themeToggle.addEventListener('click', () => {
                 this.toggleTheme();
             });
-            console.log('🔧 Theme toggle listener added');
         } else {
-            console.warn('🔧 Theme toggle button not found');
         }
         
         // Theme selector in settings modal
@@ -66,11 +63,9 @@ export class UIManager {
                 this.handleThemeSelection(e.target.value);
             });
         } else {
-            console.warn('🔧 Theme selector not found');
         }
         
         // Settings panel - now handled by routing to /settings page
-        console.log('🔧 Settings now handled by /settings route');
         
         // Initialize dynamic UI elements from collections.json
         this.initializeDynamicUI();
@@ -79,11 +74,9 @@ export class UIManager {
         const browseCollectionsCloseBtn = document.getElementById('browse-collections-close-btn');
         if (browseCollectionsCloseBtn) {
             browseCollectionsCloseBtn.addEventListener('click', () => {
-                console.log('🔧 Browse Collections close button clicked');
                 this.hideBrowseCollectionsPanel();
             });
         } else {
-            console.warn('🔧 Browse Collections close button not found');
         }
         
         // ESC key to close Browse Collections panel
@@ -201,7 +194,6 @@ export class UIManager {
     toggleToolsPanel() {
         const toolsPanel = document.getElementById('tools-panel');
         if (!toolsPanel) {
-            console.warn('Tools panel not found');
             return;
         }
 
@@ -226,18 +218,15 @@ export class UIManager {
         
         // Check system preference
         const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        console.log('🎨 System prefers dark mode:', prefersDark);
         
         let themeToApply;
         
         if (savedTheme) {
             // Use saved preference
             themeToApply = savedTheme;
-            console.log('🎨 Using saved theme preference:', savedTheme);
         } else {
             // Default to system preference (Auto mode)
             themeToApply = prefersDark ? 'dark' : 'light';
-            console.log('🎨 Using system theme preference (Auto):', themeToApply, '(system prefers dark:', prefersDark + ')');
         }
         
         // Apply the theme
@@ -252,7 +241,6 @@ export class UIManager {
             // Only auto-switch if no user preference is saved
             if (!localStorage.getItem('stac-explorer-theme')) {
                 const newTheme = e.matches ? 'dark' : 'light';
-                console.log('🎨 System theme changed to:', newTheme);
                 this.setTheme(newTheme);
             }
         });
@@ -286,7 +274,6 @@ export class UIManager {
         });
         document.dispatchEvent(themeChangeEvent);
         
-        console.log(`🎨 Theme set to: ${theme}, event dispatched:`, themeChangeEvent.detail);
     }
     
     /**
@@ -299,7 +286,6 @@ export class UIManager {
         
         // Save theme preference
         localStorage.setItem('stac-explorer-theme', newTheme);
-        console.log('💾 Saved theme preference:', newTheme);
         
         // Apply the new theme
         this.setTheme(newTheme);
@@ -310,7 +296,6 @@ export class UIManager {
      * @param {string} themeChoice - 'auto', 'dark', or 'light'
      */
     handleThemeSelection(themeChoice) {
-        console.log('🎨 Theme selection changed to:', themeChoice);
         
         if (themeChoice === 'auto') {
             // Remove saved preference to use system preference
@@ -321,13 +306,11 @@ export class UIManager {
             const systemTheme = prefersDark ? 'dark' : 'light';
             this.setTheme(systemTheme);
             
-            console.log('🎨 Auto theme - using system preference:', systemTheme);
         } else {
             // Save explicit preference and apply it
             localStorage.setItem('stac-explorer-theme', themeChoice);
             this.setTheme(themeChoice);
             
-            console.log('💾 Saved explicit theme preference:', themeChoice);
         }
         
         // Update theme selectors to reflect the change
@@ -418,7 +401,6 @@ export class UIManager {
                 }
             }
         } catch (error) {
-            console.warn('Error checking GPU status:', error);
             gpuStatusText.textContent = 'Unable to determine GPU status';
         }
     }
@@ -427,12 +409,10 @@ export class UIManager {
      * Show settings panel
      */
     showSettingsPanel() {
-        console.log('🔧 showSettingsPanel called');
         const settingsPanel = document.getElementById('settings-panel');
         const mapDiv = document.getElementById('map');
         
         if (settingsPanel && mapDiv) {
-            console.log('🔧 Showing settings panel');
             
             // Hide map and show settings panel
             mapDiv.style.display = 'none';
@@ -450,9 +430,7 @@ export class UIManager {
             // Load custom catalog URL
             this.loadCustomCatalogUrl();
             
-            console.log('🔧 Settings panel shown');
         } else {
-            console.error('🔧 Settings panel or map element not found!');
         }
     }
     
@@ -460,7 +438,6 @@ export class UIManager {
      * Hide settings panel
      */
     hideSettingsPanel() {
-        console.log('🔧 hideSettingsPanel called');
         
         const settingsPanel = document.getElementById('settings-panel');
         const mapDiv = document.getElementById('map');
@@ -470,7 +447,6 @@ export class UIManager {
             settingsPanel.style.display = 'none';
             mapDiv.style.display = 'block';
             
-            console.log('🔧 Settings panel hidden, map restored');
         }
     }
     
@@ -478,7 +454,6 @@ export class UIManager {
      * Hide Browse Collections panel
      */
     hideBrowseCollectionsPanel() {
-        console.log('🔧 hideBrowseCollectionsPanel called');
         
         const browsePanel = document.getElementById('browse-collections-panel');
         
@@ -486,9 +461,7 @@ export class UIManager {
             // Hide browse collections panel
             browsePanel.style.display = 'none';
             
-            console.log('🔧 Browse Collections panel hidden');
         } else {
-            console.warn('🔧 Browse Collections panel not found');
         }
         
         // Remove escape key handler
@@ -501,20 +474,16 @@ export class UIManager {
      * Show browse collections panel
      */
     showBrowseCollectionsPanel() {
-        console.log('🔧 showBrowseCollectionsPanel called');
         const browseCollectionsPanel = document.getElementById('browse-collections-panel');
         const mapDiv = document.getElementById('map');
         
         if (browseCollectionsPanel && mapDiv) {
-            console.log('🔧 Showing browse collections panel');
             
             // Hide map and show browse collections panel
             mapDiv.style.display = 'none';
             browseCollectionsPanel.style.display = 'block';
             
-            console.log('🔧 Browse collections panel shown');
         } else {
-            console.error('🔧 Browse collections panel or map element not found!');
         }
     }
     
@@ -522,7 +491,6 @@ export class UIManager {
      * Hide browse collections panel
      */
     hideBrowseCollectionsPanel() {
-        console.log('🔧 hideBrowseCollectionsPanel called');
         
         const browseCollectionsPanel = document.getElementById('browse-collections-panel');
         const mapDiv = document.getElementById('map');
@@ -532,13 +500,11 @@ export class UIManager {
             browseCollectionsPanel.style.display = 'none';
             mapDiv.style.display = 'block';
             
-            console.log('🔧 Browse collections panel hidden, map restored');
             
             // Ensure trigger button is properly reset
             const trigger = document.querySelector('.collection-browser-trigger');
             if (trigger) {
                 trigger.classList.remove('loading');
-                console.log('🔧 Trigger button reset after panel close');
             }
         }
     }
@@ -667,7 +633,6 @@ export class UIManager {
             }
         }));
         
-        console.log(`📊 Catalog ${catalogKey} ${isEnabled ? 'enabled' : 'disabled'}`);
         
         // Optional: Show a brief notification
         if (window.notificationService) {
@@ -713,7 +678,6 @@ export class UIManager {
                     this.addCustomCatalogToUI(customCatalog);
                     this.showCustomCatalogStatus('✓ Custom catalog loaded', 'success');
                 } catch (error) {
-                    console.error('🔧 Error loading saved custom catalog:', error);
                 }
             }
             
@@ -733,24 +697,16 @@ export class UIManager {
             
             // Add button event listener
             const addCustomCatalogBtn = document.getElementById('add-custom-catalog-btn');
-            console.log('🔧 Looking for add-custom-catalog-btn:', !!addCustomCatalogBtn);
             if (addCustomCatalogBtn) {
-                console.log('🔧 Adding click listener to Add button');
                 addCustomCatalogBtn.addEventListener('click', (e) => {
-                    console.log('🔧 Add button clicked!');
                     e.preventDefault();
                     const url = customCatalogInput.value.trim();
-                    console.log('🔧 URL to add:', url);
                     if (url) {
-                        console.log('🔧 Calling saveCustomCatalogUrl with:', url);
                         this.saveCustomCatalogUrl(url);
                     } else {
-                        console.log('🔧 No URL provided');
                     }
                 });
-                console.log('🔧 Add button listener attached successfully');
             } else {
-                console.warn('🔧 Add button not found!');
             }
         }
     }
@@ -759,17 +715,13 @@ export class UIManager {
      * Save custom catalog URL to localStorage
      */
     async saveCustomCatalogUrl(url) {
-        console.log('🔧 saveCustomCatalogUrl called with:', url);
         const trimmedUrl = url.trim();
         localStorage.setItem('stacExplorer-customCatalogUrl', trimmedUrl);
-        console.log('🔧 Saved URL to localStorage:', trimmedUrl);
         
         if (trimmedUrl) {
-            console.log('🔧 Starting catalog validation for:', trimmedUrl);
             // Try to fetch catalog information
             await this.validateAndAddCustomCatalog(trimmedUrl);
         } else {
-            console.log('🔧 Empty URL, removing custom catalog');
             // Remove custom catalog if URL is empty
             this.removeCustomCatalog();
         }
@@ -779,7 +731,6 @@ export class UIManager {
             detail: { url: trimmedUrl }
         }));
         
-        console.log('🔧 Custom catalog URL saved:', trimmedUrl);
     }
     
     /**
@@ -794,7 +745,6 @@ export class UIManager {
      */
     async validateAndAddCustomCatalog(url) {
         try {
-            console.log('🔧 Validating custom catalog:', url);
             
             // Show loading indicator
             this.showCustomCatalogStatus('Validating catalog...', 'loading');
@@ -844,7 +794,6 @@ export class UIManager {
             
             this.showCustomCatalogStatus('✓ Catalog validated successfully', 'success');
             
-            console.log('🔧 Custom catalog validated:', customCatalog);
             
             // Trigger collections refresh to include the new custom catalog
             document.dispatchEvent(new CustomEvent('refreshCollections'));
@@ -855,7 +804,6 @@ export class UIManager {
             }));
             
         } catch (error) {
-            console.error('🔧 Custom catalog validation failed:', error);
             this.showCustomCatalogStatus(`✗ Error: ${error.message}`, 'error');
         } finally {
             // Re-enable the add button
@@ -913,7 +861,6 @@ export class UIManager {
                 catalog.enabled = isEnabled;
                 localStorage.setItem('stacExplorer-customCatalog', JSON.stringify(catalog));
                 localStorage.setItem('catalog-custom-catalog-enabled', isEnabled.toString());
-                console.log('🔧 Custom catalog toggled:', isEnabled);
             });
         }
     }
@@ -936,7 +883,6 @@ export class UIManager {
         }
         
         this.showCustomCatalogStatus('', 'hidden');
-        console.log('🔧 Custom catalog removed');
     }
     
     /**

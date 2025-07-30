@@ -248,7 +248,6 @@ export class SettingsPanel {
                 this.config.appSettings.customCatalogUrl = this.settings.customCatalogUrl || '';
             }
         } catch (error) {
-            console.error('Error loading settings:', error);
         }
     }
     

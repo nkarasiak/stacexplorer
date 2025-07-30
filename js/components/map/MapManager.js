@@ -47,7 +47,6 @@ export class MapManager {
             await this.initializeDeckGL();
         }
         
-        console.log('✅ Modular MapManager initialized successfully');
     }
 
     /**
@@ -65,7 +64,6 @@ export class MapManager {
             await this.deckGLIntegration.initialize();
             
         } catch (error) {
-            console.warn('⚠️ Failed to initialize Deck.gl, falling back to MapLibre only:', error);
             this.useDeckGL = false;
             this.deckGLIntegration = null;
         }
@@ -77,7 +75,6 @@ export class MapManager {
     async displayItemOnMap(item, preferredAssetKey = null, preserveViewport = false, options = {}) {
         // Check if map is initialized
         if (!this.mapLayers) {
-            console.warn('MapManager not fully initialized yet');
             return;
         }
         
@@ -97,7 +94,6 @@ export class MapManager {
                     return;
                 }
             } catch (error) {
-                console.warn('⚠️ Deck.gl rendering failed, falling back to MapLibre:', error);
             }
         }
         
@@ -112,7 +108,6 @@ export class MapManager {
         try {
             // Check if mapLayers is initialized
             if (!this.mapLayers) {
-                console.warn('MapLayers not initialized yet');
                 return;
             }
             
@@ -122,7 +117,6 @@ export class MapManager {
             // Get bounding box
             const bbox = this.mapLayers.getBoundingBox(item);
             if (!bbox) {
-                console.warn('Item has no valid bbox or geometry');
                 return;
             }
             
@@ -130,14 +124,12 @@ export class MapManager {
             if (!preserveViewport) {
                 this.mapLayers.fitMapToBbox(bbox);
             } else {
-                console.log('🔒 Preserving viewport - not centering/zooming to item');
             }
             
             // For now, just show boundary (full implementation would handle asset loading)
             this.mapLayers.addGeoJsonLayerWithoutTooltip(bbox, item);
             
         } catch (error) {
-            console.error('Error displaying item on map:', error);
         }
     }
 
@@ -157,7 +149,6 @@ export class MapManager {
             // Get bounding box
             let bbox = this.mapLayers.getBoundingBox(item);
             if (!bbox) {
-                console.warn('Item has no valid bbox or geometry');
                 throw new Error('No geometry available for this item');
             }
 
@@ -166,7 +157,6 @@ export class MapManager {
             this.mapLayers.fitMapToBbox(bbox);
             
         } catch (error) {
-            console.error('Error displaying item geometry:', error);
             throw error;
         }
     }
@@ -221,7 +211,6 @@ export class MapManager {
     clearSearchBbox() {
         if (this.mapLayers) {
             this.mapLayers.removeCurrentLayer();
-            console.log('✅ Search bbox cleared');
         }
     }
 
@@ -230,11 +219,9 @@ export class MapManager {
      */
     displayBboxOnMap(bbox, label = 'Location') {
         if (!this.mapCore.isMapReady()) {
-            console.warn('⚠️ Map not ready for bbox display, waiting for initialization...');
             // Wait for map to be ready and retry
             const waitForMap = () => {
                 if (this.mapCore.isMapReady()) {
-                    console.log('✅ Map ready, displaying bbox');
                     this.displayBboxOnMap(bbox, label);
                 } else {
                     setTimeout(waitForMap, 100);
@@ -245,7 +232,6 @@ export class MapManager {
         }
 
         if (!bbox || bbox.length !== 4) {
-            console.error('❌ Invalid bbox provided:', bbox);
             return;
         }
 
@@ -269,9 +255,7 @@ export class MapManager {
             // Fit map to the bbox
             this.mapLayers.fitMapToBbox(bbox);
             
-            console.log('✅ Displayed bbox on map:', bbox, 'with label:', label);
         } catch (error) {
-            console.error('❌ Error displaying bbox on map:', error);
         }
     }
 
@@ -279,7 +263,6 @@ export class MapManager {
      * Fit map to layer bounds
      */
     fitToLayerBounds() {
-        console.log('fitToLayerBounds - would need implementation');
     }
 
     /**
@@ -317,7 +300,6 @@ export class MapManager {
         if (this.mapDrawing) {
             return this.mapDrawing.startDrawingBbox(callback);
         } else {
-            console.warn('MapDrawing not initialized');
         }
     }
 

@@ -134,7 +134,6 @@ export class LoadingStateManager extends BaseUIComponent {
         
         // Check if already loading
         if (this.loadingStates.has(key)) {
-            console.warn(`Loading state '${key}' already active`);
             return;
         }
         
@@ -208,7 +207,6 @@ export class LoadingStateManager extends BaseUIComponent {
         const loadingState = this.loadingStates.get(key);
         
         if (!loadingState) {
-            console.warn(`Loading state '${key}' not found`);
             return;
         }
         

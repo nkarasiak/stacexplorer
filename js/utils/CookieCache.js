@@ -35,7 +35,6 @@ export class CookieCache {
                     localStorage.setItem(`stac_${key}`, serializedData);
                     return;
                 } catch (localStorageError) {
-                    console.warn('[CACHE] localStorage failed, trying cookie fallback:', localStorageError.message);
                     // Fall through to cookie logic below
                 }
             }
@@ -57,7 +56,6 @@ export class CookieCache {
             
             
         } catch (error) {
-            console.error('[CACHE] Error setting cache:', error);
         }
     }
 
@@ -79,7 +77,6 @@ export class CookieCache {
                         return parsedData;
                     }
                 } catch (localStorageError) {
-                    console.warn('[CACHE] localStorage read failed:', localStorageError.message);
                 }
             }
             
@@ -113,7 +110,6 @@ export class CookieCache {
             return cacheEntry.data;
             
         } catch (error) {
-            console.error('[CACHE] Error getting cache:', error);
             this.remove(key); // Remove corrupted cache
             return null;
         }
@@ -130,7 +126,6 @@ export class CookieCache {
                 try {
                     localStorage.removeItem(`stac_${key}`);
                 } catch (localStorageError) {
-                    console.warn('[CACHE] localStorage remove failed:', localStorageError.message);
                 }
             }
             
@@ -145,7 +140,6 @@ export class CookieCache {
             }
             
         } catch (error) {
-            console.error('[CACHE] Error removing cache:', error);
         }
     }
 
@@ -184,7 +178,6 @@ export class CookieCache {
                 }
             }
         } catch (error) {
-            console.error('[CACHE] Error clearing cache:', error);
         }
     }
 
@@ -229,7 +222,6 @@ export class CookieCache {
             
             stats.totalSize += stats.localStorageSize;
         } catch (error) {
-            console.error('[CACHE] Error getting stats:', error);
         }
 
         return stats;
@@ -280,7 +272,6 @@ export class CookieCache {
             
             
         } catch (error) {
-            console.error('[CACHE] Error storing large data:', error);
         }
     }
 
@@ -310,7 +301,6 @@ export class CookieCache {
             return reconstructedData;
             
         } catch (error) {
-            console.error('[CACHE] Error retrieving large data:', error);
             return null;
         }
     }
@@ -344,7 +334,6 @@ export class CookieCache {
             
             return data;
         } catch (error) {
-            console.error('[CACHE] Compression failed:', error);
             return data;
         }
     }
@@ -376,7 +365,6 @@ export class CookieCache {
             
             return decompressed;
         } catch (error) {
-            console.error('[CACHE] Decompression failed:', error);
             return compressedData;
         }
     }

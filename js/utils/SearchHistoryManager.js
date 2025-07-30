@@ -38,7 +38,6 @@ export class SearchHistoryManager {
             return;
         }
         
-        console.log('Saving search to history:', {
             collection: searchParams.collection,
             collections: searchParams.collections,
             collectionTitle: searchParams.collectionTitle
@@ -72,7 +71,6 @@ export class SearchHistoryManager {
         try {
             localStorage.setItem(this.storageKey, JSON.stringify(history));
         } catch (error) {
-            console.error('❌ Failed to save search history:', error);
         }
     }
     
@@ -88,7 +86,6 @@ export class SearchHistoryManager {
             const history = JSON.parse(historyJson);
             return Array.isArray(history) ? history : [];
         } catch (error) {
-            console.error('❌ Failed to load search history:', error);
             return [];
         }
     }
@@ -113,7 +110,6 @@ export class SearchHistoryManager {
             // Dispatch event to update UI
             document.dispatchEvent(new CustomEvent('searchHistoryCleared'));
         } catch (error) {
-            console.error('❌ Failed to clear search history:', error);
         }
     }
     
@@ -131,7 +127,6 @@ export class SearchHistoryManager {
             // Dispatch event to update UI
             document.dispatchEvent(new CustomEvent('searchHistoryUpdated'));
         } catch (error) {
-            console.error('❌ Failed to remove search from history:', error);
         }
     }
     
@@ -144,7 +139,6 @@ export class SearchHistoryManager {
         const searchEntry = history.find(entry => entry.id === searchId);
         
         if (!searchEntry) {
-            console.error('❌ Search not found in history:', searchId);
             return;
         }
         
@@ -170,7 +164,6 @@ export class SearchHistoryManager {
                     collectionSelect.value = searchParams.collection;
                     collectionSelect.dispatchEvent(new Event('change'));
                 } else {
-                    console.warn('⚠️ Collection select element not found');
                 }
             } else if (searchParams.collections && searchParams.collections.length > 0) {
                 // Fallback for older format
@@ -180,7 +173,6 @@ export class SearchHistoryManager {
                     collectionSelect.dispatchEvent(new Event('change'));
                 }
             } else {
-                console.warn('⚠️ No collection found in search params to restore');
             }
             
             // Restore catalog selection if available
@@ -282,7 +274,6 @@ export class SearchHistoryManager {
             
             
         } catch (error) {
-            console.error('❌ Failed to restore search from history:', error);
         }
     }
     
@@ -430,21 +421,18 @@ export class SearchHistoryManager {
     restoreFilterManagerCloudCover(cloudCoverValue) {
         const filterManager = window.stacExplorer?.filterManager;
         if (!filterManager) {
-            console.warn('⚠️ FilterManager not available for cloud cover restoration');
             return;
         }
         
         // Check if cloud cover filter exists
         const cloudCoverFilter = filterManager.filters.get('cloud_cover');
         if (!cloudCoverFilter) {
-            console.warn('⚠️ Cloud cover filter not found in FilterManager');
             return;
         }
         
         // Find the cloud cover filter element
         const filterElement = document.getElementById('filter-cloud_cover');
         if (!filterElement) {
-            console.warn('⚠️ Cloud cover filter element not found');
             return;
         }
         
@@ -475,7 +463,6 @@ export class SearchHistoryManager {
             filterManager.updateFilterBadge();
             
         } else {
-            console.warn('⚠️ Missing cloud cover filter UI elements');
         }
     }
     
@@ -532,7 +519,6 @@ export class SearchHistoryManager {
             try {
                 localStorage.setItem(this.storageKey, JSON.stringify(history));
             } catch (error) {
-                console.error('❌ Failed to cleanup old entries:', error);
             }
         }
     }

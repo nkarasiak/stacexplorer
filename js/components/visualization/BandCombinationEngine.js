@@ -376,37 +376,29 @@ export class BandCombinationEngine {
      */
     async getPresignedUrl(url) {
         try {
-            console.log(`🔗 [PRESIGN-ENGINE] Attempting to presign: ${url.substring(0, 80)}...`);
             
             // Extract collection from URL to determine the correct SAS token endpoint
             const collection = this.extractCollectionFromUrl(url);
             if (!collection) {
-                console.warn(`🔗 [PRESIGN-ENGINE] Could not extract collection from URL: ${url}`);
                 return url;
             }
             
-            console.log(`🔗 [PRESIGN-ENGINE] Extracted collection: ${collection}`);
             
             // Use the correct SAS token endpoint for the specific collection
             const tokenEndpoint = `https://planetarycomputer.microsoft.com/api/sas/v1/token/${collection}`;
-            console.log(`🔗 [PRESIGN-ENGINE] Requesting SAS token from: ${tokenEndpoint}`);
             
             const tokenResponse = await fetch(tokenEndpoint);
             
-            console.log(`🔗 [PRESIGN-ENGINE] Response status: ${tokenResponse.status}`);
             
             if (tokenResponse.ok) {
                 const tokenData = await tokenResponse.json();
-                console.log(`🔗 [PRESIGN-ENGINE] Got SAS token:`, tokenData);
                 
                 if (tokenData.token) {
                     const presignedUrl = `${url}?${tokenData.token}`;
-                    console.log(`🔗 [PRESIGN-ENGINE] Created presigned URL:`, presignedUrl);
                     return presignedUrl;
                 }
             } else {
                 const errorText = await tokenResponse.text();
-                console.warn(`🔗 [PRESIGN-ENGINE] Token request failed:`, {
                     status: tokenResponse.status,
                     statusText: tokenResponse.statusText,
                     responseText: errorText
@@ -414,11 +406,9 @@ export class BandCombinationEngine {
             }
             
         } catch (error) {
-            console.warn('🔗 [PRESIGN-ENGINE] Error during presigning:', error);
         }
         
         // Fallback to original URL if presigning fails
-        console.log(`🔗 [PRESIGN-ENGINE] Using fallback URL: ${url}`);
         return url;
     }
 
@@ -482,7 +472,6 @@ export class BandCombinationEngine {
             
             return null;
         } catch (error) {
-            console.warn('🔗 [PRESIGN-ENGINE] Error extracting collection from URL:', error);
             return null;
         }
     }
@@ -496,7 +485,6 @@ export class BandCombinationEngine {
      */
     mapGenericToActualAssets(genericAssets, stacItem) {
         if (!stacItem || !stacItem.assets) {
-            console.warn('⚠️ [ASSET-MAP] No STAC item or assets provided, using generic names');
             return genericAssets;
         }
 
@@ -506,9 +494,7 @@ export class BandCombinationEngine {
             const actualAsset = this.findAssetByBandCharacteristics(genericAsset, stacItem);
             if (actualAsset) {
                 mappedAssets.push(actualAsset);
-                console.log(`🔗 [ASSET-MAP] Mapped ${genericAsset} → ${actualAsset}`);
             } else {
-                console.warn(`⚠️ [ASSET-MAP] Could not map ${genericAsset}, using as-is`);
                 mappedAssets.push(genericAsset);
             }
         }
@@ -534,11 +520,9 @@ export class BandCombinationEngine {
 
         const target = targetWavelengths[genericName.toLowerCase()];
         if (!target) {
-            console.warn(`⚠️ [ASSET-MAP] Unknown generic band: ${genericName}`);
             return null;
         }
 
-        console.log(`🔍 [ASSET-MAP] Looking for ${genericName} band (${target.center}nm ±${target.range[1] - target.center}nm)`);
 
         // First try: Look through all assets for eo:bands metadata
         for (const [assetName, assetData] of Object.entries(stacItem.assets)) {
@@ -547,7 +531,6 @@ export class BandCombinationEngine {
                     if (band.center_wavelength) {
                         const wavelength = band.center_wavelength * 1000; // Convert to nm if needed
                         if (wavelength >= target.range[0] && wavelength <= target.range[1]) {
-                            console.log(`✅ [ASSET-MAP] Found ${genericName} match: ${assetName} (${wavelength}nm)`);
                             return assetName;
                         }
                     }
@@ -557,7 +540,6 @@ export class BandCombinationEngine {
 
         // Second try: Direct name match (common case when assets are already named generically)
         if (stacItem.assets && stacItem.assets[genericName]) {
-            console.log(`✅ [ASSET-MAP] Found direct match: ${genericName}`);
             return genericName;
         }
 
@@ -574,13 +556,10 @@ export class BandCombinationEngine {
         const possibleNames = variations[genericName.toLowerCase()] || [];
         for (const variation of possibleNames) {
             if (stacItem.assets && stacItem.assets[variation]) {
-                console.log(`✅ [ASSET-MAP] Found variation match: ${genericName} → ${variation}`);
                 return variation;
             }
         }
 
-        console.log(`❌ [ASSET-MAP] No ${genericName} band found in eo:bands metadata, direct match, or variations`);
-        console.log(`🔍 [ASSET-MAP] Available assets: ${Object.keys(stacItem.assets || {}).join(', ')}`);
         return null;
     }
 
@@ -592,22 +571,17 @@ export class BandCombinationEngine {
      */
     async checkUrlAccessibility(url) {
         try {
-            console.log(`🔍 [URL-CHECK] Checking accessibility: ${url.substring(0, 80)}...`);
             
             // Check if URL looks valid (supports both HTTP/HTTPS and S3 URLs)
             const isValidUrl = url.startsWith('https://') || url.startsWith('http://') || url.startsWith('s3://');
             
             if (isValidUrl) {
-                console.log(`✅ [URL-CHECK] URL appears valid: ${url.substring(0, 80)}...`);
                 return true;
             } else {
-                console.log(`❌ [URL-CHECK] Invalid URL format: ${url.substring(0, 80)}...`);
                 return false;
             }
             
         } catch (error) {
-            console.log(`❌ [URL-CHECK] URL check failed: ${url.substring(0, 80)}...`);
-            console.log(`❌ [URL-CHECK] Error: ${error.message}`);
             return false;
         }
     }
@@ -626,17 +600,14 @@ export class BandCombinationEngine {
         };
 
         if (!stacItem.assets) {
-            console.log(`❌ [ASSETS-CHECK] No assets found in STAC item`);
             return results;
         }
 
-        console.log(`🔍 [ASSETS-CHECK] Checking accessibility for assets: ${assetNames.join(', ')}`);
 
         // Check each asset
         for (const assetName of assetNames) {
             const asset = stacItem.assets[assetName];
             if (!asset || !asset.href) {
-                console.log(`❌ [ASSETS-CHECK] Asset ${assetName} not found or has no href`);
                 results.inaccessible.push(assetName);
                 continue;
             }
@@ -651,10 +622,7 @@ export class BandCombinationEngine {
 
         results.allAccessible = results.accessible.length === assetNames.length;
         
-        console.log(`📊 [ASSETS-CHECK] Results: ${results.accessible.length}/${assetNames.length} accessible`);
-        console.log(`✅ [ASSETS-CHECK] Accessible: ${results.accessible.join(', ')}`);
         if (results.inaccessible.length > 0) {
-            console.log(`❌ [ASSETS-CHECK] Inaccessible: ${results.inaccessible.join(', ')}`);
         }
 
         return results;
@@ -682,7 +650,6 @@ export class BandCombinationEngine {
      */
     async canUseTiTiler(stacItem, presetKey = null) {
         if (!stacItem || !stacItem.assets) {
-            console.log(`❌ [TITILER-CHECK] No STAC item or assets provided`);
             return false;
         }
 
@@ -690,7 +657,6 @@ export class BandCombinationEngine {
         if (presetKey) {
             const preset = this.getPresetByKey(presetKey);
             if (!preset || !preset.assets) {
-                console.log(`❌ [TITILER-CHECK] Invalid preset or no assets in preset: ${presetKey}`);
                 return false;
             }
 
@@ -723,9 +689,6 @@ export class BandCombinationEngine {
      * @returns {Promise<string|null>} Complete TiTiler tile URL or null if not accessible
      */
     async buildTileUrlWithAccessibilityCheck(stacItemUrl, preset, z, x, y, stacItem = null, scaleOptions = {}, checkAccessibility = false) {
-        console.log(`🌐 [TITILER] Building tile URL for preset: ${preset.name}`);
-        console.log(`🌐 [TITILER] STAC item provided:`, !!stacItem);
-        console.log(`🌐 [TITILER] Accessibility check enabled:`, checkAccessibility);
         
         // Check accessibility if requested and stacItem is provided
         if (checkAccessibility && stacItem && preset.assets) {
@@ -735,11 +698,9 @@ export class BandCombinationEngine {
             const accessibilityResults = await this.checkAssetsAccessibility(stacItem, mappedAssets);
             
             if (!accessibilityResults.allAccessible) {
-                console.log(`❌ [TITILER] Not all assets accessible, cannot use TiTiler`);
                 return null;
             }
             
-            console.log(`✅ [TITILER] All assets accessible, proceeding with TiTiler`);
         }
         
         // Call the original buildTileUrl function
@@ -756,8 +717,6 @@ export class BandCombinationEngine {
      * @returns {string} Complete TiTiler tile URL
      */
     async buildTileUrl(stacItemUrl, preset, z, x, y, stacItem = null, scaleOptions = {}) {
-        console.log(`🌐 [TITILER] Building tile URL for preset: ${preset.name}`);
-        console.log(`🌐 [TITILER] STAC item provided:`, !!stacItem);
         
         // For single asset presets (not expressions) OR when stacItemUrl is null, use direct COG endpoint
         if ((preset.assets && preset.assets.length === 1 && !preset.expression && stacItem) || (stacItemUrl === null && stacItem && !preset.expression)) {
@@ -767,7 +726,6 @@ export class BandCombinationEngine {
             
             if (stacItem.assets && stacItem.assets[actualAssetName]) {
                 const assetUrl = stacItem.assets[actualAssetName].href;
-                console.log(`🔗 [TITILER] Using direct URL: ${assetUrl}`);
                 const params = new URLSearchParams();
                 params.set('url', assetUrl);
                 
@@ -785,14 +743,8 @@ export class BandCombinationEngine {
                 
                 // Use correct TiTiler format: /cog/tiles/{tileMatrixSetId}/{z}/{x}/{y}.{format}
                 const tileUrl = `${this.tilerBaseUrl}/cog/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${params.toString()}`;
-                console.log(`🌐 [TITILER] Using direct COG endpoint (single asset)`);
-                console.log(`🌐 [TITILER] Asset URL: ${assetUrl.substring(0, 80)}...`);
-                console.log(`🌐 [TITILER] Tile URL: ${tileUrl}`);
                 return tileUrl;
             } else {
-                console.error(`❌ [TITILER] Asset '${actualAssetName}' not found in STAC item`);
-                console.error(`❌ [TITILER] Available assets:`, Object.keys(stacItem.assets || {}));
-                console.error(`❌ [TITILER] Looking for asset name: ${assetName} -> ${actualAssetName}`);
             }
         }
         
@@ -810,7 +762,6 @@ export class BandCombinationEngine {
             }
             
             if (needsPresigning) {
-                console.log(`🔗 [TITILER] Using Planetary Computer's TiTiler API for RGB composite`);
                 
                 // Get mapped assets
                 const mappedAssets = this.mapGenericToActualAssets ? 
@@ -839,9 +790,6 @@ export class BandCombinationEngine {
                 
                 // Use Planetary Computer's TiTiler API
                 const pcTilerUrl = `https://planetarycomputer.microsoft.com/api/data/v1/item/tiles/WebMercatorQuad/{z}/{x}/{y}.png?${params.toString()}`;
-                console.log(`🌐 [TITILER] Using Planetary Computer TiTiler API for RGB composite`);
-                console.log(`🌐 [TITILER] Assets: ${mappedAssets.join(', ')}`);
-                console.log(`🌐 [TITILER] Tile URL: ${pcTilerUrl}`);
                 return pcTilerUrl;
             }
         }
@@ -849,15 +797,11 @@ export class BandCombinationEngine {
         
         // Skip STAC endpoint if stacItemUrl is null and not an expression
         if (stacItemUrl === null && !preset.expression) {
-            console.error(`❌ [TITILER] Cannot use STAC endpoint with null stacItemUrl and no valid single asset found`);
-            console.error(`❌ [TITILER] Preset:`, preset);
-            console.error(`❌ [TITILER] STAC item assets:`, Object.keys(stacItem?.assets || {}));
             throw new Error(`No valid asset found for visualization preset '${preset.name}'. Available assets: ${Object.keys(stacItem?.assets || {}).join(', ')}`);
         }
         
         // For expressions without stacItemUrl, we need the STAC item URL
         if (stacItemUrl === null && preset.expression) {
-            console.error(`❌ [TITILER] Expression preset requires STAC item URL but none provided`);
             throw new Error(`Expression preset '${preset.name}' requires STAC item URL`);
         }
         
@@ -870,7 +814,6 @@ export class BandCombinationEngine {
             let mappedAssets;
             if (typeof this.mapGenericToActualAssets === 'function' && stacItem) {
                 mappedAssets = this.mapGenericToActualAssets(preset.assets, stacItem);
-                console.log(`🌐 [TITILER] Mapped assets: ${mappedAssets.join(',')}`);
             } else {
                 mappedAssets = preset.assets;
             }
@@ -906,7 +849,6 @@ export class BandCombinationEngine {
 
         // Use STAC endpoint
         const tileUrl = `${this.tilerBaseUrl}/stac/tiles/WebMercatorQuad/${z}/${x}/${y}.png?${params.toString()}`;
-        console.log(`🌐 [TITILER] Using STAC endpoint: ${tileUrl}`);
         return tileUrl;
     }
 
@@ -934,7 +876,6 @@ export class BandCombinationEngine {
             }
             
             if (needsPresigning) {
-                console.log(`🔗 [PREVIEW] Using PC TiTiler API for preview`);
                 
                 const params = new URLSearchParams();
                 params.set('collection', stacItem.collection);

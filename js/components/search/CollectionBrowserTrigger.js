@@ -23,23 +23,19 @@ export class CollectionBrowserTrigger {
      * Create the trigger button that makes the existing SOURCE card clickable
      */
     createTriggerButton() {
-        console.log('🔍 Looking for summary-source element...');
         
         // Try different approaches to find the element
         let summarySource = document.getElementById('summary-source');
         
         if (!summarySource) {
             // Wait a bit and try again
-            console.warn('❌ summary-source element not found immediately, waiting...');
             setTimeout(() => {
                 summarySource = document.getElementById('summary-source');
                 if (summarySource) {
                     this.setupTrigger(summarySource);
                 } else {
-                    console.error('❌ summary-source element not found after waiting');
                     // List all elements with summary in ID for debugging
                     const summaryElements = document.querySelectorAll('[id*="summary"]');
-                    console.log('📋 Available summary elements:', Array.from(summaryElements).map(el => el.id));
                 }
             }, 1000);
             return;
@@ -53,7 +49,6 @@ export class CollectionBrowserTrigger {
      * @param {HTMLElement} summarySource - The source element to make clickable
      */
     setupTrigger(summarySource) {
-        console.log('✅ Found summary-source element, setting up trigger...');
         
         // Make the existing card clickable
         summarySource.style.cursor = 'pointer';
@@ -73,12 +68,10 @@ export class CollectionBrowserTrigger {
         
         // Find the value element to update later
         this.valueElement = summarySource.querySelector('.search-summary-value');
-        console.log('📝 Value element found:', !!this.valueElement);
         
         // Add enhanced styling
         this.addTriggerStyles();
         
-        console.log('✅ Collection browser trigger created from existing SOURCE card');
     }
     
     /**
@@ -164,11 +157,9 @@ export class CollectionBrowserTrigger {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation(); // Prevent any other handlers from running
-            console.log('🖱️ Collection browser trigger clicked');
             
             // Ensure button is not disabled
             if (this.triggerButton.classList.contains('loading')) {
-                console.warn('⚠️ Button clicked while in loading state, ignoring');
                 return;
             }
             
@@ -195,7 +186,6 @@ export class CollectionBrowserTrigger {
                 setTimeout(() => {
                     this.setLoadingState(false);
                     this.ensureButtonClickable();
-                    console.log('✅ Trigger re-enabled after collection selection');
                 }, 100);
             }
         });
@@ -217,7 +207,6 @@ export class CollectionBrowserTrigger {
      * Open the collection browser panel
      */
     async openPanel() {
-        console.log('🔍 Opening collection browser panel...');
         
         // Show loading state
         this.setLoadingState(true);
@@ -226,13 +215,11 @@ export class CollectionBrowserTrigger {
             // Get UIManager instance from global scope
             const uiManager = window.stacExplorer?.uiManager;
             if (!uiManager) {
-                console.warn('⚠️ UIManager not available, falling back to modal');
                 // Fallback to opening the modal directly
                 if (this.modal) {
                     await this.modal.open();
                     return;
                 } else {
-                    console.error('❌ Neither UIManager nor modal available');
                     return;
                 }
             }
@@ -246,14 +233,11 @@ export class CollectionBrowserTrigger {
                 await this.initializeCollectionBrowserInPanel();
             }
             
-            console.log('✅ Panel opened successfully');
         } catch (error) {
-            console.error('Error opening collection browser panel:', error);
         } finally {
             // Ensure loading state is cleared
             setTimeout(() => {
                 this.setLoadingState(false);
-                console.log('✅ Loading state cleared for trigger button');
             }, 100);
         }
     }
@@ -265,7 +249,6 @@ export class CollectionBrowserTrigger {
         try {
             const panelContent = document.getElementById('browse-collections-content');
             if (!panelContent) {
-                console.error('❌ Panel content container not found');
                 return;
             }
             
@@ -278,7 +261,6 @@ export class CollectionBrowserTrigger {
             const gridElement = document.getElementById('collection-grid-container');
             if (gridElement) {
                 panelContent.appendChild(gridElement);
-                console.log('✅ Collection grid moved to panel');
             }
             
             // Load collections
@@ -293,7 +275,6 @@ export class CollectionBrowserTrigger {
                 }
             }
         } catch (error) {
-            console.error('❌ Error initializing collection browser in panel:', error);
         }
     }
     
@@ -319,7 +300,6 @@ export class CollectionBrowserTrigger {
                 }, 500);
             }
         } catch (error) {
-            console.warn('⚠️ Error preventing inline dropdown:', error);
         }
     }
     
@@ -397,7 +377,6 @@ export class CollectionBrowserTrigger {
             // Ensure cursor is set to pointer
             this.triggerButton.style.cursor = 'pointer';
             
-            console.log('✅ Collection browser trigger ensured clickable');
         }
     }
     

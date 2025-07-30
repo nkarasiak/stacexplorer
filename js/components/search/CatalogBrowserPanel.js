@@ -215,7 +215,6 @@ export class CatalogBrowserPanel {
     }
     
     forceResetLoadingStates() {
-        console.log('🔧 Force resetting loading states...');
         
         const loadingEl = document.getElementById('catalog-loading');
         const treeEl = document.getElementById('catalog-tree-view');
@@ -239,7 +238,6 @@ export class CatalogBrowserPanel {
         if (treeEl) treeEl.offsetHeight;
         if (errorEl) errorEl.offsetHeight;
         
-        console.log('✅ Loading states force reset complete');
     }
     
     hide() {
@@ -265,9 +263,6 @@ export class CatalogBrowserPanel {
         try {
             this.showLoading();
             
-            console.log('🔍 Loading root catalogs...');
-            console.log('📊 API Client endpoints:', this.apiClient.endpoints);
-            console.log('🌐 API Client connection status:', !!this.apiClient.endpoints.collections);
             
             if (!this.apiClient.endpoints.collections && !this.apiClient.endpoints.root) {
                 this.showCatalogSelection();
@@ -275,7 +270,6 @@ export class CatalogBrowserPanel {
             }
             
             const collections = await this.apiClient.getCollections();
-            console.log('📚 Loaded collections:', collections?.length || 0, collections);
             
             // Only reset path if we don't have a catalog selected
             // Keep catalog in path if it exists
@@ -292,7 +286,6 @@ export class CatalogBrowserPanel {
             
             // hideLoading() is called in displayCollections()
         } catch (error) {
-            console.error('Failed to load root catalogs:', error);
             this.showError(error.message || 'Failed to load catalogs');
         }
     }
@@ -306,7 +299,6 @@ export class CatalogBrowserPanel {
         this.filteredCollections = [...this.allCollections];
         this.searchTerm = '';
         
-        console.log(`📚 Displaying ${this.allCollections.length} collections`);
         
         // Show sidebar cards and update counts
         document.getElementById('search-card').style.display = 'block';
@@ -342,11 +334,9 @@ export class CatalogBrowserPanel {
         const grid = document.getElementById('collections-grid');
         
         if (!grid) {
-            console.error('Collections grid element not found!');
             return;
         }
         
-        console.log(`📄 Rendering ${this.filteredCollections.length} collections`);
         
         // Ensure grid has proper classes
         grid.className = `collections-grid ${this.viewMode}-view`;
@@ -375,8 +365,6 @@ export class CatalogBrowserPanel {
         }
         
         // Debug info
-        console.log(`Grid classes: ${grid.className}`);
-        console.log(`Grid children: ${grid.children.length}`);
     }
 
     
@@ -444,7 +432,6 @@ export class CatalogBrowserPanel {
         const grid = document.getElementById('collections-grid');
         
         if (!gridBtn || !listBtn || !grid) {
-            console.warn('View toggle elements not found!');
             return;
         }
         
@@ -455,8 +442,6 @@ export class CatalogBrowserPanel {
         // Update grid class completely
         grid.className = `collections-grid ${mode}-view`;
         
-        console.log(`📋 View mode changed to: ${mode}`);
-        console.log(`Grid classes: ${grid.className}`);
     }
     
     /**
@@ -481,7 +466,6 @@ export class CatalogBrowserPanel {
         // Re-render all collections
         this.renderAllCollections();
         
-        console.log(`🔍 Filtered ${this.filteredCollections.length} of ${this.allCollections.length} collections for "${this.searchTerm}"`);
     }
     
     
@@ -558,7 +542,6 @@ export class CatalogBrowserPanel {
         const title = collection.title || collection.id;
         const description = collection.description || 'No description available';
         
-        console.log('[BROWSER] Rendering collection card:', {
             id: collection.id,
             title: title,
             description: description.substring(0, 100) + '...',
@@ -1019,7 +1002,6 @@ export class CatalogBrowserPanel {
      * Show collection details (placeholder for future implementation)
      */
     showCollectionDetails(collection) {
-        console.log('📋 Show details for collection:', collection.id);
         // TODO: Implement collection details modal
         this.notificationService?.showNotification(
             `Collection details: ${collection.title || collection.id}`, 
@@ -1093,12 +1075,10 @@ export class CatalogBrowserPanel {
     }
     
     attachCollectionEventListeners(collections) {
-        console.log('🔗 Attaching event listeners for', collections.length, 'collections');
         
         collections.forEach(collection => {
             const collectionElement = document.querySelector(`[data-collection-id="${collection.id}"]`);
             if (!collectionElement) {
-                console.warn('❌ Collection element not found for:', collection.id);
                 return;
             }
             
@@ -1107,14 +1087,12 @@ export class CatalogBrowserPanel {
             if (browseButton) {
                 browseButton.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    console.log('🔍 Browse collection clicked:', collection.id);
                     this.browseCollection(collection);
                 });
             }
             
             // Also make the whole collection item clickable to browse
             collectionElement.addEventListener('click', () => {
-                console.log('📂 Collection item clicked:', collection.id);
                 this.browseCollection(collection);
             });
         });
@@ -1125,7 +1103,6 @@ export class CatalogBrowserPanel {
             this.loadStartTime = performance.now();
             this.showLoading();
             
-            console.log('🔍 Loading items for collection:', collection.id);
             
             // Show loading feedback specific to collection
             const loadingEl = document.getElementById('catalog-loading');
@@ -1142,18 +1119,11 @@ export class CatalogBrowserPanel {
                 limit: 10 // Default query limit for collection browsing
             };
             
-            console.log('📊 Search parameters:', searchParams);
-            console.log('🌐 API Client endpoints:', this.apiClient.endpoints);
-            console.log('📡 API Client search endpoint:', this.apiClient.endpoints?.search);
             
             let items;
             try {
                 items = await this.apiClient.searchItems(searchParams);
-                console.log('📚 Raw API response:', items);
-                console.log('📚 Items features:', items?.features);
-                console.log('📚 Items count:', items?.features?.length || 0);
             } catch (searchError) {
-                console.error('❌ Search API error:', searchError);
                 throw new Error(`Search API failed: ${searchError.message}`);
             }
             
@@ -1162,23 +1132,18 @@ export class CatalogBrowserPanel {
             if (Array.isArray(items)) {
                 // Direct array response (like Element84)
                 itemsArray = items;
-                console.log('📚 Direct array response - Items count:', items.length);
             } else if (items?.features && Array.isArray(items.features)) {
                 // GeoJSON FeatureCollection response
                 itemsArray = items.features;
-                console.log('📚 FeatureCollection response - Items count:', items.features.length);
             } else {
-                console.log('📭 No items found for this collection');
             }
             
             // Remove any existing collection or item from path and add the new collection
-            console.log('📍 Path before collection update:', this.currentPath);
             this.currentPath = this.currentPath.filter(p => p.type === 'catalog');
             this.currentPath.push({
                 type: 'collection',
                 data: collection
             });
-            console.log('📍 Path after collection update:', this.currentPath);
             
             this.displayItems(itemsArray);
             this.updateBreadcrumb();
@@ -1194,7 +1159,6 @@ export class CatalogBrowserPanel {
             
             this.hideLoading();
         } catch (error) {
-            console.error('❌ Failed to load collection items:', error);
             this.showError(`Failed to load items from ${collection.title || collection.id}: ${error.message}`);
             
             // Show error notification
@@ -1225,7 +1189,6 @@ export class CatalogBrowserPanel {
             const currentCollection = this.currentPath.find(p => p.type === 'collection');
             const collectionName = currentCollection?.data?.title || currentCollection?.data?.id || 'this collection';
             
-            console.warn('⚠️ No items to display for collection:', collectionName);
             
             const catalogTree = document.getElementById('catalog-tree-view');
             catalogTree.innerHTML = `
@@ -1584,7 +1547,6 @@ export class CatalogBrowserPanel {
         const thumbnailImg = element.querySelector('.dataset-thumbnail');
         if (thumbnailImg) {
             thumbnailImg.onerror = () => {
-                console.log('🚫 Thumbnail failed to load for item:', item.id, '- converting to no-thumbnail layout');
                 
                 // Replace the entire card content with no-thumbnail layout (same as ResultsPanel)
                 const clickableCard = element.querySelector('.clickable-card');
@@ -1656,7 +1618,6 @@ export class CatalogBrowserPanel {
                     return;
                 }
                 
-                console.log('🔗 [CATALOG-BROWSER] Navigating to item page:', item.id);
                 this.viewItem(item);
             });
         }
@@ -1752,24 +1713,15 @@ export class CatalogBrowserPanel {
     
     viewItem(item) {
         // Navigate to the item page instead of updating breadcrumb
-        console.log('📍 viewItem called with:', item.id);
-        console.log('📍 Current path:', this.currentPath);
         
         const catalogId = this.getCurrentCatalogId();
         const collectionId = this.getCurrentCollectionId();
         
-        console.log('📍 Retrieved catalogId:', catalogId);
-        console.log('📍 Retrieved collectionId:', collectionId);
         
         if (catalogId && collectionId) {
             const viewerUrl = this.createAppPath(`/viewer/${catalogId}/${collectionId}/${item.id}`);
-            console.log('🔗 Navigating to viewer to show item on map:', viewerUrl);
             window.location.href = viewerUrl;
         } else {
-            console.warn('❌ Cannot navigate to item page - missing catalog or collection ID');
-            console.warn('  catalogId:', catalogId);
-            console.warn('  collectionId:', collectionId);
-            console.warn('  currentPath:', this.currentPath);
             
             // Fallback to current behavior
             if (this.onItemSelect) {
@@ -1812,7 +1764,6 @@ export class CatalogBrowserPanel {
         const container = document.getElementById('breadcrumb-container');
         container.innerHTML = '';
         
-        console.log('🍞 Updating breadcrumb with path:', this.currentPath);
         
         // No home breadcrumb - Browser icon handles root navigation
         
@@ -1859,7 +1810,6 @@ export class CatalogBrowserPanel {
     }
     
     navigateToRoot() {
-        console.log('🏠 Navigating to root - showing catalog selection');
         
         // Always go back to catalog selection when clicking "Catalogs"
         this.currentPath = [];
@@ -1927,7 +1877,6 @@ export class CatalogBrowserPanel {
         const treeEl = document.getElementById('catalog-tree-view');
         const errorEl = document.getElementById('catalog-error');
         
-        console.log('🔄 Hiding loading state...', {
             loadingEl: !!loadingEl,
             treeEl: !!treeEl,
             errorEl: !!errorEl
@@ -1936,16 +1885,13 @@ export class CatalogBrowserPanel {
         if (loadingEl) {
             loadingEl.classList.add('hidden');
             loadingEl.style.display = 'none';
-            console.log('✅ Loading element hidden');
         }
         if (treeEl) {
             treeEl.style.display = 'flex';
-            console.log('✅ Tree view shown');
         }
         if (errorEl) {
             errorEl.classList.add('hidden');
             errorEl.style.display = 'none';
-            console.log('✅ Error element hidden');
         }
         
         // Force a repaint to ensure the changes take effect
@@ -2011,7 +1957,6 @@ export class CatalogBrowserPanel {
     
     // Notify state manager of catalog browser state changes
     notifyStateChange() {
-        console.log('📍 Catalog browser state changed:', this.getState());
         
         // Extract individual IDs from current path
         const catalogId = this.getCurrentCatalogId();
@@ -2026,7 +1971,6 @@ export class CatalogBrowserPanel {
             itemId: itemId
         };
         
-        console.log('🔍 notifyStateChange() extracted IDs:', {
             catalogId: catalogId,
             collectionId: collectionId,
             itemId: itemId,
@@ -2044,19 +1988,16 @@ export class CatalogBrowserPanel {
             
             // Don't update URL during restoration process
             if (stateManager.isRestoringFromUrl || stateManager.isUpdatingFromURL || stateManager.isApplyingState) {
-                console.log('🚫 Skipping state notification during restoration process');
                 return;
             }
             
             // Don't update URL if UnifiedRouter is handling URLs (it uses clean paths)
             if (window.stacExplorer?.unifiedRouter) {
-                console.log('🚫 Skipping legacy URL update - UnifiedRouter handles clean URLs');
                 // Only notify the state manager for non-URL state updates
                 // The UnifiedRouter handles URL updates via the 'catalogBrowserStateChanged' event
                 return;
             }
             
-            console.log('📍 Updating URL state via legacy method:', stateChangeDetail);
             stateManager.updateURLFromState(stateChangeDetail);
         }
     }
@@ -2066,13 +2007,11 @@ export class CatalogBrowserPanel {
         // First try to get from current path (most reliable) 
         const catalogInPath = this.currentPath.find(p => p.type === 'catalog');
         if (catalogInPath && catalogInPath.data.id) {
-            console.log('📍 Found catalog ID from path:', catalogInPath.data.id);
             return catalogInPath.data.id;
         }
         
         // If no catalog in path, we don't have enough info for a reliable ID
         // Return null rather than making async calls that could be unreliable
-        console.log('📍 No catalog found in current path, returning null');
         return null;
     }
     
@@ -2081,13 +2020,11 @@ export class CatalogBrowserPanel {
         // First try to get from current path (most reliable)
         const catalogInPath = this.currentPath.find(p => p.type === 'catalog');
         if (catalogInPath && catalogInPath.data.name) {
-            console.log('📍 Found catalog name from path:', catalogInPath.data.name);
             return catalogInPath.data.name;
         }
         
         // If no catalog in path, return null rather than attempting unreliable async calls
         const catalogId = this.getCurrentCatalogId();
-        console.log('📍 No catalog name found in path, using catalog ID:', catalogId);
         return catalogId || 'Unknown Catalog';
     }
     
@@ -2118,15 +2055,11 @@ export class CatalogBrowserPanel {
             // Get available catalogs with real STAC IDs
             const availableCatalogs = await this.getAvailableCatalogs();
             
-            console.log('🎨 Rendering catalogs HTML with real STAC data...');
-            console.log('📋 Available catalogs for rendering:', availableCatalogs);
             
             const catalogsHTML = availableCatalogs.map((catalog, index) => {
-                console.log(`🎯 Creating HTML for catalog ${index + 1}:`, catalog.name, 'ID:', catalog.id);
                 return this.createCatalogSelectionItem(catalog);
             }).join('');
             
-            console.log('📝 Generated HTML length:', catalogsHTML.length);
             
             catalogTree.innerHTML = `
                 <!-- Catalogs grid -->
@@ -2159,13 +2092,11 @@ export class CatalogBrowserPanel {
             
             this.hideLoading();
             
-            console.log('[BROWSER] Success: Catalog selection loaded with', availableCatalogs.length, 'catalogs');
             
             // Load live metadata for each catalog
             this.loadCatalogMetadata(availableCatalogs);
             
         } catch (error) {
-            console.error('❌ Failed to load catalog selection:', error);
             this.showError('Failed to load available catalogs: ' + error.message);
         }
     }
@@ -2173,15 +2104,12 @@ export class CatalogBrowserPanel {
     async getAvailableCatalogs() {
         const catalogs = [];
         
-        console.log('[BROWSER] Config object:', this.config);
-        console.log('[BROWSER] STAC Endpoints:', this.config?.stacEndpoints);
         
         // First, load custom catalogs from localStorage
         try {
             const customCatalogData = localStorage.getItem('stacExplorer-customCatalog');
             if (customCatalogData) {
                 const customCatalog = JSON.parse(customCatalogData);
-                console.log('🔧 Found custom catalog in localStorage:', customCatalog);
                 
                 // Create endpoint structure for custom catalog
                 const customEndpoint = {
@@ -2202,26 +2130,19 @@ export class CatalogBrowserPanel {
                 };
                 
                 catalogs.push(catalogItem);
-                console.log('✅ Added custom catalog to browser:', catalogItem);
             }
         } catch (error) {
-            console.warn('⚠️ Failed to load custom catalog from localStorage:', error);
         }
         
         if (this.config?.stacEndpoints) {
             const entries = Object.entries(this.config.stacEndpoints);
-            console.log(`🔢 Total entries to process: ${entries.length}`);
             
             // Process all catalogs with Promise.all for parallel fetching
             const catalogPromises = entries.map(async ([key, endpoint], index) => {
-                console.log(`📡 Processing catalog ${index + 1}/${entries.length} - ${key}:`, endpoint);
-                console.log(`   - Has collections URL: ${!!endpoint.collections}`);
-                console.log(`   - Has root URL: ${!!endpoint.root}`);
                 
                 if (endpoint.collections || endpoint.root) {
                     try {
                         // Fetch real catalog metadata from STAC API
-                        console.log(`🌐 Fetching metadata from: ${endpoint.root}`);
                         const response = await fetch(endpoint.root);
                         const stacRoot = await response.json();
                         
@@ -2234,11 +2155,9 @@ export class CatalogBrowserPanel {
                             configKey: key // Keep reference to original config key for debugging
                         };
                         
-                        console.log(`✅ Adding catalog ${index + 1} with real STAC data:`, catalog);
                         return catalog;
                         
                     } catch (error) {
-                        console.warn(`⚠️ Failed to fetch STAC metadata for ${key}, using fallback:`, error);
                         
                         // Fallback to config-based catalog
                         const catalog = {
@@ -2250,11 +2169,9 @@ export class CatalogBrowserPanel {
                             configKey: key
                         };
                         
-                        console.log(`📦 Adding fallback catalog ${index + 1}:`, catalog);
                         return catalog;
                     }
                 } else {
-                    console.log(`❌ Skipping catalog ${key}: no collections or root URL`);
                     return null;
                 }
             });
@@ -2264,13 +2181,9 @@ export class CatalogBrowserPanel {
             catalogs.push(...results.filter(catalog => catalog !== null));
             
         } else {
-            console.log('[BROWSER] Error: No config or stacEndpoints found');
         }
         
-        console.log('[BROWSER] Final catalogs list with real STAC IDs:', catalogs);
-        console.log('[BROWSER] Info: Returning', catalogs.length, 'catalogs');
         if (catalogs.length === 0) {
-            console.warn('[BROWSER] Warning: No catalogs returned! This will cause empty display.');
         }
         return catalogs;
     }
@@ -2296,7 +2209,6 @@ export class CatalogBrowserPanel {
     }
     
     createCatalogSelectionItem(catalog) {
-        console.log('[BROWSER] Creating enhanced HTML item for:', catalog.name);
         
         // Get catalog-specific icon
         const icon = this.getCatalogIcon(catalog.id);
@@ -2335,7 +2247,6 @@ export class CatalogBrowserPanel {
             </div>
         `;
         
-        console.log('[BROWSER] Generated enhanced HTML for', catalog.name, ':', html.length, 'characters');
         return html;
     }
     
@@ -2371,7 +2282,6 @@ export class CatalogBrowserPanel {
      * Load live metadata for all catalogs (collections count, status)
      */
     async loadCatalogMetadata(catalogs) {
-        console.log('[BROWSER] Loading live metadata for', catalogs.length, 'catalogs');
         
         // Load metadata for each catalog in parallel
         const metadataPromises = catalogs.map(catalog => this.loadSingleCatalogMetadata(catalog));
@@ -2383,7 +2293,6 @@ export class CatalogBrowserPanel {
      */
     async loadSingleCatalogMetadata(catalog) {
         try {
-            console.log('[BROWSER] Fetching metadata for:', catalog.name);
             
             // Set up temporary API client for this catalog
             const tempApiClient = {
@@ -2409,10 +2318,8 @@ export class CatalogBrowserPanel {
                 collectionsEl.classList.add('loaded');
             }
             
-            console.log('[BROWSER] Metadata loaded for', catalog.name, ':', collections.length, 'collections');
             
         } catch (error) {
-            console.warn('[BROWSER] Failed to load metadata for', catalog.name, ':', error.message);
             
             // Update with error state
             const collectionsEl = document.getElementById(`collections-count-${catalog.id}`);
@@ -2532,14 +2439,10 @@ export class CatalogBrowserPanel {
         try {
             this.showLoading();
             
-            console.log('🔗 Connecting to catalog:', catalog.name);
-            console.log('📡 Catalog endpoint:', catalog.endpoint);
-            console.log('🌐 API Client before:', this.apiClient.endpoints);
             
             // Set the API client endpoints
             this.apiClient.setEndpoints(catalog.endpoint);
             
-            console.log('🌐 API Client after:', this.apiClient.endpoints);
             
             // Notify about the connection
             this.notificationService.showNotification(`Connected to ${catalog.name}`, 'success');
@@ -2550,17 +2453,13 @@ export class CatalogBrowserPanel {
                 data: catalog
             }];
             
-            console.log('📍 Added catalog to path:', this.currentPath);
             
             // Load collections from the newly connected catalog
-            console.log('📚 Loading collections...');
             await this.loadRootCatalogs();
             
             this.notifyStateChange();
             
         } catch (error) {
-            console.error('❌ Failed to connect to catalog:', error);
-            console.error('❌ Error stack:', error.stack);
             this.showError(`Failed to connect to ${catalog.name}: ${error.message}`);
         }
     }

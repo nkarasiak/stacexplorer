@@ -44,7 +44,6 @@ export class SearchSummaryManager {
                 summaryElement = document.querySelector('[data-field="date"] .search-summary-value');
                 break;
             default:
-                console.warn(`Unknown field type: ${fieldType}`);
                 return;
         }
         
@@ -54,11 +53,9 @@ export class SearchSummaryManager {
                 // Check if we have mini date inputs
                 if (summaryElement.querySelector('.mini-date-inputs')) {
                     // NEVER replace mini date inputs with text - they are the new system
-                    console.log('🚫 BLOCKED: Attempt to replace mini date inputs with text:', value);
                     return; // Exit early to preserve the date inputs
                 } else {
                     // If no mini date inputs exist, restore them instead of setting text
-                    console.log('🔄 Restoring mini date inputs instead of setting text:', value);
                     const today = new Date();
                     const oneMonthAgo = new Date(today);
                     oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
@@ -81,7 +78,6 @@ export class SearchSummaryManager {
                         this.setupSimpleDateInputListeners(endInput);
                     }
                     
-                    console.log('✅ Mini date inputs restored');
                     return;
                 }
             } else {

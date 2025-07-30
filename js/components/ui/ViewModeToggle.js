@@ -16,11 +16,9 @@ export class ViewModeToggle {
     }
     
     createToggle() {
-        console.log('🔧 Creating ViewModeToggle');
         
         const existingToggle = document.getElementById('view-mode-toggle');
         if (existingToggle) {
-            console.log('🗑️ Removing existing toggle');
             existingToggle.remove();
         }
         
@@ -46,27 +44,21 @@ export class ViewModeToggle {
         const searchPanel = document.getElementById('search-panel');
         const sidebarContent = document.querySelector('.sidebar-content');
         
-        console.log('🎯 Container search results:', {
             searchContainer: !!searchContainer,
             searchPanel: !!searchPanel,
             sidebarContent: !!sidebarContent
         });
         
         if (searchContainer) {
-            console.log('✅ Adding toggle to search-container');
             searchContainer.insertBefore(toggle, searchContainer.firstChild);
         } else if (searchPanel) {
-            console.log('✅ Adding toggle to search-panel');
             searchPanel.insertBefore(toggle, searchPanel.firstChild);
         } else if (sidebarContent) {
-            console.log('✅ Adding toggle to sidebar-content');
             sidebarContent.insertBefore(toggle, sidebarContent.firstChild);
         } else {
-            console.log('⚠️ No container found, adding to body');
             document.body.appendChild(toggle);
         }
         
-        console.log('📍 Toggle element:', toggle, 'Added to DOM:', document.getElementById('view-mode-toggle'));
         
         this.toggle = toggle;
     }

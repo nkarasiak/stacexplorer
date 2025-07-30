@@ -48,7 +48,6 @@ export class STACTileLayer extends TileLayer {
             
             // Error handling
             onError: (error) => {
-                console.error('STAC tile layer error:', error);
             }
         });
     }
@@ -71,12 +70,10 @@ export class STACCollectionVisualization {
      */
     async addCollection(collection, options = {}) {
         try {
-            console.log(`🗂️ Adding STAC collection: ${collection.id}`);
 
             // Check if collection has tile endpoints
             const tileEndpoint = this.findTileEndpoint(collection);
             if (!tileEndpoint) {
-                console.warn('Collection has no tile endpoint, using item-based rendering');
                 return this.addCollectionAsItems(collection, options);
             }
 
@@ -109,11 +106,9 @@ export class STACCollectionVisualization {
             this.loadedCollections.add(collection.id);
             this.activeLayers.set(collection.id, layer);
 
-            console.log(`✅ Collection ${collection.id} added successfully`);
             return true;
 
         } catch (error) {
-            console.error(`❌ Failed to add collection ${collection.id}:`, error);
             return false;
         }
     }
@@ -182,7 +177,6 @@ export class STACCollectionVisualization {
             return URL.createObjectURL(blob);
 
         } catch (error) {
-            console.warn(`⚠️ Failed to load tile ${z}/${x}/${y}:`, error);
             return null;
         }
     }
@@ -195,7 +189,6 @@ export class STACCollectionVisualization {
     async addCollectionAsItems(collection, options) {
         // This would implement item-by-item rendering
         // for collections without tile endpoints
-        console.log('📋 Using item-based rendering for collection:', collection.id);
         return false;
     }
 
@@ -208,7 +201,6 @@ export class STACCollectionVisualization {
             this.deckGL.removeLayer(`collection-${collectionId}`);
             this.activeLayers.delete(collectionId);
             this.loadedCollections.delete(collectionId);
-            console.log(`🗑️ Removed collection: ${collectionId}`);
         }
     }
 
@@ -255,7 +247,6 @@ export class STACCollectionVisualization {
         for (const collectionId of this.loadedCollections) {
             this.removeCollection(collectionId);
         }
-        console.log('🧹 Cleared all collection layers');
     }
 }
 
@@ -279,13 +270,11 @@ export class EnhancedSTACRenderer {
         
         // Check cache first
         if (this.itemCache.has(itemId) && !options.forceReload) {
-            console.log(`📦 Using cached render for item: ${itemId}`);
             return this.itemCache.get(itemId);
         }
 
         // Prevent duplicate loading
         if (this.loadingItems.has(itemId)) {
-            console.log(`⏳ Item already loading: ${itemId}`);
             return null;
         }
 
@@ -314,7 +303,6 @@ export class EnhancedSTACRenderer {
             return renderResult;
 
         } catch (error) {
-            console.error(`❌ Failed to render item ${itemId}:`, error);
             return null;
         } finally {
             this.loadingItems.delete(itemId);
@@ -382,7 +370,6 @@ export class EnhancedSTACRenderer {
      * @param {Object} options - Options
      */
     async renderCOGAsset(item, asset, options) {
-        console.log('🗺️ Rendering COG asset:', asset.href);
         
         // Use TileLayer for COG rendering
         const layer = new TileLayer({
@@ -420,7 +407,6 @@ export class EnhancedSTACRenderer {
      * @param {Object} options - Options
      */
     async renderImageAsset(item, asset, options) {
-        console.log('🖼️ Rendering image asset:', asset.href);
         
         const bbox = this.deckGL.mapManager.getBoundingBox(item);
         if (!bbox) {
@@ -474,7 +460,6 @@ export class EnhancedSTACRenderer {
      */
     clearCache() {
         this.itemCache.clear();
-        console.log('🧹 Cleared item render cache');
     }
 }
 

@@ -189,7 +189,6 @@ export class CardSearchPanel {
         const dateStart = document.getElementById('date-start').value;
         const dateEnd = document.getElementById('date-end').value;
         
-        console.log('🔍 Checking requirements:', { 
             catalogValue, 
             bboxValue, 
             collectionValue,
@@ -212,8 +211,6 @@ export class CardSearchPanel {
             // No specific collection selected - require both location and time
             locationCompleted = hasLocation;
             timeCompleted = hasTimeRange;
-            console.log('⚠️ No specific collection selected - requiring location and time constraints');
-            console.log('⚠️ Validation details:', { 
                 hasLocation, 
                 hasTimeRange, 
                 locationCompleted, 
@@ -221,7 +218,6 @@ export class CardSearchPanel {
             });
         }
         
-        console.log('📊 Requirements status:', { 
             sourceCompleted, 
             hasSpecificCollection,
             locationCompleted,
@@ -268,7 +264,6 @@ export class CardSearchPanel {
         
         // Listen for bbox drawn on map
         document.addEventListener('bboxDrawn', (event) => {
-            console.log('Bbox drawn event received:', event.detail);
             if (event.detail?.bbox) {
                 this.completeCard('location-card', event.detail.bbox);
             }
@@ -375,7 +370,6 @@ export class CardSearchPanel {
      */
     async applyToulousePreset() {
         try {
-            console.log('🇫🇷 Applying S-2 Toulouse preset...');
             
             // 1. Set basic form values first
             document.getElementById('date-start').value = '2024-01-01';
@@ -387,7 +381,6 @@ export class CardSearchPanel {
             catalogSelect.value = 'earth-search-aws';
             catalogSelect.dispatchEvent(new Event('change'));
             
-            console.log('📡 Switching to Element84 catalog...');
             
             // 3. Wait for collections to load with timeout and retry logic
             const targetCollection = 'sentinel-s2-l2a-cogs';
@@ -402,7 +395,6 @@ export class CardSearchPanel {
             this.notificationService.showNotification('✅ Applied Sentinel-2 Toulouse preset (Element84)', 'success');
             
         } catch (error) {
-            console.error('❌ Error applying Toulouse preset:', error);
             this.notificationService.showNotification(`Error applying Toulouse preset: ${error.message}`, 'error');
         }
     }
@@ -412,7 +404,6 @@ export class CardSearchPanel {
      */
     async applyVancouverPreset() {
         try {
-            console.log('🇨🇦 Applying S-1 Vancouver preset...');
             
             // 1. Set basic form values first
             document.getElementById('date-start').value = '2024-01-01';
@@ -424,7 +415,6 @@ export class CardSearchPanel {
             catalogSelect.value = 'earth-search-aws';
             catalogSelect.dispatchEvent(new Event('change'));
             
-            console.log('📡 Switching to Element84 catalog...');
             
             // 3. Wait for collections to load with timeout and retry logic
             const targetCollection = 'sentinel-s1-grd';
@@ -439,7 +429,6 @@ export class CardSearchPanel {
             this.notificationService.showNotification('✅ Applied Sentinel-1 Vancouver preset (Element84)', 'success');
             
         } catch (error) {
-            console.error('❌ Error applying Vancouver preset:', error);
             this.notificationService.showNotification(`Error applying Vancouver preset: ${error.message}`, 'error');
         }
     }
@@ -456,14 +445,12 @@ export class CardSearchPanel {
             const maxAttempts = 20; // 10 seconds max wait
             const checkInterval = 500; // Check every 500ms
             
-            console.log(`🔍 Looking for collection: ${targetCollection}`);
             
             const checkForCollection = () => {
                 attempts++;
                 const collectionSelect = document.getElementById('collection-select');
                 
                 if (!collectionSelect) {
-                    console.warn('⚠️ Collection select element not found');
                     return;
                 }
                 
@@ -476,7 +463,6 @@ export class CardSearchPanel {
                 );
                 
                 if (matchingOption) {
-                    console.log(`✅ Found collection: ${matchingOption.value} (${matchingOption.text})`);
                     
                     // Select the collection
                     collectionSelect.value = matchingOption.value;
@@ -488,18 +474,14 @@ export class CardSearchPanel {
                         if (selectedValue === matchingOption.value) {
                             resolve(selectedValue);
                         } else {
-                            console.warn(`⚠️ Collection selection failed: expected ${matchingOption.value}, got ${selectedValue}`);
                             reject(new Error(`Collection selection failed for ${presetName}`));
                         }
                     }, 100);
                     
                 } else if (attempts >= maxAttempts) {
-                    console.error(`❌ Timeout: Could not find collection ${targetCollection} after ${attempts} attempts`);
-                    console.log('Available collections:', options.map(opt => `${opt.value} - ${opt.text}`));
                     reject(new Error(`Collection ${targetCollection} not found in ${presetName} preset`));
                     
                 } else {
-                    console.log(`⏳ Attempt ${attempts}/${maxAttempts}: Collection not yet available, retrying...`);
                     setTimeout(checkForCollection, checkInterval);
                 }
             };
@@ -586,7 +568,6 @@ export class CardSearchPanel {
         const closeButton = document.getElementById('stac-modal-close');
         
         if (!loadButton || !modal) {
-            console.warn('⚠️ STAC loader elements not found');
             return;
         }
         
@@ -616,7 +597,6 @@ export class CardSearchPanel {
         // Initialize load buttons in modal
         this.initModalLoadButtons();
         
-        console.log('🔗 STAC loader modal initialized');
     }
     
     /**
@@ -746,7 +726,6 @@ export class CardSearchPanel {
         loadButton.disabled = true;
         
         try {
-            console.log(`🔗 Loading STAC item from URL: ${url}`);
             
             // Fetch the STAC item JSON
             const response = await fetch(url);
@@ -770,7 +749,6 @@ export class CardSearchPanel {
             this.hideStacLoadModal();
             
         } catch (error) {
-            console.error('❌ Error loading STAC item from URL:', error);
             this.notificationService.showNotification(
                 `Failed to load STAC item: ${error.message}`, 
                 'error'
@@ -801,7 +779,6 @@ export class CardSearchPanel {
         loadButton.disabled = true;
         
         try {
-            console.log('🔗 Loading STAC item from JSON');
             
             // Parse the JSON
             const stacItem = JSON.parse(jsonText);
@@ -813,7 +790,6 @@ export class CardSearchPanel {
             this.hideStacLoadModal();
             
         } catch (error) {
-            console.error('❌ Error loading STAC item from JSON:', error);
             if (error instanceof SyntaxError) {
                 this.notificationService.showNotification(
                     'Invalid JSON format', 
@@ -836,7 +812,6 @@ export class CardSearchPanel {
      * Process and validate a STAC item, then display it
      */
     async processStacItem(stacItem) {
-        console.log('🔍 [PASTE-DEBUG] Processing STAC object:', {
             type: stacItem.type,
             id: stacItem.id,
             hasAssets: !!stacItem.assets,
@@ -845,12 +820,9 @@ export class CardSearchPanel {
         
         // Validate basic STAC item structure
         if (!stacItem.type || stacItem.type !== 'Feature') {
-            console.error('❌ [PASTE-DEBUG] Invalid type. Expected "Feature", got:', stacItem.type);
-            console.error('❌ [PASTE-DEBUG] Full object keys:', Object.keys(stacItem));
             
             // If it looks like a STAC item but just missing the type, try to fix it
             if (!stacItem.type && stacItem.id && stacItem.assets && stacItem.properties) {
-                console.warn('⚠️ [PASTE-DEBUG] Object looks like STAC item but missing type field. Auto-adding type="Feature"');
                 stacItem.type = 'Feature';
             } else {
                 throw new Error(`Invalid STAC item: expected type="Feature", got type="${stacItem.type || 'undefined'}". Make sure your STAC item has a "type": "Feature" field at the root level.`);
@@ -858,39 +830,29 @@ export class CardSearchPanel {
         }
         
         if (!stacItem.id) {
-            console.error('❌ [PASTE-DEBUG] Missing id field');
             throw new Error('Invalid STAC item: missing id');
         }
         
         if (!stacItem.assets || typeof stacItem.assets !== 'object') {
-            console.error('❌ [PASTE-DEBUG] Missing or invalid assets:', stacItem.assets);
             throw new Error('Invalid STAC item: missing or invalid assets');
         }
         
-        console.log(`✅ Successfully loaded STAC item: ${stacItem.id}`);
         
         // Clear previous map state (geometry, bbox, thumbnails)
-        console.log('🧹 [DEBUG] About to clear map state...');
         this.clearMapState();
-        console.log('🧹 [DEBUG] Map state cleared, now setting items...');
         
         // Display the item in results
         this.resultsPanel.setItems([stacItem]);
-        console.log('🧹 [DEBUG] Items set in results panel');
         
         // Automatically display the pasted item on the map (like clicking on it)
         if (this.mapManager) {
-            console.log('🗺️ [DEBUG] Auto-displaying pasted item on map...');
             try {
                 await this.mapManager.displayItemOnMap(stacItem, 'thumbnail');
-                console.log('🗺️ [DEBUG] Successfully displayed pasted item on map');
             } catch (error) {
-                console.warn('⚠️ [DEBUG] Failed to auto-display on map:', error);
                 // Fallback: just fit to bounds without displaying assets
                 const bbox = this.mapManager.getBoundingBox(stacItem);
                 if (bbox) {
                     this.mapManager.fitMapToBbox(bbox);
-                    console.log('🗺️ [DEBUG] Fitted map to item bounds as fallback');
                 }
             }
         }
@@ -907,41 +869,30 @@ export class CardSearchPanel {
      */
     clearMapState() {
         try {
-            console.log('🧹 [PASTE-DEBUG] ====== STARTING CLEAR MAP STATE ======');
             
             // Clear map drawings and previous geometry
             document.dispatchEvent(new CustomEvent('clearMapDrawings'));
-            console.log('🧹 [PASTE-DEBUG] Dispatched clearMapDrawings event');
             
             // Clear current item layer (geometry/bbox) - this fixes the overlay issue!
             if (this.mapManager && typeof this.mapManager.removeCurrentLayer === 'function') {
-                console.log('🧹 [PASTE-DEBUG] Calling mapManager.removeCurrentLayer()...');
                 this.mapManager.removeCurrentLayer();
-                console.log('🧹 [PASTE-DEBUG] Completed mapManager.removeCurrentLayer()');
             } else {
-                console.warn('⚠️ [PASTE-DEBUG] MapManager or removeCurrentLayer not available');
             }
             
             // Clear thumbnails if mapManager is available
             if (this.mapManager && typeof this.mapManager.clearAllThumbnails === 'function') {
-                console.log('🧹 [PASTE-DEBUG] Calling mapManager.clearAllThumbnails()...');
                 this.mapManager.clearAllThumbnails();
-                console.log('🧹 [PASTE-DEBUG] Completed mapManager.clearAllThumbnails()');
             }
             
             // Clear any visualization layers if available
             if (window.stacExplorer?.rasterManager) {
                 const layers = window.stacExplorer.rasterManager.getLayerInfo();
-                console.log(`🧹 [PASTE-DEBUG] Clearing ${layers.length} visualization layers`);
                 layers.forEach(layer => {
                     window.stacExplorer.rasterManager.removeLayer(layer.layerId);
                 });
-                console.log('🧹 [PASTE-DEBUG] Completed clearing visualization layers');
             }
             
-            console.log('🧹 [PASTE-DEBUG] ====== COMPLETED CLEAR MAP STATE ======');
         } catch (error) {
-            console.error('❌ [PASTE-DEBUG] Error clearing map state:', error);
         }
     }
     
@@ -1014,7 +965,6 @@ export class CardSearchPanel {
      */
     async performSearch() {
         try {
-            console.log('🔍 Starting search...');
             
             // Dispatch search-started event for tutorial and other listeners
             const searchParams = this.searchForm.getSearchParams();
@@ -1066,7 +1016,6 @@ export class CardSearchPanel {
             
             // Get search parameters from SearchForm (maintains compatibility)
             // searchParams already declared above at line 1016
-            console.log('📋 Base search params from form:', JSON.stringify(searchParams, null, 2));
             
             // Add filter parameters if FilterManager is available
             if (window.stacExplorer?.filterManager) {
@@ -1077,12 +1026,9 @@ export class CardSearchPanel {
                         searchParams.query = {};
                     }
                     Object.assign(searchParams.query, filterParams);
-                    console.log('🌥️ Added filter parameters:', filterParams);
                 } else {
-                    console.log('🔍 No active filters to apply');
                 }
             } else {
-                console.log('⚠️ FilterManager not available');
             }
             
             // CRITICAL: Override collection parameter from our card UI
@@ -1093,18 +1039,14 @@ export class CardSearchPanel {
             // Add collection if specified
             if (selectedCollection) {
                 searchParams.collections = [selectedCollection];
-                console.log('✅ Added collection to search params:', selectedCollection);
             } else {
-                console.log('⚠️ No collection selected - proceeding without collection parameter');
             }
             
             // CRITICAL: Validate that we have required parameters for the search
-            console.log('🔍 Final search parameters before API call:', JSON.stringify(searchParams, null, 2));
             
             // Collection is always required
             if (!searchParams.collections) {
                 const errorMsg = 'Collection is required for single-source search but none was selected';
-                console.error('❌', errorMsg);
                 this.notificationService.showNotification(errorMsg, 'error');
                 document.getElementById('loading').style.display = 'none';
                 return;
@@ -1112,12 +1054,10 @@ export class CardSearchPanel {
             
             // CRITICAL: Additional validation for "all collections" searches without constraints
             if (!searchParams.collections || searchParams.collections.length === 0) {
-                console.log('🚨 No specific collection selected - validating constraints...');
                 
                 const hasLocationConstraint = searchParams.bbox || searchParams.intersects;
                 const hasTimeConstraint = searchParams.datetime;
                 
-                console.log('🔍 Constraint check:', {
                     hasLocationConstraint,
                     hasTimeConstraint,
                     bbox: searchParams.bbox,
@@ -1131,7 +1071,6 @@ export class CardSearchPanel {
                     if (!hasTimeConstraint) missingConstraints.push('Time Range');
                     
                     const errorMsg = `Searching all collections requires: ${missingConstraints.join(' and ')}`;
-                    console.error('❌', errorMsg);
                     this.notificationService.showNotification(errorMsg, 'error');
                     document.getElementById('loading').style.display = 'none';
                     return;
@@ -1141,9 +1080,7 @@ export class CardSearchPanel {
             let items = [];
             
             // Use regular single-source search
-            console.log('🌐 Making API request...');
             items = await this.apiClient.searchItems(searchParams);
-            console.log('📊 Search completed, received items:', items.length);
 
             
             // Update results panel
@@ -1188,9 +1125,7 @@ export class CardSearchPanel {
                         detail: historyParams
                     }));
                     
-                    console.log('💾 Search saved to history with', items.length, 'results');
                 } catch (historyError) {
-                    console.warn('⚠️ Failed to save search to history:', historyError);
                 }
             }
             
@@ -1206,14 +1141,12 @@ export class CardSearchPanel {
                 const collectionText = selectedCollection ? ` from collection "${selectedCollection}"` : 
                                      ' from all collections';
                 this.notificationService.showNotification(`Found ${items.length} datasets${collectionText}!`, 'success');
-                console.log('🎉 Search successful!', {
                     itemCount: items.length,
                     collection: selectedCollection || 'all collections',
                     searchParams: searchParams
                 });
             }
         } catch (error) {
-            console.error('❌ Error searching items:', error);
             
             // Provide user-friendly error messages
             let userMessage = 'Search failed. Please try again.';
@@ -1252,7 +1185,6 @@ export class CardSearchPanel {
             }
             return collectionId;
         } catch (error) {
-            console.warn('Failed to get collection title:', error);
             return collectionId;
         }
     }
@@ -1311,7 +1243,6 @@ export class CardSearchPanel {
         // Reset smart filters if FilterManager is available
         if (window.stacExplorer?.filterManager) {
             window.stacExplorer.filterManager.resetFilters();
-            console.log('🔄 Smart filters reset');
         }
         
         // Reset all card states
@@ -1372,9 +1303,6 @@ export class CardSearchPanel {
      * @param {Object} collectionsInfo - Information about loaded collections
      */
     handleCollectionsUpdated(collectionsInfo) {
-        console.log('📡 Collections updated event received');
-        console.log('📋 Collections info:', collectionsInfo);
-        console.log('🔄 Checking for pending selection:', this.pendingCollectionSelection);
         
         // Log all available collections
         const collectionSelect = document.getElementById('collection-select');
@@ -1383,7 +1311,6 @@ export class CardSearchPanel {
                 value: opt.value,
                 text: opt.text
             }));
-            console.log('📋 Available collections after update:', availableCollections);
         }
         
         // If we have a pending collection selection, apply it now
@@ -1398,13 +1325,10 @@ export class CardSearchPanel {
             );
             
             if (option) {
-                console.log('✅ Found matching collection option:', option.value, '-', option.text);
                 collectionSelect.value = option.value;
                 collectionSelect.dispatchEvent(new Event('change'));
                 this.completeCard('dataset-card', option.value);
             } else {
-                console.warn('⚠️ Could not find collection:', targetCollection);
-                console.log('🔍 Available options were:', 
                     Array.from(collectionSelect.options).map(opt => `${opt.value} - ${opt.text}`));
             }
             
@@ -1467,7 +1391,6 @@ export class CardSearchPanel {
                 await this.processStacItem(jsonData);
                 
             } else if (this.isStacCollection(jsonData)) {
-                console.log('📂 Detected STAC collection from paste:', jsonData.id);
                 
                 this.notificationService.showNotification(
                     `📂 STAC collection detected, but only items are supported for direct loading`,
@@ -1481,7 +1404,6 @@ export class CardSearchPanel {
             
         } catch (error) {
             // Error processing - ignore silently to avoid annoying users
-            console.debug('Paste processing error (ignored):', error);
         }
     }
     
@@ -1491,7 +1413,6 @@ export class CardSearchPanel {
      * @returns {boolean} True if valid STAC item
      */
     isValidStacItem(obj) {
-        console.log('🔍 [PASTE-DEBUG] Validating STAC item:', {
             hasObj: !!obj,
             isObject: typeof obj === 'object',
             type: obj?.type,
@@ -1511,7 +1432,6 @@ export class CardSearchPanel {
                typeof obj.properties === 'object' &&
                (obj.stac_version || obj.geometry !== undefined); // STAC version or geometry indicates STAC item
                
-        console.log('🔍 [PASTE-DEBUG] STAC item validation result:', isValid);
         return isValid;
     }
     

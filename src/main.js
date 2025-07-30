@@ -10,11 +10,9 @@ import { initializeApp } from '../js/app.js'
 
 // Initialize the application
 async function init() {
-  console.log('🚀 Vite main.js initializing...')
   
   // Ensure DOM is fully ready
   if (document.readyState !== 'complete') {
-    console.log('⏳ Waiting for DOM to be complete...')
     await new Promise(resolve => {
       if (document.readyState === 'complete') {
         resolve()
@@ -24,7 +22,6 @@ async function init() {
     })
   }
   
-  console.log('✅ DOM ready, initializing app...')
   
   // Give a small delay to ensure all elements are rendered
   await new Promise(resolve => setTimeout(resolve, 100))
@@ -44,13 +41,11 @@ async function init() {
     console.error('This might indicate the HTML structure was not loaded properly')
     // Still try to initialize, but with a warning
   } else {
-    console.log('✅ All critical DOM elements found')
   }
   
   // Initialize the app
   try {
     await initializeApp()
-    console.log('🎉 STAC Explorer initialized successfully with Vite!')
   } catch (error) {
     console.error('❌ Failed to initialize STAC Explorer:', error)
     
@@ -88,7 +83,6 @@ if (document.readyState === 'loading') {
 if (import.meta.hot) {
   import.meta.hot.accept('@/app.js', (newModule) => {
     if (newModule) {
-      console.log('🔄 App module updated')
     }
   })
 }

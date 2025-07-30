@@ -15,7 +15,6 @@ export class MapLayers {
      * Clear all thumbnails from the map
      */
     clearAllThumbnails() {
-        console.log('🧹 Clearing all thumbnails from map');
         
         // Remove all thumbnail layers and sources
         this.thumbnailLayers.forEach((layerId, itemId) => {
@@ -37,7 +36,6 @@ export class MapLayers {
         this.thumbnailSources.clear();
         this.thumbnailLayers.clear();
         
-        console.log('✅ All thumbnails cleared');
     }
 
     /**
@@ -58,7 +56,6 @@ export class MapLayers {
             layersToRemove.forEach(layerId => {
                 if (this.map.getLayer(layerId)) {
                     this.map.removeLayer(layerId);
-                    console.log(`🗑️ Removed layer: ${layerId}`);
                 }
             });
             
@@ -72,7 +69,6 @@ export class MapLayers {
             sourcesToRemove.forEach(sourceId => {
                 if (this.map.getSource(sourceId)) {
                     this.map.removeSource(sourceId);
-                    console.log(`🗑️ Removed source: ${sourceId}`);
                 }
             });
             
@@ -102,7 +98,6 @@ export class MapLayers {
                 maxZoom: 14 // Don't zoom in too much
             });
             
-            console.log('🗺️ Map fitted to bbox:', bbox);
         } catch (error) {
             console.error('Error fitting map to bbox:', error);
         }
@@ -202,7 +197,6 @@ export class MapLayers {
                 }
             });
             
-            console.log('✅ Added boundary layer for item:', item.id);
             
         } catch (error) {
             console.error('Error adding GeoJSON layer:', error);
@@ -280,7 +274,6 @@ export class MapLayers {
         
         // Re-add each thumbnail (simplified implementation)
         thumbnails.forEach((sourceId, itemId) => {
-            console.log(`🔄 Would reapply thumbnail for ${itemId}`);
             // This would need more implementation based on stored thumbnail data
         });
     }
@@ -289,7 +282,6 @@ export class MapLayers {
      * Add asset overlay to map (simplified version)
      */
     async addAssetOverlay(asset, item, assetKey) {
-        console.log(`🗺️ Adding asset overlay: ${assetKey} for item ${item.id}`);
         
         try {
             // This is a simplified implementation
@@ -303,7 +295,6 @@ export class MapLayers {
             // For now, just show the boundary
             this.addGeoJsonLayerWithoutTooltip(bbox, item);
             
-            console.log(`✅ Asset overlay added for ${assetKey}`);
             
         } catch (error) {
             console.error(`❌ Failed to add asset overlay for ${assetKey}:`, error);

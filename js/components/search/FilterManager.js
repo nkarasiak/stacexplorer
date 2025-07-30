@@ -37,7 +37,6 @@ export class FilterManager {
         
         // For debugging - show button initially if no collections
         // Remove this after fixing the collection detection
-        console.log('🔍 FilterManager initialized');
         
         // Show filter button immediately for testing while collections load
         this.showFilterButton();
@@ -76,7 +75,6 @@ export class FilterManager {
     setupEventListeners() {
         // Listen for collection changes
         document.addEventListener('collectionsChanged', (event) => {
-            console.log('🔍 Received collectionsChanged event');
             this.updateFiltersForCollections(event.detail.collections);
         });
         
@@ -84,7 +82,6 @@ export class FilterManager {
         const collectionSelect = document.getElementById('collection-select');
         if (collectionSelect) {
             collectionSelect.addEventListener('change', (event) => {
-                console.log('🔍 Collection dropdown changed:', event.target.value);
                 // Get all collections from global state if available
                 if (window.stacExplorer?.collectionManager?.allCollections) {
                     this.updateFiltersForCollections(window.stacExplorer.collectionManager.allCollections);
@@ -321,7 +318,6 @@ export class FilterManager {
         // Prevent body scroll
         document.body.style.overflow = 'hidden';
         
-        console.log('🔍 Fresh filter modal created and displayed');
     }
     
     /**
@@ -435,23 +431,19 @@ export class FilterManager {
      * Update filters based on selected collections
      */
     updateFiltersForCollections(collections) {
-        console.log('🔍 FilterManager received collections:', collections?.length || 0, collections);
         
         if (!collections || collections.length === 0) {
-            console.log('⚠️ No collections provided to FilterManager');
             this.hideFilterButton();
             return;
         }
         
         const collectionTypes = this.analyzeCollectionTypes(collections);
-        console.log('🔍 Detected collection types:', collectionTypes);
         
         // Clear existing filters
         this.clearFilters();
         
         // Add relevant filters
         const relevantFilters = this.getRelevantFilters(collectionTypes);
-        console.log('🔍 Relevant filters found:', relevantFilters.length, relevantFilters.map(f => f.name));
         
         if (relevantFilters.length > 0) {
             this.showFilters(relevantFilters);
@@ -528,14 +520,12 @@ export class FilterManager {
                 collection.summaries['eo:bands'] ||
                 collection.summaries['eo:snow_cover'])) {
                 types.add('optical');
-                console.log(`🌥️ Collection has EO properties: ${collection.id}`);
             }
         });
         
         // If we have collections but no specific type detected, assume optical as default
         if (collections.length > 0 && types.size === 0) {
             types.add('optical');
-            console.log('📡 No specific type detected, defaulting to optical');
         }
         
         return Array.from(types);
@@ -734,16 +724,13 @@ export class FilterManager {
             const property = filter.stacProperty;
             const value = parseFloat(filter.value);
             
-            console.log(`🔍 Processing filter: ${filter.id} = ${value} (property: ${property})`);
             
             if (filter.id === 'cloud_cover') {
                 // Maximum cloud cover filter (less than or equal)
                 queryParams[property] = { lte: value };
-                console.log(`🌥️ Added ${property} constraint: <= ${value}`);
             }
         });
         
-        console.log('🔍 Final STAC query parameters from FilterManager:', queryParams);
         return queryParams;
     }
     
@@ -751,7 +738,6 @@ export class FilterManager {
      * Callback when filters change
      */
     onFiltersChanged() {
-        console.log('🔍 Active filters:', this.activeFilters);
         
         // Update filter badge
         this.updateFilterBadge();
@@ -772,14 +758,10 @@ export class FilterManager {
      * Update URL with current filter values
      */
     updateURLWithFilters() {
-        console.log('🔗 Attempting to update URL with filters...');
-        console.log('🔗 UnifiedStateManager available:', !!window.stacExplorer?.unifiedStateManager);
-        console.log('🔗 Active filters:', this.activeFilters);
         
         if (window.stacExplorer?.unifiedStateManager) {
             // Call updateURL directly - it will read the current filter state from FilterManager
             window.stacExplorer.unifiedStateManager.updateURL();
-            console.log('✅ Called updateURL() to refresh URL with current filter state');
         } else {
             console.error('❌ UnifiedStateManager not available for URL updates');
         }
@@ -804,10 +786,8 @@ export class FilterManager {
      * Show filter button
      */
     showFilterButton() {
-        console.log('🔍 Attempting to show filter button:', !!this.filterButton);
         if (this.filterButton) {
             this.filterButton.style.display = 'block';
-            console.log('✅ Filter button shown');
         } else {
             console.error('❌ Filter button element not found!');
         }
@@ -855,7 +835,6 @@ export class FilterManager {
             // Find and activate cloud cover filter
             const cloudCoverFilter = this.filters.get('cloud_cover');
             if (cloudCoverFilter && cloudCoverValue >= 0 && cloudCoverValue <= 100) {
-                console.log('🔗 Restoring cloud cover filter from URL:', cloudCoverValue);
                 
                 // Enable the filter
                 const filterElement = document.getElementById('filter-cloud_cover');

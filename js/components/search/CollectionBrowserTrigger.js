@@ -23,7 +23,6 @@ export class CollectionBrowserTrigger {
      * Create the trigger button that makes the existing SOURCE card clickable
      */
     createTriggerButton() {
-        console.log('🔍 Looking for summary-source element...');
         
         // Try different approaches to find the element
         let summarySource = document.getElementById('summary-source');
@@ -39,7 +38,6 @@ export class CollectionBrowserTrigger {
                     console.error('❌ summary-source element not found after waiting');
                     // List all elements with summary in ID for debugging
                     const summaryElements = document.querySelectorAll('[id*="summary"]');
-                    console.log('📋 Available summary elements:', Array.from(summaryElements).map(el => el.id));
                 }
             }, 1000);
             return;
@@ -53,7 +51,6 @@ export class CollectionBrowserTrigger {
      * @param {HTMLElement} summarySource - The source element to make clickable
      */
     setupTrigger(summarySource) {
-        console.log('✅ Found summary-source element, setting up trigger...');
         
         // Make the existing card clickable
         summarySource.style.cursor = 'pointer';
@@ -73,12 +70,10 @@ export class CollectionBrowserTrigger {
         
         // Find the value element to update later
         this.valueElement = summarySource.querySelector('.search-summary-value');
-        console.log('📝 Value element found:', !!this.valueElement);
         
         // Add enhanced styling
         this.addTriggerStyles();
         
-        console.log('✅ Collection browser trigger created from existing SOURCE card');
     }
     
     /**
@@ -164,7 +159,6 @@ export class CollectionBrowserTrigger {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation(); // Prevent any other handlers from running
-            console.log('🖱️ Collection browser trigger clicked');
             
             // Ensure button is not disabled
             if (this.triggerButton.classList.contains('loading')) {
@@ -195,7 +189,6 @@ export class CollectionBrowserTrigger {
                 setTimeout(() => {
                     this.setLoadingState(false);
                     this.ensureButtonClickable();
-                    console.log('✅ Trigger re-enabled after collection selection');
                 }, 100);
             }
         });
@@ -217,7 +210,6 @@ export class CollectionBrowserTrigger {
      * Open the collection browser panel
      */
     async openPanel() {
-        console.log('🔍 Opening collection browser panel...');
         
         // Show loading state
         this.setLoadingState(true);
@@ -246,14 +238,12 @@ export class CollectionBrowserTrigger {
                 await this.initializeCollectionBrowserInPanel();
             }
             
-            console.log('✅ Panel opened successfully');
         } catch (error) {
             console.error('Error opening collection browser panel:', error);
         } finally {
             // Ensure loading state is cleared
             setTimeout(() => {
                 this.setLoadingState(false);
-                console.log('✅ Loading state cleared for trigger button');
             }, 100);
         }
     }
@@ -278,7 +268,6 @@ export class CollectionBrowserTrigger {
             const gridElement = document.getElementById('collection-grid-container');
             if (gridElement) {
                 panelContent.appendChild(gridElement);
-                console.log('✅ Collection grid moved to panel');
             }
             
             // Load collections
@@ -397,7 +386,6 @@ export class CollectionBrowserTrigger {
             // Ensure cursor is set to pointer
             this.triggerButton.style.cursor = 'pointer';
             
-            console.log('✅ Collection browser trigger ensured clickable');
         }
     }
     

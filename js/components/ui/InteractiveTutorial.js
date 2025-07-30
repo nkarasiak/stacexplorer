@@ -6,14 +6,12 @@
 export class InteractiveTutorial {
     constructor() {
         // Disable tutorial completely
-        console.log('🚫 Tutorial disabled');
         this.isDisabled = true;
         return;
         
         // Disable tutorial on mobile devices
         this.isMobile = window.innerWidth <= 768;
         if (this.isMobile) {
-            console.log('📱 Tutorial disabled on mobile devices');
             return;
         }
         
@@ -130,12 +128,10 @@ export class InteractiveTutorial {
                 action: () => {
                     // Prevent multiple executions
                     if (this.collectionStepInProgress) {
-                        console.log('🎯 Tutorial: Collection step already in progress, skipping');
                         return;
                     }
                     this.collectionStepInProgress = true;
                     
-                    console.log('🎯 Tutorial: Starting collection step');
                     
                     // Reposition tutorial to not block the modal
                     this.repositionTutorialForModal();
@@ -329,7 +325,6 @@ export class InteractiveTutorial {
      */
     start() {
         if (this.isDisabled || this.isMobile || this.isActive) {
-            console.log('🚫 Tutorial start blocked - disabled');
             return;
         }
         
@@ -338,7 +333,6 @@ export class InteractiveTutorial {
         this.createOverlay();
         this.showStep(this.currentStep);
         
-        console.log('🎓 Interactive tutorial started');
     }
 
     /**
@@ -396,7 +390,6 @@ export class InteractiveTutorial {
             this.initializeThemeSelection();
         }
         
-        console.log(`🎓 Tutorial step: ${step.id} (${stepIndex + 1}/${this.steps.length})`);
     }
 
     /**
@@ -450,7 +443,6 @@ export class InteractiveTutorial {
             themeToggleIcon.textContent = theme === 'dark' ? 'light_mode' : 'dark_mode';
         }
         
-        console.log(`🎨 Tutorial theme changed to: ${theme}`);
     }
 
 
@@ -460,7 +452,6 @@ export class InteractiveTutorial {
     hideTutorialTemporarily() {
         if (this.overlay) {
             this.overlay.style.display = 'none';
-            console.log('🎯 Tutorial: Temporarily hidden for modal interaction');
         }
     }
 
@@ -475,7 +466,6 @@ export class InteractiveTutorial {
             this.overlay.style.left = '0';
             this.overlay.style.width = '100%';
             this.overlay.style.height = '100%';
-            console.log('🎯 Tutorial: Shown again after modal interaction');
         }
     }
 
@@ -500,7 +490,6 @@ export class InteractiveTutorial {
             this.tutorialPanel.style.transform = 'none';
             this.tutorialPanel.style.position = 'relative';
             
-            console.log('🎯 Tutorial: Repositioned for modal interaction');
         }
     }
 
@@ -512,7 +501,6 @@ export class InteractiveTutorial {
         setTimeout(() => {
             const priorityCards = document.querySelectorAll('.collection-card.priority-collection');
             if (priorityCards.length > 0) {
-                console.log('🌟 Tutorial: Adding collection selection guide');
                 
                 // Create floating guide overlay
                 const guideOverlay = document.createElement('div');
@@ -605,22 +593,15 @@ export class InteractiveTutorial {
 
         // Add debugging to track modal state
         const modal = document.getElementById('collection-browser-modal');
-        console.log('🛰️ Tutorial: Modal state check:', {
-            modalExists: !!modal,
-            modalHasOpenClass: modal && modal.classList.contains('open'),
-            modalDisplay: modal ? modal.style.display : 'N/A'
-        });
 
         // Check if modal is already open - if so, skip button guide and show collection guide
         if (modal && modal.classList.contains('open')) {
-            console.log('🛰️ Tutorial: Modal already open, showing collection guide directly');
             setTimeout(() => {
                 this.showCollectionSelectionGuide();
             }, 500);
             return;
         }
 
-        console.log('🛰️ Tutorial: Adding collection button guide');
 
         // Monitor for unexpected modal opening with detailed logging
         let modalOpenedAutomatically = false;
@@ -718,7 +699,6 @@ export class InteractiveTutorial {
 
         // Set up click handler to detect when user clicks the button
         const buttonClickHandler = (event) => {
-            console.log('🛰️ Tutorial: User clicked SOURCE button manually');
             
             // Remove button guide immediately when clicked
             this.cleanupCollectionButtonGuide();
@@ -750,7 +730,6 @@ export class InteractiveTutorial {
             return;
         }
 
-        console.log('🌍 Tutorial: Adding location search guide');
 
         // Create floating guide overlay
         const guideOverlay = document.createElement('div');
@@ -830,7 +809,6 @@ export class InteractiveTutorial {
                 locationInput.style.transform = '';
                 locationInput.style.zIndex = '';
             }
-            console.log('🌍 Tutorial: Location guide cleaned up');
         };
 
         // Remove after 15 seconds or when user interacts
@@ -864,7 +842,6 @@ export class InteractiveTutorial {
             return;
         }
 
-        console.log('📅 Tutorial: Adding date picker guide');
 
         // Create floating guide overlay
         const guideOverlay = document.createElement('div');
@@ -948,7 +925,6 @@ export class InteractiveTutorial {
                     input.style.zIndex = '';
                 }
             });
-            console.log('📅 Tutorial: Date picker guide cleaned up');
         };
 
         // Remove after 15 seconds or when user interacts
@@ -980,7 +956,6 @@ export class InteractiveTutorial {
     listenForModalClose() {
         // Listen for collection selection event first
         const collectionSelectionHandler = (event) => {
-            console.log('🎯 Tutorial: Collection selected, cleaning up guides');
             this.cleanupCollectionButtonGuide();
             this.cleanupCollectionGuides();
             
@@ -1007,7 +982,6 @@ export class InteractiveTutorial {
                 this.cleanupCollectionGuides();
                 this.collectionStepInProgress = false;
                 this.restoreTutorialPosition();
-                console.log('🎯 Tutorial: Modal closed, tutorial restored');
                 document.removeEventListener('modalCollectionSelected', collectionSelectionHandler);
                 return;
             }
@@ -1039,7 +1013,6 @@ export class InteractiveTutorial {
             card.style.zIndex = '';
         });
         
-        console.log('🎯 Tutorial: Collection guides cleaned up');
     }
 
     /**
@@ -1062,7 +1035,6 @@ export class InteractiveTutorial {
             sourceButton.removeAttribute('data-tutorial-controlled');
         }
         
-        console.log('🛰️ Tutorial: Collection button guide cleaned up');
     }
 
     /**
@@ -1084,7 +1056,6 @@ export class InteractiveTutorial {
             locationInput.style.zIndex = '';
         }
         
-        console.log('🌍 Tutorial: Location guides cleaned up');
     }
 
     /**
@@ -1109,7 +1080,6 @@ export class InteractiveTutorial {
             }
         });
         
-        console.log('📅 Tutorial: Date picker guides cleaned up');
     }
 
     /**
@@ -1141,7 +1111,6 @@ export class InteractiveTutorial {
                 this.positionPanel(currentStep);
             }
             
-            console.log('🎯 Tutorial: Position restored to normal');
         }
     }
 
@@ -1151,7 +1120,6 @@ export class InteractiveTutorial {
     listenForLocationSearchClose() {
         // Listen for location selection event
         const locationSelectionHandler = (event) => {
-            console.log('🎯 Tutorial: Location selected, cleaning up guides');
             this.cleanupLocationGuides();
             
             // Wait a bit then restore tutorial
@@ -1175,7 +1143,6 @@ export class InteractiveTutorial {
                 // Location search is closed, restore tutorial
                 this.cleanupLocationGuides();
                 this.restoreTutorialPosition();
-                console.log('🎯 Tutorial: Location search closed, tutorial restored');
                 document.removeEventListener('location-selected', locationSelectionHandler);
                 return;
             }
@@ -1194,7 +1161,6 @@ export class InteractiveTutorial {
     listenForDatePickerClose() {
         // Listen for date change events
         const dateChangeHandler = (event) => {
-            console.log('🎯 Tutorial: Date changed, cleaning up guides');
             this.cleanupDateGuides();
             
             // Wait a bit then restore tutorial
@@ -1223,7 +1189,6 @@ export class InteractiveTutorial {
                 // Date picker is closed, restore tutorial
                 this.cleanupDateGuides();
                 this.restoreTutorialPosition();
-                console.log('🎯 Tutorial: Date picker closed, tutorial restored');
                 
                 // Clean up event listeners
                 if (startDateInput) {
@@ -1247,7 +1212,6 @@ export class InteractiveTutorial {
      * Wait for user to select a collection during tutorial
      */
     waitForCollectionSelection() {
-        console.log('🎯 Tutorial: Waiting for user to select a collection...');
         
         const enableButton = () => {
             const nextButton = document.querySelector('.tutorial-btn.btn-primary');
@@ -1255,7 +1219,6 @@ export class InteractiveTutorial {
                 nextButton.removeAttribute('disabled');
                 nextButton.classList.remove('disabled');
                 nextButton.textContent = 'Continue';
-                console.log('🎯 Tutorial: Next button enabled for collection');
             }
         };
         
@@ -1266,7 +1229,6 @@ export class InteractiveTutorial {
             const hasCollectionParam = urlParams.has('cn');
             
             if (hasCatalogParam && hasCollectionParam) {
-                console.log('✅ Tutorial: Collection detected (URL params cs & cn)');
                 enableButton();
                 return true;
             }
@@ -1299,7 +1261,6 @@ export class InteractiveTutorial {
      * Wait for user to select a location during tutorial
      */
     waitForLocationSelection() {
-        console.log('🎯 Tutorial: Waiting for user to select a location...');
         
         const enableButton = () => {
             const nextButton = document.querySelector('.tutorial-btn.btn-primary');
@@ -1307,7 +1268,6 @@ export class InteractiveTutorial {
                 nextButton.removeAttribute('disabled');
                 nextButton.classList.remove('disabled');
                 nextButton.textContent = 'Continue';
-                console.log('🎯 Tutorial: Next button enabled');
             }
         };
         
@@ -1321,7 +1281,6 @@ export class InteractiveTutorial {
             const hasBboxValue = bboxInput && bboxInput.value.trim() !== '';
             
             if (hasLocationParam || hasBboxValue) {
-                console.log('✅ Tutorial: Location detected (URL param or bbox)');
                 enableButton();
                 return true;
             }
@@ -1343,7 +1302,6 @@ export class InteractiveTutorial {
         
         // Listen for location selection event
         const locationHandler = (event) => {
-            console.log('✅ Tutorial: Location selected by user:', event.detail);
             enableButton();
             document.removeEventListener('location-selected', locationHandler);
             window.removeEventListener('popstate', urlHandler);
@@ -1551,7 +1509,6 @@ export class InteractiveTutorial {
         }
         
         localStorage.setItem('stac-explorer-tutorial-completed', 'true');
-        console.log('🎓 Tutorial completed/closed');
     }
 
     /**
@@ -1593,10 +1550,8 @@ export class InteractiveTutorial {
             if (this.isDisabled || this.isMobile) {
                 // Hide tutorial button when disabled or on mobile
                 tutorialBtn.style.display = 'none';
-                console.log('🚫 Tutorial button hidden - disabled');
             } else {
                 tutorialBtn.addEventListener('click', () => this.start());
-                console.log('🎓 Tutorial button initialized');
             }
         }
     }

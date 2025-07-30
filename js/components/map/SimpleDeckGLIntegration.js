@@ -33,7 +33,6 @@ class SimpleDeckGLIntegration {
                 throw new Error('MapLibre GL map not available');
             }
 
-            console.log('🎨 Initializing simple Deck.gl integration...');
 
             // Create simple Deck.gl instance
             this.deck = new window.deck.Deck({
@@ -53,7 +52,6 @@ class SimpleDeckGLIntegration {
             this.setupViewStateSync();
 
             this.isInitialized = true;
-            console.log('✅ Simple Deck.gl integration initialized successfully');
 
         } catch (error) {
             console.error('❌ Failed to initialize simple Deck.gl integration:', error);
@@ -69,7 +67,6 @@ class SimpleDeckGLIntegration {
         
         while (Date.now() - start < timeout) {
             if (typeof window.deck !== 'undefined' && window.deck.Deck && window.deck.BitmapLayer) {
-                console.log('✅ Deck.gl is ready');
                 return true;
             }
             
@@ -158,7 +155,6 @@ class SimpleDeckGLIntegration {
         }
 
         try {
-            console.log(`🎨 Adding STAC item layer: ${item.id} (${assetKey})`);
 
             // Remove existing layer
             this.removeStacLayer();
@@ -220,10 +216,8 @@ class SimpleDeckGLIntegration {
             if (!options.preserveViewport) {
                 this.mapManager.mapLayers.fitMapToBbox(bbox);
             } else {
-                console.log('🔒 Preserving viewport - not centering/zooming to item');
             }
 
-            console.log('✅ STAC layer added successfully with simple Deck.gl');
             return true;
 
         } catch (error) {
@@ -248,7 +242,6 @@ class SimpleDeckGLIntegration {
             if (this.deck) {
                 this.deck.setProps({ layers: [] });
             }
-            console.log('🧹 Removed current STAC layer');
         }
     }
 
@@ -318,7 +311,6 @@ class SimpleDeckGLIntegration {
      */
     async getImageAsBase64(imageUrl) {
         try {
-            console.log('🖼️ Converting image to avoid CORS:', imageUrl);
             
             // First try to fetch as blob (like LazyImageLoader does)
             const response = await fetch(imageUrl, {
@@ -331,7 +323,6 @@ class SimpleDeckGLIntegration {
                 
                 // Validate blob
                 if (blob && blob.size > 0 && blob.type.startsWith('image/')) {
-                    console.log('✅ Successfully fetched image as blob');
                     return URL.createObjectURL(blob);
                 }
             }
@@ -360,7 +351,6 @@ class SimpleDeckGLIntegration {
                         
                         // Convert to base64
                         const dataURL = canvas.toDataURL('image/jpeg', 0.8);
-                        console.log('✅ Converted image to base64 via canvas');
                         resolve(dataURL);
                         
                     } catch (canvasError) {
@@ -414,7 +404,6 @@ class SimpleDeckGLIntegration {
         this.currentLayer = null;
         this.isInitialized = false;
 
-        console.log('🗑️ Simple Deck.gl integration destroyed');
     }
 }
 

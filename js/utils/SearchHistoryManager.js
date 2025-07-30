@@ -38,11 +38,6 @@ export class SearchHistoryManager {
             return;
         }
         
-        console.log('Saving search to history:', {
-            collection: searchParams.collection,
-            collections: searchParams.collections,
-            collectionTitle: searchParams.collectionTitle
-        });
         
         const sanitizedParams = this.sanitizeSearchParams(searchParams);
         

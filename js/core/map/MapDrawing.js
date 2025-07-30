@@ -21,7 +21,6 @@ export class MapDrawing {
         try {
             // Check if source already exists (avoid duplicates)
             if (this.map.getSource('drawing-source')) {
-                console.log('🎯 Drawing source already exists, skipping initialization');
                 return;
             }
 
@@ -72,7 +71,6 @@ export class MapDrawing {
                 filter: ['==', '$type', 'Point']
             });
 
-            console.log('✅ Drawing functionality initialized successfully');
         } catch (error) {
             console.error('❌ Failed to initialize drawing functionality:', error);
         }
@@ -97,7 +95,6 @@ export class MapDrawing {
             // Wait for map to be ready and retry
             const waitForMap = () => {
                 if (this.mapCore.isMapReady()) {
-                    console.log('✅ Map ready, starting drawing');
                     this.startDrawingBbox(callback);
                 } else {
                     setTimeout(waitForMap, 100);
@@ -282,7 +279,6 @@ export class MapDrawing {
                 const retryDrawingSource = this.map.getSource('drawing-source');
                 if (retryDrawingSource) {
                     retryDrawingSource.setData(data);
-                    console.log(`✅ Drawing source initialized and ${context} updated`);
                     return true;
                 } else {
                     console.warn(`⚠️ Failed to initialize drawing source, skipping ${context}`);
@@ -385,16 +381,10 @@ export class MapDrawing {
         let bbox;
         let geometryName = 'Custom Area';
         
-        console.log('🎯 MapDrawing: Processing geometry for event dispatch');
-        console.log('🎯 MapDrawing: drawingType:', this.drawingType);
-        console.log('🎯 MapDrawing: geometry type:', typeof geometry);
-        console.log('🎯 MapDrawing: geometry isArray:', Array.isArray(geometry));
-        console.log('🎯 MapDrawing: geometry:', geometry);
         
         if (Array.isArray(geometry) && geometry.length === 4) {
             // This is a bbox array [west, south, east, north] - round to 6 decimal places
             bbox = geometry.map(coord => parseFloat(coord.toFixed(6)));
-            console.log('🎯 MapDrawing: Using geometry as bbox array');
         } else if (geometry && geometry.type === 'Polygon') {
             // Convert polygon to bbox
             const coordinates = geometry.coordinates[0];
@@ -406,15 +396,11 @@ export class MapDrawing {
                 parseFloat(Math.max(...lngs).toFixed(6)), // east
                 parseFloat(Math.max(...lats).toFixed(6))  // north
             ];
-            console.log('🎯 MapDrawing: Converted polygon to bbox');
         } else {
             console.error('🎯 MapDrawing: Unknown geometry format:', geometry);
         }
         
         if (bbox) {
-            console.log('🎯 MapDrawing: Dispatching geometrySelected event with bbox:', bbox);
-            console.log('🎯 MapDrawing: Drawing type was:', this.drawingType);
-            console.log('🎯 MapDrawing: Original geometry:', geometry);
             
             const event = new CustomEvent('geometrySelected', {
                 detail: {
@@ -422,9 +408,7 @@ export class MapDrawing {
                     name: geometryName
                 }
             });
-            console.log('🎯 MapDrawing: Event created:', event);
             document.dispatchEvent(event);
-            console.log('🎯 MapDrawing: Event dispatched');
         } else {
             console.error('🎯 MapDrawing: No bbox generated from geometry:', geometry);
         }
@@ -481,6 +465,5 @@ export class MapDrawing {
      */
     clearSearchBbox() {
         // This should be implemented by the parent MapManager or coordinated through events
-        console.log('🎯 MapDrawing: clearSearchBbox called - should be handled by parent');
     }
 }

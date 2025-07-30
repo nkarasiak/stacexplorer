@@ -506,7 +506,6 @@ export class ItemViewPage {
         // Get current URL and replace /browser/ with /viewer/
         const currentUrl = window.location.href;
         const viewerUrl = currentUrl.replace('/browser/', '/viewer/');
-        console.log('🔗 Navigating to viewer URL:', viewerUrl);
         window.location.href = viewerUrl;
     }
     

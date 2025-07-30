@@ -40,7 +40,6 @@ export class CollectionSelectorIntegration {
         this.initializeModal();
         this.setupEventListeners();
         
-        console.log('✅ CollectionSelectorIntegration initialized with modal');
     }
     
     /**
@@ -48,10 +47,8 @@ export class CollectionSelectorIntegration {
      */
     initializeModal() {
         try {
-            console.log('🚀 Initializing collection browser modal components...');
             
             // Create the modal
-            console.log('📱 Creating CollectionBrowserModal...');
             this.modal = new CollectionBrowserModal(
                 this.collectionManager,
                 this.apiClient,
@@ -60,7 +57,6 @@ export class CollectionSelectorIntegration {
             );
             
             // Create the trigger button (this will replace the collection summary element)
-            console.log('🔘 Creating CollectionBrowserTrigger...');
             this.trigger = new CollectionBrowserTrigger(
                 this.modal,
                 this.inlineDropdownManager
@@ -69,7 +65,6 @@ export class CollectionSelectorIntegration {
             // Hide the original dropdown elements
             this.hideOriginalElements();
             
-            console.log('✅ Modal and trigger components initialized successfully');
         } catch (error) {
             console.error('❌ Error initializing modal components:', error);
             console.error('Error details:', error.stack);
@@ -224,7 +219,6 @@ export class CollectionSelectorIntegration {
      */
     onCollectionsLoaded(collections) {
         // The modal will load collections when opened
-        console.log(`📊 ${collections.length} collections available for modal`);
     }
     
     /**
@@ -241,7 +235,6 @@ export class CollectionSelectorIntegration {
             this.trigger.setSelection(collection);
         }
         
-        console.log(`🎯 Modal selected collection: ${collection.id} from ${source}`);
     }
     
     /**
@@ -256,7 +249,6 @@ export class CollectionSelectorIntegration {
             this.trigger.clearSelection();
         }
         
-        console.log('🧹 Collection selection cleared');
     }
     
     /**
@@ -364,7 +356,6 @@ export class CollectionSelectorIntegration {
      */
     applySavedViewPreference() {
         // No longer needed with modal approach
-        console.log('📌 applySavedViewPreference called but not needed with modal approach');
     }
     
     /**

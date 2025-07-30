@@ -12,7 +12,6 @@ export class SettingsPageManager {
      * Initialize the settings page
      */
     async initialize() {
-        console.log('🔧 Initializing settings page');
         
         // Load collections first
         await this.loadCollections();
@@ -26,7 +25,6 @@ export class SettingsPageManager {
         // Set up event listeners
         this.setupEventListeners();
         
-        console.log('🔧 Settings page initialized');
     }
 
     /**
@@ -64,13 +62,11 @@ export class SettingsPageManager {
                         icon: this.getProviderIcon('custom-catalog'),
                         enabled: true // Default to enabled when added
                     };
-                    console.log('🔧 Added custom catalog to providers:', customCatalog.name);
                 }
             } catch (error) {
                 console.warn('🔧 Error loading custom catalog for providers:', error);
             }
             
-            console.log('🔧 Loaded collections as providers:', this.providers);
             
         } catch (error) {
             console.error('🔧 Error loading collections:', error);
@@ -133,7 +129,6 @@ export class SettingsPageManager {
                 }
             }
             
-            console.log('🔧 Settings loaded:', { customCatalogUrl: this.customCatalogUrl, providers: this.providers });
         } catch (error) {
             console.error('🔧 Error loading settings:', error);
         }
@@ -285,7 +280,6 @@ export class SettingsPageManager {
      * Refresh the providers list by reloading collections and updating the UI
      */
     async refreshProviders() {
-        console.log('🔧 Refreshing providers list...');
         
         // Reload collections including any new custom catalogs
         await this.loadCollections();
@@ -298,7 +292,6 @@ export class SettingsPageManager {
             // Re-attach event listeners for the new provider items
             this.attachProviderEventListeners();
             
-            console.log('🔧 Providers list refreshed with', Object.keys(this.providers).length, 'providers');
         }
     }
 
@@ -327,7 +320,6 @@ export class SettingsPageManager {
                 if (providerInfo) {
                     const catalogId = providerInfo.dataset.catalog;
                     if (catalogId) {
-                        console.log('🔍 Opening collection browser for catalog:', catalogId);
                         // Navigate to browser mode for this catalog
                         window.location.href = `/browser/${catalogId}`;
                     }
@@ -364,7 +356,6 @@ export class SettingsPageManager {
         document.body.style.overflow = 'auto';
         document.body.style.height = 'auto';
         
-        console.log('🔧 Main app content hidden, sidebar kept visible for settings page');
     }
 
     /**
@@ -675,24 +666,18 @@ export class SettingsPageManager {
      * Set up event listeners for the settings page
      */
     setupEventListeners() {
-        console.log('🔧 Setting up event listeners for settings page');
         
         // Custom catalog add button
         const addBtn = document.getElementById('add-custom-catalog-btn');
         const urlInput = document.getElementById('settings-custom-catalog-url');
         
-        console.log('🔧 Add button found:', !!addBtn);
-        console.log('🔧 URL input found:', !!urlInput);
         
         if (addBtn) {
-            console.log('🔧 Adding click listener to Add Catalog button');
             addBtn.addEventListener('click', async (e) => {
-                console.log('🔧 Add Catalog button clicked!');
                 e.preventDefault();
                 
                 // Find input field fresh each time to avoid stale references
                 const currentInput = document.getElementById('settings-custom-catalog-url');
-                console.log('🔧 Current input element:', currentInput);
                 
                 if (!currentInput) {
                     console.error('🔧 Could not find settings-custom-catalog-url input field!');
@@ -701,22 +686,15 @@ export class SettingsPageManager {
                 }
                 
                 // Debug input field
-                console.log('🔧 URL input value before trim:', `"${currentInput.value}"`);
-                console.log('🔧 URL input value length:', currentInput.value.length);
                 
                 const url = currentInput.value.trim();
-                console.log('🔧 URL after trim:', `"${url}"`);
-                console.log('🔧 URL length after trim:', url.length);
                 
                 if (url) {
-                    console.log('🔧 Calling addCustomCatalog with:', url);
                     await this.addCustomCatalog(url);
                 } else {
-                    console.log('🔧 No URL provided');
                     this.showStatus('Please enter a catalog URL', 'error');
                 }
             });
-            console.log('🔧 Event listener added successfully');
         } else {
             console.error('🔧 Add button not found!');
         }
@@ -739,7 +717,6 @@ export class SettingsPageManager {
                 if (providerInfo) {
                     const catalogId = providerInfo.dataset.catalog;
                     if (catalogId) {
-                        console.log('🔍 Opening collection browser for catalog:', catalogId);
                         // Navigate to browser mode for this catalog
                         window.location.href = `/browser/${catalogId}`;
                     }
@@ -776,47 +753,34 @@ export class SettingsPageManager {
      * Add custom catalog
      */
     async addCustomCatalog(url) {
-        console.log('🔧 addCustomCatalog called with URL:', url);
         
         const addBtn = document.getElementById('add-custom-catalog-btn');
         const statusEl = document.getElementById('settings-custom-catalog-status');
         
-        console.log('🔧 Add button element:', addBtn);
-        console.log('🔧 Status element:', statusEl);
         
         try {
-            console.log('🔧 Starting catalog validation for:', url);
             
             // Show loading state
             if (addBtn) {
-                console.log('🔧 Setting button to loading state');
                 addBtn.disabled = true;
                 addBtn.innerHTML = '<i class="material-icons">hourglass_empty</i> Validating...';
             }
             
-            console.log('🔧 Showing loading status');
             this.showStatus('Validating catalog...', 'loading');
             
             // Fetch and validate catalog
-            console.log('🔧 Fetching catalog from:', url);
             const response = await fetch(url);
-            console.log('🔧 Fetch response status:', response.status);
-            console.log('🔧 Fetch response ok:', response.ok);
             
             if (!response.ok) {
                 throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
             
-            console.log('🔧 Parsing catalog JSON');
             const catalogData = await response.json();
-            console.log('🔧 Catalog data received:', catalogData);
             
             // Basic STAC validation
-            console.log('🔧 Validating catalog type:', catalogData.type);
             if (!catalogData.type || !['Catalog', 'Collection'].includes(catalogData.type)) {
                 throw new Error('Not a valid STAC catalog or collection');
             }
-            console.log('🔧 Catalog validation passed');
             
             // Save custom catalog
             const customCatalog = {
@@ -829,23 +793,17 @@ export class SettingsPageManager {
                 isCustom: true
             };
             
-            console.log('🔧 Saving custom catalog to localStorage');
             localStorage.setItem('stacExplorer-customCatalogUrl', url);
             localStorage.setItem('stacExplorer-customCatalog', JSON.stringify(customCatalog));
-            console.log('🔧 Custom catalog saved to localStorage');
             
-            console.log('🔧 Showing success status');
             this.showStatus('✓ Catalog added successfully!', 'success');
             
             // Refresh providers list to include the new custom catalog
             await this.refreshProviders();
             
             // Trigger collections refresh
-            console.log('🔧 Dispatching refreshCollections event');
             document.dispatchEvent(new CustomEvent('refreshCollections'));
-            console.log('🔧 refreshCollections event dispatched');
             
-            console.log('🔧 Custom catalog added successfully:', customCatalog);
             
         } catch (error) {
             console.error('🔧 Error adding custom catalog:', error);
@@ -900,7 +858,6 @@ export class SettingsPageManager {
             detail: settings
         }));
         
-        console.log('🔧 Provider settings saved:', enabledProviders);
     }
 
     /**
@@ -930,7 +887,6 @@ export class SettingsPageManager {
             html.classList.toggle('light-theme', theme === 'light');
         }
         
-        console.log('🔧 Theme set to:', theme);
     }
 
     /**
@@ -949,7 +905,6 @@ export class SettingsPageManager {
         });
         
         alert('Cache cleared successfully!');
-        console.log('🔧 Cache cleared');
     }
 
     /**

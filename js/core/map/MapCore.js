@@ -66,7 +66,6 @@ export class MapCore {
             
             // Get the appropriate map style based on theme
             const styleUrl = this.getMapStyle(this.currentTheme);
-            console.log('🗺️ Loading map style:', styleUrl);
 
             // Initialize MapLibre GL map with proper config defaults
             const defaultCenter = [52.5, 28.5]; // Middle East / Central Asia region
@@ -88,7 +87,6 @@ export class MapCore {
 
             await new Promise((resolve, reject) => {
                 this.map.on('load', () => {
-                    console.log('✅ Map loaded successfully');
                     resolve();
                 });
                 this.map.on('error', (error) => {
@@ -247,10 +245,6 @@ export class MapCore {
                 // Update URL without refreshing the page
                 window.history.replaceState({}, '', url);
                 
-                console.log('🗺️ Updated map URL:', {
-                    center: `${center.lat.toFixed(6)},${center.lng.toFixed(6)}`,
-                    zoom: zoom.toFixed(2)
-                });
             }, debounceMs);
         };
         

@@ -47,7 +47,6 @@ export class MapManager {
             await this.initializeDeckGL();
         }
         
-        console.log('✅ Modular MapManager initialized successfully');
     }
 
     /**
@@ -130,7 +129,6 @@ export class MapManager {
             if (!preserveViewport) {
                 this.mapLayers.fitMapToBbox(bbox);
             } else {
-                console.log('🔒 Preserving viewport - not centering/zooming to item');
             }
             
             // For now, just show boundary (full implementation would handle asset loading)
@@ -221,7 +219,6 @@ export class MapManager {
     clearSearchBbox() {
         if (this.mapLayers) {
             this.mapLayers.removeCurrentLayer();
-            console.log('✅ Search bbox cleared');
         }
     }
 
@@ -234,7 +231,6 @@ export class MapManager {
             // Wait for map to be ready and retry
             const waitForMap = () => {
                 if (this.mapCore.isMapReady()) {
-                    console.log('✅ Map ready, displaying bbox');
                     this.displayBboxOnMap(bbox, label);
                 } else {
                     setTimeout(waitForMap, 100);
@@ -269,7 +265,6 @@ export class MapManager {
             // Fit map to the bbox
             this.mapLayers.fitMapToBbox(bbox);
             
-            console.log('✅ Displayed bbox on map:', bbox, 'with label:', label);
         } catch (error) {
             console.error('❌ Error displaying bbox on map:', error);
         }
@@ -279,7 +274,6 @@ export class MapManager {
      * Fit map to layer bounds
      */
     fitToLayerBounds() {
-        console.log('fitToLayerBounds - would need implementation');
     }
 
     /**

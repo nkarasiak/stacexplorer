@@ -145,7 +145,6 @@ export class STACApiClient {
             
             // Check if this is a static catalog (URL ends with .json)
             if (normalizedUrl.endsWith('.json')) {
-                console.log('📂 Static catalog detected (URL ends with .json)');
                 
                 // Store catalog data for special handling based on provider
                 if (normalizedUrl.includes('planet.com')) {
@@ -168,7 +167,6 @@ export class STACApiClient {
                 // Check if endpoints are already set with empty collections (catalog-type)
                 // If so, don't override them
                 if (this.endpoints.collections === '' && this.endpoints.search === '') {
-                    console.log('📂 Catalog-type endpoint detected - preserving empty collections/search URLs');
                     // Just update the root, keep collections and search empty
                     this.setEndpoints({
                         root: normalizedUrl,
@@ -707,7 +705,6 @@ export class STACApiClient {
     async fetchToken(collection) {
         const tokenEndpoint = `https://planetarycomputer.microsoft.com/api/sas/v1/token/${collection}`;
         
-        console.log(`🔗 [PRESIGN-API] Fetching new token for collection: ${collection}`);
         
         try {
             const tokenResponse = await fetch(tokenEndpoint);
@@ -720,7 +717,6 @@ export class STACApiClient {
                     const now = Date.now();
                     this.tokenCache.set(collection, tokenData.token);
                     this.tokenCacheExpiry.set(collection, now + this.TOKEN_CACHE_DURATION);
-                    console.log(`🔗 [PRESIGN-API] Cached token for collection: ${collection} (expires in ${this.TOKEN_CACHE_DURATION/1000/60} minutes)`);
                     
                     return tokenData.token;
                 }
@@ -770,13 +766,11 @@ export class STACApiClient {
             const cacheExpiry = this.tokenCacheExpiry.get(collection);
             
             if (cachedToken && cacheExpiry && now < cacheExpiry) {
-                console.log(`🔗 [PRESIGN-API] Using cached token for collection: ${collection}`);
                 return `${url}?${cachedToken}`;
             }
             
             // Check if there's already a pending request for this collection
             if (this.tokenRequestQueue.has(collection)) {
-                console.log(`🔗 [PRESIGN-API] Waiting for existing token request for collection: ${collection}`);
                 const token = await this.tokenRequestQueue.get(collection);
                 return `${url}?${token}`;
             }
@@ -786,7 +780,6 @@ export class STACApiClient {
             const timeSinceLastRequest = now - lastRequest;
             if (timeSinceLastRequest < this.MIN_REQUEST_INTERVAL) {
                 const waitTime = this.MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-                console.log(`🔗 [PRESIGN-API] Rate limiting: waiting ${waitTime}ms before token request for ${collection}`);
                 await new Promise(resolve => setTimeout(resolve, waitTime));
             }
             

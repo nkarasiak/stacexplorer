@@ -42,7 +42,6 @@ export class VisualizationPanel {
         // Listen for raster visualization events
         this.setupEventListeners();
         
-        console.log('🎨 VisualizationPanel initialized');
     }
 
     /**
@@ -60,7 +59,6 @@ export class VisualizationPanel {
             this.isVisible = true;
             
             // Don't auto-load - let user choose first
-            console.log(`🎨 Visualization panel shown for ${stacItem.id} - ready for user selection`);
             
         } catch (error) {
             console.error('❌ Error showing visualization panel:', error);
@@ -84,7 +82,6 @@ export class VisualizationPanel {
         // Clear any pending scale updates
         this.clearScaleDebounce();
         
-        console.log('🎨 Visualization panel hidden - preserving layer on map');
     }
 
     /**
@@ -277,7 +274,6 @@ export class VisualizationPanel {
             if (this.isPresetAvailable(preset)) {
                 availablePresets[presetKey] = preset;
             } else {
-                console.log(`🚫 [PRESET] Skipping ${preset.name} - required assets not available`);
             }
         }
 
@@ -296,19 +292,13 @@ export class VisualizationPanel {
 
         const availableAssets = Object.keys(this.currentItem.assets || {});
         
-        console.log(`🔍 [PRESET] Checking ${preset.name}:`);
-        console.log(`  Required assets: ${preset.assets.join(', ')}`);
-        console.log(`  Mapped assets: ${mappedAssets.join(', ')}`);
-        console.log(`  Available assets: ${availableAssets.join(', ')}`);
 
         for (const assetName of mappedAssets) {
             if (!this.currentItem.assets[assetName]) {
-                console.log(`🚫 [PRESET] Missing asset: ${assetName} for preset ${preset.name}`);
                 return false;
             }
         }
 
-        console.log(`✅ [PRESET] ${preset.name} is available`);
         return true;
     }
 
@@ -509,22 +499,16 @@ export class VisualizationPanel {
     setupEventListeners() {
         // Listen for layer events
         document.addEventListener('rasterVisualization:layerLoadProgress', (e) => {
-            console.log(`📊 [PROGRESS] Received progress event:`, e.detail);
             if (e.detail.layerId === this.currentLayerId) {
-                console.log(`📊 [PROGRESS] Updating progress for current layer ${this.currentLayerId}: ${e.detail.progress}%`);
                 this.updateLoadingProgress(e.detail.progress);
             } else {
-                console.log(`📊 [PROGRESS] Ignoring progress for different layer: ${e.detail.layerId} (current: ${this.currentLayerId})`);
             }
         });
 
         document.addEventListener('rasterVisualization:layerLoaded', (e) => {
-            console.log(`✅ [PROGRESS] Received layer loaded event:`, e.detail);
             if (e.detail.layerId === this.currentLayerId) {
-                console.log(`✅ [PROGRESS] Hiding loading for current layer ${this.currentLayerId}`);
                 this.hideLoading();
             } else {
-                console.log(`✅ [PROGRESS] Ignoring loaded event for different layer: ${e.detail.layerId} (current: ${this.currentLayerId})`);
             }
         });
     }
@@ -536,7 +520,6 @@ export class VisualizationPanel {
      */
     async loadPreset(presetKey, options = {}) {
         try {
-            console.log(`🔄 [LOADING] Starting to load preset: ${presetKey}`);
             this.showLoading();
             this.showPresetLoading(presetKey);
             
@@ -544,13 +527,9 @@ export class VisualizationPanel {
             this.hideThumbnailForCurrentItem();
             
             // Remove thumbnail/preview layers from both MapLibre and Deck.gl
-            console.log(`🎨 [PRESET] Removing thumbnail/preview layers (MapLibre + Deck.gl) before loading ${presetKey}`);
             this.removeOnlyThumbnailLayers();
             this.removeDeckGLThumbnailLayers();
 
-            console.log(`📡 [LOADING] Adding STAC item layer for item: ${this.currentItem.id}`);
-            console.log(`📡 [LOADING] Collection: ${this.currentItem.collection}`);
-            console.log(`📡 [LOADING] Preset: ${presetKey}`);
 
             // Add new layer with selected preset first
             const newLayerId = await this.rasterManager.addSTACItemLayer(
@@ -567,25 +546,21 @@ export class VisualizationPanel {
 
             // Remove existing visualization layer after new layer is successfully created
             if (this.currentLayerId && newLayerId) {
-                console.log(`🗑️ [LOADING] Removing existing layer: ${this.currentLayerId}`);
                 this.rasterManager.removeLayer(this.currentLayerId);
             }
             
             // Don't remove thumbnail layers - instead ensure high-res layer is on top
             if (newLayerId) {
-                console.log(`🎨 [PRESET] Ensuring high-resolution layer ${newLayerId} is rendered above thumbnails`);
                 this.ensureHighResLayerOnTop(newLayerId);
             }
 
             this.currentLayerId = newLayerId;
 
-            console.log(`✅ [LOADING] Layer created with ID: ${this.currentLayerId}`);
 
             // Update UI state
             this.currentPreset = presetKey;
             this.updateActivePreset(presetKey);
 
-            console.log(`🎨 Loaded preset: ${presetKey}`);
 
             if (this.notificationService) {
                 const presets = this.bandEngine.getPresetsForCollection(this.currentItem.collection);
@@ -599,7 +574,6 @@ export class VisualizationPanel {
             // Add timeout fallback to hide loading if event doesn't fire
             setTimeout(() => {
                 if (this.isLoading) {
-                    console.log(`⏰ [TIMEOUT] Layer loading timeout, hiding loading indicator`);
                     this.hideLoading();
                 }
             }, 10000); // 10 second timeout
@@ -611,7 +585,6 @@ export class VisualizationPanel {
             this.showError(`Failed to load ${presetKey} visualization: ${error.message}`);
             this.hideLoading();
         } finally {
-            console.log(`🏁 [LOADING] Finished loading preset: ${presetKey}`);
             this.hidePresetLoading(presetKey);
         }
     }
@@ -871,17 +844,14 @@ export class VisualizationPanel {
     // Action handlers (to be implemented based on requirements)
     
     downloadView() {
-        console.log('📥 Download view functionality - to be implemented');
         // TODO: Implement download functionality
     }
 
     shareVisualization() {
-        console.log('🔗 Share visualization functionality - to be implemented');
         // TODO: Implement sharing functionality
     }
 
     showLayerManager() {
-        console.log('📋 Layer manager functionality - to be implemented');
         // TODO: Implement layer management panel
     }
 
@@ -923,7 +893,6 @@ export class VisualizationPanel {
             }
         });
         
-        console.log(`🖼️ Thumbnails hidden for visualization of item: ${this.currentItem.id}`);
     }
     
     /**
@@ -942,7 +911,6 @@ export class VisualizationPanel {
             }
         });
         
-        console.log('🖼️ Thumbnails restored for all items');
     }
     
     /**
@@ -956,18 +924,15 @@ export class VisualizationPanel {
         const map = this.rasterManager.mapManager.map;
         
         try {
-            console.log('🗑️ [TARGETED] Removing only thumbnail/preview layers from map');
             
             const style = map.getStyle();
             if (!style || !style.layers) {
-                console.log('🗑️ [TARGETED] No map style or layers found');
                 return;
             }
             
             const layersToRemove = [];
             const sourcesToRemove = [];
             
-            console.log('🔍 [TARGETED] Analyzing layers for thumbnail/preview removal:');
             
             // Check ALL layers but only remove thumbnail/preview ones
             style.layers.forEach((layer, index) => {
@@ -975,7 +940,6 @@ export class VisualizationPanel {
                 const sourceId = layer.source;
                 const layerType = layer.type;
                 
-                console.log(`  ${index + 1}. ${layerId} (type: ${layerType}, source: ${sourceId})`);
                 
                 // Identify thumbnail/preview layers (but NOT high-resolution visualization layers)
                 const isThumbnailLayer = (
@@ -1004,16 +968,13 @@ export class VisualizationPanel {
                 );
                 
                 if (isThumbnailLayer && !isHighResLayer) {
-                    console.log(`    → REMOVING: Thumbnail/preview layer`);
                     layersToRemove.push(layerId);
                     
                     if (sourceId) {
                         sourcesToRemove.push(sourceId);
                     }
                 } else if (isHighResLayer) {
-                    console.log(`    → KEEPING: High-resolution visualization layer`);
                 } else {
-                    console.log(`    → KEEPING: Base map or other layer`);
                 }
             });
             
@@ -1035,19 +996,15 @@ export class VisualizationPanel {
                 );
                 
                 if (isThumbnailSource && !isHighResSource && !sourcesToRemove.includes(sourceId)) {
-                    console.log(`🔍 [TARGETED] Found additional thumbnail source: ${sourceId}`);
                     sourcesToRemove.push(sourceId);
                 }
             });
             
-            console.log(`🗑️ [TARGETED] Will remove ${layersToRemove.length} thumbnail layers:`, layersToRemove);
-            console.log(`🗑️ [TARGETED] Will remove ${[...new Set(sourcesToRemove)].length} thumbnail sources:`, [...new Set(sourcesToRemove)]);
             
             // Remove layers first
             layersToRemove.forEach(layerId => {
                 try {
                     if (map.getLayer(layerId)) {
-                        console.log(`🗑️ [TARGETED] Removing thumbnail layer: ${layerId}`);
                         map.removeLayer(layerId);
                     }
                 } catch (error) {
@@ -1059,7 +1016,6 @@ export class VisualizationPanel {
             [...new Set(sourcesToRemove)].forEach(sourceId => {
                 try {
                     if (map.getSource(sourceId)) {
-                        console.log(`🗑️ [TARGETED] Removing thumbnail source: ${sourceId}`);
                         map.removeSource(sourceId);
                     }
                 } catch (error) {
@@ -1067,15 +1023,12 @@ export class VisualizationPanel {
                 }
             });
             
-            console.log(`✅ [TARGETED] Removed ${layersToRemove.length} thumbnail layers and ${[...new Set(sourcesToRemove)].length} sources`);
             
             // Show remaining layers
             const remainingStyle = map.getStyle();
-            console.log('🔍 [TARGETED] Remaining layers after thumbnail cleanup:');
             remainingStyle.layers.forEach((layer, index) => {
                 if (!layer.id.includes('mapbox-') && !layer.id.includes('background') && 
                     !layer.id.includes('land') && !layer.id.includes('water')) {
-                    console.log(`  ${index + 1}. ${layer.id} (type: ${layer.type}, source: ${layer.source})`);
                 }
             });
             
@@ -1089,40 +1042,33 @@ export class VisualizationPanel {
      */
     removeDeckGLThumbnailLayers() {
         if (!this.rasterManager.mapManager || !this.rasterManager.mapManager.deckGLIntegration) {
-            console.log('🗑️ [DECKGL] No Deck.gl integration found');
             return;
         }
         
         const deckGLIntegration = this.rasterManager.mapManager.deckGLIntegration;
         
         try {
-            console.log('🗑️ [DECKGL] Removing Deck.gl thumbnail/preview layers');
             
             // Check if Deck.gl is available and has layers
             if (!deckGLIntegration.isAvailable()) {
-                console.log('🗑️ [DECKGL] Deck.gl not available');
                 return;
             }
             
             // Remove STAC item layers from Deck.gl (these are likely the thumbnails)
             if (typeof deckGLIntegration.removeStacLayer === 'function') {
-                console.log('🗑️ [DECKGL] Removing STAC layers from Deck.gl');
                 deckGLIntegration.removeStacLayer();
             }
             
             // If there's a method to remove all layers, use it
             if (typeof deckGLIntegration.removeAllLayers === 'function') {
-                console.log('🗑️ [DECKGL] Removing all Deck.gl layers');
                 deckGLIntegration.removeAllLayers();
             }
             
             // If there's a method to clear Deck.gl, use it
             if (typeof deckGLIntegration.clear === 'function') {
-                console.log('🗑️ [DECKGL] Clearing Deck.gl');
                 deckGLIntegration.clear();
             }
             
-            console.log('✅ [DECKGL] Deck.gl thumbnail removal completed');
             
         } catch (error) {
             console.warn('⚠️ [DECKGL] Error removing Deck.gl layers:', error);
@@ -1141,11 +1087,9 @@ export class VisualizationPanel {
         const map = this.rasterManager.mapManager.map;
         
         try {
-            console.log('🗑️ [AGGRESSIVE] Removing ALL overlay layers from map');
             
             const style = map.getStyle();
             if (!style || !style.layers) {
-                console.log('🗑️ [AGGRESSIVE] No map style or layers found');
                 return;
             }
             
@@ -1174,7 +1118,6 @@ export class VisualizationPanel {
             const layersToRemove = [];
             const sourcesToRemove = [];
             
-            console.log('🔍 [AGGRESSIVE] Analyzing all layers:');
             
             // Check ALL layers
             style.layers.forEach((layer, index) => {
@@ -1182,21 +1125,18 @@ export class VisualizationPanel {
                 const sourceId = layer.source;
                 const layerType = layer.type;
                 
-                console.log(`  ${index + 1}. ${layerId} (type: ${layerType}, source: ${sourceId})`);
                 
                 // Check if this is a base map layer we should keep
                 const isBasemapLayer = basemapPatterns.some(pattern => pattern.test(layerId));
                 
                 if (!isBasemapLayer) {
                     // This looks like an overlay layer - remove it
-                    console.log(`    → REMOVING: Not a base map layer`);
                     layersToRemove.push(layerId);
                     
                     if (sourceId && !basemapPatterns.some(pattern => pattern.test(sourceId))) {
                         sourcesToRemove.push(sourceId);
                     }
                 } else {
-                    console.log(`    → KEEPING: Base map layer`);
                 }
             });
             
@@ -1207,19 +1147,15 @@ export class VisualizationPanel {
                                        sourceId.startsWith('mapbox://');
                 
                 if (!isBasemapSource && !sourcesToRemove.includes(sourceId)) {
-                    console.log(`🔍 [AGGRESSIVE] Found additional non-basemap source: ${sourceId}`);
                     sourcesToRemove.push(sourceId);
                 }
             });
             
-            console.log(`🗑️ [AGGRESSIVE] Will remove ${layersToRemove.length} layers:`, layersToRemove);
-            console.log(`🗑️ [AGGRESSIVE] Will remove ${[...new Set(sourcesToRemove)].length} sources:`, [...new Set(sourcesToRemove)]);
             
             // Remove layers first
             layersToRemove.forEach(layerId => {
                 try {
                     if (map.getLayer(layerId)) {
-                        console.log(`🗑️ [AGGRESSIVE] Removing layer: ${layerId}`);
                         map.removeLayer(layerId);
                     }
                 } catch (error) {
@@ -1231,7 +1167,6 @@ export class VisualizationPanel {
             [...new Set(sourcesToRemove)].forEach(sourceId => {
                 try {
                     if (map.getSource(sourceId)) {
-                        console.log(`🗑️ [AGGRESSIVE] Removing source: ${sourceId}`);
                         map.removeSource(sourceId);
                     }
                 } catch (error) {
@@ -1239,13 +1174,10 @@ export class VisualizationPanel {
                 }
             });
             
-            console.log(`✅ [AGGRESSIVE] Removed ${layersToRemove.length} layers and ${[...new Set(sourcesToRemove)].length} sources`);
             
             // Show remaining layers
             const remainingStyle = map.getStyle();
-            console.log('🔍 [AGGRESSIVE] Remaining layers after cleanup:');
             remainingStyle.layers.forEach((layer, index) => {
-                console.log(`  ${index + 1}. ${layer.id} (type: ${layer.type}, source: ${layer.source})`);
             });
             
         } catch (error) {
@@ -1264,7 +1196,6 @@ export class VisualizationPanel {
         const map = this.rasterManager.mapManager.map;
         
         try {
-            console.log('🎨 [LAYER-ORDER] Preparing thumbnail layers to stay below high-resolution');
             
             // Get all layers on the map
             const style = map.getStyle();
@@ -1292,7 +1223,6 @@ export class VisualizationPanel {
                 }
             });
             
-            console.log(`🎨 [LAYER-ORDER] Found ${thumbnailLayers.length} thumbnail layers:`, thumbnailLayers);
             
             // Store reference for later use
             this.thumbnailLayerIds = thumbnailLayers;
@@ -1313,7 +1243,6 @@ export class VisualizationPanel {
         const map = this.rasterManager.mapManager.map;
         
         try {
-            console.log(`🎨 [LAYER-ORDER] Ensuring high-res layer ${highResLayerId} is on top`);
             
             // Get current layer order
             const style = map.getStyle();
@@ -1348,7 +1277,6 @@ export class VisualizationPanel {
             });
             
             if (thumbnailLayersAbove.length > 0) {
-                console.log(`🎨 [LAYER-ORDER] Found ${thumbnailLayersAbove.length} thumbnail layers above high-res, moving high-res to top`);
                 
                 // Remove and re-add the high-res layer to put it on top
                 const highResSource = map.getSource(highResLayer.source);
@@ -1366,9 +1294,7 @@ export class VisualizationPanel {
                 // Re-add it (this puts it on top)
                 map.addLayer(layerConfig);
                 
-                console.log(`✅ [LAYER-ORDER] Moved high-res layer ${highResLayerId} to top`);
             } else {
-                console.log(`✅ [LAYER-ORDER] High-res layer ${highResLayerId} is already on top`);
             }
             
         } catch (error) {
@@ -1387,18 +1313,14 @@ export class VisualizationPanel {
         const map = this.rasterManager.mapManager.map;
         
         try {
-            console.log('🗑️ [THUMBNAIL] Removing thumbnail/preview layers from basemap');
             
             // Get all layers and sources on the map
             const style = map.getStyle();
             if (!style || !style.layers) {
-                console.log('🗑️ [THUMBNAIL] No map style or layers found');
                 return;
             }
             
             // DEBUG: List all current layers and sources
-            console.log('🔍 [DEBUG] All current layers on map:', style.layers.map(l => `${l.id} (source: ${l.source}, type: ${l.type})`));
-            console.log('🔍 [DEBUG] All current sources on map:', Object.keys(style.sources || {}));
             
             // Find and remove all image overlay layers (they have dynamic IDs like image-overlay-123456789-layer)
             const layersToRemove = [];
@@ -1434,7 +1356,6 @@ export class VisualizationPanel {
                     !sourceId.includes('raster-source') &&
                     !sourceId.includes('basemap')) {
                     
-                    console.log(`🔍 [DEBUG] Found raster layer that might be thumbnail: ${layerId} (source: ${sourceId})`);
                     layersToRemove.push(layerId);
                     sourcesToRemove.push(sourceId);
                 }
@@ -1453,29 +1374,22 @@ export class VisualizationPanel {
             // Remove layers first
             layersToRemove.forEach(layerId => {
                 if (map.getLayer(layerId)) {
-                    console.log(`🗑️ [THUMBNAIL] Removing layer: ${layerId}`);
                     map.removeLayer(layerId);
                 } else {
-                    console.log(`🗑️ [THUMBNAIL] Layer not found: ${layerId}`);
                 }
             });
             
             // Remove sources
             [...new Set(sourcesToRemove)].forEach(sourceId => {
                 if (map.getSource(sourceId)) {
-                    console.log(`🗑️ [THUMBNAIL] Removing source: ${sourceId}`);
                     map.removeSource(sourceId);
                 } else {
-                    console.log(`🗑️ [THUMBNAIL] Source not found: ${sourceId}`);
                 }
             });
             
-            console.log(`✅ [THUMBNAIL] Removed ${layersToRemove.length} layers and ${[...new Set(sourcesToRemove)].length} sources from basemap`);
             
             // DEBUG: List remaining layers after removal
             const remainingStyle = map.getStyle();
-            console.log('🔍 [DEBUG] Remaining layers after removal:', remainingStyle.layers.map(l => `${l.id} (source: ${l.source}, type: ${l.type})`));
-            console.log('🔍 [DEBUG] Remaining sources after removal:', Object.keys(remainingStyle.sources || {}));
             
         } catch (error) {
             console.warn('⚠️ [THUMBNAIL] Error removing thumbnail layers:', error);
@@ -1488,9 +1402,7 @@ window.debugLayerOrder = function() {
     if (window.stacExplorer && window.stacExplorer.mapManager && window.stacExplorer.mapManager.map) {
         const map = window.stacExplorer.mapManager.map;
         const style = map.getStyle();
-        console.log('🔧 [DEBUG] Current layer order (bottom to top):');
         style.layers.forEach((layer, index) => {
-            console.log(`  ${index + 1}. ${layer.id} (type: ${layer.type}, source: ${layer.source})`);
         });
         
         // Identify thumbnail and high-res layers
@@ -1507,8 +1419,6 @@ window.debugLayerOrder = function() {
             }
         });
         
-        console.log('🔧 [DEBUG] Thumbnail layers:', thumbnailLayers);
-        console.log('🔧 [DEBUG] High-res layers:', highResLayers);
     } else {
         console.error('🔧 [DEBUG] Map not available');
     }
@@ -1517,17 +1427,14 @@ window.debugLayerOrder = function() {
 window.debugThumbnailRemoval = function() {
     if (window.stacExplorer && window.stacExplorer.visualizationPanel) {
         const vizPanel = window.stacExplorer.visualizationPanel;
-        console.log('🔧 [DEBUG] Testing targeted thumbnail removal (preserves high-res)');
         
         // Show layers before removal
-        console.log('🔧 [DEBUG] BEFORE removal:');
         window.debugLayerOrder();
         
         // Test targeted removal
         vizPanel.removeOnlyThumbnailLayers();
         
         // Show layers after removal
-        console.log('🔧 [DEBUG] AFTER removal:');
         window.debugLayerOrder();
     } else {
         console.error('🔧 [DEBUG] Visualization panel not available');
@@ -1539,17 +1446,14 @@ window.debugThumbnailRemoval = function() {
 window.debugAggressiveRemoval = function() {
     if (window.stacExplorer && window.stacExplorer.visualizationPanel) {
         const vizPanel = window.stacExplorer.visualizationPanel;
-        console.log('🔧 [DEBUG] Testing aggressive removal (removes ALL overlays)');
         
         // Show layers before removal
-        console.log('🔧 [DEBUG] BEFORE removal:');
         window.debugLayerOrder();
         
         // Test aggressive removal
         vizPanel.removeAllOverlayLayers();
         
         // Show layers after removal
-        console.log('🔧 [DEBUG] AFTER removal:');
         window.debugLayerOrder();
     } else {
         console.error('🔧 [DEBUG] Visualization panel not available');
@@ -1559,15 +1463,12 @@ window.debugAggressiveRemoval = function() {
 
 // Debug function to simulate clicking on a result item
 window.simulateItemClick = function() {
-    console.log('🔧 [DEBUG] Simulating item click to see what layers are created...');
     
     // Find the first result item and simulate clicking it
     const firstItem = document.querySelector('.dataset-item .clickable-card');
     if (firstItem) {
-        console.log('🔧 [DEBUG] Found result item, simulating click...');
         
         // Show layers before click
-        console.log('🔧 [DEBUG] BEFORE item click:');
         window.debugLayerOrder();
         
         // Simulate click
@@ -1575,7 +1476,6 @@ window.simulateItemClick = function() {
         
         // Show layers after click (with a delay to let the async operation complete)
         setTimeout(() => {
-            console.log('🔧 [DEBUG] AFTER item click (thumbnail should be visible):');
             window.debugLayerOrder();
         }, 2000);
     } else {
@@ -1585,36 +1485,27 @@ window.simulateItemClick = function() {
 
 // Debug function to inspect Deck.gl layers
 window.debugDeckGLLayers = function() {
-    console.log('🔧 [DEBUG] Inspecting Deck.gl layers...');
     
     if (window.stacExplorer && window.stacExplorer.mapManager && window.stacExplorer.mapManager.deckGLIntegration) {
         const deckGL = window.stacExplorer.mapManager.deckGLIntegration;
         
-        console.log('🔧 [DEBUG] Deck.gl integration found:', deckGL);
-        console.log('🔧 [DEBUG] Deck.gl available:', deckGL.isAvailable ? deckGL.isAvailable() : 'unknown');
         
         // Try to get layer information
         if (deckGL.deck) {
-            console.log('🔧 [DEBUG] Deck.gl instance:', deckGL.deck);
-            console.log('🔧 [DEBUG] Deck.gl layers:', deckGL.deck.props.layers);
         }
         
         // Try to get performance stats or other info
         if (typeof deckGL.getPerformanceStats === 'function') {
-            console.log('🔧 [DEBUG] Deck.gl performance stats:', deckGL.getPerformanceStats());
         }
         
     } else {
-        console.log('🔧 [DEBUG] No Deck.gl integration found');
     }
 };
 
 // Combined debug function to test Deck.gl removal
 window.debugDeckGLRemoval = function() {
-    console.log('🔧 [DEBUG] Testing Deck.gl thumbnail removal');
     
     // Show Deck.gl state before
-    console.log('🔧 [DEBUG] BEFORE Deck.gl removal:');
     window.debugDeckGLLayers();
     
     // Test Deck.gl removal
@@ -1625,7 +1516,6 @@ window.debugDeckGLRemoval = function() {
     
     // Show Deck.gl state after
     setTimeout(() => {
-        console.log('🔧 [DEBUG] AFTER Deck.gl removal:');
         window.debugDeckGLLayers();
     }, 500);
 };

@@ -138,7 +138,6 @@ export class UnifiedStateManager {
         // Wait for catalog browser components to be ready if URL has browser state
         const params = new URLSearchParams(window.location.search);
         if (params.has(this.urlKeys.viewMode) && params.get(this.urlKeys.viewMode) === 'browser') {
-            console.log('🔗 Browser mode detected in URL, waiting for components...');
             await this.waitForCatalogBrowserReady();
             // Additional delay to ensure DOM is ready
             await new Promise(resolve => setTimeout(resolve, 500));
@@ -175,7 +174,6 @@ export class UnifiedStateManager {
         const maxAttempts = 50; // 5 seconds max wait
         
         while ((!this.catalogBrowser || !this.viewModeToggle) && attempts < maxAttempts) {
-            console.log(`📍 Waiting for catalog browser components... (${attempts + 1}/${maxAttempts})`);
             await new Promise(resolve => setTimeout(resolve, 100));
             attempts++;
         }
@@ -183,7 +181,6 @@ export class UnifiedStateManager {
         if (!this.catalogBrowser || !this.viewModeToggle) {
             console.warn('📍 Catalog browser components not ready after waiting');
         } else {
-            console.log('📍 Catalog browser components ready!');
         }
     }
     
@@ -210,8 +207,6 @@ export class UnifiedStateManager {
         const params = new URLSearchParams(window.location.search);
         const pathname = window.location.pathname;
         
-        console.log('🔗 Initializing from URL:', window.location.href);
-        console.log('🔗 URL Parameters:', Array.from(params.entries()));
         
         this.isRestoringFromUrl = true;
         this.isApplyingState = true;
@@ -349,19 +344,13 @@ export class UnifiedStateManager {
      * Restore catalog browser state from URL parameters
      */
     async restoreCatalogBrowserState(params, retryCount = 0) {
-        console.log('📍 Checking catalog browser components availability...');
-        console.log('📍 catalogBrowser:', !!this.catalogBrowser);
-        console.log('📍 viewModeToggle:', !!this.viewModeToggle);
         
         if (!this.catalogBrowser || !this.viewModeToggle) {
             if (retryCount < 3) {
                 console.warn(`📍 Catalog browser components not available, retry ${retryCount + 1}/3...`);
-                console.log('📍 Available URL keys:', this.urlKeys);
-                console.log('📍 URL parameters:', Array.from(params.entries()));
                 
                 // Try again after a short delay with exponential backoff
                 setTimeout(() => {
-                    console.log('📍 Retrying catalog browser restoration...');
                     this.restoreCatalogBrowserState(params, retryCount + 1);
                 }, 1000 * (retryCount + 1));
                 return;
@@ -372,13 +361,9 @@ export class UnifiedStateManager {
         }
         
         try {
-            console.log('📍 Restoring catalog browser state from URL...');
             
             // Check if we should be in browser mode
             if (params.has(this.urlKeys.viewMode) && params.get(this.urlKeys.viewMode) === 'browser') {
-                console.log('📍 Switching to browser view mode');
-                console.log('📍 View mode toggle available:', !!this.viewModeToggle);
-                console.log('📍 Catalog browser available:', !!this.catalogBrowser);
                 
                 if (this.viewModeToggle) {
                     this.viewModeToggle.setMode('browser');
@@ -394,7 +379,6 @@ export class UnifiedStateManager {
                     const catalogId = params.get(this.urlKeys.catalogId);
                     const catalogName = params.get(this.urlKeys.catalogName) || catalogId;
                     
-                    console.log('📍 Restoring catalog:', catalogId, catalogName);
                     
                     // Create catalog object for restoration
                     const catalog = {
@@ -410,7 +394,6 @@ export class UnifiedStateManager {
                         // Restore collection if specified
                         if (params.has(this.urlKeys.collectionId)) {
                             const collectionId = params.get(this.urlKeys.collectionId);
-                            console.log('📍 Restoring collection:', collectionId);
                             
                             // Find the collection in the loaded collections
                             const collections = await this.catalogBrowser.apiClient.getCollections();
@@ -422,7 +405,6 @@ export class UnifiedStateManager {
                                 // Restore item if specified
                                 if (params.has(this.urlKeys.itemId)) {
                                     const itemId = params.get(this.urlKeys.itemId);
-                                    console.log('📍 Restoring item:', itemId);
                                     // Note: Item restoration would require loading the collection items
                                     // and finding the specific item, but for now we'll just browse the collection
                                 }
@@ -1026,11 +1008,8 @@ export class UnifiedStateManager {
      * Update URL with current application state (for form elements)
      */
     updateURL() {
-        console.log('🔍 UnifiedStateManager.updateURL() called');
-        console.log('🔍 Call stack:', new Error().stack);
         
         if (this.isRestoringFromUrl || this.isUpdatingFromURL || this.isApplyingState) {
-            console.log('🚫 Skipping URL update during restoration/update process');
             return;
         }
         
@@ -1069,16 +1048,10 @@ export class UnifiedStateManager {
             const path = window.location.pathname;
             const isCleanCatalogCollectionPath = /\/viewer\/[^\/]+\/[^\/]+/.test(path);
             
-            console.log('🔍 UnifiedStateManager.updateURL: collection check');
-            console.log('🔍 Path:', path);
-            console.log('🔍 Collection value:', collectionSelect.value);
-            console.log('🔍 Is clean path:', isCleanCatalogCollectionPath);
             
             if (!isCleanCatalogCollectionPath) {
-                console.log('🔍 Adding cn parameter');
                 params.set(this.urlKeys.collection, collectionSelect.value);
             } else {
-                console.log('🔍 Skipping cn parameter due to clean path structure');
             }
         }
         
@@ -1176,8 +1149,6 @@ export class UnifiedStateManager {
      */
     async manuallyRestoreUrlState() {
         const params = new URLSearchParams(window.location.search);
-        console.log('🔧 Manual URL restoration triggered');
-        console.log('🔧 URL parameters:', Array.from(params.entries()));
         
         if (params.has(this.urlKeys.viewMode) && params.get(this.urlKeys.viewMode) === 'browser') {
             await this.restoreCatalogBrowserState(params);
@@ -1356,7 +1327,6 @@ export class UnifiedStateManager {
                 }
             }
             
-            console.log('📍 No current catalog ID found in UnifiedStateManager');
             return null;
         } catch (error) {
             console.warn('📍 Error getting current catalog ID:', error);
@@ -1388,7 +1358,6 @@ export class UnifiedStateManager {
                 return collectionSelect.value;
             }
             
-            console.log('📍 No current collection ID found in UnifiedStateManager');
             return null;
         } catch (error) {
             console.warn('📍 Error getting current collection ID:', error);

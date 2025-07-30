@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>STAC Explorer</title>
+    <script>
+        // GitHub Pages SPA redirect script
+        // This script handles client-side routing for GitHub Pages
+        // It redirects all 404s back to index.html with the original path
+        
+        var pathSegmentsToKeep = 1; // Number of path segments to keep (for /stacexplorer/)
+        var l = window.location;
+        
+        // Store the path in sessionStorage and redirect to index.html
+        sessionStorage.redirect = l.href;
+        
+        // Redirect to the base path
+        l.replace(
+            l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+            l.pathname.split('/').slice(0, 1 + pathSegmentsToKeep).join('/') + '/'
+        );
+    </script>
+</head>
+<body>
+    <!-- GitHub Pages SPA fallback -->
+</body>
+</html>

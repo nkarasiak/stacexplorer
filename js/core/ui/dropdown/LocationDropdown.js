@@ -262,7 +262,6 @@ export class LocationDropdown {
             detail: { locationResult: result }
         }));
         
-        console.log('Location selected:', result);
     }
 
     /**

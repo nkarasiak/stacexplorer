@@ -57,13 +57,11 @@ export class CollectionManagerEnhanced {
         document.addEventListener('collectionsUpdated', (event) => {
             if (event.detail && event.detail.collections) {
                 // This is for backward compatibility with the old system
-                console.log('📡 Received collections from catalog selector (legacy)');
             }
         });
         
         // Listen for refresh collections event (from custom catalog addition)
         document.addEventListener('refreshCollections', async () => {
-            console.log('📡 Received refresh collections event, reloading...');
             await this.loadAllCollectionsOnStartup();
         });
     }
@@ -73,10 +71,8 @@ export class CollectionManagerEnhanced {
      */
     setupCatalogToggleListener() {
         document.addEventListener('catalogToggled', (event) => {
-            console.log('📊 Catalog toggled:', event.detail);
             
             // Reload collections with new settings
-            console.log('🔄 Reloading collections due to catalog settings change...');
             this.loadAllCollectionsOnStartup();
         });
     }
@@ -124,7 +120,6 @@ export class CollectionManagerEnhanced {
             
             // If collection is explicitly disabled in config, respect that regardless of localStorage
             if (collection.enabled === false) {
-                console.log(`🚫 Catalog ${catalogKey} is disabled in configuration - ignoring localStorage setting`);
                 return;
             }
             
@@ -137,11 +132,9 @@ export class CollectionManagerEnhanced {
         
         // Custom catalogs are already included in loadAllCollections()
         
-        console.log('🔍 Enabled catalogs from settings:', enabledCatalogs);
         
         // If no catalogs are enabled, return empty array (don't load anything)
         if (enabledCatalogs.length === 0) {
-            console.log('⚠️ No catalogs enabled - will not load collections');
         }
         
         return enabledCatalogs;
@@ -152,11 +145,9 @@ export class CollectionManagerEnhanced {
      */
     async loadAllCollectionsOnStartup() {
         try {
-            console.log('🚀 Auto-loading collections from all data sources...');
             this.showLoadingState();
             
             // Debug: Check localStorage contents
-            console.log('[DEBUG] localStorage keys:', Object.keys(localStorage).filter(k => k.includes('collections')));
             
             // Generate cache key based on enabled catalogs from settings
             const dataSources = await this.getEnabledCatalogs();
@@ -172,20 +163,10 @@ export class CollectionManagerEnhanced {
             const cacheKey = `collections_cache_${dataSources.sort().join('_')}`;
             
             // Try to load from cache first
-            console.log('📦 Checking cache for collections...');
             const cachedCollections = cookieCache.get(cacheKey);
             
-            console.log(`[DEBUG] Cache result:`, {
-                exists: !!cachedCollections,
-                isArray: Array.isArray(cachedCollections),
-                length: cachedCollections?.length,
-                firstItem: cachedCollections?.[0],
-                cacheKey: cacheKey
-            });
             
             if (cachedCollections && Array.isArray(cachedCollections) && cachedCollections.length > 0) {
-                console.log(`✅ Loaded ${cachedCollections.length} collections from cache!`);
-                console.log(`[DEBUG] Sample cached collection:`, cachedCollections[0]);
                 this.allCollections = cachedCollections;
                 this.collections = cachedCollections; // For backward compatibility
                 this.populateCollectionSelect(cachedCollections);
@@ -209,12 +190,10 @@ export class CollectionManagerEnhanced {
             }
             
             // Cache miss - load fresh data
-            console.log('🔄 Cache miss, loading fresh collections...');
             const allCollections = await this.loadAllCollections();
             
             if (allCollections.length > 0) {
                 // Cache only essential collection data to avoid size issues
-                console.log('💾 Caching collections (minimal data) for future use...');
                 const minimalCollections = allCollections.map(collection => ({
                     id: collection.id,
                     title: collection.title,
@@ -241,8 +220,6 @@ export class CollectionManagerEnhanced {
                     'success'
                 );
                 
-                console.log(`✅ Successfully loaded ${allCollections.length} collections from all sources`);
-                console.log('Sources breakdown:', groupedCollections);
             } else {
                 this.showNoCollectionsState();
                 this.notificationService.showNotification(
@@ -271,20 +248,15 @@ export class CollectionManagerEnhanced {
         
         // If no catalogs are enabled, return empty array
         if (dataSources.length === 0) {
-            console.log('⚠️ No catalogs enabled - returning empty collections');
             return [];
         }
         
         const errors = [];
         
-        console.log('🔄 Loading collections from all data sources in parallel...');
-        console.log('📍 Available endpoints:', this.config?.stacEndpoints);
-        console.log('🔍 Enabled providers:', dataSources);
         
         // Create loading promises for all sources in parallel to avoid race conditions
         const loadingPromises = dataSources.map(async (source) => {
             try {
-                console.log(`🔍 Starting parallel load for ${source}...`);
                 
                 // Get endpoints for this source from collections.json
                 const endpoints = await getCollectionEndpoints(source);
@@ -295,7 +267,6 @@ export class CollectionManagerEnhanced {
                     return { source, collections: [], error };
                 }
                 
-                console.log(`🔗 ${source} endpoints:`, endpoints);
                 
                 // Test if endpoints are valid URLs (skip for catalog-type collections)
                 if (endpoints.type !== 'catalog' && endpoints.collections) {
@@ -315,20 +286,12 @@ export class CollectionManagerEnhanced {
                 
                 // For catalog-type collections, connect to catalog first
                 if (endpoints.type === 'catalog') {
-                    console.log(`📂 Connecting to ${source} catalog...`);
                     await sourceApiClient.connectToCustomCatalog(endpoints.root);
                 }
                 
                 // Fetch collections from this source with increased limit
-                console.log(`📡 Fetching collections from ${source} with limit 500...`);
                 const collections = await sourceApiClient.fetchCollections(500);
                 
-                console.log(`📊 Raw response from ${source}:`, {
-                    type: typeof collections,
-                    isArray: Array.isArray(collections),
-                    length: collections?.length,
-                    firstItem: collections?.[0]?.id
-                });
                 
                 if (collections && collections.length > 0) {
                     // Add source information to each collection
@@ -339,8 +302,6 @@ export class CollectionManagerEnhanced {
                         displayTitle: `${collection.title || collection.id} (${this.getCollectionDisplayName(source)})`
                     }));
                     
-                    console.log(`✅ Loaded ${collections.length} collections from ${source}`);
-                    console.log(`📄 Sample collections:`, collections.slice(0, 3).map(c => ({id: c.id, title: c.title})));
                     return { source, collections: collectionsWithSource, error: null };
                 } else {
                     const error = `No collections returned from ${source} (got: ${JSON.stringify(collections)})`;
@@ -363,7 +324,6 @@ export class CollectionManagerEnhanced {
         });
         
         // Wait for all sources to complete before processing results
-        console.log('⏳ Waiting for all data sources to complete...');
         const results = await Promise.allSettled(loadingPromises);
         
         // Combine all successful results
@@ -371,7 +331,6 @@ export class CollectionManagerEnhanced {
         results.forEach((result, index) => {
             if (result.status === 'fulfilled' && result.value.collections.length > 0) {
                 allCollections.push(...result.value.collections);
-                console.log(`✅ Added ${result.value.collections.length} collections from ${result.value.source}`);
             } else if (result.status === 'rejected') {
                 const source = dataSources[index];
                 console.error(`❌ Failed to load collections from ${source}:`, result.reason);
@@ -379,7 +338,6 @@ export class CollectionManagerEnhanced {
             }
         });
         
-        console.log(`🗂️ Total collections loaded from all sources: ${allCollections.length}`);
         
         if (errors.length > 0) {
             console.error('❌ Collection loading errors:', errors);
@@ -424,7 +382,6 @@ export class CollectionManagerEnhanced {
                 // Automatically set the catalog selector to match the collection's source
                 const catalogSelect = document.getElementById('catalog-select');
                 if (catalogSelect && catalogSelect.value !== collection.source) {
-                    console.log(`🔄 Auto-setting catalog to ${collection.source} for collection ${collectionId}`);
                     catalogSelect.value = collection.source;
                     
                     // Update the API client to use the correct endpoints
@@ -439,7 +396,6 @@ export class CollectionManagerEnhanced {
             }
         }
         
-        console.log(`📋 Collection selected: ${collectionId}${source ? ` from ${source}` : ''}`);
     }
     
     /**
@@ -453,7 +409,6 @@ export class CollectionManagerEnhanced {
         const isDEM = this.isDEMCollection(collection);
         
         if (isDEM) {
-            console.log(`🏔️ DEM collection detected: ${collection.id}. Setting time to "Anytime"`);
             
             // Clear date inputs to set "Anytime"
             const startInput = document.getElementById('date-start');
@@ -561,7 +516,6 @@ export class CollectionManagerEnhanced {
         // Reset selection
         this.selectedCollection = '';
         
-        console.log(`✅ Populated collection dropdown with ${collections.length} collections`);
         
         // Notify filter system of collection changes
         document.dispatchEvent(new CustomEvent('collectionsChanged', {
@@ -658,7 +612,6 @@ export class CollectionManagerEnhanced {
             // Trigger change event
             select.dispatchEvent(new Event('change'));
             
-            console.log(`✅ Set selected collection: ${collectionId} from ${source}`);
         }
     }
     
@@ -716,7 +669,6 @@ export class CollectionManagerEnhanced {
             infoBtn.addEventListener('click', () => {
                 this.showSelectedCollectionDetails();
             });
-            console.log('✅ Collection info button setup completed');
         } else {
             console.warn('⚠️ Collection info button not found');
         }
@@ -752,7 +704,6 @@ export class CollectionManagerEnhanced {
      */
     async refreshCacheInBackground(cacheKey) {
         try {
-            console.log('🔄 Refreshing collections cache in background...');
             
             // Load fresh data with a longer timeout to avoid conflicts
             setTimeout(async () => {
@@ -768,11 +719,9 @@ export class CollectionManagerEnhanced {
                             displayTitle: collection.displayTitle
                         }));
                         cookieCache.set(cacheKey, minimalCollections, 30);
-                        console.log('✅ Background cache refresh completed');
                         
                         // Optionally update in-memory collections if they differ significantly
                         if (Math.abs(freshCollections.length - this.allCollections.length) > 5) {
-                            console.log('📝 Significant collection changes detected, updating UI...');
                             this.allCollections = freshCollections;
                             this.collections = freshCollections;
                             this.populateCollectionSelect(freshCollections);
@@ -797,7 +746,6 @@ export class CollectionManagerEnhanced {
             const cacheKey = `collections_cache_${dataSources.sort().join('_')}`;
             
             cookieCache.remove(cacheKey);
-            console.log('🗑️ Collections cache cleared');
             
             this.notificationService.showNotification('Collections cache cleared - will reload fresh data on next visit', 'info');
         } catch (error) {
@@ -820,21 +768,9 @@ export class CollectionManagerEnhanced {
         const dataSources = this.config?.appSettings?.enabledProviders || ['copernicus', 'element84'];
         const cacheKey = `collections_cache_${dataSources.sort().join('_')}`;
         
-        console.log('=== CACHE DEBUG ===');
-        console.log('Cache key:', cacheKey);
-        console.log('localStorage keys:', Object.keys(localStorage).filter(k => k.includes('stac_')));
-        console.log('Attempting cache get...');
         
         const cached = cookieCache.get(cacheKey);
-        console.log('Cache result:', {
-            found: !!cached,
-            isArray: Array.isArray(cached),
-            length: cached?.length,
-            sample: cached?.[0]
-        });
         
-        console.log('Cache stats:', this.getCacheStats());
-        console.log('==================');
         
         return cached;
     }
@@ -844,7 +780,6 @@ export class CollectionManagerEnhanced {
      */
     async forceRefresh() {
         try {
-            console.log('🔄 Forcing collections refresh...');
             this.clearCache();
             
             this.showLoadingState();

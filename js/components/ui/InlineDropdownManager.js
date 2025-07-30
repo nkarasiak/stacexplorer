@@ -28,7 +28,6 @@ export class InlineDropdownManager {
      * Initialize inline dropdowns
      */
     initializeInlineDropdowns() {
-        console.log('🎛️ Initializing modular inline dropdowns...');
         
         
         // Set up date dropdown
@@ -40,7 +39,6 @@ export class InlineDropdownManager {
         // Preload collections
         this.preloadCollections();
         
-        console.log('✅ Modular inline dropdowns initialized');
     }
 
 
@@ -136,7 +134,6 @@ export class InlineDropdownManager {
      * Select date preset
      */
     selectDatePreset(preset) {
-        console.log('[DATE INPUT] 🎯 selectDatePreset called with:', preset);
         
         const today = new Date();
         
@@ -178,27 +175,21 @@ export class InlineDropdownManager {
                 break;
         }
         
-        console.log('[DATE INPUT] 📊 Selected date calculated:', this.selectedDate);
         
         // Update URL parameters directly
-        console.log('[DATE INPUT] 1️⃣ Updating URL parameters...');
         this.updateURLParameters();
         
         // Update main form inputs first (these are used by forceRestoreDateInputs)
-        console.log('[DATE INPUT] 2️⃣ Updating main form inputs...');
         this.updateMainFormInputs();
         
         // Update the display immediately
-        console.log('[DATE INPUT] 3️⃣ Updating display...');
         this.updateDateDisplay();
         
         // Trigger search parameter change
-        console.log('[DATE INPUT] 4️⃣ Triggering search parameter change...');
         this.triggerSearchParameterChange();
         
         // Final direct update to visible inputs after a small delay
         setTimeout(() => {
-            console.log('[DATE INPUT] 5️⃣ Final direct update to visible inputs...');
             const startInput = document.getElementById('summary-start-date');
             const endInput = document.getElementById('summary-end-date');
             
@@ -210,14 +201,9 @@ export class InlineDropdownManager {
                     startInput.value = this.selectedDate.start || '';
                     endInput.value = this.selectedDate.end || '';
                 }
-                console.log('[DATE INPUT] ✅ Final input values set:', { 
-                    start: startInput.value, 
-                    end: endInput.value 
-                });
             }
         }, 50);
         
-        console.log('[DATE INPUT] ✅ Date preset selection complete:', preset, this.selectedDate);
     }
 
     /**
@@ -239,17 +225,12 @@ export class InlineDropdownManager {
         }
         
         window.history.pushState({}, '', url);
-        console.log('[DATE INPUT] 🔗 URL updated with parameters:', { 
-            ds: url.searchParams.get('ds'), 
-            de: url.searchParams.get('de') 
-        });
     }
 
     /**
      * Update date display in UI
      */
     updateDateDisplay() {
-        console.log('[DATE INPUT] 🔄 updateDateDisplay called with:', this.selectedDate);
         
         // Instead of trying to update existing inputs, recreate them with correct values
         this.recreateMiniDateInputs();
@@ -264,7 +245,6 @@ export class InlineDropdownManager {
     recreateMiniDateInputs() {
         const summaryValueDiv = document.querySelector('[data-field="date"] .search-summary-value');
         if (!summaryValueDiv) {
-            console.warn('[DATE INPUT] ⚠️ Summary value div not found');
             return;
         }
 
@@ -280,7 +260,6 @@ export class InlineDropdownManager {
             endValue = this.selectedDate.end || '';
         }
         
-        console.log('[DATE INPUT] 🔧 Recreating mini date inputs with:', { startValue, endValue });
         
         // Recreate the mini date inputs HTML with simple text inputs
         summaryValueDiv.innerHTML = `
@@ -298,10 +277,6 @@ export class InlineDropdownManager {
         const startInput = document.getElementById('summary-start-date');
         const endInput = document.getElementById('summary-end-date');
         
-        console.log('[DATE INPUT] ✅ Mini date inputs recreated with values:', { 
-            actualStartValue: startInput?.value,
-            actualEndValue: endInput?.value
-        });
         
         // Force a visual update
         if (startInput && endInput) {
@@ -313,18 +288,11 @@ export class InlineDropdownManager {
                 startInput.blur();
                 endInput.focus();
                 endInput.blur();
-                console.log('[DATE INPUT] 🔄 Forced visual refresh');
             }, 50);
         }
         
         // Check values again after a short delay to see if something is overriding them
         setTimeout(() => {
-            console.log('[DATE INPUT] 🔍 Values after 500ms:', {
-                startValue: document.getElementById('summary-start-date')?.value,
-                endValue: document.getElementById('summary-end-date')?.value,
-                startHTML: document.getElementById('summary-start-date')?.outerHTML,
-                endHTML: document.getElementById('summary-end-date')?.outerHTML
-            });
         }, 500);
     }
 
@@ -500,13 +468,11 @@ export class InlineDropdownManager {
      * Sync UI inputs from URL parameters (this overrides any competing systems)
      */
     syncUIFromURL() {
-        console.log('[DATE INPUT] 🔗 Syncing UI from URL...');
         
         const urlParams = new URLSearchParams(window.location.search);
         const dateStart = urlParams.get('ds');  // Using 'ds' parameter
         const dateEnd = urlParams.get('de');    // Using 'de' parameter
         
-        console.log('[DATE INPUT] 🔗 URL params found:', { ds: dateStart, de: dateEnd });
         
         if (dateStart || dateEnd) {
             // Update the mini input fields
@@ -516,15 +482,9 @@ export class InlineDropdownManager {
             if (startInput && endInput) {
                 if (dateStart) startInput.value = dateStart;
                 if (dateEnd) endInput.value = dateEnd;
-                console.log('[DATE INPUT] 🔗 UI inputs synced from URL:', { 
-                    startValue: startInput.value, 
-                    endValue: endInput.value 
-                });
             } else {
-                console.warn('[DATE INPUT] 🔗 UI inputs not found for URL sync');
             }
         } else {
-            console.log('[DATE INPUT] 🔗 No date parameters in URL to sync');
         }
     }
 
@@ -532,15 +492,12 @@ export class InlineDropdownManager {
      * Set up persistent preset handler
      */
     setupPersistentPresetHandler() {
-        console.log('[DATE INPUT] 🎛️ Setting up persistent preset handlers...');
         
         // Handle mini preset buttons
         const presetButtons = document.querySelectorAll('.preset-mini-btn');
-        console.log('[DATE INPUT] 🔘 Found preset buttons:', presetButtons.length, Array.from(presetButtons).map(btn => btn.id));
         
         presetButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                console.log('[DATE INPUT] 🖱️ Preset button clicked:', btn.id, btn.dataset);
                 e.stopPropagation();
                 
                 // Remove active class from all preset buttons and add to clicked one
@@ -550,18 +507,15 @@ export class InlineDropdownManager {
                 if (btn.dataset.days) {
                     const days = parseInt(btn.dataset.days);
                     const preset = days === 7 ? 'last-7-days' : 'last-30-days';
-                    console.log('[DATE INPUT] 📅 Calling selectDatePreset with:', preset);
                     this.selectDatePreset(preset);
                 } else if (btn.dataset.year) {
                     const year = btn.dataset.year;
                     const preset = year === 'current' ? 'this-year' : year;
-                    console.log('[DATE INPUT] 📅 Calling selectDatePreset with:', preset);
                     this.selectDatePreset(preset);
                 }
             });
         });
         
-        console.log('[DATE INPUT] ✅ Preset handlers set up');
     }
 
     /**
@@ -570,9 +524,7 @@ export class InlineDropdownManager {
     async preloadCollections() {
         try {
             // Simplified preloading - just log for now
-            console.log('🔄 Preloading collections...');
             this.allAvailableCollections = [];
-            console.log('✅ Collections preloaded');
         } catch (error) {
             console.warn('⚠️ Failed to preload collections:', error);
         }

@@ -49,7 +49,6 @@ export async function initializeApp() {
 // Full initialization for browser mode - now compatible with viewer mode
 async function initAppForBrowserMode() {
     try {
-        console.log('🚀 Full initialization for browser mode (compatible with viewer)');
         
         // Initialize all services (same as viewer mode)
         const notificationService = new NotificationService();
@@ -212,7 +211,6 @@ async function initAppForBrowserMode() {
             }
         };
         
-        console.log('✅ Full browser mode initialization complete (compatible with viewer)');
         
         // Show the page now that initialization is complete
         if (window.__STAC_SHOW_PAGE) {
@@ -232,7 +230,6 @@ async function initApp() {
     try {
         // Check if early detection already identified this as a browser deep link
         if (window.__STAC_EARLY_BROWSER_MODE) {
-            console.log('🚀 Early browser mode detected, using fast initialization');
             await initAppForBrowserMode();
             return;
         }
@@ -242,7 +239,6 @@ async function initApp() {
         const isBrowserMode = path.startsWith('/browser');
         
         if (isBrowserMode) {
-            console.log('🚀 Browser mode detected (fallback), using fast initialization:', path);
             await initAppForBrowserMode();
             return;
         }
@@ -257,7 +253,6 @@ async function initApp() {
 // Normal initialization for map/search mode  
 async function initAppNormal() {
     try {
-        console.log('🌍 Normal initialization for map/search mode');
         
         // Initialize core services
         const notificationService = new NotificationService();
@@ -298,7 +293,6 @@ async function initAppNormal() {
             
             // Trigger theme update for map after initialization
             const currentTheme = document.documentElement.classList.contains('dark-theme') ? 'dark' : 'light';
-            console.log('🎨 Map initialized, applying current theme:', currentTheme);
             document.dispatchEvent(new CustomEvent('themeChange', {
                 detail: { 
                     theme: currentTheme === 'light' ? 'Light' : 'Dark',
@@ -442,7 +436,6 @@ async function initAppNormal() {
         setTimeout(async () => {
             const params = new URLSearchParams(window.location.search);
             if (params.has('vm') && params.get('vm') === 'browser') {
-                console.log('🔄 Attempting manual URL restoration as fallback...');
                 await stateManager.manuallyRestoreUrlState();
             }
         }, 2000);
@@ -832,7 +825,6 @@ function setupLocationInputs(inlineDropdownManager) {
                 const { defaultGeocodingService } = module;
                 
                 defaultGeocodingService.searchLocations(query, (results, error) => {
-                    console.log('DEBUG - Search callback:', 'Results:', results?.length, 'Error:', !!error);
                     
                     if (error) {
                         resultsContainer.style.display = 'block';
@@ -846,7 +838,6 @@ function setupLocationInputs(inlineDropdownManager) {
                         return;
                     }
                     
-                    console.log('DEBUG - Showing results container');
                     resultsContainer.style.display = 'block';
                     
                     // Display results
@@ -940,7 +931,6 @@ function setupLocationInputs(inlineDropdownManager) {
     if (drawBboxBtn) {
         drawBboxBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            console.log('🎯 Draw bbox button clicked');
             
             // Get the map manager
             const mapManager = window.stacExplorer?.mapManager;
@@ -961,7 +951,6 @@ function setupLocationInputs(inlineDropdownManager) {
             // Start drawing with callback
             mapManager.startDrawingBbox((bbox) => {
                 if (bbox && Array.isArray(bbox) && bbox.length === 4) {
-                    console.log('✅ Bbox drawn:', bbox);
                     
                     // Update location inputs with the drawn area
                     locationInputs.forEach(input => {

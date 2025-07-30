@@ -87,9 +87,14 @@ export default defineConfig({
     minify: 'terser',
     terserOptions: {
       compress: {
-        drop_console: false, // Keep console logs for debugging
+        drop_console: false, // Keep console.error and console.warn 
         drop_debugger: true,
-        pure_funcs: ['console.debug'], // Remove debug logs only
+        pure_funcs: [
+          'console.log', 
+          'console.debug', 
+          'console.info',
+          'console.trace'
+        ], // Remove debug logs but keep errors/warnings
       }
     },
     

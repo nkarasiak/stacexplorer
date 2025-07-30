@@ -930,7 +930,6 @@ export class MemoryManager {
      */
     log(...args) {
         if (this.options.debugMode) {
-            console.log('[MemoryManager]', ...args);
         }
     }
 }

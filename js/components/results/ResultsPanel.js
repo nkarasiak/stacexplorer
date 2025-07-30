@@ -35,12 +35,9 @@ export class ResultsPanel {
         
         // Debug methods for testing restore functionality
         window.testMapRestore = () => {
-            console.log('🧪 Testing map restore functionality...');
             if (this.savedMapView) {
-                console.log('📍 Saved view exists, attempting restore...');
                 this.restoreMapView();
             } else {
-                console.log('❌ No saved view to test with');
             }
         };
         
@@ -48,13 +45,6 @@ export class ResultsPanel {
         window.forceRestoreMapView = () => this.forceRestoreMapView();
         
         window.debugHoverState = () => {
-            console.log('🔍 Current hover state:', {
-                savedMapView: this.savedMapView,
-                currentHoveredItem: this.currentHoveredItem,
-                hasHoverTimeout: !!this.hoverTimeout,
-                hasRestoreTimeout: !!this.restoreTimeout,
-                hasBboxLayer: !!this.currentBboxLayer
-            });
         };
         
         // Initialize pagination controls
@@ -187,7 +177,6 @@ export class ResultsPanel {
      * @param {Object} item - STAC item to display
      */
     showModal(item) {
-        console.log('📋 showModal called with item:', item.id);
         this.currentItem = item;
         
         // Remove existing modal if any
@@ -201,7 +190,6 @@ export class ResultsPanel {
                            document.body.classList.contains('dark-theme') ||
                            document.querySelector('.dark-theme') !== null;
         
-        console.log('🎨 Detected theme:', isDarkTheme ? 'dark' : 'light');
         
         // Theme-aware colors
         const themeColors = isDarkTheme ? {
@@ -419,7 +407,6 @@ export class ResultsPanel {
         freshOverlay.appendChild(workingDialog);
         document.body.appendChild(freshOverlay);
         
-        console.log('📋 Fresh modal created and added to body');
         
         // Setup event listeners
         const closeBtn = document.getElementById('fresh-modal-close');
@@ -484,7 +471,6 @@ export class ResultsPanel {
         };
         document.addEventListener('keydown', escapeHandler);
         
-        console.log('📋 Fresh modal should now be visible and functional');
     }
     
     /**
@@ -959,14 +945,10 @@ export class ResultsPanel {
         const tabHeaders = content.querySelectorAll('.tab-header');
         const tabPanes = content.querySelectorAll('.tab-content-pane');
         
-        console.log('🔍 Setting up simple tab switching');
-        console.log('🔍 Found', tabHeaders.length, 'tab headers');
-        console.log('🔍 Found', tabPanes.length, 'tab panes');
         
         tabHeaders.forEach(header => {
             header.addEventListener('click', () => {
                 const targetId = header.getAttribute('data-target');
-                console.log('🔥 Tab clicked:', targetId);
                 
                 // Remove active class from all headers and panes
                 tabHeaders.forEach(h => h.classList.remove('active'));
@@ -979,7 +961,6 @@ export class ResultsPanel {
                 const targetPane = content.querySelector(`#${targetId}`);
                 if (targetPane) {
                     targetPane.classList.add('active');
-                    console.log('✅ Switched to tab:', targetId);
                 } else {
                     console.error('❌ Target pane not found:', targetId);
                 }
@@ -994,22 +975,16 @@ export class ResultsPanel {
         const tabButtons = content.querySelectorAll('.tab-btn');
         const tabPanes = content.querySelectorAll('.tab-pane');
         
-        console.log('🔍 Setting up tab switching');
-        console.log('🔍 Found', tabButtons.length, 'tab buttons');
-        console.log('🔍 Found', tabPanes.length, 'tab panes');
         
         // Log all available panes
         tabPanes.forEach((pane, index) => {
-            console.log(`🔍 Pane ${index}:`, pane.id, 'content length:', pane.innerHTML.length);
         });
         
         tabButtons.forEach((button, index) => {
-            console.log(`🔍 Button ${index}:`, button.dataset.tab, button.textContent.trim());
             
             button.addEventListener('click', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                console.log('🔥 Tab clicked:', button.dataset.tab);
                 const tabId = button.dataset.tab;
                 
                 // Update button states with visual feedback
@@ -1029,20 +1004,17 @@ export class ResultsPanel {
                 if (targetPane) {
                     targetPane.classList.add('active');
                     targetPane.style.display = 'block'; // Force show
-                    console.log('✅ Switched to tab:', tabId, 'pane content length:', targetPane.innerHTML.length);
                     
                     // Scroll to top of tab content
                     targetPane.scrollTop = 0;
                 } else {
                     console.error('❌ Target pane not found:', `#${tabId}-tab`);
-                    console.log('Available panes:', Array.from(tabPanes).map(p => p.id));
                 }
             });
         });
         
         // Ensure first tab is properly active
         if (tabButtons.length > 0 && tabPanes.length > 0) {
-            console.log('🔧 Ensuring first tab is active');
             tabButtons[0].click();
         }
     }
@@ -1092,7 +1064,6 @@ export class ResultsPanel {
             const existingImages = datasetList.querySelectorAll('img');
             if (existingImages.length > 0) {
                 lazyImageLoader.unobserve(existingImages);
-                console.log('🧹 Cleaned up', existingImages.length, 'image observers');
             }
         }
         
@@ -1179,7 +1150,6 @@ export class ResultsPanel {
      * @returns {HTMLElement} List item element
      */
     createDatasetItem(item) {
-        console.log('🔍 Creating dataset item for:', item.id, 'Collection:', item.collection);
         const li = document.createElement('li');
         li.className = 'dataset-item';
         li.dataset.id = item.id;
@@ -1195,9 +1165,6 @@ export class ResultsPanel {
         };
         
         // PRIORITY 1: Check for thumbnail sources with rendered_preview prioritized
-        console.log('🖼️ Checking thumbnail sources for', item.id);
-        console.log('📎 Available links:', item.links?.map(l => `${l.rel}: ${l.href}`) || 'none');
-        console.log('🗂️ Available assets:', Object.keys(item.assets || {}));
         
         // PRIORITY 1a: Check links.thumbnail first (highest priority)
         if (item.links && Array.isArray(item.links)) {
@@ -1205,7 +1172,6 @@ export class ResultsPanel {
             if (thumbnailLink && isUsableUrl(thumbnailLink.href)) {
                 thumbnailUrl = thumbnailLink.href;
                 hasThumbnail = true;
-                console.log('✅ Using links.thumbnail:', thumbnailUrl);
             }
         }
         
@@ -1213,7 +1179,6 @@ export class ResultsPanel {
         if (!hasThumbnail && item.assets && item.assets.rendered_preview && isUsableUrl(item.assets.rendered_preview.href)) {
             thumbnailUrl = item.assets.rendered_preview.href;
             hasThumbnail = true;
-            console.log('✅ Using assets.rendered_preview:', thumbnailUrl);
         }
         
         // PRIORITY 1c: Check links.preview (after rendered_preview)
@@ -1222,7 +1187,6 @@ export class ResultsPanel {
             if (previewLink && isUsableUrl(previewLink.href)) {
                 thumbnailUrl = previewLink.href;
                 hasThumbnail = true;
-                console.log('✅ Using links.preview:', thumbnailUrl);
             }
         }
         
@@ -1231,11 +1195,9 @@ export class ResultsPanel {
             if (item.assets.thumbnail && isUsableUrl(item.assets.thumbnail.href)) {
                 thumbnailUrl = item.assets.thumbnail.href;
                 hasThumbnail = true;
-                console.log('✅ Using assets.thumbnail:', thumbnailUrl);
             } else if (item.assets.preview && isUsableUrl(item.assets.preview.href)) {
                 thumbnailUrl = item.assets.preview.href;
                 hasThumbnail = true;
-                console.log('✅ Using assets.preview:', thumbnailUrl);
             } else if (item.assets.overview && isUsableUrl(item.assets.overview.href)) {
                 thumbnailUrl = item.assets.overview.href;
                 hasThumbnail = true;
@@ -1250,13 +1212,11 @@ export class ResultsPanel {
             }
             
             if (!hasThumbnail) {
-                console.log('🚫 No usable thumbnail found in assets (S3 URLs skipped)');
             }
         }
         
         // PRIORITY 3: Generate TiTiler preview for collections that don't have thumbnails in links or assets
         if (!hasThumbnail) {
-            console.log('🔧 No thumbnail found in links or assets, trying TiTiler generation...');
             if (item.collection === 'cop-dem-glo-30' || item.collection === 'cop-dem-glo-90') {
                 thumbnailUrl = this.generateDEMThumbnailUrl(item);
                 hasThumbnail = !!thumbnailUrl;
@@ -1364,14 +1324,6 @@ export class ResultsPanel {
         const description = item.properties && item.properties.description ? 
             item.properties.description : (item.description || 'No description available');
             
-        console.log('📋 Item metadata:', {
-            id: item.id,
-            collection: collectionId,
-            date: itemDate,
-            cloudCover: cloudIcon,
-            title: title,
-            hasThumbnail: hasThumbnail
-        });
         
         // Prepare metadata fields
         const metadataFields = [];
@@ -1461,7 +1413,6 @@ export class ResultsPanel {
         const thumbnail = li.querySelector('.dataset-thumbnail');
         if (thumbnail) {
             thumbnail.onerror = () => {
-                console.log('🚫 Thumbnail failed to load for item:', item.id, '- converting to no-thumbnail layout');
                 
                 // Replace the entire card content with no-thumbnail layout
                 const clickableCard = li.querySelector('.clickable-card');
@@ -1529,9 +1480,6 @@ export class ResultsPanel {
                             return;
                         }
                         
-                        console.log('Card clicked for item:', item.id);
-                        console.log('📋 Item assets:', Object.keys(item.assets || {}));
-                        console.log('📎 Item links:', item.links?.map(l => l.rel) || []);
                         
                         // Show loading indicator
                         document.getElementById('loading').style.display = 'flex';
@@ -1590,7 +1538,6 @@ export class ResultsPanel {
                         // Dispatch item activated event with catalog and collection context
                         const catalogId = this.getCurrentCatalogId();
                         const collectionId = this.getCurrentCollectionId();
-                        console.log('📍 Context for item activation - catalogId:', catalogId, 'collectionId:', collectionId);
                         
                         document.dispatchEvent(new CustomEvent('itemActivated', {
                             detail: { 
@@ -1632,7 +1579,6 @@ export class ResultsPanel {
                     return;
                 }
                 
-                console.log('Card clicked for item:', item.id);
                 displayOnMap();
             });
             
@@ -1652,17 +1598,14 @@ export class ResultsPanel {
                 
                 // Small delay to prevent rapid firing on mouse movement
                 this.hoverTimeout = setTimeout(() => {
-                    console.log('🎯 Hover timeout triggered for item:', item.id);
                     
                     // Skip hover preview if center-map button is active for any item
                     if (this.centeredItem) {
-                        console.log('🔒 Center-map is active, skipping hover preview');
                         return;
                     }
                     
                     // Save current map view if not already saved or if different item
                     if (!this.savedMapView || this.currentHoveredItem !== item.id) {
-                        console.log('💾 Saving map view for hover preview...');
                         this.saveMapView();
                         this.currentHoveredItem = item.id;
                     }
@@ -1672,17 +1615,10 @@ export class ResultsPanel {
                     
                     // Add visual feedback to the card
                     clickableCard.classList.add('map-preview-active');
-                    console.log('✨ Added map-preview-active class to card');
                 }, 400); // 400ms delay to prevent rapid triggering
             });
             
             clickableCard.addEventListener('mouseleave', (e) => {
-                console.log('🖱️ Mouse LEAVE detected on item:', item.id);
-                console.log('🖱️ Leave event details:', {
-                    target: e.target.className,
-                    relatedTarget: e.relatedTarget?.className || 'none',
-                    currentItem: this.currentHoveredItem
-                });
                 
                 // Visual hover effect reset
                 clickableCard.style.transform = '';
@@ -1690,31 +1626,25 @@ export class ResultsPanel {
                 
                 // Clear hover timeout if mouse leaves quickly
                 if (this.hoverTimeout) {
-                    console.log('⏰ Clearing hover timeout');
                     clearTimeout(this.hoverTimeout);
                     this.hoverTimeout = null;
                 }
                 
                 // Clear any existing restore timeout
                 if (this.restoreTimeout) {
-                    console.log('⏰ Clearing existing restore timeout');
                     clearTimeout(this.restoreTimeout);
                     this.restoreTimeout = null;
                 }
                 
                 // Remove visual feedback immediately
                 clickableCard.classList.remove('map-preview-active');
-                console.log('✨ Removed map-preview-active class');
                 
                 // Only restore if we actually have a saved view and this was the active item
                 // AND center-map button is not active
                 if (this.savedMapView && this.currentHoveredItem === item.id && !this.centeredItem) {
-                    console.log('💾 Valid restore conditions met, starting restore timer...');
                     
                     // Restore view with slight delay
                     this.restoreTimeout = setTimeout(() => {
-                        console.log('🔄 Restore timeout triggered, restoring map view...');
-                        console.log('📍 About to restore to saved view:', this.savedMapView);
                         
                         const restored = this.restoreMapView();
                         this.removeBboxFromMap();
@@ -1723,13 +1653,11 @@ export class ResultsPanel {
                             this.currentHoveredItem = null;
                             // Clear saved view after successful restore
                             // this.savedMapView = null; // Keep it for subsequent hovers
-                            console.log('✅ Map view restore process completed');
                         } else {
                             console.error('❌ Map view restore failed');
                         }
                     }, 600); // 600ms delay to allow user to hover other items
                 } else {
-                    console.log('ℹ️ Skipping restore - no saved view or different item');
                 }
             });
         }
@@ -1739,7 +1667,6 @@ export class ResultsPanel {
         if (detailsBtn) {
             detailsBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent card click
-                console.log('Details button clicked for item:', item.id);
                 this.showModal(item);
             });
         }
@@ -1748,7 +1675,6 @@ export class ResultsPanel {
         if (vizBtn) {
             vizBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent card click
-                console.log('Visualization button clicked for item:', item.id);
                 this.showVisualizationPanel(item);
             });
         }
@@ -1757,7 +1683,6 @@ export class ResultsPanel {
         if (centerMapBtn) {
             centerMapBtn.addEventListener('click', (e) => {
                 e.stopPropagation(); // Prevent card click
-                console.log('Center map button clicked for item:', item.id);
                 this.centerMapOnItem(item, element);
             });
         }
@@ -1805,7 +1730,6 @@ export class ResultsPanel {
 
             if (isCurrentlyCentered) {
                 // Toggle OFF - restore previous view
-                console.log('🔄 Restoring previous map view for item:', item.id);
                 
                 // Update button appearance
                 centerMapBtn.classList.remove('active');
@@ -1837,7 +1761,6 @@ export class ResultsPanel {
                 
             } else {
                 // Toggle ON - center on item
-                console.log('🎯 Centering map on item:', item.id);
                 
                 // Save current view before centering (only if not already saved)
                 if (!this.centeredItem) {
@@ -1949,13 +1872,11 @@ export class ResultsPanel {
                 return;
             }
 
-            console.log('🗺️ Navigating to viewer for item:', this.currentItem.id);
             
             // Get current URL and replace /browser/ with /viewer/
             const currentUrl = window.location.href;
             const viewerUrl = currentUrl.replace('/browser/', '/viewer/');
             
-            console.log('🔗 Navigating to viewer URL:', viewerUrl);
             
             // Navigate to the viewer URL
             window.location.href = viewerUrl;
@@ -1978,12 +1899,10 @@ export class ResultsPanel {
         try {
             // Check if item has a data asset
             if (!item.assets || !item.assets.data || !item.assets.data.href) {
-                console.log('🚫 [DEM-THUMB] No data asset found for DEM thumbnail');
                 return null;
             }
 
             const assetUrl = item.assets.data.href;
-            console.log(`🏔️ [DEM-THUMB] Generating thumbnail for: ${item.id}`);
 
             // Only generate thumbnails for Planetary Computer DEM data
             if (this.apiClient && assetUrl.includes('blob.core.windows.net')) {
@@ -2000,17 +1919,14 @@ export class ResultsPanel {
                 const bbox = item.bbox || this.extractBboxFromGeometry(item.geometry);
                 if (bbox) {
                     const pcUrl = `https://planetarycomputer.microsoft.com/api/data/v1/item/crop/${bbox[0]},${bbox[1]},${bbox[2]},${bbox[3]}.png?${params.toString()}`;
-                    console.log(`🏔️ [DEM-THUMB] Generated PC TiTiler preview: ${pcUrl}`);
                     return pcUrl;
                 }
             } else {
                 // For non-PC DEM data (like Element84), we can't generate thumbnails
                 // because public TiTiler instances don't have access to private S3 buckets
-                console.log(`🚫 [DEM-THUMB] Cannot generate thumbnail for non-PC DEM data: ${assetUrl.substring(0, 50)}...`);
                 return null;
             }
 
-            console.log('🚫 [DEM-THUMB] Could not extract bbox for thumbnail generation');
             return null;
 
         } catch (error) {
@@ -2028,7 +1944,6 @@ export class ResultsPanel {
         try {
             // Check if item has red, green, blue assets for true color composite
             if (!item.assets) {
-                console.log('🚫 [LANDSAT-THUMB] No assets found for Landsat thumbnail');
                 return null;
             }
 
@@ -2038,11 +1953,9 @@ export class ResultsPanel {
             const blueAsset = item.assets.blue || item.assets.B02 || item.assets.SR_B2;
 
             if (!redAsset || !greenAsset || !blueAsset) {
-                console.log('🚫 [LANDSAT-THUMB] Missing RGB assets for Landsat thumbnail');
                 return null;
             }
 
-            console.log(`🛰️ [LANDSAT-THUMB] Generating thumbnail for: ${item.id}`);
 
             // Use Element84's TiTiler for Element84 hosted Landsat data
             const assetUrl = redAsset.href;
@@ -2057,12 +1970,10 @@ export class ResultsPanel {
                     params.set('rescale', '0,30000');
                     
                     const tiTilerUrl = `https://titiler.xyz/stac/preview?url=${encodeURIComponent(item.links?.find(l => l.rel === 'self')?.href || '')}&${params.toString()}&bbox=${bbox.join(',')}`;
-                    console.log(`🛰️ [LANDSAT-THUMB] Generated TiTiler preview: ${tiTilerUrl}`);
                     return tiTilerUrl;
                 }
             }
 
-            console.log('🚫 [LANDSAT-THUMB] Could not generate thumbnail for Landsat item');
             return null;
 
         } catch (error) {
@@ -2117,15 +2028,6 @@ export class ResultsPanel {
         
         try {
             const map = this.mapManager.map;
-            console.log('🔍 Map object type detection:', {
-                constructor: map.constructor.name,
-                hasSetView: typeof map.setView,
-                hasGetCenter: typeof map.getCenter,
-                hasGetZoom: typeof map.getZoom,
-                hasFitBounds: typeof map.fitBounds,
-                properties: Object.getOwnPropertyNames(map).slice(0, 10),
-                methods: Object.getOwnPropertyNames(Object.getPrototypeOf(map)).slice(0, 20)
-            });
             
             const center = map.getCenter();
             const zoom = map.getZoom();
@@ -2138,11 +2040,6 @@ export class ResultsPanel {
                 mapType: map.constructor.name
             };
             
-            console.log('📍 Saved map view:', {
-                center: `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`,
-                zoom: zoom.toFixed(2),
-                mapType: map.constructor.name
-            });
         } catch (error) {
             console.error('❌ Error saving map view:', error);
         }
@@ -2152,8 +2049,6 @@ export class ResultsPanel {
      * Restore saved map view state
      */
     restoreMapView() {
-        console.log('🔄 Starting map view restore...');
-        console.log('📊 Saved map view state:', this.savedMapView);
         
         if (!this.mapManager || !this.mapManager.map) {
             console.warn('⚠️ Cannot restore map view - map not available');
@@ -2170,32 +2065,15 @@ export class ResultsPanel {
             const currentCenter = map.getCenter();
             const currentZoom = map.getZoom();
             
-            console.log('🗺️ Current map state:', {
-                center: `${currentCenter.lat.toFixed(4)}, ${currentCenter.lng.toFixed(4)}`,
-                zoom: currentZoom.toFixed(2)
-            });
             
-            console.log('🎯 Target map state:', {
-                center: `${this.savedMapView.lat.toFixed(4)}, ${this.savedMapView.lng.toFixed(4)}`,
-                zoom: this.savedMapView.zoom.toFixed(2)
-            });
             
             // Detect map type and use appropriate API
-            console.log('🔍 Map restoration - available methods:', {
-                hasSetView: typeof map.setView,
-                hasSetZoom: typeof map.setZoom,
-                hasPanTo: typeof map.panTo,
-                hasSetCenter: typeof map.setCenter,
-                hasFlyTo: typeof map.flyTo,
-                constructor: map.constructor.name
-            });
             
             let restored = false;
             
             // Try different restoration methods based on available APIs
             if (typeof map.flyTo === 'function') {
                 // MapLibre GL JS API
-                console.log('📍 Using MapLibre flyTo API');
                 map.flyTo({
                     center: [this.savedMapView.lng, this.savedMapView.lat], // MapLibre uses [lng, lat]
                     zoom: this.savedMapView.zoom,
@@ -2205,7 +2083,6 @@ export class ResultsPanel {
                 
             } else if (typeof map.jumpTo === 'function') {
                 // MapLibre instant jump (no animation)
-                console.log('📍 Using MapLibre jumpTo API');
                 map.jumpTo({
                     center: [this.savedMapView.lng, this.savedMapView.lat], // MapLibre uses [lng, lat]
                     zoom: this.savedMapView.zoom
@@ -2214,14 +2091,12 @@ export class ResultsPanel {
                 
             } else if (typeof map.setCenter === 'function' && typeof map.setZoom === 'function') {
                 // Split center and zoom for MapLibre
-                console.log('📍 Using MapLibre setCenter + setZoom API');
                 map.setCenter([this.savedMapView.lng, this.savedMapView.lat]);
                 map.setZoom(this.savedMapView.zoom);
                 restored = true;
                 
             } else if (typeof map.setView === 'function') {
                 // Standard Leaflet API (fallback)
-                console.log('📍 Using Leaflet setView API');
                 map.setView([this.savedMapView.lat, this.savedMapView.lng], this.savedMapView.zoom, {
                     animate: true,
                     duration: 0.6
@@ -2230,14 +2105,12 @@ export class ResultsPanel {
                 
             } else if (typeof map.panTo === 'function' && typeof map.setZoom === 'function') {
                 // Split pan and zoom (Leaflet fallback)
-                console.log('📍 Using panTo + setZoom API');
                 map.panTo([this.savedMapView.lat, this.savedMapView.lng]);
                 map.setZoom(this.savedMapView.zoom);
                 restored = true;
                 
             } else if (this.mapManager.fitToBounds) {
                 // Use MapManager's fitToBounds as fallback
-                console.log('📍 Using MapManager fitToBounds as fallback');
                 const buffer = 0.001; // Small buffer around the point
                 this.mapManager.fitToBounds([
                     this.savedMapView.lng - buffer,
@@ -2253,19 +2126,13 @@ export class ResultsPanel {
             }
             
             if (restored) {
-                console.log('✅ Map view restore command executed successfully');
                 
                 // Verify the restore worked after animation
                 setTimeout(() => {
                     try {
                         const newCenter = map.getCenter();
                         const newZoom = map.getZoom();
-                        console.log('🔍 Post-restore map state:', {
-                            center: `${newCenter.lat.toFixed(4)}, ${newCenter.lng.toFixed(4)}`,
-                            zoom: newZoom.toFixed(2)
-                        });
                     } catch (e) {
-                        console.log('ℹ️ Could not verify post-restore state:', e.message);
                     }
                 }, 700);
             }
@@ -2283,7 +2150,6 @@ export class ResultsPanel {
      * @param {Object} item - STAC item with bbox or geometry
      */
     zoomToItemBbox(item) {
-        console.log('🔍 Starting zoom to item bbox for:', item.id);
         
         if (!this.mapManager || !this.mapManager.map) {
             console.warn('⚠️ Cannot zoom - map not available');
@@ -2293,19 +2159,11 @@ export class ResultsPanel {
         // Get bbox from item
         let bbox = item.bbox;
         if (!bbox && item.geometry) {
-            console.log('📐 No direct bbox, extracting from geometry...');
             bbox = this.extractBboxFromGeometry(item.geometry);
         }
         
         if (bbox && bbox.length >= 4) {
             const [west, south, east, north] = bbox;
-            console.log('🔍 Zooming to item bbox:', { 
-                item: item.id,
-                west: west.toFixed(4), 
-                south: south.toFixed(4), 
-                east: east.toFixed(4), 
-                north: north.toFixed(4)
-            });
             
             // Add visual indicator on map for the bbox first
             this.showBboxOnMap(bbox);
@@ -2317,7 +2175,6 @@ export class ResultsPanel {
                 if (typeof map.fitBounds === 'function') {
                     // Check if it's MapLibre (uses [lng, lat] order)
                     if (typeof map.addSource === 'function') {
-                        console.log('📍 Using MapLibre fitBounds');
                         map.fitBounds(
                             [west, south, east, north], // MapLibre uses [west, south, east, north]
                             { 
@@ -2327,7 +2184,6 @@ export class ResultsPanel {
                             }
                         );
                     } else {
-                        console.log('📍 Using Leaflet fitBounds');
                         map.fitBounds(
                             [[south, west], [north, east]], // Leaflet uses [[lat, lng], [lat, lng]]
                             { 
@@ -2339,13 +2195,11 @@ export class ResultsPanel {
                         );
                     }
                 } else if (this.mapManager.fitToBounds) {
-                    console.log('📍 Using MapManager fitToBounds');
                     this.mapManager.fitToBounds([west, south, east, north]);
                 } else {
                     console.warn('⚠️ No fitBounds method available');
                 }
                 
-                console.log('✅ Map fitted to bbox successfully');
             } catch (error) {
                 console.error('❌ Error fitting map to bbox:', error);
             }
@@ -2363,7 +2217,6 @@ export class ResultsPanel {
      * @param {Array} bbox - [west, south, east, north]
      */
     showBboxOnMap(bbox) {
-        console.log('🔍 Attempting to show bbox on map:', bbox);
         
         // Check if map manager is available
         if (!this.mapManager || !this.mapManager.map) {
@@ -2372,18 +2225,15 @@ export class ResultsPanel {
         }
         
         const map = this.mapManager.map;
-        console.log('🗺️ Map type for bbox:', map.constructor.name);
         
         // Remove existing bbox layer
         this.removeBboxFromMap();
         
         const [west, south, east, north] = bbox;
-        console.log('📐 Bbox coordinates:', { west, south, east, north });
         
         try {
             // Check if this is MapLibre (has addSource method)
             if (typeof map.addSource === 'function' && typeof map.addLayer === 'function') {
-                console.log('📍 Using MapLibre GL JS for bbox display');
                 
                 // Create unique source ID
                 const sourceId = `bbox-source-${Date.now()}`;
@@ -2443,10 +2293,8 @@ export class ResultsPanel {
                     mapType: 'maplibre'
                 };
                 
-                console.log('✅ Added MapLibre bbox layers successfully');
                 
             } else if (window.L) {
-                console.log('📍 Using Leaflet for bbox display');
                 
                 // Create bounds in [lat, lng] format for Leaflet
                 const bounds = [[south, west], [north, east]];
@@ -2466,7 +2314,6 @@ export class ResultsPanel {
                 this.currentBboxLayer.addTo(map);
                 this.currentBboxLayer.bringToFront();
                 
-                console.log('✅ Added Leaflet bbox rectangle successfully');
                 
             } else {
                 console.warn('⚠️ No supported mapping library found for bbox display');
@@ -2482,7 +2329,6 @@ export class ResultsPanel {
      */
     removeBboxFromMap() {
         if (!this.currentBboxLayer) {
-            console.log('ℹ️ No bbox layer to remove');
             return;
         }
         
@@ -2496,7 +2342,6 @@ export class ResultsPanel {
         try {
             // Handle MapLibre layers
             if (this.currentBboxLayer.mapType === 'maplibre') {
-                console.log('🗑️ Removing MapLibre bbox layers...');
                 
                 // Remove layers first
                 if (map.getLayer(this.currentBboxLayer.layerId)) {
@@ -2511,13 +2356,10 @@ export class ResultsPanel {
                     map.removeSource(this.currentBboxLayer.sourceId);
                 }
                 
-                console.log('✅ Removed MapLibre bbox layers successfully');
                 
             } else {
                 // Handle Leaflet layers
-                console.log('🗑️ Removing Leaflet bbox layer...');
                 map.removeLayer(this.currentBboxLayer);
-                console.log('✅ Removed Leaflet bbox layer successfully');
             }
             
             this.currentBboxLayer = null;
@@ -2533,7 +2375,6 @@ export class ResultsPanel {
      * Clear all hover-related timeouts and reset state (for debugging)
      */
     clearHoverState() {
-        console.log('🧹 Clearing all hover state...');
         
         if (this.hoverTimeout) {
             clearTimeout(this.hoverTimeout);
@@ -2554,19 +2395,16 @@ export class ResultsPanel {
             card.classList.remove('map-preview-active');
         });
         
-        console.log('✅ Hover state cleared');
     }
     
     /**
      * Force restore map view (for debugging)
      */
     forceRestoreMapView() {
-        console.log('🔧 Force restoring map view...');
         this.clearHoverState();
         if (this.savedMapView) {
             this.restoreMapView();
         } else {
-            console.log('❌ No saved view to restore');
         }
     }
     
@@ -2588,7 +2426,6 @@ export class ResultsPanel {
                 
                 const catalogId = endpointMappings[currentEndpoint];
                 if (catalogId) {
-                    console.log('📍 Current catalog ID from API client:', catalogId);
                     return catalogId;
                 }
             }
@@ -2597,12 +2434,10 @@ export class ResultsPanel {
             if (window.stacExplorer?.stateManager?.getCurrentCatalogId) {
                 const catalogId = window.stacExplorer.stateManager.getCurrentCatalogId();
                 if (catalogId) {
-                    console.log('📍 Current catalog ID from state manager:', catalogId);
                     return catalogId;
                 }
             }
             
-            console.log('📍 No current catalog ID found in ResultsPanel');
             return null;
         } catch (error) {
             console.warn('📍 Error getting current catalog ID:', error);
@@ -2618,7 +2453,6 @@ export class ResultsPanel {
             // Try to get from collection selector
             const collectionSelect = document.getElementById('collection-select');
             if (collectionSelect && collectionSelect.value) {
-                console.log('📍 Current collection ID from selector:', collectionSelect.value);
                 return collectionSelect.value;
             }
             
@@ -2626,12 +2460,10 @@ export class ResultsPanel {
             if (window.stacExplorer?.stateManager?.getCurrentCollectionId) {
                 const collectionId = window.stacExplorer.stateManager.getCurrentCollectionId();
                 if (collectionId) {
-                    console.log('📍 Current collection ID from state manager:', collectionId);
                     return collectionId;
                 }
             }
             
-            console.log('📍 No current collection ID found in ResultsPanel');
             return null;
         } catch (error) {
             console.warn('📍 Error getting current collection ID:', error);
@@ -2643,13 +2475,11 @@ export class ResultsPanel {
      * Display item with proper itemActivated event dispatch
      */
     displayItemWithEvent(item, assetKey = null) {
-        console.log('🔥 Displaying item with event dispatch:', item.id);
         
         // Get current catalog and collection context
         const catalogId = this.getCurrentCatalogId();
         const collectionId = this.getCurrentCollectionId();
         
-        console.log('📍 Context for item activation - catalogId:', catalogId, 'collectionId:', collectionId);
         
         // Dispatch itemActivated event with proper context
         document.dispatchEvent(new CustomEvent('itemActivated', {

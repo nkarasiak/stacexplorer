@@ -25,7 +25,6 @@ export class SatelliteAnimation {
      * Initialize the satellite animation
      */
     init() {
-        console.log('🛰️ Initializing satellite animation...');
         this.createSatelliteElements();
         this.calculateLayout();
         this.bindEvents();
@@ -44,7 +43,6 @@ export class SatelliteAnimation {
         
         // Listen for offline/online status changes
         this.offlineUnsubscribe = offlineManager.onStatusChange((status, isOffline) => {
-            console.log('🛰️ Offline status changed:', status, isOffline);
             this.isOffline = isOffline;
             this.updateSatelliteAppearance();
             
@@ -99,7 +97,6 @@ export class SatelliteAnimation {
         message.style.transform = 'translateX(-50%)';
         
         this.container.appendChild(message);
-        console.log('🛰️ Added offline message bubble to satellite');
     }
     
     /**
@@ -109,7 +106,6 @@ export class SatelliteAnimation {
         const existingMessage = document.getElementById('satellite-offline-message');
         if (existingMessage) {
             existingMessage.remove();
-            console.log('🛰️ Removed offline message bubble from satellite');
         }
     }
     
@@ -140,7 +136,6 @@ export class SatelliteAnimation {
         // Update appearance based on offline status
         this.updateSatelliteAppearance();
         
-        console.log('🛰️ Satellite elements created');
     }
     
     /**
@@ -175,7 +170,6 @@ export class SatelliteAnimation {
      */
     onResultsUpdated(detail) {
         const hasResults = detail && detail.count > 0;
-        console.log('🛰️ Results updated, has results:', hasResults);
         
         this.hasResults = hasResults;
         
@@ -192,7 +186,6 @@ export class SatelliteAnimation {
      * Handle results cleared event
      */
     onResultsCleared() {
-        console.log('🛰️ Results cleared');
         this.hasResults = false;
         document.body.classList.remove('has-results');
         this.startAnimation();
@@ -206,20 +199,15 @@ export class SatelliteAnimation {
         const resultsCount = document.getElementById('results-count');
         const count = resultsCount ? parseInt(resultsCount.textContent) || 0 : 0;
         
-        console.log('🛰️ Initial results check, count:', count);
-        console.log('🛰️ Results count element:', resultsCount);
-        console.log('🛰️ Results count text:', resultsCount ? resultsCount.textContent : 'not found');
         
         this.hasResults = count > 0;
         
         if (!this.hasResults) {
-            console.log('🛰️ No results found, starting animation...');
             // Start animation after a short delay to ensure page is loaded
             setTimeout(() => {
                 this.startAnimation();
             }, 2000);
         } else {
-            console.log('🛰️ Results found, not starting animation');
             document.body.classList.add('has-results');
         }
     }
@@ -230,13 +218,9 @@ export class SatelliteAnimation {
     startAnimation() {
         // In offline mode, always show animation regardless of results
         if (this.isActive || (!this.isOffline && this.hasResults)) {
-            console.log('🛰️ Animation not started - isActive:', this.isActive, 'hasResults:', this.hasResults, 'isOffline:', this.isOffline);
             return;
         }
         
-        console.log('🛰️ Starting satellite animation');
-        console.log('🛰️ Container:', this.container);
-        console.log('🛰️ Satellite:', this.satellite);
         
         this.isActive = true;
         this.currentColumn = 0;
@@ -252,7 +236,6 @@ export class SatelliteAnimation {
      * Stop the satellite animation
      */
     stopAnimation() {
-        console.log('🛰️ Stopping satellite animation');
         this.isActive = false;
         
         if (this.animationInterval) {
@@ -293,7 +276,6 @@ export class SatelliteAnimation {
     executeFlight() {
         // In offline mode, ignore hasResults check
         if (!this.isActive || (!this.isOffline && this.hasResults)) {
-            console.log('🛰️ Flight cancelled - isActive:', this.isActive, 'hasResults:', this.hasResults, 'isOffline:', this.isOffline);
             return;
         }
         
@@ -306,12 +288,10 @@ export class SatelliteAnimation {
         this.satellite.style.transform = 'translateY(100vh) translateX(100px)';
         this.satellite.classList.remove('hidden');
         this.satellite.classList.add('visible');
-        console.log('🛰️ Satellite classes after show:', this.satellite.className);
         
         // Start animation after a brief moment
         setTimeout(() => {
             this.satellite.classList.add('animate');
-            console.log('🛰️ Animation class added:', this.satellite.className);
         }, 100);
         
         // Remove animation class and hide satellite after animation completes
@@ -321,7 +301,6 @@ export class SatelliteAnimation {
             
             // Move to next column
             this.currentColumn = (this.currentColumn + 1) % this.maxColumns;
-            console.log('🛰️ Flight completed, next column:', this.currentColumn);
             
             // Schedule next flight
             this.scheduleNextFlight();
@@ -332,7 +311,6 @@ export class SatelliteAnimation {
      * Test method to manually trigger a satellite flight
      */
     testFlight() {
-        console.log('🛰️ TEST: Manually triggering satellite flight');
         this.hasResults = false;
         this.isActive = false;
         this.startAnimation();
@@ -342,7 +320,6 @@ export class SatelliteAnimation {
      * Force satellite animation to start regardless of results state
      */
     forceStart() {
-        console.log('🛰️ FORCE: Starting satellite animation regardless of results');
         this.hasResults = false;
         this.isActive = false;
         this.startAnimation();
@@ -352,13 +329,6 @@ export class SatelliteAnimation {
      * Debug method to check satellite visibility and positioning
      */
     debugSatellite() {
-        console.log('🛰️ DEBUG: Satellite element:', this.satellite);
-        console.log('🛰️ DEBUG: Container element:', this.container);
-        console.log('🛰️ DEBUG: Satellite computed style:', window.getComputedStyle(this.satellite));
-        console.log('🛰️ DEBUG: Container computed style:', window.getComputedStyle(this.container));
-        console.log('🛰️ DEBUG: Satellite classes:', this.satellite.className);
-        console.log('🛰️ DEBUG: Container position:', this.container.getBoundingClientRect());
-        console.log('🛰️ DEBUG: Satellite position:', this.satellite.getBoundingClientRect());
         
         // Make satellite very visible for testing
         this.satellite.style.cssText += `
@@ -374,14 +344,12 @@ export class SatelliteAnimation {
             border: 5px solid yellow !important;
         `;
         
-        console.log('🛰️ DEBUG: Made satellite highly visible at center of screen');
     }
     
     /**
      * Destroy the satellite animation
      */
     destroy() {
-        console.log('🛰️ Destroying satellite animation');
         this.stopAnimation();
         
         // Clean up offline message

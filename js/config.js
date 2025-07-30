@@ -56,6 +56,7 @@ export const CONFIG = {
     appSettings: {
         defaultDateRange: 0, // Default date range in days (0 means no default)
         itemsPerPage: 10, // Number of items per page in results
+        customCatalogUrl: '', // Custom STAC catalog/API URL
         async getEnabledProviders() {
             const collections = await loadCollections();
             return collections

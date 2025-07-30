@@ -8,7 +8,8 @@ export class SettingsPanel {
         this.notificationService = notificationService;
         this.isOpen = false;
         this.settings = {
-            enabledProviders: [...(config.appSettings.enabledProviders || [])]
+            enabledProviders: [...(config.appSettings.enabledProviders || [])],
+            customCatalogUrl: config.appSettings.customCatalogUrl || ''
         };
         
         this.init();
@@ -34,6 +35,23 @@ export class SettingsPanel {
             <div class="settings-content">
                 <div class="settings-section">
                     <div class="settings-section-title">
+                        <i class="material-icons">link</i>
+                        Custom Catalog
+                    </div>
+                    <div class="settings-section-content">
+                        <div class="input-group">
+                            <label for="custom-catalog-url">STAC Catalog/API URL:</label>
+                            <input type="url" 
+                                   id="custom-catalog-url" 
+                                   placeholder="https://example.com/stac"
+                                   value="${this.settings.customCatalogUrl}"
+                                   class="settings-input">
+                            <small class="input-hint">Enter the root URL of a STAC catalog or API endpoint</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-section">
+                    <div class="settings-section-title">
                         <i class="material-icons">cloud</i>
                         Data Providers
                     </div>
@@ -56,6 +74,9 @@ export class SettingsPanel {
         
         // Populate providers
         this.populateProviders();
+        
+        // Update custom catalog input
+        this.updateCustomCatalogInput();
     }
     
     /**
@@ -95,6 +116,11 @@ export class SettingsPanel {
                     this.settings.enabledProviders = this.settings.enabledProviders.filter(p => p !== provider);
                 }
             }
+        });
+        
+        // Custom catalog URL input
+        this.panel.querySelector('#custom-catalog-url').addEventListener('input', (e) => {
+            this.settings.customCatalogUrl = e.target.value.trim();
         });
     }
     
@@ -142,6 +168,7 @@ export class SettingsPanel {
     open() {
         this.panel.classList.add('open');
         this.isOpen = true;
+        this.updateCustomCatalogInput();
     }
     
     /**
@@ -152,9 +179,11 @@ export class SettingsPanel {
         this.isOpen = false;
         // Reset settings to current config
         this.settings = {
-            enabledProviders: [...(this.config.appSettings.enabledProviders || [])]
+            enabledProviders: [...(this.config.appSettings.enabledProviders || [])],
+            customCatalogUrl: this.config.appSettings.customCatalogUrl || ''
         };
         this.populateProviders();
+        this.updateCustomCatalogInput();
     }
     
     /**
@@ -172,9 +201,25 @@ export class SettingsPanel {
     /**
      * Save settings
      */
-    saveSettings() {
+    async saveSettings() {
         // Update config
         this.config.appSettings.enabledProviders = this.settings.enabledProviders;
+        this.config.appSettings.customCatalogUrl = this.settings.customCatalogUrl;
+        
+        // Save custom catalog URL and validate it
+        if (this.settings.customCatalogUrl) {
+            localStorage.setItem('stacExplorer-customCatalogUrl', this.settings.customCatalogUrl);
+            
+            // Dispatch event to trigger validation by UIManager
+            document.dispatchEvent(new CustomEvent('customCatalogUrlChanged', {
+                detail: { url: this.settings.customCatalogUrl }
+            }));
+        } else {
+            // Remove custom catalog if URL is empty
+            localStorage.removeItem('stacExplorer-customCatalogUrl');
+            localStorage.removeItem('stacExplorer-customCatalog');
+            localStorage.removeItem('catalog-custom-catalog-enabled');
+        }
         
         // Save to localStorage
         localStorage.setItem('stacExplorerSettings', JSON.stringify(this.settings));
@@ -200,9 +245,20 @@ export class SettingsPanel {
             if (savedSettings) {
                 this.settings = JSON.parse(savedSettings);
                 this.config.appSettings.enabledProviders = this.settings.enabledProviders;
+                this.config.appSettings.customCatalogUrl = this.settings.customCatalogUrl || '';
             }
         } catch (error) {
             console.error('Error loading settings:', error);
+        }
+    }
+    
+    /**
+     * Update the custom catalog URL input field
+     */
+    updateCustomCatalogInput() {
+        const input = this.panel.querySelector('#custom-catalog-url');
+        if (input) {
+            input.value = this.settings.customCatalogUrl || '';
         }
     }
 } 

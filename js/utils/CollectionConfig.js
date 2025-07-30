@@ -51,12 +51,59 @@ export async function loadCollections() {
 }
 
 /**
+ * Load all collections including custom catalogs
+ * @returns {Promise<Array>} Array of collection configurations including custom catalogs
+ */
+export async function loadAllCollections() {
+    const standardCollections = await loadCollections();
+    const customCatalog = getCustomCatalog();
+    
+    if (customCatalog && customCatalog.enabled !== false) {
+        // Convert custom catalog to collection format
+        const customCollection = {
+            id: customCatalog.id,
+            name: customCatalog.name,
+            description: customCatalog.description,
+            endpoint: customCatalog.url,
+            type: customCatalog.type === 'Collection' ? 'catalog' : 'api',
+            enabled: customCatalog.enabled,
+            isCustom: true,
+            endpoints: {
+                root: customCatalog.url,
+                collections: customCatalog.type === 'Catalog' ? `${customCatalog.url}/collections` : customCatalog.url,
+                search: customCatalog.type === 'Catalog' ? `${customCatalog.url}/search` : null
+            }
+        };
+        
+        return [customCollection, ...standardCollections];
+    }
+    
+    return standardCollections;
+}
+
+/**
+ * Get custom catalog from localStorage
+ * @returns {Object|null} Custom catalog configuration or null
+ */
+export function getCustomCatalog() {
+    try {
+        const savedCustomCatalog = localStorage.getItem('stacExplorer-customCatalog');
+        if (savedCustomCatalog) {
+            return JSON.parse(savedCustomCatalog);
+        }
+    } catch (error) {
+        console.error('Error loading custom catalog:', error);
+    }
+    return null;
+}
+
+/**
  * Get collection configuration by ID (supports both legacy and real IDs)
  * @param {string} collectionId - The collection ID to find (legacy or real)
  * @returns {Promise<Object|null>} Collection configuration or null if not found
  */
 export async function getCollectionById(collectionId) {
-    const collections = await loadCollections();
+    const collections = await loadAllCollections(); // Use loadAllCollections to include custom catalogs
     
     // First try direct match with real ID
     let collection = collections.find(c => c.id === collectionId);

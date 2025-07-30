@@ -5,7 +5,7 @@
 
 import { CollectionDetailsModal } from './CollectionDetailsModal.js';
 import { cookieCache } from '../../utils/CookieCache.js';
-import { loadCollections, getEnabledCollectionIds, getCollectionEndpoints, getCollectionName } from '../../utils/CollectionConfig.js';
+import { loadCollections, loadAllCollections, getEnabledCollectionIds, getCollectionEndpoints, getCollectionName } from '../../utils/CollectionConfig.js';
 
 export class CollectionManagerEnhanced {
     /**
@@ -60,6 +60,12 @@ export class CollectionManagerEnhanced {
                 console.log('📡 Received collections from catalog selector (legacy)');
             }
         });
+        
+        // Listen for refresh collections event (from custom catalog addition)
+        document.addEventListener('refreshCollections', async () => {
+            console.log('📡 Received refresh collections event, reloading...');
+            await this.loadAllCollectionsOnStartup();
+        });
     }
     
     /**
@@ -86,6 +92,21 @@ export class CollectionManagerEnhanced {
             'planetlabs': 'Planet Labs',
             'gee': 'Google Earth Engine'
         };
+        
+        // Handle custom catalogs by checking localStorage
+        if (source === 'custom-catalog') {
+            try {
+                const customCatalogData = localStorage.getItem('stacExplorer-customCatalog');
+                if (customCatalogData) {
+                    const customCatalog = JSON.parse(customCatalogData);
+                    return customCatalog.name || 'Custom Catalog';
+                }
+            } catch (error) {
+                console.warn('Error reading custom catalog name:', error);
+            }
+            return 'Custom Catalog';
+        }
+        
         return displayNames[source] || source;
     }
 
@@ -93,7 +114,7 @@ export class CollectionManagerEnhanced {
      * Get enabled catalogs from localStorage settings
      */
     async getEnabledCatalogs() {
-        const collections = await loadCollections();
+        const collections = await loadAllCollections(); // Use loadAllCollections to include custom catalogs
         const enabledCatalogs = [];
         
         collections.forEach(collection => {
@@ -113,6 +134,8 @@ export class CollectionManagerEnhanced {
                 enabledCatalogs.push(catalogKey);
             }
         });
+        
+        // Custom catalogs are already included in loadAllCollections()
         
         console.log('🔍 Enabled catalogs from settings:', enabledCatalogs);
         

@@ -1812,9 +1812,9 @@
             <div class="sidebar-header">
                 <h1 id="app-logo" style="cursor: pointer;" title="Return to Homepage"><i class="material-icons">satellite_alt</i> <span>STAC Explorer</span></h1>
                 <div>
-                    <button id="settings-toggle" class="settings-toggle" title="Settings">
+                    <a href="/settings" id="settings-toggle" class="settings-toggle" title="Settings">
                         <i class="material-icons">settings</i>
-                    </button>
+                    </a>
                     <button id="theme-toggle" class="theme-toggle">
                         <i class="material-icons">light_mode</i>
                     </button>
@@ -2129,6 +2129,29 @@
                         <div class="setting-status" id="gpu-status-display-panel">
                             <i class="material-icons">info</i>
                             <span id="gpu-status-text-panel">Checking GPU acceleration status...</span>
+                        </div>
+                    </div>
+                    
+                    <div class="settings-section">
+                        <h3><i class="material-icons">link</i> Custom Catalog</h3>
+                        <div class="setting-item">
+                            <div class="setting-content">
+                                <div class="setting-label">STAC Catalog/API URL</div>
+                                <div class="setting-description">Enter the root URL of a STAC catalog or API endpoint</div>
+                            </div>
+                            <div class="setting-control">
+                                <div style="display: flex; gap: 8px; align-items: center;">
+                                    <input type="url" 
+                                           id="custom-catalog-url" 
+                                           class="settings-input"
+                                           placeholder="https://example.com/stac"
+                                           style="flex: 1; padding: 8px 12px; border: 1px solid var(--border-primary, #d1d5db); border-radius: 6px; font-size: 14px;">
+                                    <button id="add-custom-catalog-btn" 
+                                            style="padding: 8px 16px; background: var(--primary-color, #667eea); color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
+                                        Add
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     

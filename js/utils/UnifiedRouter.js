@@ -37,6 +37,9 @@ export class UnifiedRouter {
             browserCollection: new RegExp(`^${base}/browser/([^/]+)/([^/]+)/?$`),       // /browser/{catalogId}/{collectionId}
             browserItem: new RegExp(`^${base}/browser/([^/]+)/([^/]+)/([^/]+)/?$`),    // /browser/{catalogId}/{collectionId}/{itemId}
             
+            // Settings page route
+            settings: new RegExp(`^${base}/settings/?$`),
+            
             // Legacy redirect patterns
             legacyCatalog: /^\/catalog(?:\/.*)?$/,
             legacyBrowserVerbose: /^\/browser\/catalog\/([^\/]+)(?:\/collection\/([^\/]+))?(?:\/item\/([^\/]+))?\/?$/
@@ -295,6 +298,11 @@ export class UnifiedRouter {
                 case 'browserItem':
                     console.log('📍 Browser item route matched:', route.matches);
                     await this.handleBrowserItemRoute(route.matches[0], route.matches[1], route.matches[2]);
+                    break;
+                
+                // Settings page route
+                case 'settings':
+                    await this.handleSettingsRoute();
                     break;
                 
                 // Legacy redirects
@@ -1378,6 +1386,31 @@ export class UnifiedRouter {
         }
         
         console.warn('📍 Core components not fully ready after', maxWait, 'ms - proceeding anyway');
+    }
+
+    /**
+     * Handle settings route
+     */
+    async handleSettingsRoute() {
+        console.log('📍 Handling settings route');
+        
+        try {
+            // Dynamically import and initialize settings page manager
+            const { SettingsPageManager } = await import('../components/pages/SettingsPageManager.js');
+            const settingsManager = new SettingsPageManager();
+            await settingsManager.initialize();
+            
+            // Store for future use
+            if (!window.stacExplorer) window.stacExplorer = {};
+            window.stacExplorer.settingsPageManager = settingsManager;
+            
+            console.log('📍 Settings page loaded successfully');
+            
+        } catch (error) {
+            console.error('📍 Error loading settings page:', error);
+            // Fallback to main app
+            window.location.href = '/';
+        }
     }
 
     /**

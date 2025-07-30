@@ -47,7 +47,8 @@
       "WebFetch(domain:stac.dataspace.copernicus.eu)",
       "Bash(powershell:*)",
       "Bash(pkill:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "WebFetch(domain:stac.terrascope.be)"
     ],
     "deny": []
   }

@@ -2176,6 +2176,38 @@ export class CatalogBrowserPanel {
         console.log('[BROWSER] Config object:', this.config);
         console.log('[BROWSER] STAC Endpoints:', this.config?.stacEndpoints);
         
+        // First, load custom catalogs from localStorage
+        try {
+            const customCatalogData = localStorage.getItem('stacExplorer-customCatalog');
+            if (customCatalogData) {
+                const customCatalog = JSON.parse(customCatalogData);
+                console.log('🔧 Found custom catalog in localStorage:', customCatalog);
+                
+                // Create endpoint structure for custom catalog
+                const customEndpoint = {
+                    root: customCatalog.url,
+                    collections: customCatalog.url.endsWith('/') ? customCatalog.url + 'collections' : customCatalog.url + '/collections',
+                    search: customCatalog.url.endsWith('/') ? customCatalog.url + 'search' : customCatalog.url + '/search',
+                    type: customCatalog.type || 'api'
+                };
+                
+                const catalogItem = {
+                    id: customCatalog.id,
+                    name: customCatalog.name,
+                    description: customCatalog.description,
+                    endpoint: customEndpoint,
+                    url: customCatalog.url,
+                    configKey: 'custom-catalog',
+                    isCustom: true
+                };
+                
+                catalogs.push(catalogItem);
+                console.log('✅ Added custom catalog to browser:', catalogItem);
+            }
+        } catch (error) {
+            console.warn('⚠️ Failed to load custom catalog from localStorage:', error);
+        }
+        
         if (this.config?.stacEndpoints) {
             const entries = Object.entries(this.config.stacEndpoints);
             console.log(`🔢 Total entries to process: ${entries.length}`);

@@ -36,6 +36,13 @@
       "enabled": false,
       "endpoint": "https://earthengine-stac.storage.googleapis.com/catalog/catalog.json",
       "type": "catalog"
+    },
+    {
+      "id": "terrascope",
+      "name": "Terrascope",
+      "description": "Belgian Earth observation data and services platform",
+      "enabled": true,
+      "endpoint": "https://stac.terrascope.be/"
     }
   ]
 }

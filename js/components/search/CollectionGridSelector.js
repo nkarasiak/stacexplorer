@@ -3,7 +3,7 @@
  * Displays collections as cards with images, descriptions, and search functionality
  */
 
-import { loadCollections } from '../../utils/CollectionConfig.js';
+import { loadAllCollections } from '../../utils/CollectionConfig.js';
 
 export class CollectionGridSelector {
     /**
@@ -699,7 +699,7 @@ export class CollectionGridSelector {
      * Populate source filter with collections from collections.json
      */
     async populateSourceFilter() {
-        const collections = await loadCollections();
+        const collections = await loadAllCollections();
         const sourceFilter = this.elements.sourceFilter;
         
         // Clear existing options except 'all'

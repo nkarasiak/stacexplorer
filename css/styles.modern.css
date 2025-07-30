@@ -5397,3 +5397,81 @@ html.dark-theme .settings-content .settings-section h3 {
     border: 1px solid rgba(59, 130, 246, 0.3);
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15);
 }
+
+/* Settings Panel Input Styles */
+.settings-section-content {
+    margin-top: 1rem;
+}
+
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--text-primary, #374151);
+    font-size: 0.875rem;
+}
+
+.settings-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border-primary, #d1d5db);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    background: var(--background-primary, #ffffff);
+    color: var(--text-primary, #374151);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settings-input:focus {
+    outline: none;
+    border-color: var(--primary-color, #667eea);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.input-hint {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary, #6b7280);
+}
+
+.settings-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary, #374151);
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border-primary, #e5e7eb);
+}
+
+/* Dark theme for settings inputs */
+html.dark-theme .input-group label,
+html.dark-theme .settings-section-title {
+    color: var(--text-dark, #f9fafb);
+}
+
+html.dark-theme .settings-input {
+    background: var(--background-dark-secondary, #374151);
+    border-color: var(--border-dark, #4b5563);
+    color: var(--text-dark, #f9fafb);
+}
+
+html.dark-theme .settings-input:focus {
+    border-color: var(--primary-color, #667eea);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+}
+
+html.dark-theme .input-hint {
+    color: var(--text-dark-secondary, #9ca3af);
+}
+
+html.dark-theme .settings-section-title {
+    border-bottom-color: var(--border-dark, #4b5563);
+}

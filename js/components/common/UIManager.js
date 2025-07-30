@@ -2,7 +2,7 @@
  * UIManager.js - Core UI functionality handling global UI interactions
  */
 
-import { loadCollections, getCollectionName } from '../../utils/CollectionConfig.js';
+import { loadCollections, loadAllCollections, getCollectionName } from '../../utils/CollectionConfig.js';
 
 export class UIManager {
     constructor() {
@@ -38,6 +38,16 @@ export class UIManager {
     setupEventListeners() {
         console.log('🔧 Setting up event listeners...');
         
+        // Custom catalog URL changed event
+        document.addEventListener('customCatalogUrlChanged', async (e) => {
+            const url = e.detail.url;
+            if (url) {
+                await this.validateAndAddCustomCatalog(url);
+            } else {
+                this.removeCustomCatalog();
+            }
+        });
+        
         // Theme toggle
         const themeToggle = document.getElementById('theme-toggle');
         if (themeToggle) {
@@ -59,48 +69,8 @@ export class UIManager {
             console.warn('🔧 Theme selector not found');
         }
         
-        // Settings panel
-        const settingsToggle = document.getElementById('settings-toggle');
-        const settingsPanel = document.getElementById('settings-panel');
-        const settingsCloseBtn = document.getElementById('settings-close-btn');
-        
-        console.log('🔧 Settings elements found:', {
-            settingsToggle: !!settingsToggle,
-            settingsPanel: !!settingsPanel,
-            settingsCloseBtn: !!settingsCloseBtn,
-            settingsToggleEl: settingsToggle,
-            settingsPanelEl: settingsPanel
-        });
-        
-        if (settingsToggle && settingsPanel) {
-            console.log('🔧 Adding settings button click listener');
-            // Mark that we've added the main listener
-            settingsToggle.setAttribute('data-main-listener-added', 'true');
-            settingsToggle.addEventListener('click', (e) => {
-                console.log('🔧 Settings button clicked!');
-                e.preventDefault();
-                e.stopPropagation();
-                this.showSettingsPanel();
-            });
-            console.log('🔧 Settings button listener added successfully');
-            
-            if (settingsCloseBtn) {
-                settingsCloseBtn.addEventListener('click', () => {
-                    console.log('🔧 Settings close button clicked');
-                    this.hideSettingsPanel();
-                });
-            } else {
-                console.warn('🔧 Settings close button not found');
-            }
-            
-            // Close panel with Escape key
-            this.handleSettingsPanelEscape = (e) => {
-                if (e.key === 'Escape') {
-                    this.hideSettingsPanel();
-                }
-            };
-            document.addEventListener('keydown', this.handleSettingsPanelEscape);
-        }
+        // Settings panel - now handled by routing to /settings page
+        console.log('🔧 Settings now handled by /settings route');
         
         // Initialize dynamic UI elements from collections.json
         this.initializeDynamicUI();
@@ -477,6 +447,9 @@ export class UIManager {
             // Initialize catalog toggles for panel
             this.populateCatalogToggles('panel');
             
+            // Load custom catalog URL
+            this.loadCustomCatalogUrl();
+            
             console.log('🔧 Settings panel shown');
         } else {
             console.error('🔧 Settings panel or map element not found!');
@@ -721,5 +694,295 @@ export class UIManager {
         });
         
         return states;
+    }
+    
+    /**
+     * Load custom catalog URL from localStorage
+     */
+    loadCustomCatalogUrl() {
+        const customCatalogInput = document.getElementById('custom-catalog-url');
+        if (customCatalogInput) {
+            const savedUrl = localStorage.getItem('stacExplorer-customCatalogUrl') || '';
+            customCatalogInput.value = savedUrl;
+            
+            // Load existing custom catalog if present
+            const savedCustomCatalog = localStorage.getItem('stacExplorer-customCatalog');
+            if (savedCustomCatalog && savedUrl) {
+                try {
+                    const customCatalog = JSON.parse(savedCustomCatalog);
+                    this.addCustomCatalogToUI(customCatalog);
+                    this.showCustomCatalogStatus('✓ Custom catalog loaded', 'success');
+                } catch (error) {
+                    console.error('🔧 Error loading saved custom catalog:', error);
+                }
+            }
+            
+            // Add event listener to save changes (debounced)
+            let saveTimeout;
+            customCatalogInput.addEventListener('input', (e) => {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => {
+                    this.saveCustomCatalogUrl(e.target.value);
+                }, 1000); // Wait 1 second after user stops typing
+            });
+            
+            customCatalogInput.addEventListener('blur', (e) => {
+                clearTimeout(saveTimeout);
+                this.saveCustomCatalogUrl(e.target.value);
+            });
+            
+            // Add button event listener
+            const addCustomCatalogBtn = document.getElementById('add-custom-catalog-btn');
+            console.log('🔧 Looking for add-custom-catalog-btn:', !!addCustomCatalogBtn);
+            if (addCustomCatalogBtn) {
+                console.log('🔧 Adding click listener to Add button');
+                addCustomCatalogBtn.addEventListener('click', (e) => {
+                    console.log('🔧 Add button clicked!');
+                    e.preventDefault();
+                    const url = customCatalogInput.value.trim();
+                    console.log('🔧 URL to add:', url);
+                    if (url) {
+                        console.log('🔧 Calling saveCustomCatalogUrl with:', url);
+                        this.saveCustomCatalogUrl(url);
+                    } else {
+                        console.log('🔧 No URL provided');
+                    }
+                });
+                console.log('🔧 Add button listener attached successfully');
+            } else {
+                console.warn('🔧 Add button not found!');
+            }
+        }
+    }
+    
+    /**
+     * Save custom catalog URL to localStorage
+     */
+    async saveCustomCatalogUrl(url) {
+        console.log('🔧 saveCustomCatalogUrl called with:', url);
+        const trimmedUrl = url.trim();
+        localStorage.setItem('stacExplorer-customCatalogUrl', trimmedUrl);
+        console.log('🔧 Saved URL to localStorage:', trimmedUrl);
+        
+        if (trimmedUrl) {
+            console.log('🔧 Starting catalog validation for:', trimmedUrl);
+            // Try to fetch catalog information
+            await this.validateAndAddCustomCatalog(trimmedUrl);
+        } else {
+            console.log('🔧 Empty URL, removing custom catalog');
+            // Remove custom catalog if URL is empty
+            this.removeCustomCatalog();
+        }
+        
+        // Dispatch event for other components to react to the change
+        document.dispatchEvent(new CustomEvent('customCatalogUrlChanged', {
+            detail: { url: trimmedUrl }
+        }));
+        
+        console.log('🔧 Custom catalog URL saved:', trimmedUrl);
+    }
+    
+    /**
+     * Get custom catalog URL
+     */
+    getCustomCatalogUrl() {
+        return localStorage.getItem('stacExplorer-customCatalogUrl') || '';
+    }
+    
+    /**
+     * Validate and add custom catalog
+     */
+    async validateAndAddCustomCatalog(url) {
+        try {
+            console.log('🔧 Validating custom catalog:', url);
+            
+            // Show loading indicator
+            this.showCustomCatalogStatus('Validating catalog...', 'loading');
+            
+            // Disable the add button during validation
+            const addBtn = document.getElementById('add-custom-catalog-btn');
+            if (addBtn) {
+                addBtn.disabled = true;
+                addBtn.textContent = 'Validating...';
+            }
+            
+            // Try to fetch the catalog
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            
+            const catalogData = await response.json();
+            
+            // Basic STAC catalog validation
+            if (!catalogData.type || !['Catalog', 'Collection'].includes(catalogData.type)) {
+                throw new Error('Not a valid STAC catalog or collection');
+            }
+            
+            // Create custom catalog configuration
+            const customCatalog = {
+                id: 'custom-catalog',
+                name: catalogData.title || catalogData.id || 'Custom Catalog',
+                description: catalogData.description || 'User-provided STAC catalog',
+                url: url,
+                type: catalogData.type,
+                enabled: true,
+                isCustom: true
+            };
+            
+            // Save custom catalog
+            localStorage.setItem('stacExplorer-customCatalog', JSON.stringify(customCatalog));
+            
+            // Add to UI
+            this.addCustomCatalogToUI(customCatalog);
+            
+            this.showCustomCatalogStatus('✓ Catalog validated successfully', 'success');
+            
+            console.log('🔧 Custom catalog validated:', customCatalog);
+            
+            // Trigger collections refresh to include the new custom catalog
+            document.dispatchEvent(new CustomEvent('refreshCollections'));
+            
+            // Also dispatch a more general event for other components
+            document.dispatchEvent(new CustomEvent('customCatalogAdded', {
+                detail: customCatalog
+            }));
+            
+        } catch (error) {
+            console.error('🔧 Custom catalog validation failed:', error);
+            this.showCustomCatalogStatus(`✗ Error: ${error.message}`, 'error');
+        } finally {
+            // Re-enable the add button
+            const addBtn = document.getElementById('add-custom-catalog-btn');
+            if (addBtn) {
+                addBtn.disabled = false;
+                addBtn.textContent = 'Add';
+            }
+        }
+    }
+    
+    /**
+     * Add custom catalog to the UI
+     */
+    addCustomCatalogToUI(catalog) {
+        const container = document.getElementById('catalog-toggles-panel-container');
+        if (!container) return;
+        
+        // Remove existing custom catalog if present
+        const existingCustom = container.querySelector('[data-catalog="custom-catalog"]');
+        if (existingCustom) {
+            existingCustom.remove();
+        }
+        
+        // Create toggle HTML for custom catalog
+        const toggleHTML = `
+            <div class="setting-item" data-catalog="custom-catalog">
+                <div class="setting-content">
+                    <div class="setting-label">
+                        <i class="material-icons" style="font-size: 16px; margin-right: 6px; color: var(--primary-color, #667eea);">link</i>
+                        ${catalog.name}
+                    </div>
+                    <div class="setting-description">${catalog.description}</div>
+                    <div class="setting-url" style="font-size: 12px; color: var(--text-secondary, #6b7280); margin-top: 4px;">
+                        ${catalog.url}
+                    </div>
+                </div>
+                <div class="setting-control">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="catalog-custom-catalog-toggle-panel" data-catalog="custom-catalog" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        `;
+        
+        // Add to the beginning of the container
+        container.insertAdjacentHTML('afterbegin', toggleHTML);
+        
+        // Add event listener for the toggle
+        const toggle = container.querySelector('#catalog-custom-catalog-toggle-panel');
+        if (toggle) {
+            toggle.addEventListener('change', (e) => {
+                const isEnabled = e.target.checked;
+                catalog.enabled = isEnabled;
+                localStorage.setItem('stacExplorer-customCatalog', JSON.stringify(catalog));
+                localStorage.setItem('catalog-custom-catalog-enabled', isEnabled.toString());
+                console.log('🔧 Custom catalog toggled:', isEnabled);
+            });
+        }
+    }
+    
+    /**
+     * Remove custom catalog
+     */
+    removeCustomCatalog() {
+        // Remove from localStorage
+        localStorage.removeItem('stacExplorer-customCatalog');
+        localStorage.removeItem('catalog-custom-catalog-enabled');
+        
+        // Remove from UI
+        const container = document.getElementById('catalog-toggles-panel-container');
+        if (container) {
+            const existingCustom = container.querySelector('[data-catalog="custom-catalog"]');
+            if (existingCustom) {
+                existingCustom.remove();
+            }
+        }
+        
+        this.showCustomCatalogStatus('', 'hidden');
+        console.log('🔧 Custom catalog removed');
+    }
+    
+    /**
+     * Show status message for custom catalog
+     */
+    showCustomCatalogStatus(message, type = 'info') {
+        let statusEl = document.getElementById('custom-catalog-status');
+        
+        if (!statusEl && type !== 'hidden') {
+            // Create status element
+            const customCatalogSection = document.querySelector('#custom-catalog-url').closest('.setting-item');
+            if (customCatalogSection) {
+                statusEl = document.createElement('div');
+                statusEl.id = 'custom-catalog-status';
+                statusEl.style.cssText = 'margin-top: 8px; padding: 6px 12px; border-radius: 4px; font-size: 13px; display: flex; align-items: center; gap: 6px;';
+                customCatalogSection.appendChild(statusEl);
+            }
+        }
+        
+        if (statusEl) {
+            if (type === 'hidden') {
+                statusEl.style.display = 'none';
+                return;
+            }
+            
+            statusEl.style.display = 'flex';
+            statusEl.textContent = message;
+            
+            // Style based on type
+            switch (type) {
+                case 'loading':
+                    statusEl.style.background = 'var(--accent-50, #f0f9ff)';
+                    statusEl.style.color = 'var(--accent-700, #0369a1)';
+                    statusEl.style.border = '1px solid var(--accent-200, #bae6fd)';
+                    break;
+                case 'success':
+                    statusEl.style.background = 'var(--success-50, #f0fdf4)';
+                    statusEl.style.color = 'var(--success-700, #15803d)';
+                    statusEl.style.border = '1px solid var(--success-200, #bbf7d0)';
+                    break;
+                case 'error':
+                    statusEl.style.background = 'var(--danger-50, #fef2f2)';
+                    statusEl.style.color = 'var(--danger-700, #b91c1c)';
+                    statusEl.style.border = '1px solid var(--danger-200, #fecaca)';
+                    break;
+            }
+        }
     }
 }

@@ -1,0 +1,48 @@
+{
+  "collections": [
+    {
+      "id": "cdse-stac",
+      "name": "Copernicus Data Space",
+      "description": "European Space Agency satellite data",
+      "enabled": true,
+      "endpoint": "https://stac.dataspace.copernicus.eu/v1"
+    },
+    {
+      "id": "earth-search-aws",
+      "name": "AWS Earth Search",
+      "description": "Comprehensive Earth observation datasets",
+      "enabled": true,
+      "endpoint": "https://earth-search.aws.element84.com/v1"
+    },
+    {
+      "id": "microsoft-pc",
+      "name": "Microsoft Planetary Computer",
+      "description": "Enhanced support with presigning API",
+      "enabled": true,
+      "endpoint": "https://planetarycomputer.microsoft.com/api/stac/v1"
+    },
+    {
+      "id": "planetlabs",
+      "name": "Planet Labs",
+      "description": "High-resolution commercial satellite imagery",
+      "enabled": false,
+      "endpoint": "https://www.planet.com/data/stac/catalog.json",
+      "type": "catalog"
+    },
+    {
+      "id": "gee",
+      "name": "Google Earth Engine",
+      "description": "Google's planetary-scale Earth observation platform",
+      "enabled": false,
+      "endpoint": "https://earthengine-stac.storage.googleapis.com/catalog/catalog.json",
+      "type": "catalog"
+    },
+    {
+      "id": "terrascope",
+      "name": "Terrascope",
+      "description": "Belgian Earth observation data and services platform",
+      "enabled": true,
+      "endpoint": "https://stac.terrascope.be/"
+    }
+  ]
+}

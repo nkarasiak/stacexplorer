@@ -34,7 +34,10 @@ export class SettingsPageManager {
      */
     async loadCollections() {
         try {
-            const response = await fetch('/collections.json');
+            // Use base path for GitHub Pages compatibility
+            const basePath = window.location.hostname.endsWith('.github.io') && 
+                            window.location.pathname.startsWith('/stacexplorer/') ? '/stacexplorer' : '';
+            const response = await fetch(basePath + '/collections.json');
             if (!response.ok) {
                 throw new Error(`Failed to load collections: ${response.status}`);
             }

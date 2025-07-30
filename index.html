@@ -1812,9 +1812,9 @@
             <div class="sidebar-header">
                 <h1 id="app-logo" style="cursor: pointer;" title="Return to Homepage"><i class="material-icons">satellite_alt</i> <span>STAC Explorer</span></h1>
                 <div>
-                    <a href="/settings" id="settings-toggle" class="settings-toggle" title="Settings">
+                    <button id="settings-toggle" class="settings-toggle" title="Settings">
                         <i class="material-icons">settings</i>
-                    </a>
+                    </button>
                     <button id="theme-toggle" class="theme-toggle">
                         <i class="material-icons">light_mode</i>
                     </button>
@@ -2576,9 +2576,23 @@
                 
             }
             
+            // Settings button handler - navigate to /settings with correct base path
+            const settingsToggle = document.getElementById('settings-toggle');
+            if (settingsToggle) {
+                settingsToggle.addEventListener('click', () => {
+                    // Navigate to settings (/settings) - with correct base path
+                    const basePath = window.location.hostname.endsWith('.github.io') && 
+                                   window.location.pathname.startsWith('/stacexplorer/') ? '/stacexplorer' : '';
+                    window.location.href = basePath + '/settings';
+                });
+            }
+            
             // Dynamically set meta tag URLs based on current location
             const currentUrl = window.location.origin + window.location.pathname;
-            const imageUrl = window.location.origin + window.location.pathname.replace(/\/$/, '') + '/static/images/earthdaily_satellite.webp';
+            // Use base path for static images
+            const basePath = window.location.hostname.endsWith('.github.io') && 
+                           window.location.pathname.startsWith('/stacexplorer/') ? '/stacexplorer' : '';
+            const imageUrl = window.location.origin + basePath + '/static/images/earthdaily_satellite.webp';
             
             // Update canonical URL
             const canonicalLink = document.getElementById('canonical-url');

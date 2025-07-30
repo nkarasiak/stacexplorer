@@ -634,8 +634,10 @@
             const appLogo = document.getElementById('app-logo');
             if (appLogo) {
                 appLogo.addEventListener('click', () => {
-                    // Navigate to homepage (/viewer)
-                    window.location.href = '/viewer';
+                    // Navigate to homepage (/viewer) - with correct base path
+                    const basePath = window.location.hostname.endsWith('.github.io') && 
+                                   window.location.pathname.startsWith('/stacexplorer/') ? '/stacexplorer' : '';
+                    window.location.href = basePath + '/viewer';
                 });
                 
                 console.log('🏠 Logo click handler initialized');

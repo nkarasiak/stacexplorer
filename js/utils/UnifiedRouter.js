@@ -939,22 +939,24 @@ export class UnifiedRouter {
     updateBrowserPath(state) {
         console.log('🔧 updateBrowserPath() called with state:', state);
         
-        let newPath = '/browser';
+        let pathParts = ['/browser'];
         
         if (state.catalogId) {
             console.log('🔧 Using catalog ID for URL:', state.catalogId);
-            newPath = `/browser/${encodeURIComponent(state.catalogId)}`;
+            pathParts.push(encodeURIComponent(state.catalogId));
             
             if (state.collectionId) {
                 console.log('🔧 Adding collection ID to URL:', state.collectionId);
-                newPath += `/${encodeURIComponent(state.collectionId)}`;
+                pathParts.push(encodeURIComponent(state.collectionId));
                 
                 if (state.itemId) {
                     console.log('🔧 Adding item ID to URL:', state.itemId);
-                    newPath += `/${encodeURIComponent(state.itemId)}`;
+                    pathParts.push(encodeURIComponent(state.itemId));
                 }
             }
         }
+        
+        const newPath = this.createPath(pathParts.join('/'));
         
         if (newPath !== window.location.pathname) {
             console.log('📍 Updating browser path from', window.location.pathname, 'to:', newPath);
@@ -1083,7 +1085,7 @@ export class UnifiedRouter {
         console.log('📍 Redirecting to browser mode');
         this.currentMode = 'browser';
         
-        window.history.replaceState({}, '', '/browser');
+        window.history.replaceState({}, '', this.createPath('/browser'));
         
         // Ensure view mode toggle is correct
         if (this.stateManager.viewModeToggle) {
@@ -1095,7 +1097,7 @@ export class UnifiedRouter {
         console.log('📍 Redirecting legacy catalog route:', path);
         
         // Convert old /catalog/... URLs to new simplified /browser/... format
-        const newPath = path.replace(/^\/catalog/, '/browser');
+        const newPath = this.createPath(path.replace(/^\/catalog/, '/browser'));
         window.history.replaceState({}, '', newPath);
         this.processCurrentPath();
     }
@@ -1104,7 +1106,7 @@ export class UnifiedRouter {
         console.log('📍 Redirecting legacy verbose browser route:', matches);
         
         // Convert /browser/catalog/{id}/collection/{id}/item/{id} to /browser/{id}/{id}/{id}
-        let newPath = '/browser';
+        let newPath = this.createPath('/browser');
         
         const catalogId = matches[0];
         const collectionId = matches[1];
@@ -1409,7 +1411,7 @@ export class UnifiedRouter {
         } catch (error) {
             console.error('📍 Error loading settings page:', error);
             // Fallback to main app
-            window.location.href = '/';
+            window.location.href = this.createPath('/');
         }
     }
 

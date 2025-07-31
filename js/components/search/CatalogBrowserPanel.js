@@ -1144,7 +1144,7 @@ export class CatalogBrowserPanel {
                 data: collection
             });
             
-            this.displayItems(itemsArray);
+            this.displayCollectionWithItems(collection, itemsArray);
             this.updateBreadcrumb();
             this.notifyStateChange();
             
@@ -1218,6 +1218,154 @@ export class CatalogBrowserPanel {
         } else {
             this.renderItems(items);
         }
+    }
+    
+    /**
+     * Display collection header information followed by first 10 items
+     */
+    displayCollectionWithItems(collection, items) {
+        // Hide collections card, show items card
+        document.getElementById('collections-card').style.display = 'none';
+        document.getElementById('items-card').style.display = 'block';
+        
+        const countDisplay = document.getElementById('items-count-display');
+        
+        // Enhanced item count display with performance info
+        const loadTime = performance.now() - (this.loadStartTime || performance.now());
+        if (countDisplay) {
+            countDisplay.innerHTML = `${items.length} items loaded in ${Math.round(loadTime)}ms`;
+        }
+        
+        this.currentItems = items;
+        
+        // Create collection header and items display
+        const catalogTree = document.getElementById('catalog-tree-view');
+        
+        // Get collection metadata
+        const title = collection.title || collection.id;
+        const fullDescription = collection.description || 'No description available';
+        // Limit description to 200 characters
+        const description = fullDescription.length > 200 ? 
+            fullDescription.substring(0, 200) + '...' : fullDescription;
+        const thumbnailUrl = this.getCollectionThumbnailUrl(collection);
+        
+        // Get temporal extent
+        let temporalInfo = '';
+        if (collection.extent?.temporal?.interval?.[0]?.[0]) {
+            const startDate = collection.extent.temporal.interval[0][0];
+            const endDate = collection.extent.temporal.interval[0][1];
+            const startYear = new Date(startDate).getFullYear();
+            const endYear = endDate ? new Date(endDate).getFullYear() : 'present';
+            temporalInfo = `${startYear} - ${endYear}`;
+        }
+        
+        // Get spatial extent info
+        let spatialInfo = 'Global';
+        if (collection.extent?.spatial?.bbox?.[0]) {
+            const bbox = collection.extent.spatial.bbox[0];
+            spatialInfo = `${bbox[1].toFixed(1)}°N, ${bbox[0].toFixed(1)}°W to ${bbox[3].toFixed(1)}°N, ${bbox[2].toFixed(1)}°E`;
+        }
+        
+        // Get additional metadata
+        const license = collection.license || 'Not specified';
+        
+        catalogTree.innerHTML = `
+            <div class="collection-detail-header">
+                <div class="collection-hero">
+                    <div class="collection-hero-image">
+                        <img 
+                            src="${thumbnailUrl}" 
+                            alt="${title}"
+                            onerror="this.src='${this.getDefaultCollectionThumbnail()}'"
+                        >
+                    </div>
+                    <div class="collection-hero-content">
+                        <h1 class="collection-title">${title}</h1>
+                        <p class="collection-description">${description}</p>
+                        
+                        <div class="collection-metadata">
+                            <div class="metadata-grid">
+                                <div class="metadata-item">
+                                    <i class="material-icons">schedule</i>
+                                    <div>
+                                        <strong>Temporal Coverage</strong>
+                                        <span>${temporalInfo || 'Not specified'}</span>
+                                    </div>
+                                </div>
+                                <div class="metadata-item">
+                                    <i class="material-icons">public</i>
+                                    <div>
+                                        <strong>Spatial Coverage</strong>
+                                        <span>${spatialInfo}</span>
+                                    </div>
+                                </div>
+                                <div class="metadata-item">
+                                    <i class="material-icons">fingerprint</i>
+                                    <div>
+                                        <strong>Collection ID</strong>
+                                        <span>${collection.id}</span>
+                                    </div>
+                                </div>
+                                <div class="metadata-item">
+                                    <i class="material-icons">gavel</i>
+                                    <div>
+                                        <strong>License</strong>
+                                        <span>${license}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="collection-items-section">
+                <div class="section-header">
+                    <h2>
+                        <i class="material-icons">image</i>
+                        Recent Items
+                        <span class="item-count">(${Math.min(items.length, 10)} of ${items.length})</span>
+                    </h2>
+                </div>
+                <ul class="results-list" id="items-list">
+                    <!-- Items will be rendered here -->
+                </ul>
+            </div>
+        `;
+        
+        if (!items || items.length === 0) {
+            const itemsList = document.getElementById('items-list');
+            itemsList.innerHTML = `
+                <div class="empty-state">
+                    <i class="material-icons">search_off</i>
+                    <p>No items found in this collection</p>
+                    <small>This collection may be empty, or there might be an issue with the API request.</small>
+                </div>
+            `;
+            return;
+        }
+        
+        // Display first 10 items
+        const itemsToShow = items.slice(0, 10);
+        this.renderItemsList(itemsToShow);
+    }
+    
+    /**
+     * Render items in the items list (used by displayCollectionWithItems)
+     */
+    renderItemsList(items) {
+        const itemsList = document.getElementById('items-list');
+        if (!itemsList) return;
+        
+        itemsList.innerHTML = '';
+        
+        items.forEach(item => {
+            const itemElement = this.createItemElement(item);
+            itemsList.appendChild(itemElement);
+        });
+        
+        // Setup lazy loading for images
+        this.setupLazyLoading(itemsList);
     }
     
     renderItemsProgressively(items) {

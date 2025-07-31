@@ -1842,6 +1842,9 @@
             <div class="sidebar-header">
                 <h1 id="app-logo" style="cursor: pointer;" title="Return to Homepage"><i class="material-icons">satellite_alt</i> <span>STAC Explorer</span></h1>
                 <div>
+                    <button id="browser-toggle" class="mode-toggle" title="Browse Catalogs">
+                        <i class="material-icons">web</i>
+                    </button>
                     <button id="settings-toggle" class="settings-toggle" title="Settings">
                         <i class="material-icons">settings</i>
                     </button>
@@ -2604,6 +2607,65 @@
                     window.location.href = basePath + '/viewer';
                 });
                 
+            }
+            
+            // Browser/Viewer mode toggle button handler
+            const browserToggle = document.getElementById('browser-toggle');
+            if (browserToggle) {
+                // Detect current mode and extract path components
+                const currentPath = window.location.pathname;
+                const basePath = window.location.hostname.endsWith('.github.io') && 
+                               window.location.pathname.startsWith('/stacexplorer/') ? '/stacexplorer' : '';
+                const isBrowserMode = currentPath.includes('/browser');
+                
+                // Update button appearance based on current mode
+                const icon = browserToggle.querySelector('i');
+                if (isBrowserMode) {
+                    // In browser mode, show viewer toggle
+                    icon.textContent = 'map';
+                    browserToggle.title = 'Switch to Map Viewer';
+                } else {
+                    // In viewer mode, show browser toggle
+                    icon.textContent = 'web';
+                    browserToggle.title = 'Browse Catalogs';
+                }
+                
+                browserToggle.addEventListener('click', () => {
+                    // Preserve query parameters and hash
+                    const queryString = window.location.search;
+                    const hash = window.location.hash;
+                    
+                    // Extract the path segments after the mode (browser/viewer)
+                    let pathSegments = '';
+                    
+                    if (isBrowserMode) {
+                        // Extract everything after /browser
+                        const browserIndex = currentPath.indexOf('/browser');
+                        if (browserIndex !== -1) {
+                            const afterBrowser = currentPath.substring(browserIndex + '/browser'.length);
+                            pathSegments = afterBrowser;
+                        }
+                        // Navigate to viewer mode preserving the path, query, and hash
+                        const newPath = pathSegments ? basePath + '/viewer' + pathSegments : basePath + '/';
+                        window.location.href = newPath + queryString + hash;
+                    } else {
+                        // Extract everything after /viewer, or from root if no /viewer
+                        const viewerIndex = currentPath.indexOf('/viewer');
+                        if (viewerIndex !== -1) {
+                            const afterViewer = currentPath.substring(viewerIndex + '/viewer'.length);
+                            pathSegments = afterViewer;
+                        } else {
+                            // Handle root path or other viewer paths - preserve any catalog/collection/item paths
+                            const withoutBase = currentPath.replace(basePath, '');
+                            if (withoutBase !== '/' && withoutBase !== '') {
+                                // Remove leading slash if present
+                                pathSegments = withoutBase.startsWith('/') ? withoutBase : '/' + withoutBase;
+                            }
+                        }
+                        // Navigate to browser mode preserving the path, query, and hash
+                        window.location.href = basePath + '/browser' + pathSegments + queryString + hash;
+                    }
+                });
             }
             
             // Settings button handler - navigate to /settings with correct base path

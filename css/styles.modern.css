@@ -539,6 +539,34 @@ body, html {
 }
 
 /* Modern Theme Toggle */
+#browser-toggle {
+    position: absolute;
+    top: 16px;
+    right: 148px; /* 32px (theme button width) + 10px gap + 32px (settings button width) + 10px gap + 32px (browser button width) + 32px (right edge) */
+    background: var(--primary-gradient);
+    border: none;
+    color: white;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    z-index: 1002;
+}
+
+#browser-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+#browser-toggle i {
+    font-size: 18px;
+}
+
 #settings-toggle {
     position: absolute;
     top: 16px;
@@ -3362,6 +3390,10 @@ html.dark-theme .modal-body .info-group div {
         border-radius: 0;
     }
     
+    #browser-toggle {
+        right: 154px; /* Adjusted for mobile spacing with browser button */
+    }
+    
     #settings-toggle {
         right: 112px; /* Adjusted for mobile spacing */
     }
@@ -3372,7 +3404,7 @@ html.dark-theme .modal-body .info-group div {
     
     
     .sidebar-header {
-        padding-right: 120px;
+        padding-right: 162px; /* Increased to accommodate browser button */
     }
 }
 

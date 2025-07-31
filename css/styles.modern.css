@@ -5355,6 +5355,90 @@ html.dark-theme .settings-header h2 {
     color: var(--text-dark, #f9fafb);
 }
 
+/* Date Preset Buttons */
+.ai-date-presets {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.ai-preset-btn {
+    padding: 0.5rem 1rem;
+    background: var(--surface-secondary, #f8fafc);
+    border: 1px solid var(--border-primary, #e2e8f0);
+    border-radius: 20px;
+    color: var(--text-primary, #1e293b);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.ai-preset-btn:hover {
+    background: var(--primary-color, #667eea);
+    border-color: var(--primary-color, #667eea);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.ai-preset-btn:active {
+    transform: translateY(0);
+}
+
+/* Special styling for "Anytime" preset */
+.ai-preset-btn[data-preset="anytime"] {
+    background: var(--success-bg, #dcfce7);
+    border-color: var(--success-border, #bbf7d0);
+    color: var(--success-text, #166534);
+}
+
+.ai-preset-btn[data-preset="anytime"]:hover {
+    background: var(--success-color, #10b981);
+    border-color: var(--success-color, #10b981);
+    color: white;
+}
+
+/* Dark theme for preset buttons */
+html.dark-theme .ai-preset-btn {
+    background: var(--surface-secondary-dark, #2d3748);
+    border-color: var(--border-primary-dark, #4a5568);
+    color: var(--text-primary-dark, #f7fafc);
+}
+
+html.dark-theme .ai-preset-btn[data-preset="anytime"] {
+    background: var(--success-bg-dark, #065f46);
+    border-color: var(--success-border-dark, #059669);
+    color: var(--success-text-dark, #d1fae5);
+}
+
+/* Special styling for Anytime preset button */
+.date-preset-btn-modern.anytime-preset {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-color: #22c55e;
+    color: #166534;
+}
+
+.date-preset-btn-modern.anytime-preset:hover {
+    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+/* Dark theme for anytime preset */
+html.dark-theme .date-preset-btn-modern.anytime-preset {
+    background: linear-gradient(135deg, #065f46 0%, #047857 100%);
+    border-color: #10b981;
+    color: #d1fae5;
+}
+
+html.dark-theme .date-preset-btn-modern.anytime-preset:hover {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
 html.dark-theme .settings-content .settings-section h3 {
     color: var(--text-dark, #f9fafb);
     border-bottom-color: var(--border-dark-light, #374151);

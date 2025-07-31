@@ -153,36 +153,25 @@ export class SettingsPageManager {
                 </div>
                 
                 <!-- Theme Section -->
-                <div class="settings-section">
+                <div class="settings-section compact">
                     <div class="settings-section-title">
                         <i class="material-icons">palette</i>
                         Theme
-                    </div>
-                    <div class="setting-item">
-                        <label class="setting-label" for="theme-selector">Appearance</label>
-                        <div class="setting-description">
-                            Choose how STAC Explorer looks to you.
-                        </div>
-                        <div class="setting-control">
-                            <select id="theme-selector" class="settings-input" style="flex: none; width: 150px;">
-                                <option value="auto">System</option>
-                                <option value="light">Light</option>
-                                <option value="dark">Dark</option>
-                            </select>
-                        </div>
+                        <select id="theme-selector" class="settings-input compact-select">
+                            <option value="auto">System</option>
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                        </select>
                     </div>
                 </div>
                 
                 <!-- Data Providers Section -->
-                <div class="settings-section">
+                <div class="settings-section compact-providers">
                     <div class="settings-section-title">
                         <i class="material-icons">storage</i>
                         Data Providers
                     </div>
-                    <div class="setting-description">
-                        Enable or disable data providers. Changes will take effect immediately.
-                    </div>
-                    <div class="provider-list" id="provider-list">
+                    <div class="provider-list compact" id="provider-list">
                         ${this.renderProviders()}
                     </div>
                 </div>
@@ -656,6 +645,82 @@ export class SettingsPageManager {
             
             input:checked + .toggle-slider:before {
                 transform: translateX(24px);
+            }
+            
+            /* Compact settings section for theme */
+            .settings-section.compact {
+                padding: 1rem 1.5rem;
+                margin-bottom: 1rem;
+            }
+            
+            .settings-section.compact .settings-section-title {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                margin-bottom: 0;
+            }
+            
+            .compact-select {
+                width: 120px;
+                padding: 0.5rem;
+                margin-left: auto;
+                flex: none;
+            }
+            
+            /* Compact providers section */
+            .settings-section.compact-providers {
+                padding: 0.75rem 1.5rem;
+            }
+            
+            .provider-list.compact {
+                display: grid;
+                grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+                gap: 0.5rem;
+            }
+            
+            .provider-list.compact .provider-item {
+                padding: 0.5rem 0.75rem;
+                border-radius: 0.375rem;
+                min-width: 0;
+            }
+            
+            .provider-list.compact .provider-info {
+                gap: 0.5rem;
+                min-width: 0;
+            }
+            
+            .provider-list.compact .provider-icon {
+                width: 1.25rem;
+                height: 1.25rem;
+                flex-shrink: 0;
+            }
+            
+            .provider-list.compact .provider-name {
+                font-size: 0.875rem;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            
+            .provider-list.compact .toggle-switch {
+                width: 36px;
+                height: 18px;
+                flex-shrink: 0;
+            }
+            
+            .provider-list.compact .toggle-slider {
+                border-radius: 18px;
+            }
+            
+            .provider-list.compact .toggle-slider:before {
+                height: 14px;
+                width: 14px;
+                left: 2px;
+                bottom: 2px;
+            }
+            
+            .provider-list.compact input:checked + .toggle-slider:before {
+                transform: translateX(18px);
             }
         `;
         

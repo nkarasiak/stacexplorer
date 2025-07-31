@@ -149,7 +149,7 @@ class SimpleDeckGLIntegration {
      * @param {string} assetKey - Asset key to visualize
      * @param {Object} options - Visualization options
      */
-    async addStacItemLayer(item, assetKey = 'rendered_preview', options = {}) {
+    async addStacItemLayer(item, assetKey = null, options = {}) {
         if (!this.isInitialized) {
             await this.initialize();
         }
@@ -159,9 +159,28 @@ class SimpleDeckGLIntegration {
             // Remove existing layer
             this.removeStacLayer();
 
-            const asset = item.assets?.[assetKey];
+            // Find the best available preview asset if no specific asset key is provided
+            let asset = null;
+            let actualAssetKey = assetKey;
+            
+            if (assetKey && item.assets?.[assetKey]) {
+                asset = item.assets[assetKey];
+            } else {
+                // Try to find a suitable preview asset in order of preference
+                const previewAssetKeys = ['rendered_preview', 'thumbnail', 'preview', 'overview'];
+                
+                for (const key of previewAssetKeys) {
+                    if (item.assets?.[key]) {
+                        asset = item.assets[key];
+                        actualAssetKey = key;
+                        console.log(`Using asset '${key}' for visualization (${assetKey || 'auto-detected'})`);
+                        break;
+                    }
+                }
+            }
+
             if (!asset) {
-                console.warn(`Asset '${assetKey}' not found in item ${item.id}`);
+                console.warn(`No suitable preview asset found in item ${item.id}. Available assets:`, Object.keys(item.assets || {}));
                 return false;
             }
 

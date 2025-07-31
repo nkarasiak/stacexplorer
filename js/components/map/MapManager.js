@@ -88,7 +88,7 @@ export class MapManager {
             try {
                 const success = await this.deckGLIntegration.addStacItemLayer(
                     item, 
-                    preferredAssetKey || 'rendered_preview',
+                    preferredAssetKey,
                     deckOptions
                 );
                 

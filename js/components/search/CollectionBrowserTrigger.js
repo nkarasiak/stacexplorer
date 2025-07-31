@@ -23,27 +23,44 @@ export class CollectionBrowserTrigger {
      * Create the trigger button that makes the existing SOURCE card clickable
      */
     createTriggerButton() {
+        // Use a more robust approach with multiple retries and better logging
+        this.attemptToFindAndSetupTrigger(0);
+    }
+    
+    /**
+     * Attempt to find and setup the trigger with retry logic
+     * @param {number} attemptCount - Current attempt number
+     */
+    attemptToFindAndSetupTrigger(attemptCount = 0) {
+        const maxAttempts = 5;
+        const retryDelay = [500, 1000, 2000, 3000, 5000]; // Progressive delays
         
-        // Try different approaches to find the element
-        let summarySource = document.getElementById('summary-source');
+        const summarySource = document.getElementById('summary-source');
         
-        if (!summarySource) {
-            // Wait a bit and try again
-            console.warn('❌ summary-source element not found immediately, waiting...');
-            setTimeout(() => {
-                summarySource = document.getElementById('summary-source');
-                if (summarySource) {
-                    this.setupTrigger(summarySource);
-                } else {
-                    console.error('❌ summary-source element not found after waiting');
-                    // List all elements with summary in ID for debugging
-                    const summaryElements = document.querySelectorAll('[id*="summary"]');
-                }
-            }, 1000);
+        if (summarySource) {
+            this.setupTrigger(summarySource);
             return;
         }
         
-        this.setupTrigger(summarySource);
+        if (attemptCount < maxAttempts) {
+            console.warn(`⚠️ summary-source element not found (attempt ${attemptCount + 1}/${maxAttempts}), retrying in ${retryDelay[attemptCount]}ms...`);
+            
+            // Debug: List all elements with summary in ID
+            const summaryElements = document.querySelectorAll('[id*="summary"]');
+            console.log('Available summary elements:', Array.from(summaryElements).map(el => el.id));
+            
+            setTimeout(() => {
+                this.attemptToFindAndSetupTrigger(attemptCount + 1);
+            }, retryDelay[attemptCount]);
+        } else {
+            console.error('❌ summary-source element not found after all retries');
+            console.log('Available elements with "summary" in ID:', 
+                Array.from(document.querySelectorAll('[id*="summary"]')).map(el => el.id)
+            );
+            console.log('Available elements with "source" in class:', 
+                Array.from(document.querySelectorAll('[class*="source"]')).map(el => ({ id: el.id, class: el.className }))
+            );
+        }
     }
     
     /**
@@ -155,10 +172,13 @@ export class CollectionBrowserTrigger {
         if (!this.triggerButton) return;
         
         // Main click handler to open panel
-        this.triggerButton.addEventListener('click', (e) => {
+        const clickHandler = (e) => {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation(); // Prevent any other handlers from running
+            
+            // Force reset button state before processing click
+            this.resetTriggerState();
             
             // Ensure button is not disabled
             if (this.triggerButton.classList.contains('loading')) {
@@ -170,6 +190,19 @@ export class CollectionBrowserTrigger {
             this.preventInlineDropdown();
             
             this.openPanel();
+        };
+        
+        this.triggerButton.addEventListener('click', clickHandler);
+        
+        // Also add event listeners for other interaction methods
+        this.triggerButton.addEventListener('mousedown', (e) => {
+            // Ensure button is ready for interaction
+            this.resetTriggerState();
+        });
+        
+        this.triggerButton.addEventListener('focus', (e) => {
+            // Ensure button is ready when focused
+            this.resetTriggerState();
         });
         
         // Keyboard support
@@ -185,11 +218,25 @@ export class CollectionBrowserTrigger {
             if (e.detail && e.detail.collection) {
                 this.updateSelection(e.detail.collection);
                 
-                // Ensure button is re-enabled after selection
+                // Ensure button is re-enabled after selection with multiple checks
                 setTimeout(() => {
                     this.setLoadingState(false);
                     this.ensureButtonClickable();
+                    
+                    // Force reset any modal states that might be interfering
+                    if (this.modal) {
+                        this.modal.isOpen = false;
+                    }
+                    
+                    // Double-check that the button is clickable
+                    this.resetTriggerState();
                 }, 100);
+                
+                // Additional check after a longer delay
+                setTimeout(() => {
+                    this.ensureButtonClickable();
+                    this.resetTriggerState();
+                }, 500);
             }
         });
         
@@ -204,10 +251,26 @@ export class CollectionBrowserTrigger {
         document.addEventListener('collectionCleared', () => {
             this.clearSelection();
         });
+        
+        // Listen for any modal or panel close events to reset trigger state
+        document.addEventListener('browseCollectionsPanelClosed', () => {
+            setTimeout(() => {
+                this.ensureButtonClickable();
+                this.resetTriggerState();
+            }, 100);
+        });
+        
+        // Also listen for generic modal close events
+        document.addEventListener('modalClosed', () => {
+            setTimeout(() => {
+                this.ensureButtonClickable();
+                this.resetTriggerState();
+            }, 100);
+        });
     }
     
     /**
-     * Open the collection browser panel
+     * Open the collection browser modal
      */
     async openPanel() {
         
@@ -215,27 +278,11 @@ export class CollectionBrowserTrigger {
         this.setLoadingState(true);
         
         try {
-            // Get UIManager instance from global scope
-            const uiManager = window.stacExplorer?.uiManager;
-            if (!uiManager) {
-                console.warn('⚠️ UIManager not available, falling back to modal');
-                // Fallback to opening the modal directly
-                if (this.modal) {
-                    await this.modal.open();
-                    return;
-                } else {
-                    console.error('❌ Neither UIManager nor modal available');
-                    return;
-                }
-            }
-            
-            // Show the panel using UIManager
-            uiManager.showBrowseCollectionsPanel();
-            
-            // Initialize the collection browser content in the panel if modal exists
+            // Always use modal to avoid panel/modal conflicts
             if (this.modal) {
-                // Move the collection grid content to the panel
-                await this.initializeCollectionBrowserInPanel();
+                await this.modal.open();
+            } else {
+                console.error('❌ Modal not available');
             }
             
         } catch (error) {
@@ -255,32 +302,33 @@ export class CollectionBrowserTrigger {
         try {
             const panelContent = document.getElementById('browse-collections-content');
             if (!panelContent) {
-                console.error('❌ Panel content container not found');
+                // Fall back to modal when panel structure is not available
+                if (this.modal) {
+                    await this.modal.open();
+                }
                 return;
             }
             
-            // Initialize grid selector if not already done
-            if (!this.modal.gridSelector) {
-                await this.modal.initializeGridSelector();
-            }
+            // For panel mode, just show a simple message or basic interface
+            // Avoid using modal methods which cause conflicts
+            panelContent.innerHTML = `
+                <div class="panel-collection-browser">
+                    <div class="panel-message">
+                        <h3>Browse Collections</h3>
+                        <p>Collection browser is loading...</p>
+                        <button onclick="location.reload()" class="retry-btn">Refresh Page</button>
+                    </div>
+                </div>
+            `;
             
-            // Move the grid selector into the panel
-            const gridElement = document.getElementById('collection-grid-container');
-            if (gridElement) {
-                panelContent.appendChild(gridElement);
-            }
+            // Since the modal/panel integration is causing conflicts,
+            // let's just ensure the trigger button remains clickable
+            // and rely on the modal fallback for now
+            setTimeout(() => {
+                this.resetTriggerState();
+                this.ensureButtonClickable();
+            }, 500);
             
-            // Load collections
-            const collections = this.modal.collectionManager.getAllCollections();
-            if (collections && collections.length > 0) {
-                await this.modal.gridSelector.loadCollections(collections);
-                
-                // Sync current selection
-                const selectedId = this.modal.collectionManager.getSelectedCollection();
-                if (selectedId) {
-                    this.modal.gridSelector.setSelectedCollection(selectedId);
-                }
-            }
         } catch (error) {
             console.error('❌ Error initializing collection browser in panel:', error);
         }
@@ -386,6 +434,33 @@ export class CollectionBrowserTrigger {
             // Ensure cursor is set to pointer
             this.triggerButton.style.cursor = 'pointer';
             
+        }
+    }
+    
+    /**
+     * Reset trigger state completely - more aggressive than ensureButtonClickable
+     */
+    resetTriggerState() {
+        if (this.triggerButton) {
+            // Remove all possible interfering classes and attributes
+            this.triggerButton.classList.remove('loading', 'disabled', 'processing');
+            this.triggerButton.removeAttribute('disabled');
+            this.triggerButton.removeAttribute('aria-disabled');
+            
+            // Reset all styles that might interfere
+            this.triggerButton.style.pointerEvents = 'auto';
+            this.triggerButton.style.cursor = 'pointer';
+            this.triggerButton.style.opacity = '1';
+            this.triggerButton.style.filter = '';
+            this.triggerButton.style.userSelect = '';
+            
+            // Ensure it's properly accessible
+            this.triggerButton.tabIndex = 0;
+            
+            // Clear any timeouts or intervals that might be affecting it
+            if (this.resetTimeout) {
+                clearTimeout(this.resetTimeout);
+            }
         }
     }
     

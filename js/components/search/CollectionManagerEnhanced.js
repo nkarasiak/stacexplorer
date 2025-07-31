@@ -64,6 +64,11 @@ export class CollectionManagerEnhanced {
         document.addEventListener('refreshCollections', async () => {
             await this.loadAllCollectionsOnStartup();
         });
+        
+        // Listen for settings changed event (from settings panel/page)
+        document.addEventListener('settingsChanged', async (event) => {
+            await this.loadAllCollectionsOnStartup();
+        });
     }
     
     /**
@@ -113,29 +118,43 @@ export class CollectionManagerEnhanced {
         const collections = await loadAllCollections(); // Use loadAllCollections to include custom catalogs
         const enabledCatalogs = [];
         
+        // Check if we have settings in the new format (stacExplorerSettings)
+        let enabledProvidersFromSettings = null;
+        try {
+            const savedSettings = localStorage.getItem('stacExplorerSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                if (settings.enabledProviders && Array.isArray(settings.enabledProviders)) {
+                    enabledProvidersFromSettings = settings.enabledProviders;
+                }
+            }
+        } catch (error) {
+            console.warn('Error parsing settings:', error);
+        }
+        
         collections.forEach(collection => {
             const catalogKey = collection.id;
-            const savedState = localStorage.getItem(`catalog-${catalogKey}-enabled`);
-            const defaultState = collection.enabled !== false;
             
-            // If collection is explicitly disabled in config, respect that regardless of localStorage
-            if (collection.enabled === false) {
-                return;
+            let isEnabled;
+            
+            // Check settings in priority order:
+            // 1. New format (stacExplorerSettings.enabledProviders)
+            // 2. Old format (individual catalog-${catalogKey}-enabled keys)
+            // 3. Default state from collection config
+            if (enabledProvidersFromSettings !== null) {
+                // Use new settings format - this overrides any config defaults
+                isEnabled = enabledProvidersFromSettings.includes(catalogKey);
+            } else {
+                // Fall back to old format
+                const savedState = localStorage.getItem(`catalog-${catalogKey}-enabled`);
+                const defaultState = collection.enabled !== false;
+                isEnabled = savedState !== null ? savedState === 'true' : defaultState;
             }
-            
-            const isEnabled = savedState !== null ? savedState === 'true' : defaultState;
             
             if (isEnabled) {
                 enabledCatalogs.push(catalogKey);
             }
         });
-        
-        // Custom catalogs are already included in loadAllCollections()
-        
-        
-        // If no catalogs are enabled, return empty array (don't load anything)
-        if (enabledCatalogs.length === 0) {
-        }
         
         return enabledCatalogs;
     }

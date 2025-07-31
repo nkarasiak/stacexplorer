@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.1] - 2025-07-31
+
+### 🐛 Fixed
+- **Catalog Settings Override**: Fixed issue where catalogs with `"enabled": false` in collections.json could not be enabled via user settings
+- **Static Catalog Settings**: Resolved problem where static (.json) catalogs ignored enabled/disabled settings from UI
+- **Browse Collections Filters**: Fixed disabled catalogs appearing in Browse Collections source filter dropdown
+- **Settings Priority Logic**: User settings now properly override configuration defaults for all catalog types
+- **Real-time Filter Updates**: Source filters now refresh immediately when catalog settings are changed
+
+### 🔧 Improved
+- **Settings Logic**: Enhanced `getEnabledCatalogs()` method to respect user preferences over config defaults
+- **Filter Management**: Created `getEnabledCollectionsFromSettings()` utility for consistent settings handling
+- **Event Handling**: Added `settingsChanged` event listeners for automatic UI updates
+- **Code Quality**: Removed debug logging for cleaner production code
+
 ## [2.12.0] - 2025-07-30
 
 ### ✨ Features

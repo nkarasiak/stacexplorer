@@ -40,9 +40,17 @@ export class DateDropdownHandler {
                 </div>
                 
                 <div class="ai-dropdown-content">
+                    <!-- Date Presets -->
+                    <div class="ai-date-presets">
+                        <button type="button" class="ai-preset-btn" data-preset="anytime">Anytime</button>
+                        <button type="button" class="ai-preset-btn" data-preset="last7days">Last 7 days</button>
+                        <button type="button" class="ai-preset-btn" data-preset="last30days">Last 30 days</button>
+                        <button type="button" class="ai-preset-btn" data-preset="lastyear">Last year</button>
+                    </div>
+                    
                     <!-- Mini Text Calendar -->
                     <div class="ai-calendar-section">
-                        <h4 class="ai-section-title">Date Range</h4>
+                        <h4 class="ai-section-title">Custom Date Range</h4>
                         <div class="ai-mini-calendar">
                             <div class="ai-date-input-row">
                                 <label for="ai-start-date" class="ai-date-label">Start Date:</label>
@@ -82,6 +90,7 @@ export class DateDropdownHandler {
         const endDateInput = dropdown.querySelector('#ai-end-date');
         const applyBtn = dropdown.querySelector('.ai-apply-btn');
         const cancelBtn = dropdown.querySelector('.ai-cancel-btn');
+        const presetButtons = dropdown.querySelectorAll('.ai-preset-btn');
         
         if (!startDateInput || !endDateInput) return;
         
@@ -111,6 +120,14 @@ export class DateDropdownHandler {
         startDateInput.addEventListener('change', updateSelection);
         endDateInput.addEventListener('change', updateSelection);
         
+        // Preset button handlers
+        presetButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const preset = btn.dataset.preset;
+                this.applyPreset(preset, startDateInput, endDateInput);
+            });
+        });
+        
         // Apply button handler
         if (applyBtn) {
             applyBtn.addEventListener('click', () => {
@@ -124,6 +141,93 @@ export class DateDropdownHandler {
                 this.cancelDateSelection();
             });
         }
+    }
+    
+    /**
+     * Apply a date preset
+     * @param {string} preset - Preset type
+     * @param {HTMLInputElement} startDateInput - Start date input element
+     * @param {HTMLInputElement} endDateInput - End date input element
+     */
+    applyPreset(preset, startDateInput, endDateInput) {
+        const today = new Date();
+        
+        switch (preset) {
+            case 'anytime':
+                this.currentSelection = {
+                    type: 'anytime',
+                    start: null,
+                    end: null
+                };
+                startDateInput.value = '';
+                endDateInput.value = '';
+                // Apply immediately for anytime
+                this.applyAnytimeSelection();
+                return;
+                
+            case 'last7days':
+                const sevenDaysAgo = new Date(today);
+                sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+                this.currentSelection = {
+                    type: 'preset',
+                    start: sevenDaysAgo,
+                    end: today
+                };
+                startDateInput.value = this.formatDateForInput(sevenDaysAgo);
+                endDateInput.value = this.formatDateForInput(today);
+                break;
+                
+            case 'last30days':
+                const thirtyDaysAgo = new Date(today);
+                thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+                this.currentSelection = {
+                    type: 'preset',
+                    start: thirtyDaysAgo,
+                    end: today
+                };
+                startDateInput.value = this.formatDateForInput(thirtyDaysAgo);
+                endDateInput.value = this.formatDateForInput(today);
+                break;
+                
+            case 'lastyear':
+                const oneYearAgo = new Date(today);
+                oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+                this.currentSelection = {
+                    type: 'preset',
+                    start: oneYearAgo,
+                    end: today
+                };
+                startDateInput.value = this.formatDateForInput(oneYearAgo);
+                endDateInput.value = this.formatDateForInput(today);
+                break;
+        }
+    }
+    
+    /**
+     * Apply "Anytime" selection (removes date filter)
+     */
+    applyAnytimeSelection() {
+        // Clear form inputs
+        const startInput = document.getElementById('date-start');
+        const endInput = document.getElementById('date-end');
+        if (startInput) startInput.value = '';
+        if (endInput) endInput.value = '';
+        
+        // Update search summary
+        this.searchSummaryManager.updateSearchSummary('date', 'ANYTIME');
+        
+        // Trigger search parameter change event with no datetime
+        document.dispatchEvent(new CustomEvent('searchParameterChanged', {
+            detail: {
+                type: 'date',
+                dateType: 'anytime',
+                dateStart: null,
+                dateEnd: null
+            }
+        }));
+        
+        // Close dropdown
+        document.dispatchEvent(new CustomEvent('closeDropdown'));
     }
     
     /**

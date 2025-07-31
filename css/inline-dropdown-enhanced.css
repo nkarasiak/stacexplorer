@@ -47,6 +47,52 @@
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
+/* =================================================================
+   DATE PRESET BUTTONS
+   ================================================================= */
+
+.ai-date-presets {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.ai-preset-btn {
+    padding: 0.5rem 1rem;
+    background: var(--md-surface-variant, #2d2d2d);
+    border: 1px solid var(--md-outline, #666);
+    border-radius: 20px;
+    color: var(--md-on-surface, #e0e0e0);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.ai-preset-btn:hover {
+    background: var(--primary-color, #667eea);
+    border-color: var(--primary-color, #667eea);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.ai-preset-btn:active {
+    transform: translateY(0);
+}
+
+/* Special styling for "Anytime" preset */
+.ai-preset-btn[data-preset="anytime"] {
+    background: var(--md-surface-container, #3a3a3a);
+    border-color: var(--primary-color-alpha, rgba(102, 126, 234, 0.5));
+}
+
+.ai-preset-btn[data-preset="anytime"]:hover {
+    background: var(--success-color, #10b981);
+    border-color: var(--success-color, #10b981);
+}
+
 /* Light theme adjustments - Enhanced compatibility */
 .light-theme .inline-dropdown-container {
     background: rgba(255, 255, 255, 0.98) !important;

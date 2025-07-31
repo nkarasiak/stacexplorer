@@ -1,6 +1,6 @@
 {
   "name": "stac-explorer",
-  "version": "2.8.0",
+  "version": "2.12.1",
   "description": "Modern STAC Catalog Explorer with enhanced development workflow",
   "main": "proxy.js",
   "type": "module",

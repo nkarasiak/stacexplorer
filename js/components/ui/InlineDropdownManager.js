@@ -72,6 +72,15 @@ export class InlineDropdownManager {
         return `
             <div class="dropdown-section date-dropdown-modern">
                 <div class="date-presets-modern">
+                    <button class="date-preset-btn-modern anytime-preset" data-preset="anytime">
+                        <div class="preset-icon">
+                            <i class="material-icons">all_inclusive</i>
+                        </div>
+                        <div class="preset-content">
+                            <span class="preset-title">Anytime</span>
+                            <span class="preset-desc">No date filter</span>
+                        </div>
+                    </button>
                     <button class="date-preset-btn-modern" data-preset="last-7-days">
                         <div class="preset-icon">
                             <i class="material-icons">today</i>

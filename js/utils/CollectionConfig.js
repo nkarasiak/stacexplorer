@@ -189,6 +189,54 @@ export async function getEnabledCollectionIds() {
 }
 
 /**
+ * Get collections that are enabled based on user settings (overrides config defaults)
+ * @returns {Promise<Array>} Array of enabled collection configurations
+ */
+export async function getEnabledCollectionsFromSettings() {
+    const collections = await loadAllCollections();
+    const enabledCollections = [];
+    
+    // Check if we have settings in the new format (stacExplorerSettings)
+    let enabledProvidersFromSettings = null;
+    try {
+        const savedSettings = localStorage.getItem('stacExplorerSettings');
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            if (settings.enabledProviders && Array.isArray(settings.enabledProviders)) {
+                enabledProvidersFromSettings = settings.enabledProviders;
+            }
+        }
+    } catch (error) {
+        console.warn('Error parsing settings:', error);
+    }
+    
+    collections.forEach(collection => {
+        const catalogKey = collection.id;
+        let isEnabled;
+        
+        // Check settings in priority order:
+        // 1. New format (stacExplorerSettings.enabledProviders)
+        // 2. Old format (individual catalog-${catalogKey}-enabled keys)
+        // 3. Default state from collection config
+        if (enabledProvidersFromSettings !== null) {
+            // Use new settings format - this overrides any config defaults
+            isEnabled = enabledProvidersFromSettings.includes(catalogKey);
+        } else {
+            // Fall back to old format
+            const savedState = localStorage.getItem(`catalog-${catalogKey}-enabled`);
+            const defaultState = collection.enabled !== false;
+            isEnabled = savedState !== null ? savedState === 'true' : defaultState;
+        }
+        
+        if (isEnabled) {
+            enabledCollections.push(collection);
+        }
+    });
+    
+    return enabledCollections;
+}
+
+/**
  * Convert legacy ID to real catalog ID
  * @param {string} legacyId - Legacy internal ID
  * @returns {string} Real catalog ID or original ID if no mapping exists

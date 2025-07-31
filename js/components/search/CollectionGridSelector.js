@@ -3,7 +3,7 @@
  * Displays collections as cards with images, descriptions, and search functionality
  */
 
-import { loadAllCollections } from '../../utils/CollectionConfig.js';
+import { loadAllCollections, getEnabledCollectionsFromSettings } from '../../utils/CollectionConfig.js';
 
 export class CollectionGridSelector {
     /**
@@ -181,6 +181,13 @@ export class CollectionGridSelector {
         // Clear selection
         this.elements.clearSelectionBtn.addEventListener('click', () => {
             this.clearSelection();
+        });
+        
+        // Listen for settings changes to refresh source filter
+        document.addEventListener('settingsChanged', async () => {
+            if (this.collectionsLoaded) {
+                await this.populateSourceFilter();
+            }
         });
         
         // Load more
@@ -684,10 +691,10 @@ export class CollectionGridSelector {
     }
     
     /**
-     * Populate source filter with collections from collections.json
+     * Populate source filter with enabled collections only
      */
     async populateSourceFilter() {
-        const collections = await loadAllCollections();
+        const collections = await getEnabledCollectionsFromSettings();
         const sourceFilter = this.elements.sourceFilter;
         
         // Clear existing options except 'all'
@@ -695,7 +702,7 @@ export class CollectionGridSelector {
         sourceFilter.innerHTML = '';
         sourceFilter.appendChild(allOption);
         
-        // Add options for each collection
+        // Add options for each enabled collection only
         collections.forEach(collection => {
             const option = document.createElement('option');
             option.value = collection.id;

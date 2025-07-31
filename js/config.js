@@ -11,12 +11,17 @@ export const CONFIG = {
         const endpoints = {};
         
         collections.forEach(collection => {
-            endpoints[collection.id] = {
-                root: collection.endpoints.root,
-                collections: collection.endpoints.collections,
-                search: collection.endpoints.search,
-                type: collection.endpoints.type || 'stac'
-            };
+            if (collection.endpoint) {
+                const baseUrl = collection.endpoint.replace(/\/$/, ''); // remove trailing slash
+                const type = collection.type || 'api'; // default to 'api' if not specified
+                
+                endpoints[collection.id] = {
+                    root: baseUrl,
+                    collections: type === 'catalog' ? '' : `${baseUrl}/collections`,
+                    search: type === 'catalog' ? '' : `${baseUrl}/search`,
+                    type: type
+                };
+            }
         });
         
         return endpoints;

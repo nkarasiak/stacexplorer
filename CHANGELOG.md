@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.2] - 2025-07-31
+
+### 🐛 Fixed
+- **Browser Mode Catalog Loading**: Fixed critical issue where browser mode displayed "No catalogs returned!" due to async configuration loading mismatch
+- **Direct URL Item Display**: Fixed viewer URLs like `/viewer/microsoft-pc/3dep-seamless/n34w116-1` not displaying items in results panel
+- **STAC Endpoints Configuration**: Resolved configuration access issue where `config.stacEndpoints` was expected as property but provided as async method
+- **Collection Configuration Mapping**: Fixed incorrect property access (`collection.endpoints.root` vs `collection.endpoint`) in config loading
+
+### 🔧 Improved
+- **Async Configuration Handling**: Enhanced `getAvailableCatalogs()` method to properly await STAC endpoints from configuration
+- **URL-based Item Search**: Added `itemActivated` event listener to ResultsPanel for automatic single-item display from direct URLs
+- **Error Handling**: Added comprehensive error handling and descriptive warnings for configuration loading failures
+- **Code Robustness**: Improved null checking and fallback handling in catalog configuration methods
+
 ## [2.12.1] - 2025-07-31
 
 ### 🐛 Fixed

@@ -2132,8 +2132,18 @@ export class CatalogBrowserPanel {
             console.warn('⚠️ Failed to load custom catalog from localStorage:', error);
         }
         
-        if (this.config?.stacEndpoints) {
-            const entries = Object.entries(this.config.stacEndpoints);
+        // Load STAC endpoints from config (async method)
+        let stacEndpoints = null;
+        try {
+            if (this.config?.getStacEndpoints) {
+                stacEndpoints = await this.config.getStacEndpoints();
+            }
+        } catch (error) {
+            console.warn('⚠️ Failed to load STAC endpoints from config:', error);
+        }
+        
+        if (stacEndpoints) {
+            const entries = Object.entries(stacEndpoints);
             
             // Process all catalogs with Promise.all for parallel fetching
             const catalogPromises = entries.map(async ([key, endpoint], index) => {
@@ -2180,6 +2190,7 @@ export class CatalogBrowserPanel {
             catalogs.push(...results.filter(catalog => catalog !== null));
             
         } else {
+            console.warn('[BROWSER] Warning: No STAC endpoints found in config!');
         }
         
         if (catalogs.length === 0) {

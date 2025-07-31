@@ -55,6 +55,9 @@ export class ResultsPanel {
         
         // Listen for asset displayed events
         document.addEventListener('assetDisplayed', this.handleAssetDisplayed.bind(this));
+        
+        // Listen for item activated events to display single items in results panel
+        document.addEventListener('itemActivated', this.handleItemActivated.bind(this));
     }
     
     /**
@@ -2491,6 +2494,19 @@ export class ResultsPanel {
                 collectionId: collectionId
             }
         }));
+    }
+    
+    /**
+     * Handle item activated event to display single item in results panel
+     * @param {CustomEvent} event - The itemActivated event
+     */
+    handleItemActivated(event) {
+        const { item } = event.detail;
+        if (item) {
+            // Display the single item in the results panel
+            this.setItems([item]);
+            this.renderPage();
+        }
     }
     
 }

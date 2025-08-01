@@ -129,26 +129,21 @@ export class SearchForm {
      */
     detectAndProcessGeometry(text) {
         if (!text || typeof text !== 'string') {
-            console.log('🔍 No text or invalid text:', text);
             return false;
         }
         
         try {
             text = text.trim();
-            console.log('🔍 Detecting geometry in text:', text.substring(0, 100) + (text.length > 100 ? '...' : ''));
             
             // Detect format and process accordingly
             if (isWKT(text)) {
-                console.log('✅ Detected WKT format');
                 this.processGeometryInput(text, 'wkt');
                 return true;
             } else if (isGeoJSON(text)) {
-                console.log('✅ Detected GeoJSON format');
                 this.processGeometryInput(text, 'geojson');
                 return true;
             }
             
-            console.log('❌ No geometry format detected');
             return false;
         } catch (error) {
             console.error('Error detecting geometry format:', error);
@@ -208,51 +203,27 @@ export class SearchForm {
                         const geometrySourceId = 'searchform-geometry';
                         
                         // Display geometry with beautiful styling
-                        console.log('🎨 Attempting to display geometry:', geojson);
-                        console.log('🎨 MapManager display methods available:', {
-                            addBeautifulGeometryLayer: typeof this.mapManager.addBeautifulGeometryLayer,
-                            addGeoJsonLayer: typeof this.mapManager.addGeoJsonLayer,
-                            displayBboxOnMap: typeof this.mapManager.displayBboxOnMap
-                        });
-                        
                         if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
-                            console.log('🎨 Using addBeautifulGeometryLayer method');
                             this.mapManager.addBeautifulGeometryLayer(
                                 geojson, 
                                 geometrySourceId
                             );
                         } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
-                            console.log('🎨 Using addGeoJsonLayer method');
                             this.mapManager.addGeoJsonLayer(
                                 geojson, 
                                 geometrySourceId
                             );
                         } else if (typeof this.mapManager.displayBboxOnMap === 'function') {
-                            console.log('🎨 Using displayBboxOnMap fallback method');
                             this.mapManager.displayBboxOnMap(bbox, 'Pasted Geometry');
-                        } else {
-                            console.warn('⚠️ No geometry display method available on mapManager');
                         }
                         
                         // Zoom to the geometry bounds
-                        console.log('🗺️ Attempting to zoom to bbox:', bbox);
-                        console.log('🗺️ MapManager methods available:', {
-                            fitToBounds: typeof this.mapManager.fitToBounds,
-                            fitMapToBbox: typeof this.mapManager.fitMapToBbox,
-                            mapLayers: !!this.mapManager.mapLayers
-                        });
-                        
                         if (typeof this.mapManager.fitToBounds === 'function') {
-                            console.log('🗺️ Using fitToBounds method');
                             this.mapManager.fitToBounds(bbox);
                         } else if (typeof this.mapManager.fitMapToBbox === 'function') {
-                            console.log('🗺️ Using fitMapToBbox method');
                             this.mapManager.fitMapToBbox(bbox);
                         } else if (this.mapManager.mapLayers && typeof this.mapManager.mapLayers.fitMapToBbox === 'function') {
-                            console.log('🗺️ Using mapLayers.fitMapToBbox method');
                             this.mapManager.mapLayers.fitMapToBbox(bbox);
-                        } else {
-                            console.warn('⚠️ No zoom method available on mapManager');
                         }
                         
                     } catch (mapError) {

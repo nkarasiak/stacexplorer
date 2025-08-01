@@ -5,6 +5,52 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.3] - 2025-08-01
+
+### 🔧 Fixed
+- **Drawing and Search Integration**: Fixed critical issue where drawn geometries on the map were not being used to constrain search results
+  - Fixed event mismatch between MapDrawing (`geometrySelected`) and GeometrySync (`bboxDrawn`) 
+  - Drawing a bbox or polygon now properly updates the search form's location constraint
+  - Enhanced URL state management to preserve drawn geometries in shareable links
+
+- **WKT/GeoJSON Paste Functionality**: Resolved issues with pasting geometric data
+  - Fixed null reference errors when location dropdown manager is unavailable
+  - Added comprehensive error handling for geometry processing  
+  - WKT and GeoJSON pasting now properly displays geometry outline on map
+  - Automatic zoom/pan to pasted geometry area for better user experience
+
+- **STAC Item Image Display**: Implemented comprehensive CORS handling from v2.4.0
+  - Canvas-based CORS bypass with data URL conversion for satellite imagery
+  - CORS proxy chain fallback (corsproxy.io, cors-anywhere) for blocked resources
+  - Smart asset prioritization (preview > thumbnail > visual > data assets)
+  - Enhanced domain detection for AWS S3, Copernicus, and other providers
+  - Graceful fallback chain: Canvas → Direct MapLibre → Geometry outline
+  - Users now see actual satellite imagery instead of CORS errors
+
+### 🚀 Enhanced  
+- **Geometry Processing**: Improved WKT and GeoJSON detection and parsing
+  - Better format validation and error messages
+  - Enhanced bbox extraction from complex geometries
+  - Improved notification system for geometry operations
+
+- **Map Layer Management**: Enhanced layer cleanup and tracking
+  - Better removal of previous layers when adding new geometries
+  - Improved layer ID tracking for reliable cleanup
+  - Enhanced error recovery for failed image loads
+
+### 🛠️ Technical Improvements
+- Added comprehensive error handling for location dropdown integration
+- Improved geometry synchronization between main interface and AI Smart Search
+- Enhanced map manager method detection for better compatibility
+- Cleaned up debug logging for production readiness
+
+### 🎯 User Experience
+- Drawing on map now immediately constrains search results to that area
+- Pasting WKT/GeoJSON automatically shows and zooms to the geometry
+- Search forms respect user's spatial selections (drawn areas, pasted geometries)
+- Satellite imagery loads successfully from various STAC providers
+- Clear visual feedback for all geometry operations
+
 ## [2.12.2] - 2025-07-31
 
 ### 🐛 Fixed

@@ -105,7 +105,7 @@ export class MapManager {
     }
 
     /**
-     * MapLibre display implementation (simplified)
+     * MapLibre display implementation with comprehensive CORS handling
      */
     async _displayItemOnMapLibre(item, preferredAssetKey = null, preserveViewport = false) {
         try {
@@ -115,24 +115,8 @@ export class MapManager {
                 return;
             }
             
-            // Remove any existing layers
-            this.mapLayers.removeCurrentLayer();
-            
-            // Get bounding box
-            const bbox = this.mapLayers.getBoundingBox(item);
-            if (!bbox) {
-                console.warn('Item has no valid bbox or geometry');
-                return;
-            }
-            
-            // Fit map to item bounds (unless preserveViewport is true)
-            if (!preserveViewport) {
-                this.mapLayers.fitMapToBbox(bbox);
-            } else {
-            }
-            
-            // For now, just show boundary (full implementation would handle asset loading)
-            this.mapLayers.addGeoJsonLayerWithoutTooltip(bbox, item);
+            // Use the comprehensive displayItemOnMap method from MapLayers
+            await this.mapLayers.displayItemOnMap(item, preferredAssetKey);
             
         } catch (error) {
             console.error('Error displaying item on map:', error);

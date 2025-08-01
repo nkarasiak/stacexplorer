@@ -5,15 +5,15 @@
  * Provides seamless map integration for STAC items with multiple visualization presets
  */
 
-import { defaultBandEngine } from './BandCombinationEngine.js';
+import { getDefaultBandEngine } from './BandCombinationEngine.js';
 
 export class RasterVisualizationManager {
-    constructor(mapManager, bandEngine = defaultBandEngine) {
+    constructor(mapManager, bandEngine = null) {
         if (!mapManager) {
             throw new Error('MapManager is required for RasterVisualizationManager');
         }
         this.mapManager = mapManager;
-        this.bandEngine = bandEngine;
+        this.bandEngine = bandEngine || getDefaultBandEngine();
         this.currentLayers = new Map();
         this.layerOpacities = new Map();
         

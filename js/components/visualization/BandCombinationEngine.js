@@ -1049,6 +1049,18 @@ export class BandCombinationEngine {
 }
 
 /**
- * Default instance for immediate use
+ * Default instance for immediate use (lazy initialized)
  */
-export const defaultBandEngine = new BandCombinationEngine();
+let _defaultBandEngine = null;
+
+export const defaultBandEngine = {
+  get instance() {
+    if (!_defaultBandEngine) {
+      _defaultBandEngine = new BandCombinationEngine();
+    }
+    return _defaultBandEngine;
+  }
+};
+
+// For backwards compatibility, proxy all methods
+export const getDefaultBandEngine = () => defaultBandEngine.instance;

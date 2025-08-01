@@ -21,7 +21,13 @@
     "watch": "nodemon --watch js --watch css --ext js,css --exec \"echo 'Files changed - refresh browser'\"",
     "serve": "http-server -p 3000 -c-1 --cors",
     "serve:python": "python serve.py -p 8000",
-    "serve:simple": "python -m http.server 8000"
+    "serve:simple": "python -m http.server 8000",
+    "lint": "eslint js/ --ext .js",
+    "lint:fix": "eslint js/ --ext .js --fix",
+    "format": "prettier --write \"js/**/*.js\" \"css/**/*.css\" \"*.{js,json,md}\"",
+    "format:check": "prettier --check \"js/**/*.js\" \"css/**/*.css\" \"*.{js,json,md}\"",
+    "quality": "npm run lint && npm run format:check",
+    "quality:fix": "npm run lint:fix && npm run format"
   },
   "dependencies": {
     "cors": "^2.8.5",
@@ -30,11 +36,17 @@
     "node-fetch": "^2.6.9"
   },
   "devDependencies": {
+    "@eslint/create-config": "^1.10.0",
+    "@eslint/js": "^9.32.0",
     "autoprefixer": "^10.4.21",
     "concurrently": "^8.2.2",
     "cssnano": "^7.1.0",
+    "eslint": "^9.32.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.3",
     "http-server": "^14.1.1",
     "nodemon": "^3.0.2",
+    "prettier": "^3.6.2",
     "rollup-plugin-visualizer": "^5.12.0",
     "terser": "^5.31.6",
     "vite": "^5.4.10",

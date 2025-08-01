@@ -8,13 +8,13 @@
  * - Manage multiple layers
  */
 
-import { defaultBandEngine } from './BandCombinationEngine.js';
+import { getDefaultBandEngine } from './BandCombinationEngine.js';
 
 export class VisualizationPanel {
-    constructor(container, rasterManager, bandEngine = defaultBandEngine, notificationService = null) {
+    constructor(container, rasterManager, bandEngine = null, notificationService = null) {
         this.container = container;
         this.rasterManager = rasterManager;
-        this.bandEngine = bandEngine;
+        this.bandEngine = bandEngine || getDefaultBandEngine();
         this.notificationService = notificationService;
         
         // Current state

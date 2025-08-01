@@ -1,0 +1,13 @@
+node_modules/
+dist/
+build/
+.vite/
+*.min.js
+coverage/
+.nyc_output/
+*.d.ts
+package-lock.json
+workbox-*.js
+sw.js
+registerSW.js
+CHANGELOG.md

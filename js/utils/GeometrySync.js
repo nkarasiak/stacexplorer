@@ -170,9 +170,20 @@ export class GeometrySync {
                     this.currentBbox = coords;
                     this.syncToAISearch('Coordinates', coords, 'coordinates');
                     
-                    // Update map if available
-                    if (this.mapManager && typeof this.mapManager.setBboxFromCoordinates === 'function') {
-                        this.mapManager.setBboxFromCoordinates(coords);
+                    // Update map if available and zoom to the bbox
+                    if (this.mapManager) {
+                        if (typeof this.mapManager.setBboxFromCoordinates === 'function') {
+                            this.mapManager.setBboxFromCoordinates(coords);
+                        }
+                        
+                        // Zoom to the bbox coordinates
+                        if (typeof this.mapManager.fitToBounds === 'function') {
+                            this.mapManager.fitToBounds(coords);
+                        } else if (typeof this.mapManager.fitMapToBbox === 'function') {
+                            this.mapManager.fitMapToBbox(coords);
+                        } else if (this.mapManager.mapLayers && typeof this.mapManager.mapLayers.fitMapToBbox === 'function') {
+                            this.mapManager.mapLayers.fitMapToBbox(coords);
+                        }
                     }
                     
                     
@@ -240,9 +251,20 @@ export class GeometrySync {
                 }
             }
             
-            // Display geometry on map
-            if (this.mapManager && typeof this.mapManager.displayGeometry === 'function') {
-                this.mapManager.displayGeometry(geojson, bbox);
+            // Display geometry on map and zoom to it
+            if (this.mapManager) {
+                if (typeof this.mapManager.displayGeometry === 'function') {
+                    this.mapManager.displayGeometry(geojson, bbox);
+                }
+                
+                // Zoom to the geometry bounds
+                if (typeof this.mapManager.fitToBounds === 'function') {
+                    this.mapManager.fitToBounds(bbox);
+                } else if (typeof this.mapManager.fitMapToBbox === 'function') {
+                    this.mapManager.fitMapToBbox(bbox);
+                } else if (this.mapManager.mapLayers && typeof this.mapManager.mapLayers.fitMapToBbox === 'function') {
+                    this.mapManager.mapLayers.fitMapToBbox(bbox);
+                }
             }
             
             

@@ -129,21 +129,26 @@ export class SearchForm {
      */
     detectAndProcessGeometry(text) {
         if (!text || typeof text !== 'string') {
+            console.log('🔍 No text or invalid text:', text);
             return false;
         }
         
         try {
             text = text.trim();
+            console.log('🔍 Detecting geometry in text:', text.substring(0, 100) + (text.length > 100 ? '...' : ''));
             
             // Detect format and process accordingly
             if (isWKT(text)) {
+                console.log('✅ Detected WKT format');
                 this.processGeometryInput(text, 'wkt');
                 return true;
             } else if (isGeoJSON(text)) {
+                console.log('✅ Detected GeoJSON format');
                 this.processGeometryInput(text, 'geojson');
                 return true;
             }
             
+            console.log('❌ No geometry format detected');
             return false;
         } catch (error) {
             console.error('Error detecting geometry format:', error);
@@ -195,7 +200,7 @@ export class SearchForm {
                 // Update bbox input field
                 this.updateBBoxInput(bbox);
                 
-                // Display geometry on map
+                // Display geometry on map and zoom to it
                 if (this.mapManager) {
                     try {
                         

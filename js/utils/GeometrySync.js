@@ -231,9 +231,13 @@ export class GeometrySync {
             this.syncToAISearch(`Custom ${geometryType}`, bbox, 'geometry', geojson);
             
             // Update location dropdown menu if available
-            if (this.inlineDropdownManager) {
-                const displayText = `${geometryType.toUpperCase()} geometry`;
-                this.inlineDropdownManager.handleLocationSelection('custom', displayText);
+            if (this.inlineDropdownManager && typeof this.inlineDropdownManager.handleLocationSelection === 'function') {
+                try {
+                    const displayText = `${geometryType.toUpperCase()} geometry`;
+                    this.inlineDropdownManager.handleLocationSelection('custom', displayText);
+                } catch (error) {
+                    console.warn('⚠️ Failed to update location dropdown:', error);
+                }
             }
             
             // Display geometry on map
@@ -306,9 +310,13 @@ export class GeometrySync {
             console.log('✅ Updated bbox input:', bboxString);
             
             // Update location dropdown if available
-            if (this.inlineDropdownManager) {
-                const displayText = 'Drawn Area';
-                this.inlineDropdownManager.handleLocationSelection('custom', displayText);
+            if (this.inlineDropdownManager && typeof this.inlineDropdownManager.handleLocationSelection === 'function') {
+                try {
+                    const displayText = 'Drawn Area';
+                    this.inlineDropdownManager.handleLocationSelection('custom', displayText);
+                } catch (error) {
+                    console.warn('⚠️ Failed to update location dropdown:', error);
+                }
             }
         } else {
             console.warn('⚠️ Bbox input field not found');

@@ -178,10 +178,14 @@ export class SearchForm {
             this.currentGeometry = geojson;
             
             // Update location dropdown if available
-            if (this.inlineDropdownManager) {
-                const geometryFormat = format === 'wkt' ? 'WKT' : 'GEOJSON';
-                const displayText = `${geometryFormat} geometry`;
-                this.inlineDropdownManager.handleLocationSelection('custom', displayText);
+            if (this.inlineDropdownManager && typeof this.inlineDropdownManager.handleLocationSelection === 'function') {
+                try {
+                    const geometryFormat = format === 'wkt' ? 'WKT' : 'GEOJSON';
+                    const displayText = `${geometryFormat} geometry`;
+                    this.inlineDropdownManager.handleLocationSelection('custom', displayText);
+                } catch (error) {
+                    console.warn('⚠️ Failed to update location dropdown:', error);
+                }
             }
             
             // Extract bbox from GeoJSON

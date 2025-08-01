@@ -1574,22 +1574,35 @@ export class ResultsPanel {
             }, 100); // Small delay to allow loading indicator to appear
         };
         
-        // Add click handler to the entire card
+        // Track if item was clicked to disable hover zoom
+        let itemWasClicked = false;
+        
+        // Add click handler to the entire card for permanent display
         if (clickableCard) {
             clickableCard.addEventListener('click', (e) => {
-                // Don't trigger if clicking on the details button
-                if (e.target.closest('.details-btn')) {
+                // Don't trigger if clicking on button controls
+                if (e.target.closest('.details-btn') || e.target.closest('.viz-btn') || e.target.closest('.center-map-btn')) {
                     return;
                 }
                 
+                // Clear any hover preview state
+                this.clearHoverState();
+                itemWasClicked = true;
+                
+                // Display item permanently on map (no zoom/pan, just display the image)
                 displayOnMap();
             });
             
-            // Add hover effects with bbox zoom preview
+            // Add mouseenter handler for hover-to-zoom preview
             clickableCard.addEventListener('mouseenter', () => {
                 // Visual hover effect
                 clickableCard.style.transform = 'translateY(-2px)';
                 clickableCard.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+                
+                // Skip hover zoom if item was clicked (permanent display mode)
+                if (itemWasClicked) {
+                    return;
+                }
                 
                 // Clear any existing timeouts
                 if (this.hoverTimeout) {
@@ -1599,33 +1612,91 @@ export class ResultsPanel {
                     clearTimeout(this.restoreTimeout);
                 }
                 
+                // Skip hover preview if center-map button is active for any item
+                if (this.centeredItem) {
+                    return;
+                }
+                
                 // Small delay to prevent rapid firing on mouse movement
-                this.hoverTimeout = setTimeout(() => {
-                    
-                    // Skip hover preview if center-map button is active for any item
-                    if (this.centeredItem) {
+                this.hoverTimeout = setTimeout(async () => {
+                    // Double-check that item wasn't clicked during timeout
+                    if (itemWasClicked) {
                         return;
+                    }
+                    
+                    // Check if map is available before proceeding
+                    if (!this.mapManager) {
+                        console.warn('⚠️ MapManager not available for hover preview, skipping zoom');
+                        return;
+                    }
+                    
+                    const map = this.mapManager.getMap();
+                    if (!map) {
+                        console.warn('⚠️ Map not initialized for hover preview, skipping zoom', {
+                            mapManager: !!this.mapManager,
+                            mapFromGetMap: !!map,
+                            hasIsMapReady: typeof this.mapManager?.isMapReady === 'function',
+                            hasGetMap: typeof this.mapManager?.getMap === 'function'
+                        });
+                        return;
+                    }
+                    
+                    // Check if map is ready using the mapManager's method
+                    if (typeof this.mapManager.isMapReady === 'function' && !this.mapManager.isMapReady()) {
+                        console.warn('⚠️ Map not ready for hover preview, waiting...', {
+                            mapReady: this.mapManager.isMapReady()
+                        });
+                        
+                        // Wait a bit more for map to be ready
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        // Check again
+                        if (!this.mapManager.isMapReady()) {
+                            console.warn('⚠️ Map still not ready after waiting, skipping hover preview');
+                            return;
+                        }
+                        
+                        // Double-check that item wasn't clicked during wait
+                        if (itemWasClicked) {
+                            return;
+                        }
                     }
                     
                     // Save current map view if not already saved or if different item
                     if (!this.savedMapView || this.currentHoveredItem !== item.id) {
-                        this.saveMapView();
+                        const saved = this.saveMapView();
+                        if (!saved) {
+                            console.warn('⚠️ Failed to save map view, skipping hover preview');
+                            return;
+                        }
                         this.currentHoveredItem = item.id;
                     }
                     
-                    // Zoom to item bbox
-                    this.zoomToItemBbox(item);
+                    // Zoom to item bbox for preview
+                    const zoomed = this.zoomToItemBbox(item);
+                    if (!zoomed) {
+                        console.warn('⚠️ Failed to zoom to item, skipping hover preview');
+                        return;
+                    }
                     
-                    // Add visual feedback to the card
-                    clickableCard.classList.add('map-preview-active');
-                }, 400); // 400ms delay to prevent rapid triggering
+                    // Add visual feedback to indicate hover preview mode
+                    clickableCard.classList.add('hover-preview-active');
+                    
+                    console.log('✅ Hover preview activated for item:', item.id);
+                    
+                }, 300); // 300ms delay to prevent rapid triggering
             });
             
+            // Add mouseleave handler to restore view when mouse leaves
             clickableCard.addEventListener('mouseleave', (e) => {
-                
                 // Visual hover effect reset
                 clickableCard.style.transform = '';
                 clickableCard.style.boxShadow = '';
+                
+                // Don't restore view if item was clicked (permanent display mode)
+                if (itemWasClicked) {
+                    return;
+                }
                 
                 // Clear hover timeout if mouse leaves quickly
                 if (this.hoverTimeout) {
@@ -1640,27 +1711,21 @@ export class ResultsPanel {
                 }
                 
                 // Remove visual feedback immediately
-                clickableCard.classList.remove('map-preview-active');
+                clickableCard.classList.remove('hover-preview-active');
                 
                 // Only restore if we actually have a saved view and this was the active item
-                // AND center-map button is not active
-                if (this.savedMapView && this.currentHoveredItem === item.id && !this.centeredItem) {
+                // AND center-map button is not active AND item wasn't clicked
+                if (this.savedMapView && this.currentHoveredItem === item.id && !this.centeredItem && !itemWasClicked) {
                     
                     // Restore view with slight delay
                     this.restoreTimeout = setTimeout(() => {
-                        
                         const restored = this.restoreMapView();
                         this.removeBboxFromMap();
                         
                         if (restored) {
                             this.currentHoveredItem = null;
-                            // Clear saved view after successful restore
-                            // this.savedMapView = null; // Keep it for subsequent hovers
-                        } else {
-                            console.error('❌ Map view restore failed');
                         }
-                    }, 600); // 600ms delay to allow user to hover other items
-                } else {
+                    }, 300); // 300ms delay to allow smooth transitions
                 }
             });
         }
@@ -2024,13 +2089,24 @@ export class ResultsPanel {
      * Save current map view state
      */
     saveMapView() {
-        if (!this.mapManager || !this.mapManager.map) {
+        if (!this.mapManager) {
+            console.warn('⚠️ Cannot save map view - mapManager not available');
+            return false;
+        }
+        
+        const map = this.mapManager.getMap();
+        if (!map) {
             console.warn('⚠️ Cannot save map view - map not available');
-            return;
+            return false;
+        }
+        
+        // Check if map is ready
+        if (typeof this.mapManager.isMapReady === 'function' && !this.mapManager.isMapReady()) {
+            console.warn('⚠️ Cannot save map view - map not ready');
+            return false;
         }
         
         try {
-            const map = this.mapManager.map;
             
             const center = map.getCenter();
             const zoom = map.getZoom();
@@ -2043,8 +2119,11 @@ export class ResultsPanel {
                 mapType: map.constructor.name
             };
             
+            return true;
+            
         } catch (error) {
             console.error('❌ Error saving map view:', error);
+            return false;
         }
     }
     
@@ -2053,7 +2132,13 @@ export class ResultsPanel {
      */
     restoreMapView() {
         
-        if (!this.mapManager || !this.mapManager.map) {
+        if (!this.mapManager) {
+            console.warn('⚠️ Cannot restore map view - mapManager not available');
+            return false;
+        }
+        
+        const map = this.mapManager.getMap();
+        if (!map) {
             console.warn('⚠️ Cannot restore map view - map not available');
             return false;
         }
@@ -2064,7 +2149,6 @@ export class ResultsPanel {
         }
         
         try {
-            const map = this.mapManager.map;
             const currentCenter = map.getCenter();
             const currentZoom = map.getZoom();
             
@@ -2154,9 +2238,21 @@ export class ResultsPanel {
      */
     zoomToItemBbox(item) {
         
-        if (!this.mapManager || !this.mapManager.map) {
+        if (!this.mapManager) {
+            console.warn('⚠️ Cannot zoom - mapManager not available');
+            return false;
+        }
+        
+        const map = this.mapManager.getMap();
+        if (!map) {
             console.warn('⚠️ Cannot zoom - map not available');
-            return;
+            return false;
+        }
+        
+        // Check if map is ready
+        if (typeof this.mapManager.isMapReady === 'function' && !this.mapManager.isMapReady()) {
+            console.warn('⚠️ Cannot zoom - map not ready');
+            return false;
         }
         
         // Get bbox from item
@@ -2173,7 +2269,6 @@ export class ResultsPanel {
             
             // Then fit map to bbox with padding
             try {
-                const map = this.mapManager.map;
                 
                 if (typeof map.fitBounds === 'function') {
                     // Check if it's MapLibre (uses [lng, lat] order)
@@ -2212,7 +2307,10 @@ export class ResultsPanel {
                 hasGeometry: !!item.geometry,
                 bbox: bbox
             });
+            return false;
         }
+        
+        return true;
     }
     
     /**
@@ -2222,12 +2320,16 @@ export class ResultsPanel {
     showBboxOnMap(bbox) {
         
         // Check if map manager is available
-        if (!this.mapManager || !this.mapManager.map) {
-            console.warn('⚠️ Map manager or map not available');
+        if (!this.mapManager) {
+            console.warn('⚠️ Map manager not available');
             return;
         }
         
-        const map = this.mapManager.map;
+        const map = this.mapManager.getMap();
+        if (!map) {
+            console.warn('⚠️ Map not available');
+            return;
+        }
         
         // Remove existing bbox layer
         this.removeBboxFromMap();
@@ -2335,12 +2437,16 @@ export class ResultsPanel {
             return;
         }
         
-        if (!this.mapManager || !this.mapManager.map) {
-            console.warn('⚠️ Cannot remove bbox - map not available');
+        if (!this.mapManager) {
+            console.warn('⚠️ Cannot remove bbox - mapManager not available');
             return;
         }
         
-        const map = this.mapManager.map;
+        const map = this.mapManager.getMap();
+        if (!map) {
+            console.warn('⚠️ Cannot remove bbox - map not available');
+            return;
+        }
         
         try {
             // Handle MapLibre layers
@@ -2398,6 +2504,78 @@ export class ResultsPanel {
             card.classList.remove('map-preview-active');
         });
         
+        document.querySelectorAll('.hover-preview-active').forEach(card => {
+            card.classList.remove('hover-preview-active');
+        });
+        
+    }
+    
+    /**
+     * Show brief instruction tooltip for hover preview mode
+     * @param {HTMLElement} card - The card element to show instruction on
+     */
+    showHoverPreviewInstructions(card) {
+        try {
+            // Remove any existing instruction tooltips
+            document.querySelectorAll('.hover-preview-instruction').forEach(el => el.remove());
+            
+            // Create instruction tooltip
+            const instruction = document.createElement('div');
+            instruction.className = 'hover-preview-instruction';
+            instruction.innerHTML = `
+                <div style="
+                    position: absolute;
+                    top: -40px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: rgba(0,0,0,0.8);
+                    color: white;
+                    padding: 6px 12px;
+                    border-radius: 4px;
+                    font-size: 12px;
+                    white-space: nowrap;
+                    z-index: 1000;
+                    pointer-events: none;
+                    animation: fadeInOut 2.5s ease-out forwards;
+                ">
+                    Move mouse away to restore view
+                </div>
+            `;
+            
+            // Add CSS animation if not already present
+            if (!document.querySelector('#hover-preview-styles')) {
+                const style = document.createElement('style');
+                style.id = 'hover-preview-styles';
+                style.textContent = `
+                    @keyframes fadeInOut {
+                        0% { opacity: 0; transform: translateX(-50%) translateY(5px); }
+                        20% { opacity: 1; transform: translateX(-50%) translateY(0px); }
+                        80% { opacity: 1; transform: translateX(-50%) translateY(0px); }
+                        100% { opacity: 0; transform: translateX(-50%) translateY(-5px); }
+                    }
+                    
+                    .hover-preview-active {
+                        border: 2px solid #667eea !important;
+                        box-shadow: 0 0 15px rgba(102, 126, 234, 0.3) !important;
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+            
+            // Position relative to card
+            card.style.position = 'relative';
+            card.appendChild(instruction);
+            
+            // Auto-remove after animation
+            setTimeout(() => {
+                if (instruction.parentNode) {
+                    instruction.remove();
+                }
+            }, 2500);
+            
+        } catch (error) {
+            console.error('❌ Error showing click preview instructions:', error);
+        }
     }
     
     /**

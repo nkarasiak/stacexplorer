@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.4] - 2025-08-01
+
+### ✨ Added
+- **Hover-to-Zoom Preview**: Result items now support hover-to-zoom functionality - when you move your cursor over a result item, the map temporarily pans and zooms to show that item's location, then restores the previous view when you move the cursor away
+
+### 🔧 Fixed
+- **Map Access Pattern**: Fixed map availability issues by using proper `mapManager.getMap()` method instead of direct `mapManager.map` access
+- **Map Initialization**: Enhanced error handling and debugging for map availability checks during hover operations
+- **Click vs Hover Separation**: Clicking result items displays them permanently without zoom/pan, while hovering provides temporary preview with automatic view restoration
+
+### 🚀 Enhanced
+- **Async Map Waiting**: Added intelligent waiting mechanism for map initialization during hover operations
+- **State Management**: Improved hover state tracking to prevent conflicts between click and hover operations
+- **Visual Feedback**: Added blue border indicator for active hover preview mode
+- **Bounding Box Display**: Shows item coverage area on map during hover preview
+
+### 🛠️ Technical Improvements
+- Added comprehensive map availability validation with detailed debugging
+- Implemented proper separation between permanent display (click) and preview (hover) modes
+- Enhanced error recovery with graceful fallbacks when map is not ready
+- Improved timeout handling for smooth hover transitions
+
+### 🎯 User Experience
+- Hover over result items → Map automatically previews item location
+- Move cursor away → Map returns to previous view
+- Click items → Permanently display on map without changing viewport
+- Smooth animations and visual feedback for all hover interactions
+
 ## [2.12.3] - 2025-08-01
 
 ### 🔧 Fixed

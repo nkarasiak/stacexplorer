@@ -208,16 +208,30 @@ export class SearchForm {
                         const geometrySourceId = 'searchform-geometry';
                         
                         // Display geometry with beautiful styling
+                        console.log('🎨 Attempting to display geometry:', geojson);
+                        console.log('🎨 MapManager display methods available:', {
+                            addBeautifulGeometryLayer: typeof this.mapManager.addBeautifulGeometryLayer,
+                            addGeoJsonLayer: typeof this.mapManager.addGeoJsonLayer,
+                            displayBboxOnMap: typeof this.mapManager.displayBboxOnMap
+                        });
+                        
                         if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
+                            console.log('🎨 Using addBeautifulGeometryLayer method');
                             this.mapManager.addBeautifulGeometryLayer(
                                 geojson, 
                                 geometrySourceId
                             );
                         } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
+                            console.log('🎨 Using addGeoJsonLayer method');
                             this.mapManager.addGeoJsonLayer(
                                 geojson, 
                                 geometrySourceId
                             );
+                        } else if (typeof this.mapManager.displayBboxOnMap === 'function') {
+                            console.log('🎨 Using displayBboxOnMap fallback method');
+                            this.mapManager.displayBboxOnMap(bbox, 'Pasted Geometry');
+                        } else {
+                            console.warn('⚠️ No geometry display method available on mapManager');
                         }
                         
                         // Zoom to the geometry bounds

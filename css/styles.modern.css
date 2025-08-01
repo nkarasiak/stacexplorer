@@ -5163,6 +5163,16 @@ html.dark-theme .modal-body .info-group div {
     z-index: 1000;
     overflow-y: auto;
     padding: 0;
+    transform: translateX(100%);
+    transition: transform 0.3s ease-in-out;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.settings-panel.open {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
 }
 
 .settings-header {
@@ -5210,6 +5220,31 @@ html.dark-theme .modal-body .info-group div {
 .settings-close-btn:hover {
     background: var(--primary-color-hover, #5a67d8);
     transform: translateY(-1px);
+}
+
+.settings-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: 1.5px solid var(--border-color, #e5e7eb);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: var(--text-secondary, #6b7280);
+}
+
+.settings-close:hover {
+    background: var(--error-color, #ef4444);
+    border-color: var(--error-color, #ef4444);
+    color: white;
+    transform: scale(1.05);
+}
+
+.settings-close .material-icons {
+    font-size: 18px;
 }
 
 .settings-close-btn .material-icons {

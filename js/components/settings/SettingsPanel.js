@@ -98,13 +98,12 @@ export class SettingsPanel {
             this.saveSettings();
         });
         
-        // ESC key to close settings
+        // ESC key handler (will be added when panel opens)
         this.escKeyHandler = (e) => {
             if (e.key === 'Escape' && this.isOpen) {
                 this.close();
             }
         };
-        document.addEventListener('keydown', this.escKeyHandler);
         
         // Provider toggles
         this.panel.querySelector('#provider-list').addEventListener('change', (e) => {
@@ -259,6 +258,38 @@ export class SettingsPanel {
         const input = this.panel.querySelector('#custom-catalog-url');
         if (input) {
             input.value = this.settings.customCatalogUrl || '';
+        }
+    }
+    
+    /**
+     * Close the settings panel
+     */
+    close() {
+        if (this.isOpen) {
+            this.panel.classList.remove('open');
+            this.isOpen = false;
+            
+            // Remove focus trap
+            document.removeEventListener('keydown', this.escKeyHandler);
+            
+            // Dispatch event to notify other components
+            document.dispatchEvent(new CustomEvent('settingsPanelClosed'));
+        }
+    }
+    
+    /**
+     * Open the settings panel
+     */
+    open() {
+        if (!this.isOpen) {
+            this.panel.classList.add('open');
+            this.isOpen = true;
+            
+            // Add focus trap
+            document.addEventListener('keydown', this.escKeyHandler);
+            
+            // Dispatch event to notify other components
+            document.dispatchEvent(new CustomEvent('settingsPanelOpened'));
         }
     }
 } 

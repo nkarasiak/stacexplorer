@@ -12,7 +12,7 @@ import { UnifiedStateManager } from './utils/UnifiedStateManager.js';
 import { UnifiedRouter } from './utils/UnifiedRouter.js';
 // import { ShareManager } from './utils/ShareManager.js'; // REMOVED - no longer needed
 import { initializeGeometrySync } from './utils/GeometrySync.js';
-import { GeocodingService } from './utils/GeocodingService.js';
+// GeocodingService loaded dynamically to reduce initial bundle size
 
 // Import UI components
 import { CardSearchPanel } from './components/search/CardSearchPanel.js';
@@ -269,19 +269,20 @@ async function initAppNormal() {
         
         const apiClient = new STACApiClient(); // Initialize without any endpoint
         
-        // Initialize GeocodingService for tutorial
-        const geocodingService = new GeocodingService();
+        // Initialize GeocodingService dynamically for tutorial
+        let geocodingService = null;
+        
+        // Lazy load GeocodingService
+        const loadGeocodingService = async () => {
+            if (!geocodingService) {
+                const module = await import('./utils/GeocodingService.js');
+                geocodingService = new module.GeocodingService();
+            }
+            return geocodingService;
+        };
         
         // Make geocoding service available globally for location search
-        window.geocodingService = geocodingService;
-        
-        // Add initialization function for location search
-        window.initializeGeocodingService = async () => {
-            if (!window.geocodingService) {
-                window.geocodingService = new GeocodingService();
-            }
-            return window.geocodingService;
-        };
+        window.initializeGeocodingService = loadGeocodingService;
         
         // Initialize catalog selector first to handle default catalog load
         const catalogSelector = new CatalogSelector(apiClient, notificationService, CONFIG);

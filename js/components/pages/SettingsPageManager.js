@@ -135,6 +135,22 @@ export class SettingsPageManager {
     }
 
     /**
+     * Close settings and return to main app
+     */
+    closeSettings() {
+        // Remove ESC key listener
+        if (this.escKeyHandler) {
+            document.removeEventListener('keydown', this.escKeyHandler);
+        }
+        
+        // Navigate back to main app
+        window.history.back();
+        
+        // Alternative: direct navigation to home
+        // window.location.href = window.location.origin + window.location.pathname.replace('/settings', '');
+    }
+
+    /**
      * Render the settings page content
      */
     renderSettingsPage() {
@@ -150,6 +166,9 @@ export class SettingsPageManager {
                         <i class="material-icons">settings</i>
                         Settings
                     </div>
+                    <button class="settings-close" id="settings-close-btn" aria-label="Close settings">
+                        <i class="material-icons">close</i>
+                    </button>
                 </div>
                 
                 <!-- Theme Section -->
@@ -731,6 +750,22 @@ export class SettingsPageManager {
      * Set up event listeners for the settings page
      */
     setupEventListeners() {
+        
+        // Close button
+        const closeBtn = document.getElementById('settings-close-btn');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                this.closeSettings();
+            });
+        }
+        
+        // ESC key to close
+        this.escKeyHandler = (e) => {
+            if (e.key === 'Escape') {
+                this.closeSettings();
+            }
+        };
+        document.addEventListener('keydown', this.escKeyHandler);
         
         // Custom catalog add button
         const addBtn = document.getElementById('add-custom-catalog-btn');

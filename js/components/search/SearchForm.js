@@ -221,10 +221,24 @@ export class SearchForm {
                         }
                         
                         // Zoom to the geometry bounds
+                        console.log('🗺️ Attempting to zoom to bbox:', bbox);
+                        console.log('🗺️ MapManager methods available:', {
+                            fitToBounds: typeof this.mapManager.fitToBounds,
+                            fitMapToBbox: typeof this.mapManager.fitMapToBbox,
+                            mapLayers: !!this.mapManager.mapLayers
+                        });
+                        
                         if (typeof this.mapManager.fitToBounds === 'function') {
+                            console.log('🗺️ Using fitToBounds method');
                             this.mapManager.fitToBounds(bbox);
                         } else if (typeof this.mapManager.fitMapToBbox === 'function') {
+                            console.log('🗺️ Using fitMapToBbox method');
                             this.mapManager.fitMapToBbox(bbox);
+                        } else if (this.mapManager.mapLayers && typeof this.mapManager.mapLayers.fitMapToBbox === 'function') {
+                            console.log('🗺️ Using mapLayers.fitMapToBbox method');
+                            this.mapManager.mapLayers.fitMapToBbox(bbox);
+                        } else {
+                            console.warn('⚠️ No zoom method available on mapManager');
                         }
                         
                     } catch (mapError) {

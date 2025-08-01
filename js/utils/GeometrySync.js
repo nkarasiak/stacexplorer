@@ -74,9 +74,10 @@ export class GeometrySync {
         }
         
         // Listen for map drawing events
-        document.addEventListener('bboxDrawn', (e) => {
+        document.addEventListener('geometrySelected', (e) => {
             if (e.detail && e.detail.bbox) {
                 this.handleBboxDrawn(e.detail.bbox);
+                this.updateMainBboxInput(e.detail.bbox);
             }
         });
         
@@ -277,8 +278,40 @@ export class GeometrySync {
             
             
             if (this.notificationService) {
-                this.notificationService.showNotification('✅ Map selection added to AI Search', 'success');
+                this.notificationService.showNotification('✅ Map selection added to search form', 'success');
             }
+        }
+    }
+
+    /**
+     * Update the main bbox input field with drawn bbox
+     * @param {Array} bbox - Bounding box to set
+     */
+    updateMainBboxInput(bbox) {
+        if (!Array.isArray(bbox) || bbox.length !== 4) {
+            console.warn('⚠️ Invalid bbox for input update:', bbox);
+            return;
+        }
+
+        const bboxInput = document.getElementById('bbox-input');
+        if (bboxInput) {
+            // Format bbox to comma-separated string with proper precision
+            const bboxString = bbox.map(coord => parseFloat(coord).toFixed(6)).join(',');
+            bboxInput.value = bboxString;
+            
+            // Trigger input event to notify other components
+            const inputEvent = new Event('input', { bubbles: true });
+            bboxInput.dispatchEvent(inputEvent);
+            
+            console.log('✅ Updated bbox input:', bboxString);
+            
+            // Update location dropdown if available
+            if (this.inlineDropdownManager) {
+                const displayText = 'Drawn Area';
+                this.inlineDropdownManager.handleLocationSelection('custom', displayText);
+            }
+        } else {
+            console.warn('⚠️ Bbox input field not found');
         }
     }
     

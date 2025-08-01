@@ -104,7 +104,10 @@ export class UnifiedRouter {
         // Listen for item activation in view mode
         document.addEventListener('itemActivated', (event) => {
             
-            if (this.currentMode === 'view') {
+            // Double-check mode based on current URL in case currentMode isn't set correctly
+            const isInBrowserMode = window.location.pathname.includes('/browser/');
+            
+            if (this.currentMode === 'view' && !isInBrowserMode) {
                 // Allow URL updates during route processing if we're upgrading from legacy item format
                 const currentPath = window.location.pathname;
                 const isLegacyItemURL = currentPath.includes('/viewer/item/');
@@ -467,7 +470,8 @@ export class UnifiedRouter {
                                 assetKey, 
                                 item, 
                                 catalogId: catalogId, 
-                                collectionId: collectionId 
+                                collectionId: collectionId,
+                                source: 'url' // Indicates this came from URL navigation
                             }
                         }));
                     } else {

@@ -1483,6 +1483,8 @@ export class ResultsPanel {
                             return;
                         }
                         
+                        // Display item on map (with pan/zoom) while preserving search results
+                        // This ensures users don't lose their search context but can see the item on map
                         
                         // Show loading indicator
                         document.getElementById('loading').style.display = 'flex';
@@ -1493,13 +1495,26 @@ export class ResultsPanel {
                         });
                         li.classList.add('active');
                         
-                        // Use the new method that dispatches itemActivated event
-                        this.displayItemWithEvent(item, null);
-                        
-                        // Hide loading indicator after a short delay
-                        setTimeout(() => {
-                            document.getElementById('loading').style.display = 'none';
-                        }, 500);
+                        // Display item on map using map manager directly (no itemActivated event)
+                        this.mapManager.displayItemOnMap(item, null, true)
+                            .then(() => {
+                                // Hide loading indicator
+                                document.getElementById('loading').style.display = 'none';
+                                
+                                // Show success notification
+                                this.notificationService.showNotification(
+                                    `Viewing ${item.properties?.title || item.id} on map`, 
+                                    'success'
+                                );
+                            })
+                            .catch((error) => {
+                                console.error('Error displaying item on map:', error);
+                                document.getElementById('loading').style.display = 'none';
+                                this.notificationService.showNotification(
+                                    'Error displaying item on map', 
+                                    'error'
+                                );
+                            });
                     });
                 }
             };
@@ -1538,19 +1553,24 @@ export class ResultsPanel {
                         });
                         element.classList.add('active');
                         
-                        // Dispatch item activated event with catalog and collection context
-                        const catalogId = this.getCurrentCatalogId();
-                        const collectionId = this.getCurrentCollectionId();
+                        // Only dispatch item activated event in viewer mode, not browser mode
+                        const isInBrowserMode = window.location.pathname.includes('/browser/');
                         
-                        document.dispatchEvent(new CustomEvent('itemActivated', {
-                            detail: { 
-                                itemId: item.id,
-                                assetKey: 'thumbnail',
-                                item: item,
+                        if (!isInBrowserMode) {
+                            // Dispatch item activated event with catalog and collection context
+                            const catalogId = this.getCurrentCatalogId();
+                            const collectionId = this.getCurrentCollectionId();
+                            
+                            document.dispatchEvent(new CustomEvent('itemActivated', {
+                                detail: { 
+                                    itemId: item.id,
+                                    assetKey: 'thumbnail',
+                                    item: item,
                                 catalogId: catalogId,
                                 collectionId: collectionId
-                            }
-                        }));
+                                }
+                            }));
+                        }
                         
                         // Expand tools panel if collapsed
                         document.dispatchEvent(new CustomEvent('expandToolsPanel'));
@@ -1589,7 +1609,8 @@ export class ResultsPanel {
                 this.clearHoverState();
                 itemWasClicked = true;
                 
-                // Display item permanently on map (no zoom/pan, just display the image)
+                // Display item on map (with pan/zoom) while preserving search results
+                // This ensures users don't lose their search context but can see the item on map
                 displayOnMap();
             });
             
@@ -1931,7 +1952,7 @@ export class ResultsPanel {
     }
 
     /**
-     * View current item on map by navigating to viewer URL
+     * View current item on map (modified to preserve search results)
      */
     async viewItemOnMap() {
         try {
@@ -1940,19 +1961,22 @@ export class ResultsPanel {
                 return;
             }
 
+            // Close the modal first
+            this.closeModal();
             
-            // Get current URL and replace /browser/ with /viewer/
-            const currentUrl = window.location.href;
-            const viewerUrl = currentUrl.replace('/browser/', '/viewer/');
+            // Display item on map with pan/zoom while preserving search results
+            await this.mapManager.displayItemOnMap(this.currentItem, null, true);
             
-            
-            // Navigate to the viewer URL
-            window.location.href = viewerUrl;
+            // Show success notification
+            this.notificationService.showNotification(
+                `Viewing ${this.currentItem.properties?.title || this.currentItem.id} on map`, 
+                'success'
+            );
             
         } catch (error) {
-            console.error('❌ Error navigating to viewer:', error);
+            console.error('❌ Error displaying item on map:', error);
             this.notificationService.showNotification(
-                'Failed to navigate to viewer', 
+                'Failed to display item on map', 
                 'error'
             );
         }
@@ -2655,23 +2679,42 @@ export class ResultsPanel {
     /**
      * Display item with proper itemActivated event dispatch
      */
-    displayItemWithEvent(item, assetKey = null) {
+    displayItemWithEvent(item, assetKey = null, source = 'user-click') {
         
-        // Get current catalog and collection context
-        const catalogId = this.getCurrentCatalogId();
-        const collectionId = this.getCurrentCollectionId();
-        
-        
-        // Dispatch itemActivated event with proper context
-        document.dispatchEvent(new CustomEvent('itemActivated', {
-            detail: { 
-                itemId: item.id, 
-                assetKey: assetKey,
-                item: item,
-                catalogId: catalogId,
-                collectionId: collectionId
-            }
-        }));
+        // Check if this is from URL navigation or user interaction
+        if (source === 'url' || source === 'navigation') {
+            // For URL navigation, dispatch itemActivated event to handle routing
+            const catalogId = this.getCurrentCatalogId();
+            const collectionId = this.getCurrentCollectionId();
+            
+            document.dispatchEvent(new CustomEvent('itemActivated', {
+                detail: { 
+                    itemId: item.id, 
+                    assetKey: assetKey,
+                    item: item,
+                    catalogId: catalogId,
+                    collectionId: collectionId,
+                    source: source
+                }
+            }));
+        } else {
+            // For user clicks, display directly on map to preserve search context
+            this.mapManager.displayItemOnMap(item, assetKey, true)
+                .then(() => {
+                    // Show success notification
+                    this.notificationService.showNotification(
+                        `Viewing ${item.properties?.title || item.id} on map`, 
+                        'success'
+                    );
+                })
+                .catch((error) => {
+                    console.error('Error displaying item on map:', error);
+                    this.notificationService.showNotification(
+                        'Error displaying item on map', 
+                        'error'
+                    );
+                });
+        }
     }
     
     /**
@@ -2679,11 +2722,17 @@ export class ResultsPanel {
      * @param {CustomEvent} event - The itemActivated event
      */
     handleItemActivated(event) {
-        const { item } = event.detail;
+        const { item, source } = event.detail;
+        
         if (item) {
-            // Display the single item in the results panel
-            this.setItems([item]);
-            this.renderPage();
+            // Only replace search results if this came from URL navigation (not user clicks)
+            // This preserves search results when users click items, but handles direct URLs
+            if (source === 'url' || source === 'navigation') {
+                // Display the single item in the results panel (for direct URL access)
+                this.setItems([item]);
+                this.renderPage();
+            }
+            // If source is 'user-click' or undefined, preserve existing search results
         }
     }
     

@@ -202,6 +202,13 @@ export class CollectionManagerEnhanced {
                     'success'
                 );
                 
+                // Emit collections loaded event
+                document.dispatchEvent(new CustomEvent('collectionsLoaded', {
+                    detail: { collections: cachedCollections, fromCache: true }
+                }));
+                
+                this.hideLoadingState();
+                
                 // Optional: Load fresh data in background to update cache
                 // Temporarily disabled to ensure cache loading works properly
                 // this.refreshCacheInBackground(cacheKey);
@@ -239,8 +246,16 @@ export class CollectionManagerEnhanced {
                     'success'
                 );
                 
+                // Emit collections loaded event
+                document.dispatchEvent(new CustomEvent('collectionsLoaded', {
+                    detail: { collections: allCollections, fromCache: false }
+                }));
+                
+                this.hideLoadingState();
+                
             } else {
                 this.showNoCollectionsState();
+                this.hideLoadingState();
                 this.notificationService.showNotification(
                     '⚠️ No collections could be loaded from any data source - check console for details', 
                     'warning'
@@ -250,6 +265,7 @@ export class CollectionManagerEnhanced {
         } catch (error) {
             console.error('❌ Error auto-loading collections:', error);
             this.showErrorState();
+            this.hideLoadingState();
             this.notificationService.showNotification(
                 `Error loading collections: ${error.message}`, 
                 'error'
@@ -570,6 +586,9 @@ export class CollectionManagerEnhanced {
             select.innerHTML = '<option value="">🔄 Loading collections from all sources...</option>';
         }
         this.isLoading = true;
+        
+        // Emit loading started event
+        document.dispatchEvent(new CustomEvent('collectionsLoadingStarted'));
     }
     
     /**
@@ -592,6 +611,16 @@ export class CollectionManagerEnhanced {
             select.innerHTML = '<option value="">❌ Error loading collections</option>';
         }
         this.isLoading = false;
+    }
+    
+    /**
+     * Hide loading state
+     */
+    hideLoadingState() {
+        this.isLoading = false;
+        
+        // Emit loading finished event
+        document.dispatchEvent(new CustomEvent('collectionsLoadingFinished'));
     }
     
     /**

@@ -14,6 +14,7 @@ export class CollectionBrowserTrigger {
         this.inlineDropdownManager = inlineDropdownManager;
         this.triggerButton = null;
         this.currentSelection = null;
+        this.collectionManager = modal?.collectionManager;
         
         this.createTriggerButton();
         this.setupEventListeners();
@@ -91,6 +92,9 @@ export class CollectionBrowserTrigger {
         // Add enhanced styling
         this.addTriggerStyles();
         
+        // Update button state based on collection loading status
+        this.updateButtonStateForCollections();
+        
     }
     
     /**
@@ -101,13 +105,13 @@ export class CollectionBrowserTrigger {
         style.textContent = `
             /* Collection Browser Trigger Styles - Enhanced existing SOURCE card */
             .collection-browser-trigger {
-                transition: all 0.3s ease !important;
+                transition: all 0.15s ease !important;
                 position: relative;
             }
             
             .collection-browser-trigger:hover {
-                transform: translateY(-2px) !important;
-                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15) !important;
+                transform: translateY(-1px) !important;
+                box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1) !important;
                 border-color: var(--primary-color, #667eea) !important;
             }
             
@@ -149,6 +153,20 @@ export class CollectionBrowserTrigger {
             .collection-browser-trigger.loading {
                 pointer-events: none;
                 opacity: 0.7;
+                transform: none !important;
+            }
+            
+            .collection-browser-trigger.loading:hover {
+                transform: none !important;
+                box-shadow: none !important;
+            }
+            
+            /* Disable hover effects when showing loading or no collections messages */
+            .collection-browser-trigger[data-state="loading"]:hover,
+            .collection-browser-trigger[data-state="no-collections"]:hover {
+                transform: none !important;
+                box-shadow: none !important;
+                border-color: initial !important;
             }
             
             /* Focus styles for accessibility */
@@ -267,12 +285,38 @@ export class CollectionBrowserTrigger {
                 this.resetTriggerState();
             }, 100);
         });
+        
+        // Listen for collection loading state changes
+        document.addEventListener('collectionsLoaded', () => {
+            this.updateButtonStateForCollections();
+        });
+        
+        document.addEventListener('collectionsLoadingStarted', () => {
+            this.updateButtonStateForCollections();
+        });
+        
+        document.addEventListener('collectionsLoadingFinished', () => {
+            this.updateButtonStateForCollections();
+        });
     }
     
     /**
      * Open the collection browser modal
      */
     async openPanel() {
+        
+        // Check if collections are still loading
+        if (this.collectionManager && this.collectionManager.isLoadingCollections()) {
+            this.showCollectionsLoadingMessage();
+            return;
+        }
+        
+        // Check if collections are loaded
+        const collections = this.collectionManager?.getAllCollections() || [];
+        if (collections.length === 0) {
+            this.showNoCollectionsMessage();
+            return;
+        }
         
         // Show loading state
         this.setLoadingState(true);
@@ -371,6 +415,7 @@ export class CollectionBrowserTrigger {
         if (this.valueElement) {
             this.valueElement.textContent = collection.title || collection.id;
             this.triggerButton.classList.add('has-selection');
+            this.triggerButton.removeAttribute('data-state'); // Clear any loading/error states
         }
         
         // Update the inline dropdown manager if it exists
@@ -501,6 +546,76 @@ export class CollectionBrowserTrigger {
             setTimeout(() => {
                 this.triggerButton.classList.remove('error');
             }, 3000);
+        }
+    }
+    
+    /**
+     * Show collections loading message
+     */
+    showCollectionsLoadingMessage() {
+        if (this.valueElement) {
+            this.valueElement.textContent = 'Loading Collections...';
+        }
+        
+        if (this.triggerButton) {
+            this.triggerButton.setAttribute('data-state', 'loading');
+        }
+        
+        // Show temporary notification
+        if (window.stacExplorer?.notificationService) {
+            window.stacExplorer.notificationService.showNotification(
+                '🔄 Collections are still loading. Please wait a moment...', 
+                'info',
+                3000
+            );
+        }
+    }
+    
+    /**
+     * Show no collections message
+     */
+    showNoCollectionsMessage() {
+        if (this.valueElement) {
+            this.valueElement.textContent = 'No Collections Available';
+        }
+        
+        if (this.triggerButton) {
+            this.triggerButton.setAttribute('data-state', 'no-collections');
+        }
+        
+        // Show temporary notification
+        if (window.stacExplorer?.notificationService) {
+            window.stacExplorer.notificationService.showNotification(
+                '⚠️ No collections are available. Please check your data sources in settings.', 
+                'warning',
+                4000
+            );
+        }
+    }
+    
+    /**
+     * Update button state based on collection loading status
+     */
+    updateButtonStateForCollections() {
+        if (!this.collectionManager) return;
+        
+        if (this.collectionManager.isLoadingCollections()) {
+            this.showCollectionsLoadingMessage();
+            this.setLoadingState(true);
+        } else {
+            const collections = this.collectionManager.getAllCollections() || [];
+            if (collections.length === 0) {
+                this.showNoCollectionsMessage();
+            } else {
+                // Reset to normal state
+                if (this.valueElement && !this.currentSelection) {
+                    this.valueElement.textContent = 'Select Source';
+                }
+                if (this.triggerButton) {
+                    this.triggerButton.removeAttribute('data-state');
+                }
+                this.setLoadingState(false);
+            }
         }
     }
     

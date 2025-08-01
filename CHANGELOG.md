@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.5] - 2025-08-01
+
+### 🔧 Fixed
+- **Collection Browser Integration**: Removed duplicate sidebar elements that conflicted with existing viewer sidebar layout
+- **Source Button Loading States**: Fixed source button behavior when collections are not loaded - now shows proper loading messages and prevents weird interactions
+- **Search Results Preservation**: Fixed critical issue where clicking on item cards would redirect to individual item pages and lose all search results context
+- **Smart Item Navigation**: Implemented intelligent handling of item interactions that distinguishes between:
+  - Direct URL access (shows single item as expected)
+  - User clicks from search results (preserves all search results while showing item on map)
+
+### ✨ Enhanced
+- **Improved User Experience**: Item card clicks now display items on map with pan/zoom while keeping all search results visible and accessible
+- **Context Preservation**: Users can now explore multiple items from their search results without losing their search context
+- **Source Button States**: Enhanced source button to show "Loading Collections..." and "No Collections Available" states with appropriate user feedback
+- **Collection Loading Events**: Added proper event system for collection loading state changes
+
+### 🛠️ Technical Improvements
+- Added `source` parameter to `itemActivated` events to distinguish between URL navigation and user interactions
+- Implemented smart result panel management that preserves search context for user clicks but handles direct URLs correctly
+- Enhanced collection loading state management with proper event dispatching
+- Improved error handling and user feedback for collection-related operations
+
+### 🎯 User Experience
+- Users can now freely explore search results without fear of losing their search context
+- Direct item URLs continue to work as expected for sharing and bookmarking
+- Better visual feedback during collection loading processes
+- Smoother workflow when browsing through multiple search results
+
 ## [2.12.4] - 2025-08-01
 
 ### ✨ Added

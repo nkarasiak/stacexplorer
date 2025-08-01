@@ -775,7 +775,8 @@ export class UnifiedStateManager {
                     assetKey: this.activeAssetKey,
                     item: activeItem,
                     catalogId: catalogId,
-                    collectionId: collectionId
+                    collectionId: collectionId,
+                    source: 'url' // Indicates this came from URL/state restoration
                 }
             }));
             

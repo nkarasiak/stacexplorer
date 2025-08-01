@@ -43,24 +43,18 @@ export class CatalogBrowserPanel {
         panel.className = 'catalog-browser-panel hidden';
         
         panel.innerHTML = `
-            <!-- Sidebar - Matching Main App Layout -->
-            <aside class="catalog-browser-sidebar">
-                <div class="sidebar-header">
-                    <h1 id="app-logo" style="cursor: pointer;" title="Return to Homepage">
-                        <i class="material-icons">satellite_alt</i> 
-                        <span>STAC Explorer</span>
-                    </h1>
+            <!-- Catalog Browser Content - Replaces existing sidebar content -->
+            <div class="catalog-browser-sidebar-replacement">
+                <div class="browser-section-header">
+                    <h2>
+                        <i class="material-icons">folder_open</i>
+                        <span>Catalog Browser</span>
+                    </h2>
                     <div class="header-actions">
                         <button id="catalog-browser-close" title="Close Browser">
                             <i class="material-icons">close</i>
                         </button>
                     </div>
-                </div>
-                <div class="browser-section-header">
-                    <h2>
-                        <i class="material-icons">folder_open</i>
-                        <span>Browser</span>
-                    </h2>
                 </div>
                 
                 <div class="catalog-breadcrumb">
@@ -126,7 +120,7 @@ export class CatalogBrowserPanel {
                         </div>
                     </div>
                 </div>
-            </aside>
+            </div>
             
             <!-- Main Content Area -->
             <main class="catalog-browser-main">

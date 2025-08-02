@@ -1,5 +1,21 @@
 /**
- * SatelliteAnimation.js - Animated satellite that flies across the screen when no search results are shown
+ * SatelliteAnimation.js - Animated satellite with interactive control capabilities
+ *
+ * Features:
+ * - Automatic animation when no search results are shown
+ * - Interactive control mode with arrow key navigation
+ * - Map following functionality that pans and rotates with satellite
+ * - Command Palette integration for easy access
+ * - Global keyboard shortcut (Ctrl+Shift+S or Cmd+Shift+S)
+ *
+ * Usage:
+ * - Press Ctrl+Shift+S to enter satellite control mode
+ * - Use arrow keys to move satellite around screen
+ * - Left/Right arrows also rotate the satellite and map
+ * - Press F to toggle map following mode
+ * - Press R to reset satellite position and orientation
+ * - Press ESC to exit control mode
+ * - Access via Command Palette (Shift+/) -> "Toggle Satellite Control"
  */
 
 import { offlineManager } from '../../utils/OfflineManager.js';
@@ -17,6 +33,17 @@ export class SatelliteAnimation {
     this.isOffline = false;
     this.offlineUnsubscribe = null;
 
+    // Satellite control properties
+    this.isControlMode = false;
+    this.satellitePosition = { x: 0, y: 0 };
+    this.satelliteOrientation = 0; // degrees
+    this.mapManager = null;
+    this.controlSpeed = 5; // pixels per keypress
+    this.rotationSpeed = 15; // degrees per keypress
+    this.keyStates = new Set(); // Track held keys for smooth movement
+    this.controlInterval = null;
+    this.isFollowingMode = true; // Map follows satellite by default
+
     this.init();
     this.setupOfflineHandling();
   }
@@ -28,11 +55,521 @@ export class SatelliteAnimation {
     this.createSatelliteElements();
     this.calculateLayout();
     this.bindEvents();
+    this.initSatelliteControl();
 
     // Start animation if no results are present
     setTimeout(() => {
       this.checkResultsAndStart();
     }, 1000); // Wait 1 second for DOM to be fully ready
+  }
+
+  /**
+   * Initialize satellite control functionality
+   */
+  initSatelliteControl() {
+    // Wait for map manager to be available
+    window.addEventListener('mapManagerReady', event => {
+      this.mapManager = event.detail.mapManager;
+    });
+
+    // Try to get existing map manager
+    const { getMapManager } = window;
+    if (getMapManager && typeof getMapManager === 'function') {
+      this.mapManager = getMapManager();
+    }
+
+    // Set up keyboard event listeners
+    this.setupKeyboardControls();
+
+    // Initialize satellite position to center of screen
+    this.satellitePosition = {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    };
+
+    // Register satellite control with Command Palette
+    this.registerWithCommandPalette();
+  }
+
+  /**
+   * Register satellite control with Command Palette
+   */
+  registerWithCommandPalette() {
+    // Wait for command palette to be available
+    setTimeout(() => {
+      const commandPalette =
+        window.CommandPalette?.instance || document.querySelector('.command-palette')?._component;
+
+      if (commandPalette && typeof commandPalette.registerCommand === 'function') {
+        // Register satellite control category
+        if (typeof commandPalette.registerCategory === 'function') {
+          commandPalette.registerCategory('satellite', {
+            label: 'Satellite Control',
+            icon: '🛰️',
+            order: 2.5,
+          });
+        }
+
+        // Register satellite control command
+        commandPalette.registerCommand({
+          id: 'satellite-control-toggle',
+          title: 'Toggle Satellite Control',
+          description: 'Enter interactive satellite control mode with arrow keys',
+          category: 'satellite',
+          keywords: ['satellite', 'control', 'arrow', 'keys', 'navigation', 'map'],
+          action: () => {
+            if (this.isControlMode) {
+              this.exitControlMode();
+            } else {
+              this.enterControlMode();
+            }
+          },
+        });
+
+        // Register satellite reset command
+        commandPalette.registerCommand({
+          id: 'satellite-reset',
+          title: 'Reset Satellite Position',
+          description: 'Reset satellite to center and clear orientation',
+          category: 'satellite',
+          keywords: ['satellite', 'reset', 'center', 'orientation'],
+          action: () => {
+            this.resetSatellitePosition();
+          },
+        });
+
+        // Register follow mode toggle
+        commandPalette.registerCommand({
+          id: 'satellite-follow-toggle',
+          title: 'Toggle Map Follow Mode',
+          description: 'Toggle whether the map follows satellite movement',
+          category: 'satellite',
+          keywords: ['satellite', 'follow', 'map', 'tracking'],
+          action: () => {
+            this.toggleFollowMode();
+          },
+        });
+      }
+    }, 2000); // Wait 2 seconds for command palette to initialize
+  }
+
+  /**
+   * Setup keyboard controls for satellite movement
+   */
+  setupKeyboardControls() {
+    // Listen for keydown events
+    document.addEventListener('keydown', event => {
+      this.handleKeyDown(event);
+      this.handleGlobalShortcuts(event);
+    });
+
+    // Listen for keyup events
+    document.addEventListener('keyup', event => {
+      this.handleKeyUp(event);
+    });
+
+    // Start control loop for smooth movement
+    this.startControlLoop();
+  }
+
+  /**
+   * Handle global keyboard shortcuts
+   */
+  handleGlobalShortcuts(event) {
+    // Ctrl+Shift+S or Cmd+Shift+S to toggle satellite control
+    if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.code === 'KeyS') {
+      event.preventDefault();
+      if (this.isControlMode) {
+        this.exitControlMode();
+      } else {
+        this.enterControlMode();
+      }
+      return;
+    }
+  }
+
+  /**
+   * Handle keydown events for satellite control
+   */
+  handleKeyDown(event) {
+    // Only handle arrow keys when satellite is visible and control mode is active
+    if (!this.isControlMode || !this.satellite) {
+      return;
+    }
+
+    const key = event.code;
+
+    // Prevent default behavior for arrow keys
+    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
+      event.preventDefault();
+      this.keyStates.add(key);
+    }
+
+    // Handle special keys
+    switch (key) {
+      case 'KeyF': // Toggle follow mode
+        event.preventDefault();
+        this.toggleFollowMode();
+        break;
+      case 'KeyR': // Reset satellite position and orientation
+        event.preventDefault();
+        this.resetSatellitePosition();
+        break;
+      case 'Escape': // Exit control mode
+        event.preventDefault();
+        this.exitControlMode();
+        break;
+    }
+  }
+
+  /**
+   * Handle keyup events
+   */
+  handleKeyUp(event) {
+    if (!this.isControlMode) {
+      return;
+    }
+
+    const key = event.code;
+    this.keyStates.delete(key);
+  }
+
+  /**
+   * Start the control loop for smooth movement
+   */
+  startControlLoop() {
+    if (this.controlInterval) {
+      return;
+    }
+
+    this.controlInterval = setInterval(() => {
+      if (this.isControlMode && this.keyStates.size > 0) {
+        this.processKeyStates();
+      }
+    }, 16); // ~60 FPS
+  }
+
+  /**
+   * Process current key states for smooth movement
+   */
+  processKeyStates() {
+    if (!this.satellite || !this.isControlMode) {
+      return;
+    }
+
+    let deltaX = 0;
+    let deltaY = 0;
+    let deltaRotation = 0;
+
+    // Movement keys
+    if (this.keyStates.has('ArrowLeft')) {
+      deltaX -= this.controlSpeed;
+      deltaRotation -= this.rotationSpeed;
+    }
+    if (this.keyStates.has('ArrowRight')) {
+      deltaX += this.controlSpeed;
+      deltaRotation += this.rotationSpeed;
+    }
+    if (this.keyStates.has('ArrowUp')) {
+      deltaY -= this.controlSpeed;
+    }
+    if (this.keyStates.has('ArrowDown')) {
+      deltaY += this.controlSpeed;
+    }
+
+    // Apply movement
+    if (deltaX !== 0 || deltaY !== 0) {
+      this.moveSatellite(deltaX, deltaY);
+    }
+
+    // Apply rotation
+    if (deltaRotation !== 0) {
+      this.rotateSatellite(deltaRotation);
+    }
+  }
+
+  /**
+   * Move satellite by delta amounts
+   */
+  moveSatellite(deltaX, deltaY) {
+    // Update position
+    this.satellitePosition.x += deltaX;
+    this.satellitePosition.y += deltaY;
+
+    // Keep satellite within screen bounds
+    const margin = 50;
+    this.satellitePosition.x = Math.max(
+      margin,
+      Math.min(window.innerWidth - margin, this.satellitePosition.x)
+    );
+    this.satellitePosition.y = Math.max(
+      margin,
+      Math.min(window.innerHeight - margin, this.satellitePosition.y)
+    );
+
+    // Update satellite visual position
+    this.updateSatellitePosition();
+
+    // Update map if following mode is enabled
+    if (this.isFollowingMode && this.mapManager?.getMap) {
+      this.updateMapPosition();
+    }
+  }
+
+  /**
+   * Rotate satellite by delta degrees
+   */
+  rotateSatellite(deltaRotation) {
+    this.satelliteOrientation += deltaRotation;
+    this.satelliteOrientation = this.satelliteOrientation % 360;
+
+    // Update satellite visual rotation
+    this.updateSatelliteRotation();
+
+    // Update map bearing if following mode is enabled
+    if (this.isFollowingMode && this.mapManager?.getMap) {
+      this.updateMapBearing();
+    }
+  }
+
+  /**
+   * Update satellite visual position
+   */
+  updateSatellitePosition() {
+    if (!this.satellite) {
+      return;
+    }
+
+    this.satellite.style.left = `${this.satellitePosition.x}px`;
+    this.satellite.style.top = `${this.satellitePosition.y}px`;
+    this.satellite.style.transform = `translate(-50%, -50%) rotate(${this.satelliteOrientation}deg)`;
+  }
+
+  /**
+   * Update satellite visual rotation
+   */
+  updateSatelliteRotation() {
+    if (!this.satellite) {
+      return;
+    }
+
+    this.satellite.style.transform = `translate(-50%, -50%) rotate(${this.satelliteOrientation}deg)`;
+  }
+
+  /**
+   * Update map position to follow satellite
+   */
+  updateMapPosition() {
+    if (!this.mapManager?.getMap) {
+      return;
+    }
+
+    const map = this.mapManager.getMap();
+    if (!map || !map.isStyleLoaded()) {
+      return;
+    }
+
+    try {
+      // Get current map center
+      const center = map.getCenter();
+
+      // Calculate movement based on satellite position relative to screen center
+      const screenCenterX = window.innerWidth / 2;
+      const screenCenterY = window.innerHeight / 2;
+
+      const deltaScreenX = this.satellitePosition.x - screenCenterX;
+      const deltaScreenY = this.satellitePosition.y - screenCenterY;
+
+      // More sophisticated coordinate conversion based on actual map projection
+      // Get the map bounds to calculate proper scale
+      const bounds = map.getBounds();
+      const mapWidth = bounds.getEast() - bounds.getWest();
+      const mapHeight = bounds.getNorth() - bounds.getSouth();
+
+      // Calculate deltas as percentage of screen then convert to geographic units
+      const deltaLngPercent = deltaScreenX / window.innerWidth;
+      const deltaLatPercent = -deltaScreenY / window.innerHeight; // Invert Y axis
+
+      const deltaLng = deltaLngPercent * mapWidth * 0.05; // Damping factor
+      const deltaLat = deltaLatPercent * mapHeight * 0.05; // Damping factor
+
+      const newCenter = [
+        Math.max(-180, Math.min(180, center.lng + deltaLng)),
+        Math.max(-85, Math.min(85, center.lat + deltaLat)),
+      ];
+
+      // Use panTo for smoother movement instead of setCenter
+      map.panTo(newCenter, { duration: 100 });
+    } catch (error) {
+      console.warn('Error updating map position:', error);
+    }
+  }
+
+  /**
+   * Update map bearing to match satellite orientation
+   */
+  updateMapBearing() {
+    const map = this.mapManager.getMap();
+    if (!map || !map.isStyleLoaded()) {
+      return;
+    }
+
+    try {
+      map.setBearing(this.satelliteOrientation);
+    } catch (error) {
+      console.warn('Error updating map bearing:', error);
+    }
+  }
+
+  /**
+   * Toggle follow mode on/off
+   */
+  toggleFollowMode() {
+    this.isFollowingMode = !this.isFollowingMode;
+    this.showControlMessage(`Follow mode: ${this.isFollowingMode ? 'ON' : 'OFF'}`);
+  }
+
+  /**
+   * Reset satellite position and orientation
+   */
+  resetSatellitePosition() {
+    this.satellitePosition = {
+      x: window.innerWidth / 2,
+      y: window.innerHeight / 2,
+    };
+    this.satelliteOrientation = 0;
+
+    this.updateSatellitePosition();
+    this.updateSatelliteRotation();
+
+    if (this.isFollowingMode && this.mapManager?.getMap) {
+      const map = this.mapManager.getMap();
+      if (map && map.isStyleLoaded()) {
+        map.setBearing(0);
+      }
+    }
+
+    this.showControlMessage('Satellite reset to center');
+  }
+
+  /**
+   * Enter satellite control mode
+   */
+  enterControlMode() {
+    if (this.isControlMode) {
+      return;
+    }
+
+    this.isControlMode = true;
+    this.stopAnimation(); // Stop automatic animation
+
+    // Position satellite at center of screen
+    this.resetSatellitePosition();
+
+    // Make satellite visible and controllable
+    this.container.style.display = 'block';
+    this.satellite.classList.remove('hidden', 'animate');
+    this.satellite.classList.add('visible', 'controllable');
+
+    // Add control mode styling
+    this.satellite.style.position = 'fixed';
+    this.satellite.style.zIndex = '1000';
+    this.satellite.style.transition = 'none';
+    this.satellite.style.cursor = 'move';
+
+    this.showControlMessage(
+      '🛰️ Satellite control active! ⬅️➡️⬆️⬇️ Move | F: Follow mode | R: Reset | ESC: Exit | Ctrl+Shift+S: Toggle'
+    );
+  }
+
+  /**
+   * Exit satellite control mode
+   */
+  exitControlMode() {
+    if (!this.isControlMode) {
+      return;
+    }
+
+    this.isControlMode = false;
+    this.keyStates.clear();
+
+    // Remove control mode styling
+    this.satellite.classList.remove('visible', 'controllable');
+    this.satellite.classList.add('hidden');
+    this.satellite.style.position = '';
+    this.satellite.style.zIndex = '';
+    this.satellite.style.transition = '';
+    this.satellite.style.cursor = '';
+    this.satellite.style.transform = '';
+
+    // Hide container
+    this.container.style.display = 'none';
+
+    this.showControlMessage('Satellite control mode deactivated');
+
+    // Resume normal animation if no results
+    setTimeout(() => {
+      this.checkResultsAndStart();
+    }, 1000);
+  }
+
+  /**
+   * Show control message to user
+   */
+  showControlMessage(message) {
+    // Remove existing message
+    const existing = document.getElementById('satellite-control-message');
+    if (existing) {
+      existing.remove();
+    }
+
+    // Create message element
+    const messageEl = document.createElement('div');
+    messageEl.id = 'satellite-control-message';
+    messageEl.textContent = message;
+    messageEl.style.cssText = `
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 20px;
+      z-index: 10000;
+      font-size: 14px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(10px);
+      animation: fadeInOut 3s ease-in-out;
+    `;
+
+    // Add CSS animation for fade in/out
+    if (!document.getElementById('satellite-control-styles')) {
+      const style = document.createElement('style');
+      style.id = 'satellite-control-styles';
+      style.textContent = `
+        @keyframes fadeInOut {
+          0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+          20%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+          100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+        }
+        .satellite.controllable {
+          box-shadow: 0 0 20px rgba(0, 123, 255, 0.6);
+          filter: brightness(1.2);
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    document.body.appendChild(messageEl);
+
+    // Remove message after animation
+    setTimeout(() => {
+      if (messageEl.parentNode) {
+        messageEl.remove();
+      }
+    }, 3000);
   }
 
   /**
@@ -354,6 +891,15 @@ export class SatelliteAnimation {
   destroy() {
     this.stopAnimation();
 
+    // Clean up control functionality
+    if (this.controlInterval) {
+      clearInterval(this.controlInterval);
+      this.controlInterval = null;
+    }
+
+    this.keyStates.clear();
+    this.isControlMode = false;
+
     // Clean up offline message
     this.removeOfflineMessage();
 
@@ -363,11 +909,23 @@ export class SatelliteAnimation {
       this.offlineUnsubscribe = null;
     }
 
+    // Clean up control message and styles
+    const controlMessage = document.getElementById('satellite-control-message');
+    if (controlMessage) {
+      controlMessage.remove();
+    }
+
+    const controlStyles = document.getElementById('satellite-control-styles');
+    if (controlStyles) {
+      controlStyles.remove();
+    }
+
     if (this.container?.parentNode) {
       this.container.parentNode.removeChild(this.container);
     }
 
     this.container = null;
     this.satellite = null;
+    this.mapManager = null;
   }
 }

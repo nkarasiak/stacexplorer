@@ -10,8 +10,9 @@
  *
  * Usage:
  * - Press Ctrl+Shift+S to enter satellite control mode
- * - Left/Right arrows: Rotate satellite (changes orientation)
- * - Up/Down arrows: Move forward/backward in current direction
+ * - Left/Right arrows: Rotate satellite orientation only (no map movement)
+ * - Up/Down arrows: Move map forward/backward in satellite direction
+ * - Satellite always stays centered on screen
  * - Press F to toggle map following mode
  * - Press R to reset satellite position and orientation
  * - Press ESC to exit control mode
@@ -83,8 +84,8 @@ export class SatelliteAnimation {
 
     // Initialize satellite position to center of screen
     this.satellitePosition = {
-      x: window.innerWidth / 2,
-      y: window.innerHeight / 2,
+      x: (window.innerWidth || 1920) / 2,
+      y: (window.innerHeight || 1080) / 2,
     };
 
     // Register satellite control with Command Palette
@@ -243,10 +244,51 @@ export class SatelliteAnimation {
     }
 
     this.controlInterval = setInterval(() => {
-      if (this.isControlMode && this.keyStates.size > 0) {
-        this.processKeyStates();
+      if (this.isControlMode) {
+        // Process movement if keys are pressed
+        if (this.keyStates.size > 0) {
+          this.processKeyStates();
+        }
+
+        // Regular validation to prevent disappearing
+        this.validateSatelliteState();
       }
     }, 16); // ~60 FPS
+  }
+
+  /**
+   * Validate satellite state to prevent disappearing
+   */
+  validateSatelliteState() {
+    if (!this.satellite || !this.container) {
+      return;
+    }
+
+    // Check if satellite is still visible and positioned correctly
+    const rect = this.satellite.getBoundingClientRect();
+    const isVisible = rect.width > 0 && rect.height > 0;
+
+    if (
+      !isVisible ||
+      rect.left < -100 ||
+      rect.top < -100 ||
+      rect.left > window.innerWidth + 100 ||
+      rect.top > window.innerHeight + 100
+    ) {
+      console.warn('Satellite appears to be off-screen or invisible, repositioning');
+      this.resetSatellitePosition();
+    }
+
+    // Ensure container is visible
+    if (this.container.style.display === 'none') {
+      this.container.style.display = 'block';
+    }
+
+    // Ensure satellite has correct classes
+    if (!this.satellite.classList.contains('visible')) {
+      this.satellite.classList.add('visible');
+      this.satellite.classList.remove('hidden');
+    }
   }
 
   /**
@@ -283,42 +325,44 @@ export class SatelliteAnimation {
       deltaY += Math.cos(radians) * this.controlSpeed;
     }
 
-    // Apply movement
-    if (deltaX !== 0 || deltaY !== 0) {
-      this.moveSatellite(deltaX, deltaY);
-    }
-
-    // Apply rotation
+    // Apply rotation (left/right keys only)
     if (deltaRotation !== 0) {
       this.rotateSatellite(deltaRotation);
+    }
+
+    // Apply movement (up/down keys only)
+    if (deltaX !== 0 || deltaY !== 0) {
+      this.moveSatellite(deltaX, deltaY);
     }
   }
 
   /**
-   * Move satellite by delta amounts
+   * Move satellite (actually moves map underneath while satellite stays centered)
    */
   moveSatellite(deltaX, deltaY) {
-    // Update position
-    this.satellitePosition.x += deltaX;
-    this.satellitePosition.y += deltaY;
+    // Validate input deltas
+    if (!isFinite(deltaX) || !isFinite(deltaY)) {
+      console.warn('Invalid movement deltas:', deltaX, deltaY);
+      return;
+    }
 
-    // Keep satellite within screen bounds
-    const margin = 50;
-    this.satellitePosition.x = Math.max(
-      margin,
-      Math.min(window.innerWidth - margin, this.satellitePosition.x)
-    );
-    this.satellitePosition.y = Math.max(
-      margin,
-      Math.min(window.innerHeight - margin, this.satellitePosition.y)
-    );
+    // Keep satellite always at screen center
+    const screenWidth = window.innerWidth || 1920;
+    const screenHeight = window.innerHeight || 1080;
 
-    // Update satellite visual position
+    this.satellitePosition = {
+      x: screenWidth / 2,
+      y: screenHeight / 2,
+    };
+
+    // Update satellite visual position (always centered)
     this.updateSatellitePosition();
 
-    // Update map if following mode is enabled
+    // Move the map underneath the satellite instead of moving the satellite
     if (this.isFollowingMode && this.mapManager?.getMap) {
-      this.updateMapPosition();
+      this.updateMapPosition(deltaX, deltaY);
+      // Also update map bearing to match satellite orientation during movement
+      this.updateMapBearing();
     }
   }
 
@@ -332,10 +376,7 @@ export class SatelliteAnimation {
     // Update satellite visual rotation
     this.updateSatelliteRotation();
 
-    // Update map bearing if following mode is enabled
-    if (this.isFollowingMode && this.mapManager?.getMap) {
-      this.updateMapBearing();
-    }
+    // Note: Map bearing is only updated during movement (up/down), not rotation (left/right)
   }
 
   /**
@@ -343,12 +384,34 @@ export class SatelliteAnimation {
    */
   updateSatellitePosition() {
     if (!this.satellite) {
+      console.warn('Satellite element not found when trying to update position');
       return;
     }
 
+    // Validate position values before applying
+    if (!isFinite(this.satellitePosition.x) || !isFinite(this.satellitePosition.y)) {
+      console.warn('Invalid satellite position detected, resetting:', this.satellitePosition);
+      this.satellitePosition = {
+        x: (window.innerWidth || 1920) / 2,
+        y: (window.innerHeight || 1080) / 2,
+      };
+    }
+
+    // Validate orientation
+    if (!isFinite(this.satelliteOrientation)) {
+      console.warn('Invalid satellite orientation detected, resetting:', this.satelliteOrientation);
+      this.satelliteOrientation = -10;
+    }
+
+    // Apply styles with validated values
     this.satellite.style.left = `${this.satellitePosition.x}px`;
     this.satellite.style.top = `${this.satellitePosition.y}px`;
     this.satellite.style.transform = `translate(-50%, -50%) rotate(${this.satelliteOrientation}deg)`;
+
+    // Ensure satellite remains visible
+    this.satellite.style.display = '';
+    this.satellite.style.visibility = 'visible';
+    this.satellite.style.opacity = '1';
   }
 
   /**
@@ -363,9 +426,11 @@ export class SatelliteAnimation {
   }
 
   /**
-   * Update map position to follow satellite
+   * Update map position based on satellite movement deltas
+   * @param {number} deltaX - Movement delta in X direction (pixels)
+   * @param {number} deltaY - Movement delta in Y direction (pixels)
    */
-  updateMapPosition() {
+  updateMapPosition(deltaX, deltaY) {
     if (!this.mapManager?.getMap) {
       return;
     }
@@ -379,33 +444,26 @@ export class SatelliteAnimation {
       // Get current map center
       const center = map.getCenter();
 
-      // Calculate movement based on satellite position relative to screen center
-      const screenCenterX = window.innerWidth / 2;
-      const screenCenterY = window.innerHeight / 2;
-
-      const deltaScreenX = this.satellitePosition.x - screenCenterX;
-      const deltaScreenY = this.satellitePosition.y - screenCenterY;
-
-      // More sophisticated coordinate conversion based on actual map projection
       // Get the map bounds to calculate proper scale
       const bounds = map.getBounds();
       const mapWidth = bounds.getEast() - bounds.getWest();
       const mapHeight = bounds.getNorth() - bounds.getSouth();
 
-      // Calculate deltas as percentage of screen then convert to geographic units
-      const deltaLngPercent = deltaScreenX / window.innerWidth;
-      const deltaLatPercent = -deltaScreenY / window.innerHeight; // Invert Y axis
+      // Convert screen deltas to geographic deltas
+      // Invert the deltas so map moves opposite to satellite movement intention
+      const deltaLngPercent = -deltaX / window.innerWidth;
+      const deltaLatPercent = deltaY / window.innerHeight; // Y axis inverted for map coordinates
 
-      const deltaLng = deltaLngPercent * mapWidth * 0.05; // Damping factor
-      const deltaLat = deltaLatPercent * mapHeight * 0.05; // Damping factor
+      const deltaLng = deltaLngPercent * mapWidth * 0.5; // Movement factor
+      const deltaLat = deltaLatPercent * mapHeight * 0.5; // Movement factor
 
       const newCenter = [
         Math.max(-180, Math.min(180, center.lng + deltaLng)),
         Math.max(-85, Math.min(85, center.lat + deltaLat)),
       ];
 
-      // Use panTo for smoother movement instead of setCenter
-      map.panTo(newCenter, { duration: 100 });
+      // Use setCenter for immediate movement (no animation for responsive feel)
+      map.setCenter(newCenter);
     } catch (error) {
       console.warn('Error updating map position:', error);
     }
@@ -439,9 +497,10 @@ export class SatelliteAnimation {
    * Reset satellite position and orientation
    */
   resetSatellitePosition() {
+    // Always keep satellite at screen center
     this.satellitePosition = {
-      x: window.innerWidth / 2,
-      y: window.innerHeight / 2,
+      x: (window.innerWidth || 1920) / 2,
+      y: (window.innerHeight || 1080) / 2,
     };
     this.satelliteOrientation = -10;
 
@@ -455,7 +514,7 @@ export class SatelliteAnimation {
       }
     }
 
-    this.showControlMessage('Satellite reset to center');
+    this.showControlMessage('Satellite centered and reset');
   }
 
   /**
@@ -484,7 +543,7 @@ export class SatelliteAnimation {
     this.satellite.style.cursor = 'move';
 
     this.showControlMessage(
-      '🛰️ Satellite control active! ⬅️➡️ Rotate | ⬆️⬇️ Forward/Back | F: Toggle follow (ON) | R: Reset | ESC: Exit'
+      '🛰️ Satellite centered! ⬅️➡️ Rotate only | ⬆️⬇️ Move map | F: Toggle follow (ON) | R: Reset | ESC: Exit'
     );
   }
 
@@ -696,6 +755,11 @@ export class SatelliteAnimation {
   bindEvents() {
     window.addEventListener('resize', () => {
       this.calculateLayout();
+
+      // Validate satellite position after resize
+      if (this.isControlMode) {
+        this.validateSatelliteAfterResize();
+      }
     });
 
     // Listen for search result changes
@@ -707,6 +771,40 @@ export class SatelliteAnimation {
     document.addEventListener('resultsCleared', () => {
       this.onResultsCleared();
     });
+  }
+
+  /**
+   * Validate and adjust satellite position after window resize
+   */
+  validateSatelliteAfterResize() {
+    if (!this.satellite || !this.isControlMode) {
+      return;
+    }
+
+    const margin = 50;
+    const newWidth = window.innerWidth;
+    const newHeight = window.innerHeight;
+
+    // Check if satellite is now outside bounds due to resize
+    if (
+      this.satellitePosition.x > newWidth - margin ||
+      this.satellitePosition.y > newHeight - margin ||
+      this.satellitePosition.x < margin ||
+      this.satellitePosition.y < margin
+    ) {
+      // Adjust position to stay within new bounds
+      this.satellitePosition.x = Math.max(
+        margin,
+        Math.min(newWidth - margin, this.satellitePosition.x)
+      );
+      this.satellitePosition.y = Math.max(
+        margin,
+        Math.min(newHeight - margin, this.satellitePosition.y)
+      );
+
+      this.updateSatellitePosition();
+      this.showControlMessage('Satellite position adjusted for screen resize');
+    }
   }
 
   /**

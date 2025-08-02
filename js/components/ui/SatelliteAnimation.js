@@ -340,13 +340,15 @@ export class SatelliteAnimation {
     // Movement keys - ONLY up/down keys move the map
     if (this.keyStates.has('ArrowUp')) {
       // Move backward opposite to the direction the satellite is pointing
-      const radians = (this.satelliteOrientation * Math.PI) / 180;
+      // Double the satellite orientation for movement calculation
+      const radians = (this.satelliteOrientation * 2 * Math.PI) / 180;
       deltaX -= Math.sin(radians) * this.controlSpeed;
       deltaY += Math.cos(radians) * this.controlSpeed;
     }
     if (this.keyStates.has('ArrowDown')) {
       // Move forward in the direction the satellite is pointing
-      const radians = (this.satelliteOrientation * Math.PI) / 180;
+      // Double the satellite orientation for movement calculation
+      const radians = (this.satelliteOrientation * 2 * Math.PI) / 180;
       deltaX += Math.sin(radians) * this.controlSpeed;
       deltaY -= Math.cos(radians) * this.controlSpeed;
     }

@@ -44,6 +44,7 @@ export class SatelliteAnimation {
     this.keyStates = new Set(); // Track held keys for smooth movement
     this.controlInterval = null;
     this.isFollowingMode = true; // Map follows satellite by default
+    this.mapKeyboardWasEnabled = false; // Track if map keyboard was enabled before control mode
 
     this.init();
     this.setupOfflineHandling();
@@ -358,9 +359,12 @@ export class SatelliteAnimation {
       this.rotateSatellite(deltaRotation);
     }
 
-    // Apply movement (up/down keys only)
+    // Apply movement (up/down keys only) - ONLY if there's actual movement
     if (deltaX !== 0 || deltaY !== 0) {
+      console.log('Calling moveSatellite with deltaX:', deltaX, 'deltaY:', deltaY);
       this.moveSatellite(deltaX, deltaY);
+    } else {
+      console.log('No movement - deltaX and deltaY are both 0, NOT calling moveSatellite');
     }
   }
 
@@ -556,6 +560,16 @@ export class SatelliteAnimation {
     this.isControlMode = true;
     this.stopAnimation(); // Stop automatic animation
 
+    // Disable MapLibre's built-in keyboard navigation
+    if (this.mapManager?.getMap) {
+      const map = this.mapManager.getMap();
+      if (map && map.keyboard) {
+        this.mapKeyboardWasEnabled = map.keyboard.isEnabled();
+        map.keyboard.disable();
+        console.log('Disabled MapLibre keyboard navigation');
+      }
+    }
+
     // Position satellite at center of screen
     this.resetSatellitePosition();
 
@@ -585,6 +599,15 @@ export class SatelliteAnimation {
 
     this.isControlMode = false;
     this.keyStates.clear();
+
+    // Re-enable MapLibre's keyboard navigation if it was enabled before
+    if (this.mapManager?.getMap) {
+      const map = this.mapManager.getMap();
+      if (map && map.keyboard && this.mapKeyboardWasEnabled) {
+        map.keyboard.enable();
+        console.log('Re-enabled MapLibre keyboard navigation');
+      }
+    }
 
     // Remove control mode styling
     this.satellite.classList.remove('visible', 'controllable');

@@ -31,7 +31,7 @@ export class SecurityUtils {
 
     try {
       const parsedUrl = new URL(url);
-      
+
       // Only allow http/https protocols
       if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
         return null;
@@ -43,7 +43,7 @@ export class SecurityUtils {
       }
 
       return parsedUrl.toString();
-    } catch (error) {
+    } catch {
       return null;
     }
   }
@@ -54,26 +54,26 @@ export class SecurityUtils {
    * @returns {boolean} Whether URL is valid for STAC
    */
   static validateStacUrl(url) {
-    const sanitized = this.sanitizeUrl(url);
+    const sanitized = SecurityUtils.sanitizeUrl(url);
     if (!sanitized) {
       return false;
     }
 
     try {
       const parsedUrl = new URL(sanitized);
-      
+
       // Check for common STAC patterns
       const validPatterns = [
         /\/stac\/?$/,
         /\/catalog\.json$/,
         /\/v1\/?$/,
         /api\/stac/,
-        /stac\..*\.(com|org|gov|edu)/
+        /stac\..*\.(com|org|gov|edu)/,
       ];
 
       const urlString = parsedUrl.toString();
       return validPatterns.some(pattern => pattern.test(urlString));
-    } catch (error) {
+    } catch {
       return false;
     }
   }
@@ -90,7 +90,7 @@ export class SecurityUtils {
 
     return query
       .trim()
-      .replace(/[<>\"'&]/g, '') // Remove potentially dangerous characters
+      .replace(/[<>"'&]/g, '') // Remove potentially dangerous characters
       .substring(0, 1000); // Limit length
   }
 
@@ -104,7 +104,7 @@ export class SecurityUtils {
     const latitude = parseFloat(lat);
     const longitude = parseFloat(lon);
 
-    if (isNaN(latitude) || isNaN(longitude)) {
+    if (Number.isNaN(latitude) || Number.isNaN(longitude)) {
       return null;
     }
 
@@ -137,7 +137,7 @@ export class SecurityUtils {
       /^MULTIPOINT\s*\(/i,
       /^MULTILINESTRING\s*\(\(/i,
       /^MULTIPOLYGON\s*\(\(\(/i,
-      /^GEOMETRYCOLLECTION\s*\(/i
+      /^GEOMETRYCOLLECTION\s*\(/i,
     ];
 
     return wktPatterns.some(pattern => pattern.test(wkt.trim()));
@@ -154,9 +154,15 @@ export class SecurityUtils {
     }
 
     const validTypes = [
-      'Point', 'LineString', 'Polygon', 'MultiPoint', 
-      'MultiLineString', 'MultiPolygon', 'GeometryCollection',
-      'Feature', 'FeatureCollection'
+      'Point',
+      'LineString',
+      'Polygon',
+      'MultiPoint',
+      'MultiLineString',
+      'MultiPolygon',
+      'GeometryCollection',
+      'Feature',
+      'FeatureCollection',
     ];
 
     return validTypes.includes(geojson.type);
@@ -195,7 +201,7 @@ export class SecurityUtils {
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
-      "frame-ancestors 'none'"
+      "frame-ancestors 'none'",
     ];
 
     return directives.join('; ');
@@ -211,12 +217,12 @@ export class SecurityUtils {
     }
 
     const headers = {
-      'Content-Security-Policy': this.generateCSP(),
+      'Content-Security-Policy': SecurityUtils.generateCSP(),
       'X-Content-Type-Options': 'nosniff',
       'X-Frame-Options': 'DENY',
       'X-XSS-Protection': '1; mode=block',
       'Referrer-Policy': 'strict-origin-when-cross-origin',
-      'Permissions-Policy': 'geolocation=(), microphone=(), camera=()'
+      'Permissions-Policy': 'geolocation=(), microphone=(), camera=()',
     };
 
     Object.entries(headers).forEach(([key, value]) => {
@@ -234,13 +240,13 @@ export class SecurityUtils {
       isAllowed(identifier) {
         const now = Date.now();
         const windowStart = now - windowMs;
-        
+
         // Get existing requests for this identifier
         const userRequests = requests.get(identifier) || [];
-        
+
         // Filter out old requests
         const recentRequests = userRequests.filter(time => time > windowStart);
-        
+
         // Check if limit exceeded
         if (recentRequests.length >= maxRequests) {
           return false;
@@ -249,7 +255,7 @@ export class SecurityUtils {
         // Add current request
         recentRequests.push(now);
         requests.set(identifier, recentRequests);
-        
+
         return true;
       },
 
@@ -258,9 +264,9 @@ export class SecurityUtils {
         const windowStart = now - windowMs;
         const userRequests = requests.get(identifier) || [];
         const recentRequests = userRequests.filter(time => time > windowStart);
-        
+
         return Math.max(0, maxRequests - recentRequests.length);
-      }
+      },
     };
   }
 
@@ -281,10 +287,10 @@ export class SecurityUtils {
  * @returns {Function} Decorator function
  */
 export function validateInput(validator) {
-  return function(target, propertyName, descriptor) {
+  return (_target, propertyName, descriptor) => {
     const method = descriptor.value;
 
-    descriptor.value = function(...args) {
+    descriptor.value = function (...args) {
       // Validate each argument
       for (const arg of args) {
         if (!validator(arg)) {

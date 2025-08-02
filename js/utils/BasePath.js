@@ -7,17 +7,17 @@
  * @returns {string} Base path (e.g., '/stacexplorer' on GitHub Pages, '' locally)
  */
 export function getBasePath() {
-    // Check if we're running on GitHub Pages
-    const hostname = window.location.hostname;
-    const pathname = window.location.pathname;
-    
-    // Detect GitHub Pages by hostname pattern and path structure
-    if (hostname.endsWith('.github.io') && pathname.startsWith('/stacexplorer/')) {
-        return '/stacexplorer';
-    }
-    
-    // For local development or other deployments
-    return '';
+  // Check if we're running on GitHub Pages
+  const hostname = window.location.hostname;
+  const pathname = window.location.pathname;
+
+  // Detect GitHub Pages by hostname pattern and path structure
+  if (hostname.endsWith('.github.io') && pathname.startsWith('/stacexplorer/')) {
+    return '/stacexplorer';
+  }
+
+  // For local development or other deployments
+  return '';
 }
 
 /**
@@ -26,7 +26,7 @@ export function getBasePath() {
  * @returns {string} Full path with base path
  */
 export function createPath(path) {
-    return getBasePath() + path;
+  return getBasePath() + path;
 }
 
 /**
@@ -35,5 +35,5 @@ export function createPath(path) {
  * @returns {string} Full URL with base path
  */
 export function createUrl(path) {
-    return window.location.origin + createPath(path);
+  return window.location.origin + createPath(path);
 }

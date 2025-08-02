@@ -1,0 +1,303 @@
+
+> stac-explorer@2.12.5 lint
+> eslint js/ --ext .js
+
+
+C:\Users\nicar\git\stacexplorer\js\app.js
+  265:5   warning  Unexpected alert    no-alert
+  813:5   warning  Unexpected alert    no-alert
+  857:24  warning  Unexpected confirm  no-alert
+
+C:\Users\nicar\git\stacexplorer\js\components\pages\SettingsPageManager.js
+  1005:5  warning  Unexpected alert    no-alert
+  1012:9  warning  Unexpected confirm  no-alert
+  1019:7  warning  Unexpected alert    no-alert
+
+C:\Users\nicar\git\stacexplorer\js\components\performance\CacheManager.js
+   74:23  error  'indexedDB' is not defined                                 no-undef
+  194:3   error  Async method 'getFromDisk' has no 'await' expression       require-await
+  357:46  error  'request' is not defined                                   no-undef
+  397:3   error  Async method 'evictFromDisk' has no 'await' expression     require-await
+  513:26  error  'CompressionStream' is not defined                         no-undef
+  518:27  error  'TextEncoder' is not defined                               no-undef
+  660:28  error  'PerformanceObserver' is not defined                       no-undef
+  710:3   error  Async method 'cleanupDiskCache' has no 'await' expression  require-await
+  719:21  error  'IDBKeyRange' is not defined                               no-undef
+  762:3   error  Async method 'clearDiskPattern' has no 'await' expression  require-await
+
+C:\Users\nicar\git\stacexplorer\js\components\performance\MemoryManager.js
+  131:26  error  'ResizeObserver' is not defined         no-undef
+  156:26  error  'IntersectionObserver' is not defined   no-undef
+  180:26  error  'MutationObserver' is not defined       no-undef
+  476:24  error  'Worker' is not defined                 no-undef
+  510:21  error  'requestAnimationFrame' is not defined  no-undef
+  530:5   error  'cancelAnimationFrame' is not defined   no-undef
+  912:7   error  'cancelAnimationFrame' is not defined   no-undef
+  945:33  error  Empty block statement                   no-empty
+
+C:\Users\nicar\git\stacexplorer\js\components\performance\VirtualizedList.js
+  187:33  error  'ResizeObserver' is not defined               no-undef
+  205:37  error  'IntersectionObserver' is not defined         no-undef
+  588:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  589:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  590:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  591:9   error  Unexpected lexical declaration in case block  no-case-declarations
+  592:9   error  Unexpected lexical declaration in case block  no-case-declarations
+
+C:\Users\nicar\git\stacexplorer\js\components\results\ResultsPanel.js
+    40:14  error    Empty block statement                                                              no-empty
+  1325:26  error    Empty block statement                                                              no-empty
+  1827:11  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  1930:3   error    Async method 'centerMapOnItem' has no 'await' expression                           require-await
+  2344:19  error    Empty block statement                                                              no-empty
+  2698:12  error    Empty block statement                                                              no-empty
+
+C:\Users\nicar\git\stacexplorer\js\components\search\CardSearchPanel.js
+   255:26  error    'MutationObserver' is not defined                                                  no-undef
+   432:3   error    Async method 'waitForCollectionAndSelect' has no 'await' expression                require-await
+   910:42  error    Unexpected surrogate pair in character class. Use 'u' flag                         no-misleading-character-class
+   910:43  error    Unexpected combined character in character class                                   no-misleading-character-class
+   910:45  error    Unexpected surrogate pair in character class. Use 'u' flag                         no-misleading-character-class
+   910:47  error    Unexpected combined character in character class                                   no-misleading-character-class
+   916:45  error    Unexpected surrogate pair in character class. Use 'u' flag                         no-misleading-character-class
+   916:46  error    Unexpected combined character in character class                                   no-misleading-character-class
+   916:48  error    Unexpected surrogate pair in character class. Use 'u' flag                         no-misleading-character-class
+  1035:16  error    Empty block statement                                                              no-empty
+  1037:14  error    Empty block statement                                                              no-empty
+  1047:14  error    Empty block statement                                                              no-empty
+  1247:37  warning  Unexpected confirm                                                                 no-alert
+  1313:23  error    'catalogInfo' is defined but never used. Allowed unused args must match /^_/u      no-unused-vars
+  1324:28  error    'collectionsInfo' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1328:13  error    'availableCollections' is assigned a value but never used                          no-unused-vars
+  1396:16  error    'parseError' is defined but never used                                             no-unused-vars
+  1420:14  error    'error' is defined but never used                                                  no-unused-vars
+
+C:\Users\nicar\git\stacexplorer\js\components\search\CatalogBrowserPanel.js
+   493:31  error  'IntersectionObserver' is not defined                                    no-undef
+   519:3   error  Duplicate name 'scrollToTop'                                             no-dupe-class-members
+   813:3   error  Duplicate name 'setupCollectionsSearch'                                  no-dupe-class-members
+   864:3   error  Duplicate name 'filterCollections'                                       no-dupe-class-members
+  1158:14  error  Empty block statement                                                    no-empty
+  1470:9   error  'requestAnimationFrame' is not defined                                   no-undef
+  1485:31  error  'IntersectionObserver' is not defined                                    no-undef
+  1661:11  error  'searchFilter' is assigned a value but never used                        no-unused-vars
+  2053:11  error  Unexpected lexical declaration in case block                             no-case-declarations
+  2274:24  error  'index' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  2369:67  error  'index' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  2441:11  error  'icon' is assigned a value but never used                                no-unused-vars
+
+C:\Users\nicar\git\stacexplorer\js\components\search\CollectionBrowserModal.js
+  410:5  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  458:3  error    Async method 'initializeGridSelector' has no 'await' expression                    require-await
+
+C:\Users\nicar\git\stacexplorer\js\components\search\CollectionBrowserTrigger.js
+   53:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+   63:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+   67:7   warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  226:54  error    'e' is defined but never used. Allowed unused args must match /^_/u                no-unused-vars
+  231:50  error    'e' is defined but never used. Allowed unused args must match /^_/u                no-unused-vars
+
+C:\Users\nicar\git\stacexplorer\js\components\search\CollectionDetailsModal.js
+  742:11  error  'icon' is assigned a value but never used  no-unused-vars
+
+C:\Users\nicar\git\stacexplorer\js\components\search\CollectionGridSelector.js
+  214:3   error  Async method 'loadCollections' has no 'await' expression                 require-await
+  465:62  error  'index' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  576:29  error  'step' is defined but never used. Allowed unused args must match /^_/u   no-unused-vars
+  577:13  error  'modalOverlay' is assigned a value but never used                        no-unused-vars
+  819:3   error  Async method 'refresh' has no 'await' expression                         require-await
+
+C:\Users\nicar\git\stacexplorer\js\components\search\CollectionManagerEnhanced.js
+  790:3  error  Async method 'refreshCacheInBackground' has no 'await' expression  require-await
+
+C:\Users\nicar\git\stacexplorer\js\components\search\SearchForm.js
+  178:9   warning  Unexpected alert       no-alert
+  242:9   warning  Unexpected alert       no-alert
+  246:7   warning  Unexpected alert       no-alert
+  528:20  error    Empty block statement  no-empty
+
+C:\Users\nicar\git\stacexplorer\js\components\settings\SettingsPanel.js
+  209:3  error  Async method 'saveSettings' has no 'await' expression  require-await
+  277:3  error  Duplicate name 'close'                                 no-dupe-class-members
+  293:3  error  Duplicate name 'open'                                  no-dupe-class-members
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\AnimationManager.js
+    91:40  error  'PerformanceObserver' is not defined                                       no-undef
+   257:3   error  Async method 'createCSSAnimation' has no 'await' expression                require-await
+   298:3   error  Async method 'createJSAnimation' has no 'await' expression                 require-await
+   673:13  error  't0' is assigned a value but never used                                    no-unused-vars
+   674:13  error  't1' is assigned a value but never used                                    no-unused-vars
+   703:3   error  Async method 'spring' has no 'await' expression                            require-await
+   784:3   error  Async method 'stagger' has no 'await' expression                           require-await
+   802:11  error  Unexpected lexical declaration in case block                               no-case-declarations
+   994:3   error  Async method 'handleReducedMotion' has no 'await' expression               require-await
+   994:49  error  'options' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1103:7   error  'cancelAnimationFrame' is not defined                                      no-undef
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\CommandPalette.js
+    85:25  error    'shouldRender' is assigned a value but never used. Allowed unused args must match /^_/u  no-unused-vars
+   291:13  warning  Unexpected confirm                                                                       no-alert
+   298:13  error    'caches' is not defined                                                                  no-undef
+   301:39  error    'caches' is not defined                                                                  no-undef
+   363:11  warning  Unexpected alert                                                                         no-alert
+   468:9   warning  Unexpected alert                                                                         no-alert
+   492:9   warning  Unexpected alert                                                                         no-alert
+   945:16  error    Empty block statement                                                                    no-empty
+  1001:3   error    Async method 'performSearch' has no 'await' expression                                   require-await
+  1160:34  error    'index' is defined but never used. Allowed unused args must match /^_/u                  no-unused-vars
+  1393:5   error    'requestAnimationFrame' is not defined                                                   no-undef
+  1416:18  error    Empty block statement                                                                    no-empty
+  1478:20  error    'shortcut' is defined but never used. Allowed unused args must match /^_/u               no-unused-vars
+  1478:30  error    'action' is defined but never used. Allowed unused args must match /^_/u                 no-unused-vars
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\DateDropdownHandler.js
+  171:9  error  Unexpected lexical declaration in case block  no-case-declarations
+  183:9  error  Unexpected lexical declaration in case block  no-case-declarations
+  195:9  error  Unexpected lexical declaration in case block  no-case-declarations
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\DropdownUIManager.js
+  200:5  error  'requestAnimationFrame' is not defined  no-undef
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\FormField.js
+  250:3   error  Async method 'handleInput' has no 'await' expression                     require-await
+  265:15  error  'event' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  271:14  error  'event' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  322:16  error  'error' is defined but never used                                        no-unused-vars
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\InlineDropdownManager.js
+  147:9   error  Unexpected lexical declaration in case block                       no-case-declarations
+  156:9   error  Unexpected lexical declaration in case block                       no-case-declarations
+  251:11  error  'todayStr' is assigned a value but never used                      no-unused-vars
+  494:14  error  Empty block statement                                              no-empty
+  496:12  error  Empty block statement                                              no-empty
+  531:3   error  Async method 'preloadCollections' has no 'await' expression        require-await
+  586:3   error  Async method 'ensureDataSourceSelected' has no 'await' expression  require-await
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\InteractiveTutorial.js
+    13:5   error  Unreachable code                                                         no-unreachable
+   598:31  error  'MutationObserver' is not defined                                        no-undef
+   694:32  error  'event' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+   851:52  error  'index' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+   949:40  error  'event' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1108:38  error  'event' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1152:31  error  'event' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1292:29  error  'event' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1351:40  error  'e' is defined but never used. Allowed unused args must match /^_/u      no-unused-vars
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\LoadingStateManager.js
+  550:3  error  Async method 'showLoadingElement' has no 'await' expression  require-await
+  577:3  error  Async method 'hideLoadingElement' has no 'await' expression  require-await
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\Modal.js
+  251:3  error  Async method 'open' has no 'await' expression    require-await
+  314:3  error  Async method 'close' has no 'await' expression   require-await
+  372:3  error  Async method 'toggle' has no 'await' expression  require-await
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\NotificationSystem.js
+  169:5  error  'requestAnimationFrame' is not defined  no-undef
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\SearchHistoryUI.js
+  216:9  warning  Unexpected confirm  no-alert
+
+C:\Users\nicar\git\stacexplorer\js\components\visualization\BandCombinationEngine.js
+  578:3   error  Async method 'checkUrlAccessibility' has no 'await' expression  require-await
+  589:14  error  'error' is defined but never used                               no-unused-vars
+  629:42  error  Empty block statement                                           no-empty
+  641:17  error  'category' is assigned a value but never used                   no-unused-vars
+  731:3   error  Async method 'buildTileUrl' has no 'await' expression           require-await
+  781:21  error  'assetKey' is assigned a value but never used                   no-unused-vars
+  911:3   error  Async method 'buildPreviewUrl' has no 'await' expression        require-await
+  916:21  error  'assetKey' is assigned a value but never used                   no-unused-vars
+
+C:\Users\nicar\git\stacexplorer\js\components\visualization\EnhancedSTACLayer.js
+   32:25  error  '_tile' is assigned a value but never used                                    no-unused-vars
+   74:3   error  Async method 'addCollection' has no 'await' expression                        require-await
+  189:3   error  Async method 'addCollectionAsItems' has no 'await' expression                 require-await
+  189:30  error  'collection' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  189:42  error  'options' is defined but never used. Allowed unused args must match /^_/u     no-unused-vars
+  373:3   error  Async method 'renderCOGAsset' has no 'await' expression                       require-await
+  409:3   error  Async method 'renderImageAsset' has no 'await' expression                     require-await
+  451:3   error  Async method 'loadCOGTile' has no 'await' expression                          require-await
+  451:21  error  'tile' is defined but never used. Allowed unused args must match /^_/u        no-unused-vars
+  451:27  error  'asset' is defined but never used. Allowed unused args must match /^_/u       no-unused-vars
+  451:34  error  'options' is defined but never used. Allowed unused args must match /^_/u     no-unused-vars
+
+C:\Users\nicar\git\stacexplorer\js\components\visualization\RasterVisualizationManager.js
+   32:3   error  Async method 'addSTACItemLayer' has no 'await' expression     require-await
+   51:24  error  'actualLayerId' is assigned a value but never used            no-unused-vars
+  110:14  error  Empty block statement                                         no-empty
+  112:12  error  Empty block statement                                         no-empty
+  127:11  error  'testTileUrl' is assigned a value but never used              no-unused-vars
+  169:15  error  'opacity' is assigned a value but never used                  no-unused-vars
+  170:15  error  'visibility' is assigned a value but never used               no-unused-vars
+  173:15  error  'source' is assigned a value but never used                   no-unused-vars
+  248:3   error  Async method 'changeVisualization' has no 'await' expression  require-await
+  361:13  error  'bounds' is assigned a value but never used                   no-unused-vars
+  430:5   error  Unreachable code                                              no-unreachable
+
+C:\Users\nicar\git\stacexplorer\js\components\visualization\VisualizationPanel.js
+    51:3   error  Async method 'show' has no 'await' expression                            require-await
+   288:14  error  Empty block statement                                                    no-empty
+   515:14  error  Empty block statement                                                    no-empty
+   522:14  error  Empty block statement                                                    no-empty
+   943:36  error  'index' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+   946:15  error  'layerType' is assigned a value but never used                           no-unused-vars
+   976:36  error  Empty block statement                                                    no-empty
+   977:16  error  Empty block statement                                                    no-empty
+  1025:45  error  'index' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1031:11  error  Empty block statement                                                    no-empty
+  1117:36  error  'index' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1120:15  error  'layerType' is assigned a value but never used                           no-unused-vars
+  1132:16  error  Empty block statement                                                    no-empty
+  1172:38  error  'layer' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1172:45  error  'index' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1272:15  error  'highResSource' is assigned a value but never used                       no-unused-vars
+  1286:14  error  Empty block statement                                                    no-empty
+  1370:16  error  Empty block statement                                                    no-empty
+  1378:16  error  Empty block statement                                                    no-empty
+  1383:13  error  'remainingStyle' is assigned a value but never used                      no-unused-vars
+  1395:27  error  'layer' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1395:34  error  'index' is defined but never used. Allowed unused args must match /^_/u  no-unused-vars
+  1482:22  error  Empty block statement                                                    no-empty
+  1486:59  error  Empty block statement                                                    no-empty
+  1488:10  error  Empty block statement                                                    no-empty
+
+C:\Users\nicar\git\stacexplorer\js\core\map\MapCore.js
+   19:3   error  Async method 'initialize' has no 'await' expression  require-await
+   55:21  error  'container' is assigned to itself                    no-self-assign
+   98:42  error  Async arrow function has no 'await' expression       require-await
+  116:29  error  Async arrow function has no 'await' expression       require-await
+  227:26  error  'MutationObserver' is not defined                    no-undef
+  270:59  error  Unnecessary escape character: \/                     no-useless-escape
+  270:67  error  Unnecessary escape character: \/                     no-useless-escape
+
+C:\Users\nicar\git\stacexplorer\js\core\map\MapLayers.js
+   964:3  error  Async method 'loadImageWithUrl' has no 'await' expression             require-await
+  1029:3  error  Async method 'calculateOptimalCoordinates' has no 'await' expression  require-await
+
+C:\Users\nicar\git\stacexplorer\js\map-auto-init.js
+  17:18  error  Empty block statement  no-empty
+
+C:\Users\nicar\git\stacexplorer\js\utils\GeocodingService.js
+   78:5  error  Unnecessary try/catch wrapper  no-useless-catch
+  361:5  error  Unnecessary try/catch wrapper  no-useless-catch
+  397:5  error  Unnecessary try/catch wrapper  no-useless-catch
+
+C:\Users\nicar\git\stacexplorer\js\utils\GeometrySync.js
+  354:7  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+C:\Users\nicar\git\stacexplorer\js\utils\LazyImageLoader.js
+   36:25  error  'IntersectionObserver' is not defined   no-undef
+  268:7   error  'requestAnimationFrame' is not defined  no-undef
+
+C:\Users\nicar\git\stacexplorer\js\utils\SearchHistoryManager.js
+  246:60  error  Unexpected combined character in character class  no-misleading-character-class
+  246:67  error  Unexpected combined character in character class  no-misleading-character-class
+
+C:\Users\nicar\git\stacexplorer\js\utils\UnifiedRouter.js
+  707:9  warning  Unexpected alert  no-alert
+  719:7  warning  Unexpected alert  no-alert
+  737:9  warning  Unexpected alert  no-alert
+
+✖ 220 problems (196 errors, 24 warnings)
+

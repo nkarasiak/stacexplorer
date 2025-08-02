@@ -1,19 +1,19 @@
-import { defineConfig } from 'vite'
-import { VitePWA } from 'vite-plugin-pwa'
-import { visualizer } from 'rollup-plugin-visualizer'
-import { resolve } from 'path'
+import { resolve } from 'path';
+import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig(async () => ({
   base: process.env.NODE_ENV === 'production' ? '/stacexplorer/' : '/',
-  
+
   plugins: [
     visualizer({
       filename: 'dist/stats.html',
       open: false,
       gzipSize: true,
-      brotliSize: true
+      brotliSize: true,
     }),
-    
+
     VitePWA({
       registerType: 'prompt',
       workbox: {
@@ -27,11 +27,11 @@ export default defineConfig(async () => ({
               cacheName: 'stac-api-cache',
               expiration: {
                 maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24
-              }
-            }
-          }
-        ]
+                maxAgeSeconds: 60 * 60 * 24,
+              },
+            },
+          },
+        ],
       },
       manifest: {
         name: 'STAC Explorer',
@@ -46,13 +46,13 @@ export default defineConfig(async () => ({
           {
             src: 'favicon.svg',
             sizes: 'any',
-            type: 'image/svg+xml'
-          }
-        ]
-      }
-    })
+            type: 'image/svg+xml',
+          },
+        ],
+      },
+    }),
   ],
-  
+
   server: {
     port: 3000,
     host: true,
@@ -61,21 +61,21 @@ export default defineConfig(async () => ({
       '/api/stac': {
         target: 'https://earth-search.aws.element84.com',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/stac/, '')
+        rewrite: path => path.replace(/^\/api\/stac/, ''),
       },
       '/api/copernicus': {
         target: 'https://catalogue.dataspace.copernicus.eu',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api\/copernicus/, '')
-      }
-    }
+        rewrite: path => path.replace(/^\/api\/copernicus/, ''),
+      },
+    },
   },
 
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: true,
-    
+
     // Optimize for smaller bundles
     minify: 'terser',
     terserOptions: {
@@ -90,57 +90,57 @@ export default defineConfig(async () => ({
       mangle: {
         // Mangle all properties starting with underscore
         properties: {
-          regex: /^_/
-        }
-      }
+          regex: /^_/,
+        },
+      },
     },
-    
+
     // Enhanced code splitting
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html')
+        main: resolve(__dirname, 'index.html'),
       },
       output: {
         // More granular chunking strategy
         manualChunks: {
           // Critical path - loaded immediately
-          'core': [
+          core: [
             './js/app.js',
             './js/config.js',
             './js/components/common/UIManager.js',
-            './js/components/common/NotificationService.js'
+            './js/components/common/NotificationService.js',
           ],
-          
+
           // Search functionality - lazy loaded
-          'search': [
+          search: [
             './js/components/search/CardSearchPanel.js',
             './js/components/search/CatalogSelector.js',
             './js/components/search/SearchForm.js',
-            './js/components/search/FilterManager.js'
+            './js/components/search/FilterManager.js',
           ],
-          
+
           // Collection management - lazy loaded
-          'collections': [
+          collections: [
             './js/components/search/CollectionManagerEnhanced.js',
             './js/components/search/CollectionSelectorIntegration.js',
             './js/components/search/CatalogBrowserPanel.js',
-            './js/components/search/CollectionBrowserModal.js'
+            './js/components/search/CollectionBrowserModal.js',
           ],
-          
+
           // Map functionality - lazy loaded
-          'mapping': [
+          mapping: [
             './js/components/map/MapManager.js',
-            './js/components/map/SimpleDeckGLIntegration.js'
+            './js/components/map/SimpleDeckGLIntegration.js',
           ],
-          
+
           // Results and visualization - lazy loaded
-          'visualization': [
+          visualization: [
             './js/components/visualization/VisualizationPanel.js',
             './js/components/visualization/RasterVisualizationManager.js',
             './js/components/visualization/BandCombinationEngine.js',
-            './js/components/results/ResultsPanel.js'
+            './js/components/results/ResultsPanel.js',
           ],
-          
+
           // UI components - can be lazy loaded
           'ui-components': [
             './js/components/ui/CommandPalette.js',
@@ -148,46 +148,48 @@ export default defineConfig(async () => ({
             './js/components/ui/SearchHistoryUI.js',
             './js/components/ui/ViewModeToggle.js',
             './js/components/ui/Modal.js',
-            './js/components/ui/Button.js'
+            './js/components/ui/Button.js',
           ],
-          
+
           // Utilities - shared across chunks
-          'utils': [
+          utils: [
             './js/utils/UnifiedStateManager.js',
             './js/utils/UnifiedRouter.js',
             './js/utils/CookieCache.js',
             './js/utils/SearchHistoryManager.js',
             './js/utils/DateUtils.js',
-            './js/utils/OfflineManager.js'
+            './js/utils/OfflineManager.js',
           ],
-          
+
           // Performance utilities - lazy loaded
-          'performance': [
+          performance: [
             './js/components/performance/CacheManager.js',
             './js/components/performance/MemoryManager.js',
-            './js/components/performance/VirtualizedList.js'
-          ]
+            './js/components/performance/VirtualizedList.js',
+          ],
         },
-        
+
         // Optimize chunk names for better caching
-        chunkFileNames: (chunkInfo) => {
-          const facadeModuleId = chunkInfo.facadeModuleId ? chunkInfo.facadeModuleId.split('/').pop().replace('.js', '') : 'chunk';
+        chunkFileNames: chunkInfo => {
+          const facadeModuleId = chunkInfo.facadeModuleId
+            ? chunkInfo.facadeModuleId.split('/').pop().replace('.js', '')
+            : 'chunk';
           return `assets/${facadeModuleId}-[hash].js`;
         },
-        
+
         // Optimize asset names
-        assetFileNames: 'assets/[name]-[hash].[ext]'
+        assetFileNames: 'assets/[name]-[hash].[ext]',
       },
-      
+
       // External dependencies that should be loaded from CDN
       external: [
         // Only externalize if you plan to use CDN versions
         // 'leaflet' // Example: if using Leaflet from CDN
-      ]
+      ],
     },
-    
+
     // Reduced bundle size limits
-    chunkSizeWarningLimit: 500 // More aggressive limit
+    chunkSizeWarningLimit: 500, // More aggressive limit
   },
 
   resolve: {
@@ -195,8 +197,8 @@ export default defineConfig(async () => ({
       '@': resolve(__dirname, './js'),
       '@components': resolve(__dirname, './js/components'),
       '@utils': resolve(__dirname, './js/utils'),
-      '@css': resolve(__dirname, './css')
-    }
+      '@css': resolve(__dirname, './css'),
+    },
   },
 
   css: {
@@ -206,33 +208,36 @@ export default defineConfig(async () => ({
       plugins: [
         (await import('autoprefixer')).default,
         (await import('cssnano')).default({
-          preset: ['default', {
-            discardComments: { removeAll: true },
-            normalizeWhitespace: false
-          }]
-        })
-      ]
-    }
+          preset: [
+            'default',
+            {
+              discardComments: { removeAll: true },
+              normalizeWhitespace: false,
+            },
+          ],
+        }),
+      ],
+    },
   },
 
   // Remove unused dependencies from optimization
   optimizeDeps: {
     include: [
       // Only include dependencies that are actually used
-      'leaflet' // If you're using Leaflet
+      'leaflet', // If you're using Leaflet
     ],
     exclude: [
       // Exclude heavy unused dependencies
       '@deck.gl/core',
-      '@deck.gl/geo-layers', 
+      '@deck.gl/geo-layers',
       '@deck.gl/layers',
       '@loaders.gl/core',
-      '@loaders.gl/tiles'
-    ]
+      '@loaders.gl/tiles',
+    ],
   },
-  
+
   define: {
     __VITE_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
-    __VITE_VERSION__: JSON.stringify(process.env.npm_package_version || '2.12.5')
-  }
-}))
+    __VITE_VERSION__: JSON.stringify(process.env.npm_package_version || '2.12.5'),
+  },
+}));

@@ -3,90 +3,90 @@
  */
 
 export class OfflineManager {
-    constructor() {
-        this.isOffline = !navigator.onLine;
-        this.callbacks = new Set();
-        this.offlineIndicator = null;
-        this.offlineOverlay = null;
-        
-        
-        this.initializeEventListeners();
-        this.createOfflineUI();
-    }
-    
-    /**
-     * Initialize online/offline event listeners
-     */
-    initializeEventListeners() {
-        window.addEventListener('online', () => {
-            this.isOffline = false;
-            this.updateUI();
-            this.notifyCallbacks('online');
-        });
-        
-        window.addEventListener('offline', () => {
-            this.isOffline = true;
-            this.updateUI();
-            this.notifyCallbacks('offline');
-        });
-        
-        // Also check for network connectivity with periodic tests
-        this.startConnectivityCheck();
-    }
-    
-    /**
-     * Periodic connectivity check as fallback (only when browser thinks we're online)
-     */
-    startConnectivityCheck() {
-        setInterval(async () => {
-            // Only do deep connectivity check if browser thinks we're online
-            // but we might have captive portal or limited connectivity
-            if (navigator.onLine && !this.isOffline) {
-                const hasConnectivity = await this.checkConnectivity();
-                const wasOffline = this.isOffline;
-                this.isOffline = !hasConnectivity;
-                
-                if (wasOffline !== this.isOffline) {
-                    this.updateUI();
-                    this.notifyCallbacks(this.isOffline ? 'offline' : 'online');
-                }
-            }
-        }, 30000); // Check every 30 seconds (less aggressive)
-    }
-    
-    /**
-     * Test actual connectivity by making a lightweight request
-     */
-    async checkConnectivity() {
-        try {
-            // Use a more reliable endpoint with shorter timeout
-            const response = await fetch('https://www.google.com/favicon.ico', {
-                method: 'HEAD', // Even lighter than GET
-                cache: 'no-cache',
-                mode: 'no-cors', // Avoid CORS issues
-                signal: AbortSignal.timeout(3000) // 3 second timeout
-            });
-            return true; // If we get here, we have connectivity
-        } catch (error) {
-            return false;
+  constructor() {
+    this.isOffline = !navigator.onLine;
+    this.callbacks = new Set();
+    this.offlineIndicator = null;
+    this.offlineOverlay = null;
+
+    this.initializeEventListeners();
+    this.createOfflineUI();
+  }
+
+  /**
+   * Initialize online/offline event listeners
+   */
+  initializeEventListeners() {
+    window.addEventListener('online', () => {
+      this.isOffline = false;
+      this.updateUI();
+      this.notifyCallbacks('online');
+    });
+
+    window.addEventListener('offline', () => {
+      this.isOffline = true;
+      this.updateUI();
+      this.notifyCallbacks('offline');
+    });
+
+    // Also check for network connectivity with periodic tests
+    this.startConnectivityCheck();
+  }
+
+  /**
+   * Periodic connectivity check as fallback (only when browser thinks we're online)
+   */
+  startConnectivityCheck() {
+    setInterval(async () => {
+      // Only do deep connectivity check if browser thinks we're online
+      // but we might have captive portal or limited connectivity
+      if (navigator.onLine && !this.isOffline) {
+        const hasConnectivity = await this.checkConnectivity();
+        const wasOffline = this.isOffline;
+        this.isOffline = !hasConnectivity;
+
+        if (wasOffline !== this.isOffline) {
+          this.updateUI();
+          this.notifyCallbacks(this.isOffline ? 'offline' : 'online');
         }
+      }
+    }, 30000); // Check every 30 seconds (less aggressive)
+  }
+
+  /**
+   * Test actual connectivity by making a lightweight request
+   */
+  async checkConnectivity() {
+    try {
+      // Use a more reliable endpoint with shorter timeout
+      // const _response = await fetch('https://www.google.com/favicon.ico', { // response unused
+      await fetch('https://www.google.com/favicon.ico', {
+        method: 'HEAD', // Even lighter than GET
+        cache: 'no-cache',
+        mode: 'no-cors', // Avoid CORS issues
+        signal: AbortSignal.timeout(3000), // 3 second timeout
+      });
+      return true; // If we get here, we have connectivity
+    } catch {
+      return false;
     }
-    
-    /**
-     * Create offline UI elements
-     */
-    createOfflineUI() {
-        // Create floating offline indicator
-        this.offlineIndicator = document.createElement('div');
-        this.offlineIndicator.id = 'offline-indicator';
-        this.offlineIndicator.innerHTML = `
+  }
+
+  /**
+   * Create offline UI elements
+   */
+  createOfflineUI() {
+    // Create floating offline indicator
+    this.offlineIndicator = document.createElement('div');
+    this.offlineIndicator.id = 'offline-indicator';
+    this.offlineIndicator.innerHTML = `
             <div class="offline-icon">📡</div>
             <div class="offline-text">Offline - Need Internet</div>
         `;
-        
-        // Add styles
-        const style = document.createElement('style');
-        style.textContent = `
+
+    // Add styles
+    const style = document.createElement('style');
+    style.textContent = `
             #offline-indicator {
                 position: fixed;
                 top: 20px;
@@ -198,148 +198,152 @@ export class OfflineManager {
                 opacity: 1;
             }
         `;
-        
-        document.head.appendChild(style);
-        document.body.appendChild(this.offlineIndicator);
-        
-        // Initial UI update
-        this.updateUI();
+
+    document.head.appendChild(style);
+    document.body.appendChild(this.offlineIndicator);
+
+    // Initial UI update
+    this.updateUI();
+  }
+
+  /**
+   * Update UI based on offline status
+   */
+  updateUI() {
+    if (this.isOffline) {
+      this.offlineIndicator.classList.add('show');
+      this.disableNetworkFeatures();
+      this.updateSatelliteAnimation();
+    } else {
+      this.offlineIndicator.classList.remove('show');
+      this.enableNetworkFeatures();
+      this.updateSatelliteAnimation();
     }
-    
-    /**
-     * Update UI based on offline status
-     */
-    updateUI() {
-        if (this.isOffline) {
-            this.offlineIndicator.classList.add('show');
-            this.disableNetworkFeatures();
-            this.updateSatelliteAnimation();
-        } else {
-            this.offlineIndicator.classList.remove('show');
-            this.enableNetworkFeatures();
-            this.updateSatelliteAnimation();
-        }
+  }
+
+  /**
+   * Update satellite animation for offline state
+   */
+  updateSatelliteAnimation() {
+    const satelliteElements = document.querySelectorAll(
+      '.satellite, .satellite-icon, [class*="satellite"]'
+    );
+
+    satelliteElements.forEach(element => {
+      if (this.isOffline) {
+        element.classList.add('satellite-offline');
+      } else {
+        element.classList.remove('satellite-offline');
+      }
+    });
+  }
+
+  /**
+   * Disable network-dependent features
+   */
+  disableNetworkFeatures() {
+    const networkElements = [
+      '#main-search-btn',
+      '#catalog-select',
+      '.search-form',
+      '.results-panel',
+      '#smart-filters-container',
+      '.collection-selector',
+    ];
+
+    networkElements.forEach(selector => {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach(element => {
+        element.classList.add('offline-disabled');
+      });
+    });
+  }
+
+  /**
+   * Re-enable network-dependent features
+   */
+  enableNetworkFeatures() {
+    const disabledElements = document.querySelectorAll('.offline-disabled');
+    disabledElements.forEach(element => {
+      element.classList.remove('offline-disabled');
+    });
+  }
+
+  /**
+   * Register callback for offline/online events
+   */
+  onStatusChange(callback) {
+    this.callbacks.add(callback);
+    return () => this.callbacks.delete(callback);
+  }
+
+  /**
+   * Notify all registered callbacks
+   */
+  notifyCallbacks(status) {
+    this.callbacks.forEach(callback => {
+      try {
+        callback(status, this.isOffline);
+      } catch (error) {
+        console.error('Offline callback error:', error);
+      }
+    });
+  }
+
+  /**
+   * Get current offline status
+   */
+  getOfflineStatus() {
+    return this.isOffline;
+  }
+
+  /**
+   * Manually trigger offline mode (for testing)
+   */
+  setOfflineMode(offline = true) {
+    const wasOffline = this.isOffline;
+    this.isOffline = offline;
+
+    if (wasOffline !== this.isOffline) {
+      this.updateUI();
+      this.notifyCallbacks(offline ? 'offline' : 'online');
     }
-    
-    /**
-     * Update satellite animation for offline state
-     */
-    updateSatelliteAnimation() {
-        const satelliteElements = document.querySelectorAll('.satellite, .satellite-icon, [class*="satellite"]');
-        
-        satelliteElements.forEach(element => {
-            if (this.isOffline) {
-                element.classList.add('satellite-offline');
-            } else {
-                element.classList.remove('satellite-offline');
-            }
-        });
+  }
+
+  /**
+   * Debug information about current state
+   */
+  getDebugInfo() {
+    return {
+      isOffline: this.isOffline,
+      navigatorOnLine: navigator.onLine,
+      callbackCount: this.callbacks.size,
+      indicatorVisible: this.offlineIndicator?.classList.contains('show'),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Check if a network request should be blocked
+   */
+  shouldBlockRequest(url) {
+    if (!this.isOffline) {
+      return false;
     }
-    
-    /**
-     * Disable network-dependent features
-     */
-    disableNetworkFeatures() {
-        const networkElements = [
-            '#main-search-btn',
-            '#catalog-select', 
-            '.search-form',
-            '.results-panel',
-            '#smart-filters-container',
-            '.collection-selector'
-        ];
-        
-        networkElements.forEach(selector => {
-            const elements = document.querySelectorAll(selector);
-            elements.forEach(element => {
-                element.classList.add('offline-disabled');
-            });
-        });
+
+    // Allow basemap tiles (they're usually cached)
+    if (url.includes('tile') || url.includes('map')) {
+      return false;
     }
-    
-    /**
-     * Re-enable network-dependent features
-     */
-    enableNetworkFeatures() {
-        const disabledElements = document.querySelectorAll('.offline-disabled');
-        disabledElements.forEach(element => {
-            element.classList.remove('offline-disabled');
-        });
+
+    // Block STAC API calls
+    if (url.includes('/collections') || url.includes('/search') || url.includes('/items')) {
+      return true;
     }
-    
-    /**
-     * Register callback for offline/online events
-     */
-    onStatusChange(callback) {
-        this.callbacks.add(callback);
-        return () => this.callbacks.delete(callback);
-    }
-    
-    /**
-     * Notify all registered callbacks
-     */
-    notifyCallbacks(status) {
-        this.callbacks.forEach(callback => {
-            try {
-                callback(status, this.isOffline);
-            } catch (error) {
-                console.error('Offline callback error:', error);
-            }
-        });
-    }
-    
-    /**
-     * Get current offline status
-     */
-    getOfflineStatus() {
-        return this.isOffline;
-    }
-    
-    /**
-     * Manually trigger offline mode (for testing)
-     */
-    setOfflineMode(offline = true) {
-        const wasOffline = this.isOffline;
-        this.isOffline = offline;
-        
-        if (wasOffline !== this.isOffline) {
-            this.updateUI();
-            this.notifyCallbacks(offline ? 'offline' : 'online');
-        }
-    }
-    
-    /**
-     * Debug information about current state
-     */
-    getDebugInfo() {
-        return {
-            isOffline: this.isOffline,
-            navigatorOnLine: navigator.onLine,
-            callbackCount: this.callbacks.size,
-            indicatorVisible: this.offlineIndicator?.classList.contains('show'),
-            timestamp: new Date().toISOString()
-        };
-    }
-    
-    /**
-     * Check if a network request should be blocked
-     */
-    shouldBlockRequest(url) {
-        if (!this.isOffline) return false;
-        
-        // Allow basemap tiles (they're usually cached)
-        if (url.includes('tile') || url.includes('map')) {
-            return false;
-        }
-        
-        // Block STAC API calls
-        if (url.includes('/collections') || url.includes('/search') || url.includes('/items')) {
-            return true;
-        }
-        
-        // Block external APIs
-        return true;
-    }
+
+    // Block external APIs
+    return true;
+  }
 }
 
 // Create and export singleton instance

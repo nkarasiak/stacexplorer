@@ -1,6 +1,6 @@
 import js from '@eslint/js';
-import prettier from 'eslint-plugin-prettier';
 import prettierConfig from 'eslint-config-prettier';
+import prettier from 'eslint-plugin-prettier';
 
 export default [
   js.configs.recommended,
@@ -8,7 +8,7 @@ export default [
   {
     files: ['js/**/*.js'],
     plugins: {
-      prettier
+      prettier,
     },
     languageOptions: {
       ecmaVersion: 2022,
@@ -28,42 +28,84 @@ export default [
         clearTimeout: 'readonly',
         setInterval: 'readonly',
         clearInterval: 'readonly',
-        
+
+        // More browser globals
+        CustomEvent: 'readonly',
+        Event: 'readonly',
+        AbortController: 'readonly',
+        AbortSignal: 'readonly',
+        navigator: 'readonly',
+        performance: 'readonly',
+        btoa: 'readonly',
+        atob: 'readonly',
+        confirm: 'readonly',
+        crypto: 'readonly',
+        Image: 'readonly',
+        WebGL2RenderingContext: 'readonly',
+        WebGLRenderingContext: 'readonly',
+        process: 'readonly',
+        Blob: 'readonly',
+        File: 'readonly',
+        FileReader: 'readonly',
+        HTMLElement: 'readonly',
+        HTMLImageElement: 'readonly',
+        Element: 'readonly',
+        NodeList: 'readonly',
+
+        // IndexedDB and Storage APIs
+        indexedDB: 'readonly',
+        IDBKeyRange: 'readonly',
+        request: 'readonly',
+
+        // Observers and Animation
+        ResizeObserver: 'readonly',
+        IntersectionObserver: 'readonly',
+        MutationObserver: 'readonly',
+        PerformanceObserver: 'readonly',
+        requestAnimationFrame: 'readonly',
+        cancelAnimationFrame: 'readonly',
+
+        // Web Workers and Streams
+        Worker: 'readonly',
+        CompressionStream: 'readonly',
+        TextEncoder: 'readonly',
+        TextDecoder: 'readonly',
+
         // External libraries that might be loaded globally
         L: 'readonly',
         maplibregl: 'readonly',
-        deck: 'readonly'
-      }
+        deck: 'readonly',
+      },
     },
     rules: {
       // Prettier integration
       'prettier/prettier': 'error',
-      
+
       // Code quality rules
       'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
       'no-console': ['warn', { allow: ['warn', 'error'] }],
       'no-debugger': 'error',
       'no-alert': 'warn',
-      
+
       // ES6+ rules
       'prefer-const': 'error',
       'no-var': 'error',
       'prefer-arrow-callback': 'error',
-      
+
       // Best practices
-      'eqeqeq': ['error', 'always'],
-      'curly': ['error', 'all'],
+      eqeqeq: ['error', 'always'],
+      curly: ['error', 'all'],
       'no-eval': 'error',
       'no-implied-eval': 'error',
       'no-new-func': 'error',
-      
+
       // Import/Export
       'no-duplicate-imports': 'error',
-      
+
       // Async/await
       'require-await': 'error',
-      'no-async-promise-executor': 'error'
-    }
+      'no-async-promise-executor': 'error',
+    },
   },
   {
     files: ['vite.config.js', 'vite.config.*.js', 'eslint.config.js'],
@@ -77,9 +119,9 @@ export default [
         module: 'readonly',
         exports: 'readonly',
         Buffer: 'readonly',
-        global: 'readonly'
-      }
-    }
+        global: 'readonly',
+      },
+    },
   },
   {
     ignores: [
@@ -93,7 +135,7 @@ export default [
       '*.d.ts',
       'workbox-*.js',
       'sw.js',
-      'registerSW.js'
-    ]
-  }
+      'registerSW.js',
+    ],
+  },
 ];

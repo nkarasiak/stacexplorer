@@ -1,0 +1,125 @@
+
+C:\Users\nicar\git\stacexplorer\js\app.js
+  262:5   warning  Unexpected alert    no-alert
+  806:5   warning  Unexpected alert    no-alert
+  850:24  warning  Unexpected confirm  no-alert
+
+C:\Users\nicar\git\stacexplorer\js\components\pages\SettingsPageManager.js
+  1005:5  warning  Unexpected alert    no-alert
+  1012:9  warning  Unexpected confirm  no-alert
+  1019:7  warning  Unexpected alert    no-alert
+
+C:\Users\nicar\git\stacexplorer\js\components\performance\CacheManager.js
+  196:3   error  Async method 'getFromDisk' has no 'await' expression       require-await
+  399:3   error  Async method 'evictFromDisk' has no 'await' expression     require-await
+  404:24  error  Replace `(resolve)` with `resolve`                         prettier/prettier
+  721:3   error  Async method 'cleanupDiskCache' has no 'await' expression  require-await
+  722:24  error  Replace `(resolve)` with `resolve`                         prettier/prettier
+  783:3   error  Async method 'clearDiskPattern' has no 'await' expression  require-await
+  788:24  error  Replace `(resolve)` with `resolve`                         prettier/prettier
+
+C:\Users\nicar\git\stacexplorer\js\components\results\ResultsPanel.js
+  1832:11  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+C:\Users\nicar\git\stacexplorer\js\components\search\CardSearchPanel.js
+  1258:37  warning  Unexpected confirm  no-alert
+
+C:\Users\nicar\git\stacexplorer\js\components\search\CollectionBrowserModal.js
+  410:5  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+C:\Users\nicar\git\stacexplorer\js\components\search\CollectionBrowserTrigger.js
+  53:7  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  63:7  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  67:7  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+C:\Users\nicar\git\stacexplorer\js\components\search\SearchForm.js
+  178:9  warning  Unexpected alert  no-alert
+  242:9  warning  Unexpected alert  no-alert
+  246:7  warning  Unexpected alert  no-alert
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\CommandPalette.js
+   291:13  warning  Unexpected confirm       no-alert
+   298:13  error    'caches' is not defined  no-undef
+   301:39  error    'caches' is not defined  no-undef
+   363:11  warning  Unexpected alert         no-alert
+   468:9   warning  Unexpected alert         no-alert
+   492:9   warning  Unexpected alert         no-alert
+   945:16  error    Empty block statement    no-empty
+  1416:18  error    Empty block statement    no-empty
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\InteractiveTutorial.js
+  13:5  error  Unreachable code  no-unreachable
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\Modal.js
+  251:3  error  Async method 'open' has no 'await' expression    require-await
+  314:3  error  Async method 'close' has no 'await' expression   require-await
+  372:3  error  Async method 'toggle' has no 'await' expression  require-await
+
+C:\Users\nicar\git\stacexplorer\js\components\ui\SearchHistoryUI.js
+  216:9  warning  Unexpected confirm  no-alert
+
+C:\Users\nicar\git\stacexplorer\js\components\visualization\BandCombinationEngine.js
+  578:3  error  Async method 'checkUrlAccessibility' has no 'await' expression  require-await
+  732:3  error  Async method 'buildTileUrl' has no 'await' expression           require-await
+  912:3  error  Async method 'buildPreviewUrl' has no 'await' expression        require-await
+
+C:\Users\nicar\git\stacexplorer\js\components\visualization\EnhancedSTACLayer.js
+  374:3  error  Async method 'renderCOGAsset' has no 'await' expression    require-await
+  410:3  error  Async method 'renderImageAsset' has no 'await' expression  require-await
+
+C:\Users\nicar\git\stacexplorer\js\components\visualization\RasterVisualizationManager.js
+   32:3  error  Async method 'addSTACItemLayer' has no 'await' expression     require-await
+  250:3  error  Async method 'changeVisualization' has no 'await' expression  require-await
+
+C:\Users\nicar\git\stacexplorer\js\core\map\MapCore.js
+   19:3   error  Async method 'initialize' has no 'await' expression  require-await
+   55:21  error  'container' is assigned to itself                    no-self-assign
+   98:42  error  Async arrow function has no 'await' expression       require-await
+  116:29  error  Async arrow function has no 'await' expression       require-await
+
+C:\Users\nicar\git\stacexplorer\js\core\map\MapLayers.js
+  959:3  error  Async method 'loadImageWithUrl' has no 'await' expression  require-await
+
+C:\Users\nicar\git\stacexplorer\js\utils\GeometrySync.js
+  354:7  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+C:\Users\nicar\git\stacexplorer\js\utils\UnifiedRouter.js
+  707:9  warning  Unexpected alert  no-alert
+  719:7  warning  Unexpected alert  no-alert
+  737:9  warning  Unexpected alert  no-alert
+
+C:\Users\nicar\git\stacexplorer\server.js
+  69:3  error  'console' is not defined  no-undef
+
+C:\Users\nicar\git\stacexplorer\src\main.js
+  14:6   error  'document' is not defined    no-undef
+  16:8   error  'document' is not defined    no-undef
+  19:5   error  'window' is not defined      no-undef
+  25:33  error  'setTimeout' is not defined  no-undef
+  36:12  error  'document' is not defined    no-undef
+  40:3   error  'console' is not defined     no-undef
+  41:3   error  'console' is not defined     no-undef
+  45:9   error  Empty block statement        no-empty
+  52:3   error  'console' is not defined     no-undef
+  55:20  error  'document' is not defined    no-undef
+  72:3   error  'document' is not defined    no-undef
+  77:5   error  'document' is not defined    no-undef
+  78:2   error  'document' is not defined    no-undef
+  81:2   error  'setTimeout' is not defined  no-undef
+  87:18  error  Empty block statement        no-empty
+
+C:\Users\nicar\git\stacexplorer\validate-build.js
+   11:1   error  'console' is not defined           no-undef
+  123:1   error  'console' is not defined           no-undef
+  128:24  error  'index' is defined but never used  no-unused-vars
+  130:3   error  'console' is not defined           no-undef
+  133:5   error  'console' is not defined           no-undef
+  139:1   error  'console' is not defined           no-undef
+  142:3   error  'console' is not defined           no-undef
+  143:3   error  'process' is not defined           no-undef
+  145:3   error  'console' is not defined           no-undef
+  146:3   error  'process' is not defined           no-undef
+
+✖ 77 problems (53 errors, 24 warnings)
+  3 errors and 0 warnings potentially fixable with the `--fix` option.
+

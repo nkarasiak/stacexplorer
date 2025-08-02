@@ -10,8 +10,8 @@
  *
  * Usage:
  * - Press Ctrl+Shift+S to enter satellite control mode
- * - Use arrow keys to move satellite around screen
- * - Left/Right arrows also rotate the satellite and map
+ * - Left/Right arrows: Rotate satellite (changes orientation)
+ * - Up/Down arrows: Move forward/backward in current direction
  * - Press F to toggle map following mode
  * - Press R to reset satellite position and orientation
  * - Press ESC to exit control mode
@@ -114,7 +114,7 @@ export class SatelliteAnimation {
         commandPalette.registerCommand({
           id: 'satellite-control-toggle',
           title: 'Toggle Satellite Control',
-          description: 'Enter interactive satellite control mode with arrow keys',
+          description: 'Control satellite with arrow keys: ←→ rotate, ↑↓ forward/back',
           category: 'satellite',
           keywords: ['satellite', 'control', 'arrow', 'keys', 'navigation', 'map'],
           action: () => {
@@ -261,20 +261,26 @@ export class SatelliteAnimation {
     let deltaY = 0;
     let deltaRotation = 0;
 
-    // Movement keys
+    // Rotation keys
     if (this.keyStates.has('ArrowLeft')) {
-      deltaX -= this.controlSpeed;
       deltaRotation -= this.rotationSpeed;
     }
     if (this.keyStates.has('ArrowRight')) {
-      deltaX += this.controlSpeed;
       deltaRotation += this.rotationSpeed;
     }
+
+    // Movement keys - forward/backward based on current orientation
     if (this.keyStates.has('ArrowUp')) {
-      deltaY -= this.controlSpeed;
+      // Move forward in the direction the satellite is pointing
+      const radians = (this.satelliteOrientation * Math.PI) / 180;
+      deltaX += Math.sin(radians) * this.controlSpeed;
+      deltaY -= Math.cos(radians) * this.controlSpeed;
     }
     if (this.keyStates.has('ArrowDown')) {
-      deltaY += this.controlSpeed;
+      // Move backward opposite to the direction the satellite is pointing
+      const radians = (this.satelliteOrientation * Math.PI) / 180;
+      deltaX -= Math.sin(radians) * this.controlSpeed;
+      deltaY += Math.cos(radians) * this.controlSpeed;
     }
 
     // Apply movement
@@ -478,7 +484,7 @@ export class SatelliteAnimation {
     this.satellite.style.cursor = 'move';
 
     this.showControlMessage(
-      '🛰️ Satellite control active! ⬅️➡️⬆️⬇️ Move | F: Follow mode | R: Reset | ESC: Exit | Ctrl+Shift+S: Toggle'
+      '🛰️ Satellite control active! ⬅️➡️ Rotate | ⬆️⬇️ Forward/Back | F: Follow mode | R: Reset | ESC: Exit'
     );
   }
 
@@ -553,10 +559,6 @@ export class SatelliteAnimation {
           0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
           20%, 80% { opacity: 1; transform: translateX(-50%) translateY(0); }
           100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-        }
-        .satellite.controllable {
-          box-shadow: 0 0 20px rgba(0, 123, 255, 0.6);
-          filter: brightness(1.2);
         }
       `;
       document.head.appendChild(style);

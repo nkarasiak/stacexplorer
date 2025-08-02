@@ -303,7 +303,7 @@ export class SatelliteAnimation {
     let deltaY = 0;
     let deltaRotation = 0;
 
-    // Rotation keys
+    // Rotation keys - ONLY affect orientation, no movement
     if (this.keyStates.has('ArrowLeft')) {
       deltaRotation -= this.rotationSpeed;
     }
@@ -311,7 +311,7 @@ export class SatelliteAnimation {
       deltaRotation += this.rotationSpeed;
     }
 
-    // Movement keys - forward/backward based on current orientation
+    // Movement keys - ONLY up/down keys move the map
     if (this.keyStates.has('ArrowUp')) {
       // Move forward in the direction the satellite is pointing
       const radians = (this.satelliteOrientation * Math.PI) / 180;
@@ -328,11 +328,15 @@ export class SatelliteAnimation {
     // Apply rotation (left/right keys only)
     if (deltaRotation !== 0) {
       this.rotateSatellite(deltaRotation);
+      // Debug: Confirm only rotation, no movement
+      console.log('Rotation only:', deltaRotation, '- No map movement');
     }
 
     // Apply movement (up/down keys only)
     if (deltaX !== 0 || deltaY !== 0) {
       this.moveSatellite(deltaX, deltaY);
+      // Debug: Confirm movement
+      console.log('Map movement:', deltaX, deltaY);
     }
   }
 

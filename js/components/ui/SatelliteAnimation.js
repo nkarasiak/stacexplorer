@@ -36,10 +36,10 @@ export class SatelliteAnimation {
     // Satellite control properties
     this.isControlMode = false;
     this.satellitePosition = { x: 0, y: 0 };
-    this.satelliteOrientation = 0; // degrees
+    this.satelliteOrientation = -10; // degrees
     this.mapManager = null;
     this.controlSpeed = 5; // pixels per keypress
-    this.rotationSpeed = 15; // degrees per keypress
+    this.rotationSpeed = 0.17; // degrees per frame (~10° per second at 60fps)
     this.keyStates = new Set(); // Track held keys for smooth movement
     this.controlInterval = null;
     this.isFollowingMode = true; // Map follows satellite by default
@@ -432,7 +432,7 @@ export class SatelliteAnimation {
    */
   toggleFollowMode() {
     this.isFollowingMode = !this.isFollowingMode;
-    this.showControlMessage(`Follow mode: ${this.isFollowingMode ? 'ON' : 'OFF'}`);
+    this.showControlMessage(`Map follow mode: ${this.isFollowingMode ? 'ON' : 'OFF'}`);
   }
 
   /**
@@ -443,7 +443,7 @@ export class SatelliteAnimation {
       x: window.innerWidth / 2,
       y: window.innerHeight / 2,
     };
-    this.satelliteOrientation = 0;
+    this.satelliteOrientation = -10;
 
     this.updateSatellitePosition();
     this.updateSatelliteRotation();
@@ -451,7 +451,7 @@ export class SatelliteAnimation {
     if (this.isFollowingMode && this.mapManager?.getMap) {
       const map = this.mapManager.getMap();
       if (map && map.isStyleLoaded()) {
-        map.setBearing(0);
+        map.setBearing(-10);
       }
     }
 
@@ -484,7 +484,7 @@ export class SatelliteAnimation {
     this.satellite.style.cursor = 'move';
 
     this.showControlMessage(
-      '🛰️ Satellite control active! ⬅️➡️ Rotate | ⬆️⬇️ Forward/Back | F: Follow mode | R: Reset | ESC: Exit'
+      '🛰️ Satellite control active! ⬅️➡️ Rotate | ⬆️⬇️ Forward/Back | F: Toggle follow (ON) | R: Reset | ESC: Exit'
     );
   }
 

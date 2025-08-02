@@ -45,6 +45,11 @@ export class SatelliteAnimation {
     this.controlInterval = null;
     this.isFollowingMode = true; // Map follows satellite by default
     this.mapKeyboardWasEnabled = false; // Track if map keyboard was enabled before control mode
+    this.validationStartTime = Date.now() + 3000; // Wait 3 seconds before starting validation
+    this.activeTimers = new Set(); // Track all active animation timers
+    this.baseZoom = 2; // Zoom level where satellite size looks perfect
+    this.baseScale = 1; // Base scale factor for perfect zoom level
+    this.zoomListenerSetup = false; // Track if zoom listener has been set up
 
     this.init();
     this.setupOfflineHandling();
@@ -78,6 +83,21 @@ export class SatelliteAnimation {
     const { getMapManager } = window;
     if (getMapManager && typeof getMapManager === 'function') {
       this.mapManager = getMapManager();
+    }
+
+    // Also try to get it from the global mapManager variable
+    if (!this.mapManager && window.mapManager) {
+      this.mapManager = window.mapManager;
+    }
+
+    // Try to get it from window.stacExplorer.mapManager (most likely location)
+    if (!this.mapManager && window.stacExplorer?.mapManager) {
+      this.mapManager = window.stacExplorer.mapManager;
+    }
+
+    // Set up map zoom listener if map manager is available
+    if (this.mapManager?.getMap) {
+      this.setupMapZoomListener();
     }
 
     // Set up keyboard event listeners
@@ -156,19 +176,48 @@ export class SatelliteAnimation {
   }
 
   /**
+   * Setup map zoom listener for satellite scaling
+   */
+  setupMapZoomListener() {
+    if (!this.mapManager?.getMap) {
+      return;
+    }
+
+    const map = this.mapManager.getMap();
+    if (!map) {
+      return;
+    }
+
+    // Listen for zoom changes
+    map.on('zoom', () => {
+      if (this.isControlMode && this.satellite) {
+        this.updateSatellitePosition(); // This will recalculate scale
+      }
+    });
+  }
+
+  /**
    * Setup keyboard controls for satellite movement
    */
   setupKeyboardControls() {
-    // Listen for keydown events
-    document.addEventListener('keydown', event => {
-      this.handleKeyDown(event);
-      this.handleGlobalShortcuts(event);
-    });
+    // Listen for keydown events with capture to run before MapLibre
+    document.addEventListener(
+      'keydown',
+      event => {
+        this.handleKeyDown(event);
+        this.handleGlobalShortcuts(event);
+      },
+      true
+    ); // Use capture phase
 
     // Listen for keyup events
-    document.addEventListener('keyup', event => {
-      this.handleKeyUp(event);
-    });
+    document.addEventListener(
+      'keyup',
+      event => {
+        this.handleKeyUp(event);
+      },
+      true
+    ); // Use capture phase
 
     // Start control loop for smooth movement
     this.startControlLoop();
@@ -204,6 +253,8 @@ export class SatelliteAnimation {
     // Prevent default behavior for arrow keys
     if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(key)) {
       event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
       this.keyStates.add(key);
     }
 
@@ -250,8 +301,9 @@ export class SatelliteAnimation {
         if (this.keyStates.size > 0) {
           this.processKeyStates();
         }
-
-        // Regular validation to prevent disappearing
+        // Skip validation during control mode - we're managing position explicitly
+      } else {
+        // Only validate when NOT in control mode
         this.validateSatelliteState();
       }
     }, 16); // ~60 FPS
@@ -261,35 +313,8 @@ export class SatelliteAnimation {
    * Validate satellite state to prevent disappearing
    */
   validateSatelliteState() {
-    if (!this.satellite || !this.container) {
-      return;
-    }
-
-    // Check if satellite is still visible and positioned correctly
-    const rect = this.satellite.getBoundingClientRect();
-    const isVisible = rect.width > 0 && rect.height > 0;
-
-    if (
-      !isVisible ||
-      rect.left < -100 ||
-      rect.top < -100 ||
-      rect.left > window.innerWidth + 100 ||
-      rect.top > window.innerHeight + 100
-    ) {
-      console.warn('Satellite appears to be off-screen or invisible, repositioning');
-      this.resetSatellitePosition();
-    }
-
-    // Ensure container is visible
-    if (this.container.style.display === 'none') {
-      this.container.style.display = 'block';
-    }
-
-    // Ensure satellite has correct classes
-    if (!this.satellite.classList.contains('visible')) {
-      this.satellite.classList.add('visible');
-      this.satellite.classList.remove('hidden');
-    }
+    // COMPLETELY DISABLE validation - it's causing more problems than it solves
+    return;
   }
 
   /**
@@ -307,51 +332,23 @@ export class SatelliteAnimation {
     // Rotation keys - ONLY affect orientation, NO movement whatsoever
     if (this.keyStates.has('ArrowLeft')) {
       deltaRotation -= this.rotationSpeed;
-      console.log(
-        'LEFT key - rotation only, deltaX should be 0:',
-        deltaX,
-        'deltaY should be 0:',
-        deltaY
-      );
     }
     if (this.keyStates.has('ArrowRight')) {
       deltaRotation += this.rotationSpeed;
-      console.log(
-        'RIGHT key - rotation only, deltaX should be 0:',
-        deltaX,
-        'deltaY should be 0:',
-        deltaY
-      );
     }
 
     // Movement keys - ONLY up/down keys move the map
     if (this.keyStates.has('ArrowUp')) {
-      // Move forward in the direction the satellite is pointing
-      const radians = (this.satelliteOrientation * Math.PI) / 180;
-      deltaX += Math.sin(radians) * this.controlSpeed;
-      deltaY -= Math.cos(radians) * this.controlSpeed;
-      console.log(
-        'UP key - deltaX:',
-        deltaX,
-        'deltaY:',
-        deltaY,
-        'orientation:',
-        this.satelliteOrientation
-      );
-    }
-    if (this.keyStates.has('ArrowDown')) {
       // Move backward opposite to the direction the satellite is pointing
       const radians = (this.satelliteOrientation * Math.PI) / 180;
       deltaX -= Math.sin(radians) * this.controlSpeed;
       deltaY += Math.cos(radians) * this.controlSpeed;
-      console.log(
-        'DOWN key - deltaX:',
-        deltaX,
-        'deltaY:',
-        deltaY,
-        'orientation:',
-        this.satelliteOrientation
-      );
+    }
+    if (this.keyStates.has('ArrowDown')) {
+      // Move forward in the direction the satellite is pointing
+      const radians = (this.satelliteOrientation * Math.PI) / 180;
+      deltaX += Math.sin(radians) * this.controlSpeed;
+      deltaY -= Math.cos(radians) * this.controlSpeed;
     }
 
     // Apply rotation (left/right keys only)
@@ -361,10 +358,7 @@ export class SatelliteAnimation {
 
     // Apply movement (up/down keys only) - ONLY if there's actual movement
     if (deltaX !== 0 || deltaY !== 0) {
-      console.log('Calling moveSatellite with deltaX:', deltaX, 'deltaY:', deltaY);
       this.moveSatellite(deltaX, deltaY);
-    } else {
-      console.log('No movement - deltaX and deltaY are both 0, NOT calling moveSatellite');
     }
   }
 
@@ -420,25 +414,33 @@ export class SatelliteAnimation {
       return;
     }
 
-    // Validate position values before applying
-    if (!isFinite(this.satellitePosition.x) || !isFinite(this.satellitePosition.y)) {
-      console.warn('Invalid satellite position detected, resetting:', this.satellitePosition);
-      this.satellitePosition = {
-        x: (window.innerWidth || 1920) / 2,
-        y: (window.innerHeight || 1080) / 2,
-      };
-    }
+    // Skip validation during control mode - we're explicitly controlling position
+    if (!this.isControlMode) {
+      // Validate position values before applying
+      if (!isFinite(this.satellitePosition.x) || !isFinite(this.satellitePosition.y)) {
+        console.warn('Invalid satellite position detected, resetting:', this.satellitePosition);
+        this.satellitePosition = {
+          x: (window.innerWidth || 1920) / 2,
+          y: (window.innerHeight || 1080) / 2,
+        };
+      }
 
-    // Validate orientation
-    if (!isFinite(this.satelliteOrientation)) {
-      console.warn('Invalid satellite orientation detected, resetting:', this.satelliteOrientation);
-      this.satelliteOrientation = -10;
+      // Validate orientation
+      if (!isFinite(this.satelliteOrientation)) {
+        console.warn(
+          'Invalid satellite orientation detected, resetting:',
+          this.satelliteOrientation
+        );
+        this.satelliteOrientation = -10;
+      }
     }
 
     // Apply styles with validated values
     this.satellite.style.left = `${this.satellitePosition.x}px`;
     this.satellite.style.top = `${this.satellitePosition.y}px`;
-    this.satellite.style.transform = `translate(-50%, -50%) rotate(${this.satelliteOrientation}deg)`;
+
+    const scale = this.calculateSatelliteScale();
+    this.satellite.style.transform = `translate(-50%, -50%) rotate(${this.satelliteOrientation}deg) scale(${scale})`;
 
     // Ensure satellite remains visible
     this.satellite.style.display = '';
@@ -454,7 +456,33 @@ export class SatelliteAnimation {
       return;
     }
 
-    this.satellite.style.transform = `translate(-50%, -50%) rotate(${this.satelliteOrientation}deg)`;
+    const scale = this.calculateSatelliteScale();
+    this.satellite.style.transform = `translate(-50%, -50%) rotate(${this.satelliteOrientation}deg) scale(${scale})`;
+  }
+
+  /**
+   * Calculate satellite scale based on map zoom level
+   */
+  calculateSatelliteScale() {
+    if (!this.mapManager?.getMap) {
+      return this.baseScale;
+    }
+
+    const map = this.mapManager.getMap();
+    if (!map) {
+      return this.baseScale;
+    }
+
+    const currentZoom = map.getZoom();
+
+    // Scale formula: SMALLER satellite at lower zoom (farther away), LARGER at higher zoom (closer)
+    // At baseZoom (2), scale = baseScale (1)
+    // Each zoom level increases/decreases the scale
+    const zoomDifference = currentZoom - this.baseZoom;
+    const scale = this.baseScale * Math.pow(1.4, zoomDifference); // 1.4 makes satellite bigger when zooming in
+
+    // Clamp scale between reasonable bounds
+    return Math.max(0.3, Math.min(3.0, scale));
   }
 
   /**
@@ -529,6 +557,8 @@ export class SatelliteAnimation {
    * Reset satellite position and orientation
    */
   resetSatellitePosition() {
+    console.warn('resetSatellitePosition called during control mode:', this.isControlMode);
+
     // Always keep satellite at screen center
     this.satellitePosition = {
       x: (window.innerWidth || 1920) / 2,
@@ -546,7 +576,9 @@ export class SatelliteAnimation {
       }
     }
 
-    this.showControlMessage('Satellite centered and reset');
+    if (this.isControlMode) {
+      this.showControlMessage('Satellite centered and reset');
+    }
   }
 
   /**
@@ -555,6 +587,26 @@ export class SatelliteAnimation {
   enterControlMode() {
     if (this.isControlMode) {
       return;
+    }
+
+    // Try to get map manager again before entering control mode
+    if (!this.mapManager) {
+      const { getMapManager } = window;
+      if (getMapManager && typeof getMapManager === 'function') {
+        this.mapManager = getMapManager();
+      }
+      if (!this.mapManager && window.mapManager) {
+        this.mapManager = window.mapManager;
+      }
+      if (!this.mapManager && window.stacExplorer?.mapManager) {
+        this.mapManager = window.stacExplorer.mapManager;
+      }
+    }
+
+    // Set up zoom listener if not already done
+    if (this.mapManager?.getMap && !this.zoomListenerSetup) {
+      this.setupMapZoomListener();
+      this.zoomListenerSetup = true;
     }
 
     this.isControlMode = true;
@@ -566,7 +618,6 @@ export class SatelliteAnimation {
       if (map && map.keyboard) {
         this.mapKeyboardWasEnabled = map.keyboard.isEnabled();
         map.keyboard.disable();
-        console.log('Disabled MapLibre keyboard navigation');
       }
     }
 
@@ -605,7 +656,6 @@ export class SatelliteAnimation {
       const map = this.mapManager.getMap();
       if (map && map.keyboard && this.mapKeyboardWasEnabled) {
         map.keyboard.enable();
-        console.log('Re-enabled MapLibre keyboard navigation');
       }
     }
 
@@ -909,11 +959,15 @@ export class SatelliteAnimation {
    * Start the satellite animation
    */
   startAnimation() {
+    // Don't start animation if in control mode
+    if (this.isControlMode) {
+      return;
+    }
+
     // In offline mode, always show animation regardless of results
     if (this.isActive || (!this.isOffline && this.hasResults)) {
       return;
     }
-
     this.isActive = true;
     this.currentColumn = 0;
 
@@ -935,16 +989,25 @@ export class SatelliteAnimation {
       this.animationInterval = null;
     }
 
-    // Hide satellite immediately
-    this.satellite.classList.remove('visible', 'animate');
-    this.satellite.classList.add('hidden');
+    // Clear all active animation timers
+    this.activeTimers.forEach(timerId => {
+      clearTimeout(timerId);
+    });
+    this.activeTimers.clear();
 
-    // Hide container after transition
-    setTimeout(() => {
-      if (!this.isActive) {
-        this.container.style.display = 'none';
-      }
-    }, 500);
+    // Only hide satellite if not in control mode
+    if (!this.isControlMode) {
+      // Hide satellite immediately
+      this.satellite.classList.remove('visible', 'animate');
+      this.satellite.classList.add('hidden');
+
+      // Hide container after transition
+      setTimeout(() => {
+        if (!this.isActive && !this.isControlMode) {
+          this.container.style.display = 'none';
+        }
+      }, 500);
+    }
   }
 
   /**
@@ -960,6 +1023,7 @@ export class SatelliteAnimation {
     this.animationInterval = setTimeout(() => {
       this.executeFlight();
     }, 10000);
+    this.activeTimers.add(this.animationInterval);
   }
 
   /**
@@ -982,12 +1046,17 @@ export class SatelliteAnimation {
     this.satellite.classList.add('visible');
 
     // Start animation after a brief moment
-    setTimeout(() => {
+    const animateTimer = setTimeout(() => {
       this.satellite.classList.add('animate');
     }, 100);
+    this.activeTimers.add(animateTimer);
 
     // Remove animation class and hide satellite after animation completes
-    setTimeout(() => {
+    const hideTimer = setTimeout(() => {
+      // Don't hide if we're in control mode
+      if (this.isControlMode) {
+        return;
+      }
       this.satellite.classList.remove('animate', 'visible');
       this.satellite.classList.add('hidden');
 
@@ -997,6 +1066,7 @@ export class SatelliteAnimation {
       // Schedule next flight
       this.scheduleNextFlight();
     }, 10000);
+    this.activeTimers.add(hideTimer);
   }
 
   /**

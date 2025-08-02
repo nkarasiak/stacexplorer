@@ -31,6 +31,7 @@
     "biome:check": "biome check js/",
     "biome:fix": "biome check js/ --write",
     "biome:unsafe": "biome check js/ --write --unsafe",
+    "test": "npm run quality",
     "prepare": "husky install"
   },
   "dependencies": {

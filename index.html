@@ -363,10 +363,15 @@
         border-radius: 16px;
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
+        width: 100%;
+        box-sizing: border-box;
       }
 
       .search-summary-row {
         margin-bottom: 12px;
+        width: 100%;
+        box-sizing: border-box;
+        overflow: hidden; /* Prevent horizontal overflow */
       }
 
       .search-summary-row:last-child {
@@ -395,6 +400,9 @@
         position: relative;
         overflow: hidden;
         min-height: 40px;
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
       }
 
       .search-summary-item::before {
@@ -491,6 +499,7 @@
         gap: 6px;
         position: relative;
         z-index: 1;
+        overflow: hidden; /* Prevent content overflow */
       }
 
       .search-summary-label {
@@ -1318,7 +1327,8 @@
         }
 
         .search-summary-content {
-          max-width: 100px; /* Even smaller on mobile */
+          max-width: 140px; /* Increased from 100px to accommodate "Select Source" */
+          min-width: 120px; /* Ensure minimum space for source button */
         }
 
         .search-summary-label {
@@ -1327,6 +1337,35 @@
 
         .search-summary-value {
           font-size: 11px;
+        }
+
+        /* Ensure source button stays visible on mobile */
+        #summary-source .search-summary-content {
+          min-width: 120px !important;
+          max-width: 150px !important;
+        }
+
+        .source-card-main {
+          min-width: 160px !important;
+        }
+
+        /* Mobile fix for SOURCE button positioning */
+        #summary-source {
+          min-width: 200px !important;
+          max-width: 100% !important;
+        }
+      }
+
+      /* Extra small screens */
+      @media (max-width: 480px) {
+        .search-summary-content {
+          max-width: 120px;
+          min-width: 100px;
+        }
+
+        #summary-source .search-summary-content {
+          min-width: 100px !important;
+          max-width: 130px !important;
         }
       }
 
@@ -1365,6 +1404,8 @@
         gap: 16px !important;
         padding: 10px 14px !important;
         min-height: 44px !important;
+        width: 100% !important; /* Ensure full width */
+        box-sizing: border-box !important;
       }
 
       .source-card-main {
@@ -1373,10 +1414,11 @@
         gap: 16px !important;
         flex: 1 !important;
         min-width: 200px !important;
-        max-width: 60% !important;
+        max-width: 70% !important; /* Increased from 60% to 70% for more space */
         justify-content: flex-start !important;
         margin: 0 !important;
         padding: 0 !important;
+        overflow: hidden; /* Prevent text overflow */
       }
 
       .source-presets-mini {
@@ -1528,6 +1570,41 @@
       /* Adjust catalog card layout when buttons are hidden */
       #summary-source[data-field='collection'] .source-card-main {
         max-width: 100% !important;
+      }
+
+      /* Ensure source button is always visible during loading */
+      #summary-source .search-summary-value {
+        min-width: 90px; /* Minimum width to show "Select Source" */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* Critical fix: Prevent SOURCE button from being pushed off during loading */
+      #summary-source {
+        min-width: 250px !important; /* Ensure adequate minimum width */
+        max-width: 100% !important;
+        flex-shrink: 0 !important; /* Prevent shrinking */
+      }
+
+      /* Ensure the source card content area has priority */
+      #summary-source .source-card-main {
+        min-width: 220px !important; /* Guarantee space for content */
+        flex-shrink: 0 !important;
+      }
+
+      /* Loading state fix - ensure SOURCE button is always visible */
+      .search-summary-interface[data-loading="true"] #summary-source,
+      #summary-source:not([data-collections-loaded="true"]) {
+        min-width: 280px !important;
+        max-width: 100% !important;
+      }
+
+      /* Prevent flex shrinking during any loading state */
+      .search-summary-interface #summary-source {
+        flex-shrink: 0 !important;
+        flex-grow: 0 !important;
+        flex-basis: auto !important;
       }
 
       .source-more-btn {

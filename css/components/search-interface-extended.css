@@ -11,11 +11,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    135deg,
-    rgba(102, 126, 234, 0.1) 0%,
-    rgba(118, 75, 162, 0.05) 100%
-  );
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.05) 100%);
   opacity: 0;
   transition: opacity 0.3s ease;
   border-radius: 16px;
@@ -28,11 +24,7 @@
     0 8px 32px rgba(102, 126, 234, 0.15),
     0 4px 16px rgba(0, 0, 0, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.12) 0%,
-    rgba(255, 255, 255, 0.06) 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
 }
 
 .search-summary-item:hover::before {
@@ -68,11 +60,7 @@
   position: absolute;
   inset: 1px;
   border-radius: 9px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
 }
 
 .search-summary-icon i {
@@ -233,11 +221,7 @@
 .search-field-enhanced {
   width: 100%;
   padding: 16px 20px 16px 45px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.08) 0%,
-    rgba(255, 255, 255, 0.04) 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 12px;
   color: var(--text-primary, rgba(255, 255, 255, 0.9));
@@ -255,11 +239,7 @@
 .beautiful-search-field:focus,
 .search-field-enhanced:focus {
   outline: none;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.12) 0%,
-    rgba(255, 255, 255, 0.06) 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
   border-color: rgba(102, 126, 234, 0.4);
   box-shadow:
     0 8px 32px rgba(102, 126, 234, 0.15),
@@ -278,11 +258,7 @@
 
 .beautiful-search-field:hover:not(:focus),
 .search-field-enhanced:hover:not(:focus) {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
   border-color: rgba(255, 255, 255, 0.2);
   transform: translateY(-1px);
   backdrop-filter: blur(14px) saturate(130%);
@@ -374,11 +350,7 @@
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0.05) 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 16px;
   color: var(--text-primary, rgba(255, 255, 255, 0.9));
@@ -390,11 +362,7 @@
 }
 
 .search-filter-chip:hover {
-  background: linear-gradient(
-    135deg,
-    rgba(255, 255, 255, 0.15) 0%,
-    rgba(255, 255, 255, 0.08) 100%
-  );
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
   border-color: rgba(255, 255, 255, 0.25);
   transform: translateY(-1px);
 }
@@ -446,11 +414,7 @@
 
 /* Keyboard navigation */
 .suggestion-item.keyboard-highlighted {
-  background: linear-gradient(
-    135deg,
-    rgba(102, 126, 234, 0.2) 0%,
-    rgba(118, 75, 162, 0.1) 100%
-  );
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.1) 100%);
   border-left: 3px solid var(--primary-500, #2196f3);
   padding-left: 13px;
   transform: translateX(4px);

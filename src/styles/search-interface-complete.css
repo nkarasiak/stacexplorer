@@ -670,10 +670,13 @@
 }
 
 .search-summary-row {
+  display: flex !important;
   margin-bottom: 6px;
   width: 100%;
   box-sizing: border-box;
-  overflow: hidden; /* Prevent horizontal overflow */
+  overflow: visible !important; /* Allow SOURCE button to be visible */
+  flex-wrap: nowrap !important;
+  align-items: center !important;
 }
 
 .search-summary-row:last-child {
@@ -1792,6 +1795,159 @@ textarea:focus {
 #summary-source:not([data-collections-loaded="true"]) {
   min-width: 280px !important;
   max-width: 100% !important;
+}
+
+/* Fallback rule - ensure SOURCE is always visible regardless of loading state */
+#summary-source {
+  min-width: 200px !important;
+  flex-shrink: 0 !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  position: relative !important;
+  z-index: 10 !important;
+}
+
+/* Prevent any class from hiding the SOURCE button */
+#summary-source.hidden,
+.hidden #summary-source,
+#summary-source.invisible {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* Remove visual effects (shadows, borders, radius) for SOURCE, LOCATION, TIME elements */
+#summary-source,
+#summary-location,
+#summary-date,
+.source-card-expanded,
+.location-card-expanded,
+.time-card-expanded {
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  cursor: default !important;
+}
+
+/* Remove hover effects */
+#summary-source:hover,
+#summary-location:hover,
+#summary-date:hover,
+.source-card-expanded:hover,
+.location-card-expanded:hover,
+.time-card-expanded:hover {
+  box-shadow: none !important;
+  transform: none !important;
+  background: transparent !important;
+}
+
+/* Remove cursor pointer from collection browser trigger */
+.collection-browser-trigger {
+  cursor: default !important;
+}
+
+.collection-browser-trigger:hover {
+  cursor: default !important;
+}
+
+/* COMPREHENSIVE VISUAL EFFECTS REMOVAL */
+/* Remove ALL border-radius, box-shadow, and visual effects from search interface elements */
+.search-summary-interface,
+.search-summary-row,
+.search-summary-item,
+.search-summary-icon,
+.search-summary-content,
+.search-summary-label,
+.search-summary-value,
+#summary-source,
+#summary-location, 
+#summary-date,
+.source-card-expanded,
+.location-card-expanded,
+.time-card-expanded,
+.source-card-main,
+.location-card-main,
+.time-card-main,
+.collection-browser-trigger,
+.dropdown-active,
+.mini-location-input,
+.mini-date-input,
+.mini-location-input-container,
+.mini-date-inputs,
+.location-action-btn,
+.preset-mini-btn,
+.time-presets-mini,
+.source-presets-mini {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: none !important;
+  transition: none !important;
+  animation: none !important;
+  cursor: default !important;
+}
+
+/* Remove ALL hover effects */
+.search-summary-interface:hover,
+.search-summary-row:hover,
+.search-summary-item:hover,
+.search-summary-icon:hover,
+#summary-source:hover,
+#summary-location:hover,
+#summary-date:hover,
+.source-card-expanded:hover,
+.location-card-expanded:hover,
+.time-card-expanded:hover,
+.collection-browser-trigger:hover,
+.dropdown-active:hover,
+.mini-location-input:hover,
+.mini-date-input:hover,
+.location-action-btn:hover,
+.preset-mini-btn:hover {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: none !important;
+  cursor: default !important;
+}
+
+/* Remove ALL active/focus effects */
+.search-summary-item:active,
+.search-summary-item:focus,
+.search-summary-item.active,
+.dropdown-active,
+.dropdown-active:hover,
+.dropdown-active:active,
+#summary-source:active,
+#summary-location:active,
+#summary-date:active,
+.collection-browser-trigger:active,
+.mini-location-input:focus,
+.mini-date-input:focus {
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: none !important;
+  outline: none !important;
+}
+
+/* Remove pseudo-elements that create visual effects */
+.search-summary-item::before,
+.search-summary-item::after,
+.dropdown-active::after,
+.collection-browser-trigger::after {
+  display: none !important;
 }
 
 /* Prevent flex shrinking during any loading state */

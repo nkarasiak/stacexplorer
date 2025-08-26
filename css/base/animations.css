@@ -92,13 +92,22 @@
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.6; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 /* Fade animations */
@@ -239,12 +248,12 @@
     animation: none !important;
     transition: none !important;
   }
-  
+
   .browser-mode-loading::before,
   .browser-mode-loading::after {
     animation: none !important;
   }
-  
+
   .animate-fade-in,
   .animate-fade-out,
   .animate-slide-in-right,

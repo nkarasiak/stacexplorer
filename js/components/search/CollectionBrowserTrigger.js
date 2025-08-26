@@ -82,7 +82,6 @@ export class CollectionBrowserTrigger {
     console.log('🔧 CollectionBrowserTrigger: Setting up trigger button');
 
     // Make the existing card clickable
-    summarySource.style.cursor = 'pointer';
     summarySource.classList.add('collection-browser-trigger');
     summarySource.setAttribute('role', 'button');
     summarySource.setAttribute('tabindex', '0');
@@ -516,8 +515,7 @@ export class CollectionBrowserTrigger {
       this.triggerButton.style.pointerEvents = '';
       this.triggerButton.style.opacity = '';
 
-      // Ensure cursor is set to pointer
-      this.triggerButton.style.cursor = 'pointer';
+      // Remove cursor style - handled by CSS
     }
   }
 
@@ -533,7 +531,6 @@ export class CollectionBrowserTrigger {
 
       // Reset all styles that might interfere
       this.triggerButton.style.pointerEvents = 'auto';
-      this.triggerButton.style.cursor = 'pointer';
       this.triggerButton.style.opacity = '1';
       this.triggerButton.style.filter = '';
       this.triggerButton.style.userSelect = '';

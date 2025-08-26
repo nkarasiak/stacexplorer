@@ -63,7 +63,11 @@
   transition: all 0.2s ease;
   white-space: nowrap;
   flex-shrink: 0;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -125,7 +129,11 @@
   border-radius: 4px;
   transition: all 0.2s ease;
   white-space: nowrap;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -325,7 +333,11 @@
   min-width: 85px;
   height: 28px;
   transition: all 0.2s ease;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   box-sizing: border-box;
   text-align: center;
 }
@@ -359,7 +371,11 @@
   min-width: 140px;
   height: 28px;
   transition: all 0.2s ease;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   box-sizing: border-box;
   text-align: left;
 }

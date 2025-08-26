@@ -79,6 +79,8 @@ export class CollectionBrowserTrigger {
    * @param {HTMLElement} summarySource - The source element to make clickable
    */
   setupTrigger(summarySource) {
+    console.log('🔧 CollectionBrowserTrigger: Setting up trigger button');
+
     // Make the existing card clickable
     summarySource.style.cursor = 'pointer';
     summarySource.classList.add('collection-browser-trigger');
@@ -97,6 +99,14 @@ export class CollectionBrowserTrigger {
 
     // Find the value element to update later
     this.valueElement = summarySource.querySelector('.search-summary-value');
+
+    console.log('🔧 Found elements:', {
+      hasTriggerButton: !!this.triggerButton,
+      hasValueElement: !!this.valueElement,
+      currentValueText: this.valueElement?.textContent,
+      triggerButtonId: this.triggerButton?.id,
+      triggerButtonClasses: this.triggerButton?.className,
+    });
 
     // Add enhanced styling
     this.addTriggerStyles();
@@ -421,13 +431,26 @@ export class CollectionBrowserTrigger {
    * @param {Object} collection - Selected collection object
    */
   updateSelection(collection) {
+    console.log('🎯 CollectionBrowserTrigger: Updating selection', {
+      collectionTitle: collection?.title || collection?.id,
+      hasValueElement: !!this.valueElement,
+      hasTriggerButton: !!this.triggerButton,
+    });
+
     this.currentSelection = collection;
 
     // Update the search summary value
-    if (this.valueElement) {
-      this.valueElement.textContent = collection.title || collection.id;
+    if (this.valueElement && this.triggerButton) {
+      const displayText = collection.title || collection.id;
+      console.log('🎯 Setting value element text to:', displayText);
+      this.valueElement.textContent = displayText;
       this.triggerButton.classList.add('has-selection');
       this.triggerButton.removeAttribute('data-state'); // Clear any loading/error states
+    } else {
+      console.warn('⚠️ Missing elements when updating selection:', {
+        hasValueElement: !!this.valueElement,
+        hasTriggerButton: !!this.triggerButton,
+      });
     }
 
     // Update the inline dropdown manager if it exists
@@ -451,7 +474,11 @@ export class CollectionBrowserTrigger {
     // Reset the search summary value
     if (this.valueElement) {
       this.valueElement.textContent = 'Select Source';
+    }
+
+    if (this.triggerButton) {
       this.triggerButton.classList.remove('has-selection');
+      this.triggerButton.removeAttribute('data-state');
     }
 
     // Update the inline dropdown manager if it exists
@@ -565,12 +592,26 @@ export class CollectionBrowserTrigger {
    * Show collections loading message
    */
   showCollectionsLoadingMessage() {
+    console.log('🔄 CollectionBrowserTrigger: Showing loading message');
+
+    // Ensure the elements still exist before modifying them
+    this.ensureElementsExist();
+
     if (this.valueElement) {
+      console.log('🔄 Setting value element text to "Loading Collections..."');
       this.valueElement.textContent = 'Loading Collections...';
+    } else {
+      console.warn('⚠️ Value element not found when trying to show loading message');
     }
 
     if (this.triggerButton) {
       this.triggerButton.setAttribute('data-state', 'loading');
+      console.log('🔄 Set trigger button data-state to loading');
+
+      // Ensure the label element is still present
+      this.ensureLabelExists();
+    } else {
+      console.warn('⚠️ Trigger button not found when trying to show loading message');
     }
 
     // Show temporary notification
@@ -621,15 +662,119 @@ export class CollectionBrowserTrigger {
       if (collections.length === 0) {
         this.showNoCollectionsMessage();
       } else {
-        // Reset to normal state
-        if (this.valueElement && !this.currentSelection) {
-          this.valueElement.textContent = 'Select Source';
-        }
-        if (this.triggerButton) {
-          this.triggerButton.removeAttribute('data-state');
-        }
-        this.setLoadingState(false);
+        // Reset to normal state - always restore if no selection
+        this.restoreNormalState();
       }
+    }
+  }
+
+  /**
+   * Restore the button to its normal state after loading
+   */
+  restoreNormalState() {
+    console.log('✅ CollectionBrowserTrigger: Restoring normal state', {
+      hasCurrentSelection: !!this.currentSelection,
+      currentSelectionTitle: this.currentSelection?.title || this.currentSelection?.id || null,
+    });
+
+    // Ensure elements exist before restoring state
+    this.ensureElementsExist();
+    this.ensureLabelExists();
+
+    if (this.valueElement) {
+      // Only restore default text if there's no current selection
+      if (!this.currentSelection) {
+        console.log('✅ Restoring value element text to "Select Source"');
+        this.valueElement.textContent = 'Select Source';
+      } else {
+        console.log(
+          '✅ Keeping current selection text:',
+          this.currentSelection.title || this.currentSelection.id
+        );
+      }
+    } else {
+      console.warn('⚠️ Value element not found when trying to restore normal state');
+    }
+
+    if (this.triggerButton) {
+      this.triggerButton.removeAttribute('data-state');
+      this.triggerButton.classList.remove('loading');
+      console.log('✅ Removed loading state from trigger button');
+    } else {
+      console.warn('⚠️ Trigger button not found when trying to restore normal state');
+    }
+
+    this.setLoadingState(false);
+    this.ensureButtonClickable();
+  }
+
+  /**
+   * Ensure the trigger button and value elements still exist
+   */
+  ensureElementsExist() {
+    if (!this.triggerButton || !this.triggerButton.parentNode) {
+      console.warn('🔧 Trigger button lost, attempting to re-find it');
+      const summarySource = document.getElementById('summary-source');
+      if (summarySource) {
+        this.triggerButton = summarySource;
+        this.valueElement = summarySource.querySelector('.search-summary-value');
+      }
+    }
+
+    if (!this.valueElement && this.triggerButton) {
+      console.warn('🔧 Value element lost, attempting to re-find it');
+      this.valueElement = this.triggerButton.querySelector('.search-summary-value');
+    }
+  }
+
+  /**
+   * Ensure the SOURCE label element exists and is visible
+   */
+  ensureLabelExists() {
+    if (!this.triggerButton) {
+      return;
+    }
+
+    let labelElement = this.triggerButton.querySelector('.search-summary-label');
+    if (!labelElement) {
+      console.warn('🔧 Label element missing, recreating it');
+
+      // Find or create the search-summary-content container
+      let contentContainer = this.triggerButton.querySelector('.search-summary-content');
+      if (!contentContainer) {
+        console.warn('🔧 Content container missing, recreating it');
+        contentContainer = document.createElement('div');
+        contentContainer.className = 'search-summary-content';
+
+        // Find the source-card-main container or create one
+        let mainContainer = this.triggerButton.querySelector('.source-card-main');
+        if (!mainContainer) {
+          mainContainer = document.createElement('div');
+          mainContainer.className = 'source-card-main';
+          this.triggerButton.appendChild(mainContainer);
+        }
+
+        mainContainer.appendChild(contentContainer);
+      }
+
+      // Create the label element
+      labelElement = document.createElement('div');
+      labelElement.className = 'search-summary-label';
+      labelElement.textContent = 'SOURCE:';
+
+      // Insert it before the value element
+      if (this.valueElement) {
+        contentContainer.insertBefore(labelElement, this.valueElement);
+      } else {
+        contentContainer.appendChild(labelElement);
+        // Also recreate value element if needed
+        this.valueElement = document.createElement('div');
+        this.valueElement.className = 'search-summary-value';
+        this.valueElement.textContent = 'Select Source';
+        contentContainer.appendChild(this.valueElement);
+      }
+
+      console.log('✅ Recreated label element');
     }
   }
 

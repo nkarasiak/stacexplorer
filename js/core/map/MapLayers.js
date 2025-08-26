@@ -59,6 +59,8 @@ export class MapLayers {
         'item-bbox-layer-stroke',
         'thumbnail-layer',
         'image-overlay-layer',
+        'location-geometry-layer',
+        'location-geometry-outline',
       ];
 
       layersToRemove.forEach(layerId => {
@@ -76,6 +78,7 @@ export class MapLayers {
         'item-bbox',
         'thumbnail-source',
         'image-overlay-source',
+        'location-geometry-source',
       ];
 
       sourcesToRemove.forEach(sourceId => {
@@ -176,6 +179,86 @@ export class MapLayers {
     }
 
     return null;
+  }
+
+  /**
+   * Add actual geometry layer for location display (preserves original geometry)
+   */
+  addLocationGeometry(geometry, label = 'Location') {
+    try {
+      console.log('🎯 MapLayers: addLocationGeometry called with:', {
+        geometryType: geometry?.type,
+        coordinates: geometry?.coordinates,
+        label: label,
+        mapReady: !!this.map,
+      });
+
+      // Remove any existing location geometry layers
+      this.removeLocationGeometry();
+
+      const geojson = {
+        type: 'Feature',
+        properties: {
+          title: label,
+          description: 'Location Geometry',
+        },
+        geometry: geometry,
+      };
+
+      console.log('🎯 MapLayers: Creating GeoJSON feature:', geojson);
+
+      // Add source
+      this.map.addSource('location-geometry-source', {
+        type: 'geojson',
+        data: geojson,
+      });
+
+      // Add fill layer
+      this.map.addLayer({
+        id: 'location-geometry-layer',
+        type: 'fill',
+        source: 'location-geometry-source',
+        paint: {
+          'fill-color': '#4f46e5',
+          'fill-opacity': 0.15,
+        },
+      });
+
+      // Add outline layer
+      this.map.addLayer({
+        id: 'location-geometry-outline',
+        type: 'line',
+        source: 'location-geometry-source',
+        paint: {
+          'line-color': '#4f46e5',
+          'line-width': 2,
+          'line-opacity': 0.8,
+        },
+      });
+
+      console.log('✅ Successfully added location geometry to map:', geometry.type);
+    } catch (error) {
+      console.error('❌ Error adding location geometry:', error);
+    }
+  }
+
+  /**
+   * Remove location geometry layers
+   */
+  removeLocationGeometry() {
+    try {
+      if (this.map.getLayer('location-geometry-outline')) {
+        this.map.removeLayer('location-geometry-outline');
+      }
+      if (this.map.getLayer('location-geometry-layer')) {
+        this.map.removeLayer('location-geometry-layer');
+      }
+      if (this.map.getSource('location-geometry-source')) {
+        this.map.removeSource('location-geometry-source');
+      }
+    } catch (error) {
+      console.warn('Warning: Could not remove location geometry layers:', error);
+    }
   }
 
   /**

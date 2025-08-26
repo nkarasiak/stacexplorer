@@ -986,9 +986,63 @@ function setupLocationInputs(inlineDropdownManager) {
     });
   });
 
+  /**
+   * Calculate bounding box from GeoJSON geometry
+   * @param {Object} geometry - GeoJSON geometry object
+   * @returns {Array|null} Bounds in format [[west, south], [east, north]]
+   */
+  function calculateGeometryBounds(geometry) {
+    if (!geometry || !geometry.coordinates) {
+      return null;
+    }
+
+    const allCoords = [];
+
+    // Recursively extract all coordinate pairs from any geometry type
+    function extractCoords(coords) {
+      if (
+        Array.isArray(coords) &&
+        coords.length >= 2 &&
+        typeof coords[0] === 'number' &&
+        typeof coords[1] === 'number'
+      ) {
+        // This is a coordinate pair [lng, lat]
+        allCoords.push(coords);
+      } else if (Array.isArray(coords)) {
+        // This is an array of coordinates or coordinate arrays
+        coords.forEach(extractCoords);
+      }
+    }
+
+    extractCoords(geometry.coordinates);
+
+    if (allCoords.length === 0) {
+      return null;
+    }
+
+    const lngs = allCoords.map(coord => coord[0]);
+    const lats = allCoords.map(coord => coord[1]);
+
+    const west = Math.min(...lngs);
+    const east = Math.max(...lngs);
+    const south = Math.min(...lats);
+    const north = Math.max(...lats);
+
+    return [
+      [west, south],
+      [east, north],
+    ];
+  }
+
   // Listen for location selection events from the dropdown
   document.addEventListener('locationSelected', e => {
-    const { name, bbox } = e.detail;
+    // Handle both old format {name, bbox} and new format {locationResult}
+    const locationResult = e.detail.locationResult || e.detail;
+    const name = locationResult.display_name || locationResult.name || e.detail.name;
+    const bbox = locationResult.bbox || e.detail.bbox;
+    const geometry = locationResult.geometry;
+
+    console.log('🌍 Location selected:', { name, bbox, geometry, hasGeometry: !!geometry });
 
     // Update all location inputs with the selected location
     locationInputs.forEach(input => {
@@ -998,29 +1052,52 @@ function setupLocationInputs(inlineDropdownManager) {
     // Update the search summary
     inlineDropdownManager.updateSearchSummary('location', name.toUpperCase());
 
-    // If we have a bbox, zoom the map to it and show the bounding box
-    if (bbox && window.stacExplorer && window.stacExplorer.mapManager) {
+    // Display the location on the map
+    if (window.stacExplorer && window.stacExplorer.mapManager) {
       try {
         const mapManager = window.stacExplorer.mapManager;
 
-        // Clear any existing location bbox visualization
-        if (typeof mapManager.removeBoundingBoxVisualization === 'function') {
-          mapManager.removeBoundingBoxVisualization('location-bbox');
+        // Clear any existing location visualizations
+        if (mapManager.mapLayers?.removeLocationGeometry) {
+          mapManager.mapLayers.removeLocationGeometry();
         }
 
-        // Add bounding box visualization
-        if (typeof mapManager.addBoundingBoxVisualization === 'function') {
-          mapManager.addBoundingBoxVisualization(bbox, 'location-bbox');
+        // If we have actual geometry (like WKT), display it directly
+        if (geometry && mapManager.mapLayers?.addLocationGeometry) {
+          console.log('🎯 Displaying actual geometry on map:', geometry.type);
+          mapManager.mapLayers.addLocationGeometry(geometry, name);
+        } else if (bbox) {
+          // Fallback to bounding box if no geometry
+          console.log('🔲 Displaying bounding box as fallback');
+          mapManager.displayBboxOnMap(bbox, name);
         }
 
-        // Zoom to the location
-        if (mapManager.map?.fitBounds) {
-          // Convert bbox format: [west, south, east, north] to [[west, south], [east, north]]
-          const bounds = [
-            [bbox[0], bbox[1]],
-            [bbox[2], bbox[3]],
-          ];
-          mapManager.map.fitBounds(bounds, { padding: 20 });
+        // Zoom to the location (prefer geometry bounds over bbox)
+        if (mapManager.mapCore?.map?.fitBounds) {
+          const map = mapManager.mapCore.map;
+          if (geometry) {
+            // For geometry, calculate bounds from the geometry
+            const bounds = calculateGeometryBounds(geometry);
+            if (bounds) {
+              map.fitBounds(bounds, { padding: 20 });
+            }
+          } else if (bbox) {
+            // Convert bbox format: [west, south, east, north] to [[west, south], [east, north]]
+            const bounds = [
+              [bbox[0], bbox[1]],
+              [bbox[2], bbox[3]],
+            ];
+            map.fitBounds(bounds, { padding: 20 });
+          }
+        } else if (mapManager.map?.fitBounds) {
+          // Legacy map reference
+          if (bbox) {
+            const bounds = [
+              [bbox[0], bbox[1]],
+              [bbox[2], bbox[3]],
+            ];
+            mapManager.map.fitBounds(bounds, { padding: 20 });
+          }
         }
       } catch (error) {
         // Silently handle map zoom errors

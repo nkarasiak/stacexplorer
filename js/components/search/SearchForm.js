@@ -96,16 +96,21 @@ export class SearchForm {
       // Add paste event listener to bbox input
       const bboxInput = document.getElementById('bbox-input');
       if (bboxInput) {
+        console.log('📋 SearchForm: Setting up bbox input paste listener');
         bboxInput.addEventListener('paste', event => {
           // Get pasted text
           const pastedText = (event.clipboardData || window.clipboardData).getData('text');
+          console.log('📋 SearchForm: Paste detected in bbox input:', pastedText);
 
           // Check if it looks like WKT or GeoJSON
           if (this.detectAndProcessGeometry(pastedText)) {
+            console.log('📋 SearchForm: Processed as geometry, preventing default paste');
             // Prevent default paste if we processed it as geometry
             event.preventDefault();
           }
         });
+      } else {
+        console.warn('⚠️ SearchForm: bbox-input element not found for paste listener');
       }
 
       // Global paste event listener (for when focused on the page but not in an input)
@@ -115,10 +120,20 @@ export class SearchForm {
         const isEditable =
           event.target.isContentEditable || event.target.getAttribute('role') === 'textbox';
 
+        console.log('📋 SearchForm: Global paste detected:', {
+          targetTag,
+          isEditable,
+          targetId: event.target.id,
+          targetClass: event.target.className,
+        });
+
         if (targetTag !== 'input' && targetTag !== 'textarea' && !isEditable) {
           // Get pasted text
           const pastedText = (event.clipboardData || window.clipboardData).getData('text');
+          console.log('📋 SearchForm: Processing global paste:', pastedText);
           this.detectAndProcessGeometry(pastedText);
+        } else {
+          console.log('📋 SearchForm: Ignoring paste in editable element');
         }
       });
     } catch (error) {
@@ -134,21 +149,26 @@ export class SearchForm {
    */
   detectAndProcessGeometry(text) {
     if (!text || typeof text !== 'string') {
+      console.log('❌ SearchForm: Invalid input to detectAndProcessGeometry:', typeof text);
       return false;
     }
 
     try {
+      console.log('🔍 SearchForm: detectAndProcessGeometry called with:', text);
       text = text.trim();
 
       // Detect format and process accordingly
       if (isWKT(text)) {
+        console.log('✅ SearchForm: Detected as WKT, processing...');
         this.processGeometryInput(text, 'wkt');
         return true;
       } else if (isGeoJSON(text)) {
+        console.log('✅ SearchForm: Detected as GeoJSON, processing...');
         this.processGeometryInput(text, 'geojson');
         return true;
       }
 
+      console.log('❌ SearchForm: Text not recognized as WKT or GeoJSON');
       return false;
     } catch (error) {
       console.error('Error detecting geometry format:', error);
@@ -207,15 +227,26 @@ export class SearchForm {
         // Display geometry on map and zoom to it
         if (this.mapManager) {
           try {
-            // Use a consistent source ID to replace previous geometry
-            const geometrySourceId = 'searchform-geometry';
+            console.log('🔧 SearchForm: Displaying geometry on map');
 
-            // Display geometry with beautiful styling
-            if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
-              this.mapManager.addBeautifulGeometryLayer(geojson, geometrySourceId);
+            // Use actual geometry display instead of bbox fallback
+            if (this.mapManager.mapLayers?.addLocationGeometry) {
+              console.log('🎯 SearchForm: Using addLocationGeometry for actual geometry');
+              // Extract geometry from GeoJSON feature if needed
+              const geometry = geojson.type === 'Feature' ? geojson.geometry : geojson;
+              console.log('🎯 SearchForm: Extracted geometry:', {
+                type: geometry?.type,
+                coordinates: geometry?.coordinates,
+              });
+              this.mapManager.mapLayers.addLocationGeometry(geometry, 'Pasted Geometry');
+            } else if (typeof this.mapManager.addBeautifulGeometryLayer === 'function') {
+              this.mapManager.addBeautifulGeometryLayer(geojson, 'searchform-geometry');
             } else if (typeof this.mapManager.addGeoJsonLayer === 'function') {
-              this.mapManager.addGeoJsonLayer(geojson, geometrySourceId);
-            } else if (typeof this.mapManager.displayBboxOnMap === 'function') {
+              this.mapManager.addGeoJsonLayer(geojson, 'searchform-geometry');
+            } else {
+              console.warn(
+                '⚠️ SearchForm: No geometry display methods available, falling back to bbox'
+              );
               this.mapManager.displayBboxOnMap(bbox, 'Pasted Geometry');
             }
 

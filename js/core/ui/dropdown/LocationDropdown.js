@@ -104,12 +104,6 @@ export class LocationDropdown {
       });
     }
 
-    if (fromViewBtn) {
-      fromViewBtn.addEventListener('click', () => {
-        this.useCurrentMapView();
-      });
-    }
-
     // Quick locations
     quickLocationBtns.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -217,10 +211,21 @@ export class LocationDropdown {
       wkt: geometryResult.format === 'WKT' ? originalText : null,
     };
 
+    console.log('🔍 LocationDropdown: Created selectedLocationResult:', {
+      displayText,
+      geometryType: geometryResult.geoJSON?.type,
+      geometryCoords: geometryResult.geoJSON?.coordinates,
+      bbox: this.selectedLocationResult.bbox,
+      hasGeometry: !!this.selectedLocationResult.geometry,
+    });
+
     this.notificationService?.showNotification(
       `✅ ${geometryResult.format} geometry detected and parsed successfully`,
       'success'
     );
+
+    // IMPORTANT: Actually select the location to trigger the event
+    this.selectLocation(this.selectedLocationResult);
   }
 
   /**
@@ -260,6 +265,14 @@ export class LocationDropdown {
    */
   selectLocation(result) {
     this.selectedLocationResult = result;
+
+    console.log('🚀 LocationDropdown: Dispatching locationSelected event with:', {
+      resultType: typeof result,
+      hasGeometry: !!result.geometry,
+      hasBbox: !!result.bbox,
+      geometryType: result.geometry?.type,
+      displayName: result.display_name,
+    });
 
     // Dispatch event for other components
     document.dispatchEvent(

@@ -37,10 +37,6 @@ export class LocationDropdown {
                         <i class="material-icons">crop_free</i>
                         Draw Area on Map
                     </button>
-                    <button id="from-view-btn" class="location-tool-btn">
-                        <i class="material-icons">visibility</i>
-                        Use Current Map View
-                    </button>
                 </div>
                 
                 <div class="quick-locations">
@@ -63,7 +59,6 @@ export class LocationDropdown {
     const searchInput = dropdown.querySelector('#location-search-input');
     const suggestions = dropdown.querySelector('#location-suggestions');
     const drawBboxBtn = dropdown.querySelector('#draw-bbox-btn');
-    const fromViewBtn = dropdown.querySelector('#from-view-btn');
     const quickLocationBtns = dropdown.querySelectorAll('.quick-location-btn');
 
     // Search input handling

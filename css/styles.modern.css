@@ -3842,7 +3842,7 @@ html.dark-theme .modal-body .info-group div {
   outline-offset: 2px;
 }
 
-/* Support for older browsers (fallbacks) */
+/* Modern browser support */
 @supports not (backdrop-filter: blur(12px)) {
   .sidebar {
     background: var(--bg-secondary);
@@ -5410,8 +5410,13 @@ html.dark-theme .modal-body .info-group div {
   z-index: 1000;
   overflow: hidden;
   padding: 0;
-  display: flex;
+  display: none;
   flex-direction: column;
+}
+
+.browse-collections-panel.show,
+.browse-collections-panel.active {
+  display: flex;
 }
 
 .browse-collections-panel .panel-header {

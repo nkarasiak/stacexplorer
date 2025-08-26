@@ -1,0 +1,237 @@
+/* 
+ * Main Styles - Core layout and components
+ * Extracted from index.html for modularity
+ */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Header Action Buttons - Material Design Style */
+.mode-toggle,
+.settings-toggle,
+.theme-toggle {
+  background: none;
+  border: none;
+  color: var(--color-on-surface-variant, #49454f);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-full);
+  transition: all var(--md-duration-short2) var(--md-motion-standard);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.mode-toggle:hover,
+.settings-toggle:hover,
+.theme-toggle:hover {
+  background-color: var(--color-primary-container, rgba(33, 150, 243, 0.12));
+  color: var(--md-primary, #2196f3);
+}
+
+.mode-toggle .material-icons,
+.settings-toggle .material-icons,
+.theme-toggle .material-icons {
+  font-size: 20px;
+}
+
+/* Ensure header actions are displayed inline with proper spacing */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-0-5);
+  flex-shrink: 0;
+}
+
+/* Responsive behavior for header actions */
+@media (max-width: 480px) {
+  .header-actions {
+    gap: 2px;
+  }
+  
+  .mode-toggle,
+  .settings-toggle,
+  .theme-toggle {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .mode-toggle .material-icons,
+  .settings-toggle .material-icons,
+  .theme-toggle .material-icons {
+    font-size: 18px;
+  }
+}
+
+/* Inline SOURCE layout - Override default column layout */
+.inline-source {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.inline-source .search-summary-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface-variant, #49454f);
+  white-space: nowrap;
+  margin: 0;
+}
+
+.inline-source .search-summary-value {
+  color: var(--color-on-surface, #1d1b20);
+  font-weight: var(--font-weight-normal);
+  margin: 0;
+}
+
+/* Inline LOCATION layout - Same as SOURCE */
+.inline-location {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.inline-location .search-summary-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface-variant, #49454f);
+  white-space: nowrap;
+  margin: 0;
+}
+
+.inline-location .search-summary-value {
+  color: var(--color-on-surface, #1d1b20);
+  font-weight: var(--font-weight-normal);
+  margin: 0;
+  flex: 1;
+}
+
+.inline-location .mini-location-input-container {
+  flex: 0 0 auto;
+  min-width: 160px;
+  max-width: 200px;
+}
+
+/* Enhanced location input styling */
+.mini-location-input {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  font-size: 14px;
+  font-family: var(--font-family-sans);
+  transition: all var(--md-duration-short2) var(--md-motion-standard);
+  outline: none;
+}
+
+.mini-location-input:focus {
+  border-color: var(--md-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-container);
+  background-color: var(--color-surface-bright);
+}
+
+.mini-location-input::placeholder {
+  color: var(--color-on-surface-variant);
+  opacity: 0.7;
+}
+
+/* Inline TIME layout - Same as SOURCE and LOCATION */
+.inline-time {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.inline-time .search-summary-label {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-on-surface-variant, #49454f);
+  white-space: nowrap;
+  margin: 0;
+}
+
+.inline-time .search-summary-value {
+  color: var(--color-on-surface, #1d1b20);
+  font-weight: var(--font-weight-normal);
+  margin: 0;
+  flex: 1;
+}
+
+.inline-time .mini-date-inputs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+/* Enhanced date input styling */
+.mini-date-input {
+  padding: var(--space-1-5) var(--space-2);
+  border: 1px solid var(--color-outline-variant);
+  border-radius: var(--radius-xs);
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  font-size: 14px;
+  font-family: var(--font-family-sans);
+  transition: all var(--md-duration-short2) var(--md-motion-standard);
+  outline: none;
+  min-width: 120px;
+}
+
+.mini-date-input:focus {
+  border-color: var(--md-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-container);
+  background-color: var(--color-surface-bright);
+}
+
+.mini-date-input::placeholder {
+  color: var(--color-on-surface-variant);
+  opacity: 0.7;
+}
+
+.date-separator {
+  color: var(--color-on-surface-variant);
+  font-weight: var(--font-weight-medium);
+  padding: 0 var(--space-1);
+}
+
+/* Icon Layout Fix - Prevent icons from appearing alone on their line */
+.search-summary-icon {
+  flex-shrink: 0 !important;
+  margin-right: var(--space-2) !important;
+}
+
+/* Ensure proper flex flow in card main containers */
+.source-card-main,
+.location-card-main,
+.time-card-main {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--space-2) !important;
+  flex-wrap: nowrap !important; /* Prevent wrapping that causes icon isolation */
+  min-width: 0; /* Allow flex items to shrink properly */
+}
+
+/* Ensure content doesn't force icon to new line */
+.search-summary-content {
+  flex: 1 1 auto !important;
+  min-width: 0 !important; /* Allow text to wrap/truncate instead of forcing icon wrap */
+}

@@ -1,18 +1,6 @@
 /* ItemViewPage Component Styles */
 
 /* ItemViewPage uses the app's theme system */
-:root {
-  /* Default fallback values - will be overridden by theme */
-  --item-page-bg: var(--bg-primary, linear-gradient(135deg, #fafbff 0%, #f0f4ff 50%, #e8f0fe 100%));
-  --item-page-glass-bg: var(--surface-primary, rgba(255, 255, 255, 0.9));
-  --item-page-glass-border: var(--border-primary, rgba(15, 23, 42, 0.15));
-  --item-page-text-primary: var(--text-primary, rgba(15, 23, 42, 0.95));
-  --item-page-text-secondary: var(--text-secondary, rgba(15, 23, 42, 0.8));
-  --item-page-text-muted: var(--text-tertiary, rgba(15, 23, 42, 0.6));
-  --item-page-border: var(--border-secondary, rgba(15, 23, 42, 0.08));
-  --item-page-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
-  --item-page-blur: var(--glass-blur-sm, blur(12px));
-}
 
 .item-view-page {
   position: absolute;

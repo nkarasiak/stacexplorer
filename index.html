@@ -186,8 +186,17 @@
     />
     <!-- Design Tokens - Load first for CSS custom properties -->
     <link rel="stylesheet" href="css/tokens/design-tokens.css" />
+    <!-- Base Styles -->
+    <link rel="stylesheet" href="css/base/animations.css" />
+    <link rel="stylesheet" href="css/base/layout.css" />
+    <link rel="stylesheet" href="css/base/components.css" />
+    <!-- Theme System -->
+    <link rel="stylesheet" href="css/themes/light-theme.css" />
+    <link rel="stylesheet" href="css/themes/dark-theme.css" />
     <!-- Modern Glassmorphism CSS -->
     <link rel="stylesheet" href="css/styles.modern.css" />
+    <!-- Extended Components -->
+    <link rel="stylesheet" href="css/components/search-interface-extended.css" />
     <!-- Enhanced UI Components -->
     <link rel="stylesheet" href="css/components/buttons.css" />
     <link rel="stylesheet" href="css/components/modals.css" />
@@ -215,6 +224,8 @@
     <!-- Simple Catalog Layout -->
     <link rel="stylesheet" href="css/components/catalog-simple.css" />
     <link rel="stylesheet" href="css/components/item-view-page.css" />
+    <!-- Utilities -->
+    <link rel="stylesheet" href="css/utils/utilities.css" />
     <!-- Deck.gl CSS - Note: Deck.gl doesn't require CSS for basic functionality -->
     <!-- Schema.org Structured Data -->
     <script type="application/ld+json">
@@ -255,1932 +266,13 @@
         "browser": ["Chrome", "Firefox", "Safari", "Edge"]
       }
     </script>
-
-    <style>
-      .header-actions {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-      }
-
-      .header-controls {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .settings-toggle {
-        background: none;
-        border: none;
-        color: var(--text-secondary, #888);
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 8px;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .settings-toggle:hover {
-        background: var(--surface-primary, rgba(255, 255, 255, 0.1));
-        color: var(--primary-400, #64b5f6);
-        transform: translateY(-1px);
-      }
-
-      .settings-toggle .material-icons {
-        font-size: 20px;
-      }
-
-      #deckgl-status {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 6px 12px;
-        border-radius: 16px;
-        font-size: 12px;
-        font-weight: 500;
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: white;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      #deckgl-status:hover {
-        background: linear-gradient(135deg, #0d9668, #047857);
-        transform: translateY(-1px);
-      }
-
-      #deckgl-status.inactive {
-        background: linear-gradient(135deg, #6b7280, #4b5563);
-      }
-
-      #deckgl-status .material-icons {
-        font-size: 16px;
-      }
-
-      /* Old collection select dropdown removed - using beautiful modal now */
-
-      /* AI Search Info Styling */
-      .ai-search-info {
-        text-align: center;
-        padding: 20px;
-        color: var(--text-secondary, #666);
-      }
-
-      .ai-search-info p {
-        margin: 0;
-        font-size: 14px;
-      }
-
-      .ai-search-info kbd {
-        background: var(--surface-tertiary, #f1f5f9);
-        border: 1px solid var(--border-light, #e2e8f0);
-        border-radius: 4px;
-        padding: 2px 6px;
-        margin: 0 2px;
-        font-family: monospace;
-        font-size: 12px;
-        font-weight: 500;
-        color: var(--text-primary, #1a1a1a);
-        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-      }
-
-      .dark-theme .ai-search-info {
-        color: var(--text-secondary, #aaa);
-      }
-
-      .dark-theme .ai-search-info kbd {
-        background: var(--surface-tertiary, #2a2a2a);
-        border-color: var(--border-dark, #444);
-        color: var(--text-primary, #ffffff);
-      }
-
-      /* Compact Search Summary Interface - Optimized for Vertical Space */
-      .search-summary-interface {
-        padding: 16px 0;
-        border-radius: 16px;
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        width: 100%;
-        box-sizing: border-box;
-      }
-
-      .search-summary-row {
-        margin-bottom: 12px;
-        width: 100%;
-        box-sizing: border-box;
-        overflow: hidden; /* Prevent horizontal overflow */
-      }
-
-      .search-summary-row:last-child {
-        margin-bottom: 0;
-      }
-
-      .search-summary-item {
-        display: flex;
-        align-items: center;
-        padding: 8px 12px;
-        border-radius: 10px;
-        cursor: pointer;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.08) 0%,
-          rgba(255, 255, 255, 0.03) 100%
-        );
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow:
-          0 3px 16px rgba(0, 0, 0, 0.08),
-          inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        user-select: none;
-        position: relative;
-        overflow: hidden;
-        min-height: 40px;
-        width: 100%;
-        max-width: 100%;
-        box-sizing: border-box;
-      }
-
-      .search-summary-item::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.1) 0%,
-          rgba(118, 75, 162, 0.05) 100%
-        );
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        border-radius: 16px;
-      }
-
-      .search-summary-item:hover {
-        transform: translateY(-2px) scale(1.01);
-        border-color: rgba(102, 126, 234, 0.3);
-        box-shadow:
-          0 8px 32px rgba(102, 126, 234, 0.15),
-          0 4px 16px rgba(0, 0, 0, 0.1),
-          inset 0 1px 0 rgba(255, 255, 255, 0.3);
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.12) 0%,
-          rgba(255, 255, 255, 0.06) 100%
-        );
-      }
-
-      .search-summary-item:hover::before {
-        opacity: 1;
-      }
-
-      .search-summary-item:active {
-        transform: translateY(-1px) scale(1.005);
-        box-shadow:
-          0 4px 16px rgba(102, 126, 234, 0.2),
-          0 2px 8px rgba(0, 0, 0, 0.1),
-          inset 0 1px 0 rgba(255, 255, 255, 0.4);
-      }
-
-      .search-summary-icon {
-        width: 40px;
-        height: 40px;
-        border-radius: 10px;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        position: relative;
-        box-shadow:
-          0 3px 12px rgba(102, 126, 234, 0.25),
-          inset 0 1px 0 rgba(255, 255, 255, 0.2);
-        transition: all 0.3s ease;
-      }
-
-      .search-summary-icon::after {
-        content: '';
-        position: absolute;
-        inset: 1px;
-        border-radius: 9px;
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.1) 0%,
-          rgba(255, 255, 255, 0.05) 100%
-        );
-      }
-
-      .search-summary-icon i {
-        color: white;
-        font-size: 18px;
-        position: relative;
-        z-index: 1;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-      }
-
-      .search-summary-item:hover .search-summary-icon {
-        transform: scale(1.05);
-        box-shadow:
-          0 4px 16px rgba(102, 126, 234, 0.3),
-          inset 0 1px 0 rgba(255, 255, 255, 0.3);
-      }
-
-      .search-summary-content {
-        flex: 1;
-        min-width: 0;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        position: relative;
-        z-index: 1;
-        overflow: hidden; /* Prevent content overflow */
-      }
-
-      .search-summary-label {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-secondary, #64748b);
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        white-space: nowrap;
-        opacity: 0.9;
-        flex-shrink: 0;
-      }
-
-      .search-summary-value {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text-primary, #1a1a1a);
-        font-family: 'Roboto', sans-serif;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        line-height: 1.2;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        flex: 1;
-        min-width: 0;
-        margin-top: 1px;
-      }
-
-      /* Inline format for compact display */
-      .search-summary-inline {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex: 1;
-        min-width: 0;
-      }
-
-      /* Glassmorphism for Main Interface Elements */
-      .md-card,
-      .search-container {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.1) 0%,
-          rgba(255, 255, 255, 0.05) 100%
-        ) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.18) !important;
-        box-shadow:
-          0 8px 32px rgba(0, 0, 0, 0.12),
-          inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-        border-radius: 16px !important;
-      }
-
-      .sidebar-content {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.1) 0%,
-          rgba(255, 255, 255, 0.05) 100%
-        ) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        border: none !important;
-        box-shadow:
-          0 8px 32px rgba(0, 0, 0, 0.12),
-          inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-        border-radius: 0 !important;
-      }
-
-      .md-card-header {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.15) 0%,
-          rgba(255, 255, 255, 0.08) 100%
-        ) !important;
-        backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
-        border-radius: 16px 16px 0 0 !important;
-        padding: 16px 20px !important;
-      }
-
-      .md-card-body {
-        background: transparent !important;
-        padding: 0px 16px 0px 16px !important;
-      }
-
-      /* Glassmorphism for Buttons and Interactive Elements */
-      .md-btn,
-      .header-action-btn,
-      .main-search-btn {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.12) 0%,
-          rgba(255, 255, 255, 0.06) 100%
-        ) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        box-shadow:
-          0 4px 16px rgba(0, 0, 0, 0.1),
-          inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
-        border-radius: 12px !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      }
-
-      .md-btn:hover,
-      .header-action-btn:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.18) 0%,
-          rgba(255, 255, 255, 0.1) 100%
-        ) !important;
-        border-color: rgba(255, 255, 255, 0.3) !important;
-        transform: translateY(-2px) scale(1.02) !important;
-        box-shadow:
-          0 6px 24px rgba(0, 0, 0, 0.15),
-          inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
-      }
-
-      /* Glassmorphism for Primary Buttons */
-      .md-btn-primary {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.8) 0%,
-          rgba(118, 75, 162, 0.8) 100%
-        ) !important;
-        border: 1px solid rgba(102, 126, 234, 0.3) !important;
-        color: white !important;
-      }
-
-      .md-btn-primary:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.9) 0%,
-          rgba(118, 75, 162, 0.9) 100%
-        ) !important;
-        border-color: rgba(102, 126, 234, 0.5) !important;
-      }
-
-      /* Dark Glassmorphism for Dropdowns - Match cards */
-      .search-suggestions,
-      .ai-dropdown-content,
-      .dropdown-content {
-        background: linear-gradient(
-          135deg,
-          rgba(30, 30, 60, 0.95) 0%,
-          rgba(25, 25, 55, 0.98) 100%
-        ) !important;
-        backdrop-filter: blur(16px) saturate(140%) brightness(1.1) !important;
-        -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.1) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        box-shadow:
-          0 12px 40px rgba(0, 0, 0, 0.4),
-          inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
-        border-radius: 12px !important;
-      }
-
-      .suggestion-item,
-      .ai-option,
-      .dropdown-item {
-        background: transparent !important;
-        border-radius: 8px !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        color: rgba(255, 255, 255, 0.9) !important;
-        border: 1px solid transparent !important;
-      }
-
-      .suggestion-item:hover,
-      .ai-option:hover,
-      .dropdown-item:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.08) 0%,
-          rgba(255, 255, 255, 0.04) 100%
-        ) !important;
-        backdrop-filter: blur(12px) saturate(120%) !important;
-        -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
-        border-color: rgba(255, 255, 255, 0.15) !important;
-        color: rgba(255, 255, 255, 0.98) !important;
-        transform: translateY(-1px) !important;
-      }
-
-      /* Light Theme Dropdown Styles */
-      .light-theme .search-suggestions,
-      .light-theme .ai-dropdown-content,
-      .light-theme .dropdown-content {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.98) 0%,
-          rgba(248, 250, 252, 0.95) 100%
-        ) !important;
-        backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
-        -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
-        border: 1px solid rgba(0, 0, 0, 0.12) !important;
-        box-shadow:
-          0 12px 40px rgba(0, 0, 0, 0.15),
-          inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-        border-radius: 12px !important;
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      .light-theme .suggestion-item,
-      .light-theme .ai-option,
-      .light-theme .dropdown-item {
-        background: transparent !important;
-        border-radius: 8px !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        color: var(--text-primary, #1a1a1a) !important;
-        border: 1px solid transparent !important;
-      }
-
-      .light-theme .suggestion-item:hover,
-      .light-theme .ai-option:hover,
-      .light-theme .dropdown-item:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.08) 0%,
-          rgba(118, 75, 162, 0.04) 100%
-        ) !important;
-        backdrop-filter: blur(12px) saturate(120%) !important;
-        -webkit-backdrop-filter: blur(12px) saturate(120%) !important;
-        border-color: rgba(102, 126, 234, 0.2) !important;
-        color: var(--text-primary, #1a1a1a) !important;
-        transform: translateY(-1px) !important;
-      }
-
-      /* Light theme dropdown headers */
-      .light-theme .ai-dropdown-header {
-        background: linear-gradient(
-          135deg,
-          rgba(248, 250, 252, 0.95) 0%,
-          rgba(255, 255, 255, 0.9) 100%
-        ) !important;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      /* Light theme dropdown option titles and text */
-      .light-theme .ai-option-title,
-      .light-theme .ai-option-subtitle,
-      .light-theme .ai-location-name,
-      .light-theme .ai-location-details {
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      .light-theme .ai-option-subtitle,
-      .light-theme .ai-location-details {
-        color: var(--text-secondary, #64748b) !important;
-      }
-
-      /* Light theme search input in dropdown */
-      .light-theme .ai-location-search-input,
-      .light-theme .ai-search-input {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.9) 0%,
-          rgba(248, 250, 252, 0.8) 100%
-        ) !important;
-        border: 2px solid rgba(0, 0, 0, 0.1) !important;
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      .light-theme .ai-location-search-input::placeholder,
-      .light-theme .ai-search-input::placeholder {
-        color: var(--text-secondary, #64748b) !important;
-      }
-
-      .light-theme .ai-location-search-input:focus,
-      .light-theme .ai-search-input:focus {
-        border-color: rgba(102, 126, 234, 0.4) !important;
-        box-shadow:
-          0 0 0 3px rgba(102, 126, 234, 0.15),
-          inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-      }
-
-      /* Light theme loading and error states in dropdown */
-      .light-theme .ai-location-loading,
-      .light-theme .ai-location-error,
-      .light-theme .ai-location-no-results {
-        color: var(--text-secondary, #64748b) !important;
-      }
-
-      /* Light theme close button and icons */
-      .light-theme .ai-dropdown-close {
-        color: var(--text-secondary, #64748b) !important;
-        background: transparent !important;
-        border: none !important;
-      }
-
-      .light-theme .ai-dropdown-close:hover {
-        color: var(--text-primary, #1a1a1a) !important;
-        background: rgba(0, 0, 0, 0.05) !important;
-      }
-
-      .light-theme .ai-dropdown-header-content i {
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      /* Light theme search results */
-      .light-theme .ai-location-result-item {
-        background: transparent !important;
-        border: 1px solid transparent !important;
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      .light-theme .ai-location-result-item:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.05) 0%,
-          rgba(118, 75, 162, 0.03) 100%
-        ) !important;
-        border-color: rgba(102, 126, 234, 0.15) !important;
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      /* Light theme collection options */
-      .light-theme .ai-everything-option {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.08) 0%,
-          rgba(118, 75, 162, 0.05) 100%
-        ) !important;
-        border-color: rgba(102, 126, 234, 0.2) !important;
-      }
-
-      .light-theme .ai-everything-option:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.12) 0%,
-          rgba(118, 75, 162, 0.08) 100%
-        ) !important;
-        border-color: rgba(102, 126, 234, 0.3) !important;
-      }
-
-      /* Light theme option icons */
-      .light-theme .ai-option i,
-      .light-theme .ai-location-option i {
-        color: var(--text-secondary, #64748b) !important;
-      }
-
-      .light-theme .ai-option:hover i,
-      .light-theme .ai-location-option:hover i {
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      /* Light theme date picker elements */
-      .light-theme .flatpickr-calendar {
-        background: rgba(255, 255, 255, 0.98) !important;
-        border: 1px solid rgba(0, 0, 0, 0.12) !important;
-        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15) !important;
-      }
-
-      .light-theme .flatpickr-day {
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      .light-theme .flatpickr-day:hover {
-        background: rgba(102, 126, 234, 0.1) !important;
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      .light-theme .flatpickr-day.selected {
-        background: rgba(102, 126, 234, 0.8) !important;
-        color: white !important;
-      }
-
-      /* Light theme buttons in dropdowns */
-      .light-theme .btn,
-      .light-theme .md-btn,
-      .light-theme .ai-dropdown-content .btn,
-      .light-theme .ai-dropdown-content button {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.9) 0%,
-          rgba(248, 250, 252, 0.8) 100%
-        ) !important;
-        border: 1px solid rgba(0, 0, 0, 0.12) !important;
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      .light-theme .btn:hover,
-      .light-theme .md-btn:hover,
-      .light-theme .ai-dropdown-content .btn:hover,
-      .light-theme .ai-dropdown-content button:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.1) 0%,
-          rgba(118, 75, 162, 0.05) 100%
-        ) !important;
-        border-color: rgba(102, 126, 234, 0.3) !important;
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      /* Light theme primary buttons */
-      .light-theme .btn-primary,
-      .light-theme .md-btn-primary {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.9) 0%,
-          rgba(118, 75, 162, 0.9) 100%
-        ) !important;
-        border-color: rgba(102, 126, 234, 0.8) !important;
-        color: white !important;
-      }
-
-      .light-theme .btn-primary:hover,
-      .light-theme .md-btn-primary:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 1) 0%,
-          rgba(118, 75, 162, 1) 100%
-        ) !important;
-        border-color: rgba(102, 126, 234, 1) !important;
-      }
-
-      /* Light theme sliders and form elements in dropdowns */
-      .light-theme .ai-slider {
-        background: rgba(0, 0, 0, 0.1) !important;
-      }
-
-      .light-theme .ai-slider::-webkit-slider-thumb {
-        background: rgba(102, 126, 234, 0.9) !important;
-        border: 2px solid rgba(255, 255, 255, 0.9) !important;
-      }
-
-      .light-theme .ai-slider::-moz-range-thumb {
-        background: rgba(102, 126, 234, 0.9) !important;
-        border: 2px solid rgba(255, 255, 255, 0.9) !important;
-      }
-
-      /* Light Theme Notification Styles */
-      .light-theme .notification {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.98) 0%,
-          rgba(248, 250, 252, 0.95) 100%
-        ) !important;
-        backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
-        -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
-        border: 1px solid rgba(0, 0, 0, 0.12) !important;
-        box-shadow:
-          0 12px 40px rgba(0, 0, 0, 0.15),
-          inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      .light-theme .notification--success {
-        background: linear-gradient(
-          135deg,
-          rgba(34, 197, 94, 0.08) 0%,
-          rgba(255, 255, 255, 0.98) 100%
-        ) !important;
-        border-left: 4px solid rgba(34, 197, 94, 0.8) !important;
-      }
-
-      .light-theme .notification--error {
-        background: linear-gradient(
-          135deg,
-          rgba(239, 68, 68, 0.08) 0%,
-          rgba(255, 255, 255, 0.98) 100%
-        ) !important;
-        border-left: 4px solid rgba(239, 68, 68, 0.8) !important;
-      }
-
-      .light-theme .notification--warning {
-        background: linear-gradient(
-          135deg,
-          rgba(245, 158, 11, 0.08) 0%,
-          rgba(255, 255, 255, 0.98) 100%
-        ) !important;
-        border-left: 4px solid rgba(245, 158, 11, 0.8) !important;
-      }
-
-      .light-theme .notification--info {
-        background: linear-gradient(
-          135deg,
-          rgba(59, 130, 246, 0.08) 0%,
-          rgba(255, 255, 255, 0.98) 100%
-        ) !important;
-        border-left: 4px solid rgba(59, 130, 246, 0.8) !important;
-      }
-
-      .light-theme .notification--loading {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.08) 0%,
-          rgba(255, 255, 255, 0.98) 100%
-        ) !important;
-        border-left: 4px solid rgba(102, 126, 234, 0.8) !important;
-      }
-
-      .light-theme .notification__title {
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      .light-theme .notification__message {
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      .light-theme .notification__description {
-        color: var(--text-secondary, #64748b) !important;
-      }
-
-      .light-theme .notification__close {
-        color: var(--text-secondary, #64748b) !important;
-        background: transparent !important;
-      }
-
-      .light-theme .notification__close:hover {
-        color: var(--text-primary, #1a1a1a) !important;
-        background: rgba(0, 0, 0, 0.05) !important;
-      }
-
-      .light-theme .notification__icon {
-        opacity: 0.9 !important;
-      }
-
-      .light-theme .notification--success .notification__icon {
-        color: rgba(34, 197, 94, 0.9) !important;
-      }
-
-      .light-theme .notification--error .notification__icon {
-        color: rgba(239, 68, 68, 0.9) !important;
-      }
-
-      .light-theme .notification--warning .notification__icon {
-        color: rgba(245, 158, 11, 0.9) !important;
-      }
-
-      .light-theme .notification--info .notification__icon {
-        color: rgba(59, 130, 246, 0.9) !important;
-      }
-
-      .light-theme .notification--loading .notification__icon {
-        color: rgba(102, 126, 234, 0.9) !important;
-      }
-
-      .light-theme .notification__actions {
-        border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
-      }
-
-      .light-theme .notification__action {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.9) 0%,
-          rgba(118, 75, 162, 0.9) 100%
-        ) !important;
-        color: white !important;
-        border: none !important;
-      }
-
-      .light-theme .notification__action:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 1) 0%,
-          rgba(118, 75, 162, 1) 100%
-        ) !important;
-      }
-
-      .light-theme .notification__progress {
-        background: rgba(0, 0, 0, 0.08) !important;
-      }
-
-      /* Light Theme Notification Container (from styles.modern.css) */
-      .light-theme .notification-container {
-        /* Container positioning remains the same */
-      }
-
-      .light-theme .notification-container .notification {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.98) 0%,
-          rgba(248, 250, 252, 0.95) 100%
-        ) !important;
-        backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
-        -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.05) !important;
-        border: 1px solid rgba(0, 0, 0, 0.12) !important;
-        box-shadow:
-          0 12px 40px rgba(0, 0, 0, 0.15),
-          inset 0 1px 0 rgba(255, 255, 255, 0.8) !important;
-        color: var(--text-primary, #1a1a1a) !important;
-      }
-
-      .light-theme .notification-container .notification i {
-        opacity: 0.9 !important;
-      }
-
-      .light-theme .notification-container .notification.success i {
-        color: rgba(34, 197, 94, 0.9) !important;
-      }
-
-      .light-theme .notification-container .notification.error i {
-        color: rgba(239, 68, 68, 0.9) !important;
-      }
-
-      .light-theme .notification-container .notification.warning i {
-        color: rgba(245, 158, 11, 0.9) !important;
-      }
-
-      .light-theme .notification-container .notification.info i {
-        color: rgba(59, 130, 246, 0.9) !important;
-      }
-
-      /* Glassmorphism for Dataset Cards */
-      .dataset-item,
-      .stac-item {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.08) 0%,
-          rgba(255, 255, 255, 0.04) 100%
-        ) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        box-shadow:
-          0 4px 16px rgba(0, 0, 0, 0.08),
-          inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-        border-radius: 12px !important;
-      }
-
-      .dataset-item:hover,
-      .stac-item:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.12) 0%,
-          rgba(255, 255, 255, 0.06) 100%
-        ) !important;
-        border-color: rgba(255, 255, 255, 0.25) !important;
-        transform: translateY(-2px) !important;
-        box-shadow:
-          0 8px 24px rgba(0, 0, 0, 0.12),
-          inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
-      }
-
-      /* Glassmorphism for Modals and Overlays */
-      .modal-content,
-      .modal-dialog,
-      .notification {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.15) 0%,
-          rgba(255, 255, 255, 0.08) 100%
-        ) !important;
-        backdrop-filter: blur(25px) !important;
-        -webkit-backdrop-filter: blur(25px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.25) !important;
-        box-shadow:
-          0 16px 48px rgba(0, 0, 0, 0.2),
-          inset 0 1px 0 rgba(255, 255, 255, 0.35) !important;
-        border-radius: 16px !important;
-      }
-
-      .modal-header {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.18) 0%,
-          rgba(255, 255, 255, 0.1) 100%
-        ) !important;
-        backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.2) !important;
-        border-radius: 16px 16px 0 0 !important;
-      }
-
-      /* Glassmorphism for Navigation and Sidebar */
-      .sidebar,
-      .navbar,
-      .navigation {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.08) 0%,
-          rgba(255, 255, 255, 0.04) 100%
-        ) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        border-right: 1px solid rgba(255, 255, 255, 0.15) !important;
-      }
-
-      /* Glassmorphism for Form Elements */
-      input[type='text'],
-      input[type='email'],
-      input[type='password'],
-      select,
-      textarea {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.1) 0%,
-          rgba(255, 255, 255, 0.05) 100%
-        ) !important;
-        backdrop-filter: blur(10px) !important;
-        -webkit-backdrop-filter: blur(10px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        border-radius: 10px !important;
-      }
-
-      input[type='text']:focus,
-      input[type='email']:focus,
-      input[type='password']:focus,
-      select:focus,
-      textarea:focus {
-        border-color: rgba(102, 126, 234, 0.4) !important;
-        box-shadow:
-          0 0 0 3px rgba(102, 126, 234, 0.15),
-          inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
-      }
-
-      /* Glassmorphism for Badges and Labels */
-      .md-badge,
-      .badge,
-      .label,
-      .tag {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.8) 0%,
-          rgba(118, 75, 162, 0.8) 100%
-        ) !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
-        border: 1px solid rgba(102, 126, 234, 0.3) !important;
-        box-shadow:
-          0 2px 8px rgba(102, 126, 234, 0.25),
-          inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
-        border-radius: 8px !important;
-        color: white !important;
-      }
-
-      /* Glassmorphism for Tooltips */
-      .tooltip,
-      .tooltip-content {
-        background: linear-gradient(
-          135deg,
-          rgba(0, 0, 0, 0.8) 0%,
-          rgba(0, 0, 0, 0.6) 100%
-        ) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        box-shadow:
-          0 4px 16px rgba(0, 0, 0, 0.3),
-          inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
-        border-radius: 8px !important;
-        color: white !important;
-      }
-
-      /* Glassmorphism for Loading States */
-      .loading-overlay,
-      .spinner-container {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.1) 0%,
-          rgba(255, 255, 255, 0.05) 100%
-        ) !important;
-        backdrop-filter: blur(15px) !important;
-        -webkit-backdrop-filter: blur(15px) !important;
-        border-radius: 12px !important;
-      }
-
-      /* Glassmorphism for Tabs and Navigation */
-      .tab,
-      .nav-item,
-      .breadcrumb {
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.08) 0%,
-          rgba(255, 255, 255, 0.04) 100%
-        ) !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        border-radius: 10px !important;
-      }
-
-      .tab.active,
-      .nav-item.active {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.6) 0%,
-          rgba(118, 75, 162, 0.6) 100%
-        ) !important;
-        border-color: rgba(102, 126, 234, 0.4) !important;
-        color: white !important;
-      }
-
-      /* Dark theme support */
-      .dark-theme .search-summary-item {
-        background: var(--surface-secondary, #2a2a2a);
-      }
-
-      .dark-theme .search-summary-item:hover {
-        background: var(--surface-tertiary, #3a3a3a);
-        border-color: var(--primary-600, #4f46e5);
-        box-shadow: 0 2px 8px rgba(129, 140, 248, 0.15);
-      }
-
-      .dark-theme .search-summary-item:active {
-        box-shadow: 0 1px 4px rgba(129, 140, 248, 0.15);
-      }
-
-      .dark-theme .search-summary-label {
-        color: var(--text-secondary, #94a3b8);
-      }
-
-      .dark-theme .search-summary-value {
-        color: var(--text-primary, #ffffff);
-      }
-
-      /* Responsive design */
-      @media (max-width: 768px) {
-        .search-summary-interface {
-          padding: 12px 0;
-        }
-
-        .search-summary-item {
-          padding: 10px 12px;
-        }
-
-        .search-summary-icon {
-          width: 32px;
-          height: 32px;
-        }
-
-        .search-summary-icon i {
-          font-size: 16px;
-        }
-
-        .search-summary-content {
-          max-width: 140px; /* Increased from 100px to accommodate "Select Source" */
-          min-width: 120px; /* Ensure minimum space for source button */
-        }
-
-        .search-summary-label {
-          font-size: 9px;
-        }
-
-        .search-summary-value {
-          font-size: 11px;
-        }
-
-        /* Ensure source button stays visible on mobile */
-        #summary-source .search-summary-content {
-          min-width: 120px !important;
-          max-width: 150px !important;
-        }
-
-        .source-card-main {
-          min-width: 160px !important;
-        }
-
-        /* Mobile fix for SOURCE button positioning */
-        #summary-source {
-          min-width: 200px !important;
-          max-width: 100% !important;
-        }
-      }
-
-      /* Extra small screens */
-      @media (max-width: 480px) {
-        .search-summary-content {
-          max-width: 120px;
-          min-width: 100px;
-        }
-
-        #summary-source .search-summary-content {
-          min-width: 100px !important;
-          max-width: 130px !important;
-        }
-      }
-
-      /* Animation effects */
-      @keyframes pulse {
-        0% {
-          transform: scale(1);
-          opacity: 1;
-        }
-        50% {
-          transform: scale(1.05);
-          opacity: 0.8;
-        }
-        100% {
-          transform: scale(1);
-          opacity: 1;
-        }
-      }
-
-      @keyframes highlight {
-        0% {
-          background-color: transparent;
-        }
-        50% {
-          background-color: rgba(79, 70, 229, 0.2);
-        }
-        100% {
-          background-color: transparent;
-        }
-      }
-
-      /* Source Card - Very compact */
-      .source-card-expanded {
-        display: flex !important;
-        align-items: center !important;
-        gap: 16px !important;
-        padding: 10px 14px !important;
-        min-height: 44px !important;
-        width: 100% !important; /* Ensure full width */
-        box-sizing: border-box !important;
-      }
-
-      .source-card-main {
-        display: flex !important;
-        align-items: center !important;
-        gap: 16px !important;
-        flex: 1 !important;
-        min-width: 200px !important;
-        max-width: 70% !important; /* Increased from 60% to 70% for more space */
-        justify-content: flex-start !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: hidden; /* Prevent text overflow */
-      }
-
-      .source-presets-mini {
-        display: flex;
-        gap: 12px;
-        flex-shrink: 0;
-        margin-left: 20px;
-      }
-
-      .source-mini-btn {
-        padding: 10px 16px !important;
-        font-size: 13px !important;
-        font-weight: 600 !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.08) 0%,
-          rgba(255, 255, 255, 0.03) 100%
-        ) !important;
-        color: var(--text-secondary, #888) !important;
-        border-radius: 12px !important;
-        cursor: pointer !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        text-align: center !important;
-        line-height: 1.3 !important;
-        min-height: 40px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
-        position: relative !important;
-        overflow: hidden !important;
-        min-width: 54px !important;
-        white-space: nowrap !important;
-      }
-
-      .source-mini-btn::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.8) 0%,
-          rgba(118, 75, 162, 0.8) 100%
-        );
-        border-radius: 12px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-
-      .source-mini-btn:hover {
-        transform: translateY(-2px) scale(1.02) !important;
-        border-color: rgba(102, 126, 234, 0.4) !important;
-        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25) !important;
-      }
-
-      .source-mini-btn:hover::before {
-        opacity: 1;
-      }
-
-      .source-mini-btn:hover,
-      .source-mini-btn.active {
-        color: white !important;
-      }
-
-      .source-mini-btn.active::before {
-        opacity: 1;
-      }
-
-      .source-mini-btn.active {
-        transform: translateY(-1px) scale(1.01) !important;
-        border-color: rgba(102, 126, 234, 0.6) !important;
-        box-shadow: 0 2px 12px rgba(102, 126, 234, 0.3) !important;
-      }
-
-      /* Very compact spacing for other search cards */
-      .time-card-expanded,
-      .search-summary-item:not(.source-card-expanded):not(.location-card-expanded) {
-        display: flex !important;
-        align-items: center !important;
-        gap: 16px !important;
-        padding: 10px 14px !important;
-        min-height: 44px !important;
-      }
-
-      .location-card-main,
-      .time-card-main {
-        display: flex !important;
-        align-items: center !important;
-        gap: 16px !important;
-        flex: 1 !important;
-        min-width: 200px !important;
-      }
-
-      .search-summary-item .search-summary-content {
-        display: flex !important;
-        align-items: center !important;
-        gap: 6px !important;
-        flex: 1 !important;
-        min-width: 200px !important;
-      }
-
-      /* Compact buttons for other cards */
-      .location-presets-mini,
-      .time-presets-mini,
-      .search-summary-item:not(.source-card-expanded) .presets-mini {
-        display: flex;
-        gap: 8px;
-        flex-shrink: 0;
-        margin-left: 12px;
-      }
-
-      .location-mini-btn,
-      .time-mini-btn,
-      .search-summary-item:not(.source-card-expanded) .mini-btn {
-        padding: 6px 10px !important;
-        font-size: 11px !important;
-        font-weight: 600 !important;
-        border: 1px solid rgba(255, 255, 255, 0.15) !important;
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0.08) 0%,
-          rgba(255, 255, 255, 0.03) 100%
-        ) !important;
-        color: var(--text-secondary, #888) !important;
-        border-radius: 8px !important;
-        cursor: pointer !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        text-align: center !important;
-        line-height: 1.2 !important;
-        min-height: 28px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
-        position: relative !important;
-        overflow: hidden !important;
-        min-width: 40px !important;
-        white-space: nowrap !important;
-      }
-
-      /* Hide buttons for catalog card specifically */
-      #summary-source[data-field='collection'] .source-presets-mini {
-        display: none !important;
-      }
-
-      /* Adjust catalog card layout when buttons are hidden */
-      #summary-source[data-field='collection'] .source-card-main {
-        max-width: 100% !important;
-      }
-
-      /* Ensure source button is always visible during loading */
-      #summary-source .search-summary-value {
-        min-width: 90px; /* Minimum width to show "Select Source" */
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      /* Critical fix: Prevent SOURCE button from being pushed off during loading */
-      #summary-source {
-        min-width: 250px !important; /* Ensure adequate minimum width */
-        max-width: 100% !important;
-        flex-shrink: 0 !important; /* Prevent shrinking */
-      }
-
-      /* Ensure the source card content area has priority */
-      #summary-source .source-card-main {
-        min-width: 220px !important; /* Guarantee space for content */
-        flex-shrink: 0 !important;
-      }
-
-      /* Loading state fix - ensure SOURCE button is always visible */
-      .search-summary-interface[data-loading="true"] #summary-source,
-      #summary-source:not([data-collections-loaded="true"]) {
-        min-width: 280px !important;
-        max-width: 100% !important;
-      }
-
-      /* Prevent flex shrinking during any loading state */
-      .search-summary-interface #summary-source {
-        flex-shrink: 0 !important;
-        flex-grow: 0 !important;
-        flex-basis: auto !important;
-      }
-
-      .source-more-btn {
-        background: var(--surface-secondary, rgba(255, 255, 255, 0.1)) !important;
-        border-color: var(--border-primary, rgba(255, 255, 255, 0.3)) !important;
-      }
-
-      .source-more-btn:hover {
-        background: var(--surface-tertiary, rgba(255, 255, 255, 0.2)) !important;
-        color: var(--text-primary, #ffffff) !important;
-        border-color: var(--border-primary, rgba(255, 255, 255, 0.5)) !important;
-      }
-
-      .source-more-btn .material-icons {
-        font-size: 14px !important;
-      }
-
-      /* Location Card - Very compact */
-      .location-card-expanded {
-        display: flex !important;
-        flex-direction: row !important;
-        gap: 16px !important;
-        padding: 10px 14px !important;
-        min-height: 44px !important;
-        overflow: visible !important;
-        align-items: center !important;
-      }
-
-      .location-card-main {
-        display: flex !important;
-        align-items: center !important;
-        gap: 16px !important;
-        flex: 1 !important;
-        min-width: 200px !important;
-        max-width: 100% !important;
-        justify-content: flex-start !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
-      .location-tools-inline {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        flex-shrink: 0;
-        background: transparent;
-        border-top: none;
-        padding: 1px 0px;
-        border-radius: 0 0 10px 0;
-        position: absolute;
-        bottom: -5px;
-        right: 0;
-        width: auto;
-        overflow: visible !important;
-      }
-
-      .location-search-inline {
-        position: relative;
-        display: flex;
-        align-items: center;
-        flex: 1;
-        max-width: 200px;
-        overflow: visible !important;
-      }
-
-      .location-action-btn {
-        padding: 3px 6px !important;
-        background: transparent !important;
-        border: none !important;
-        color: rgba(255, 255, 255, 0.7) !important;
-        cursor: pointer !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 2px !important;
-        font-size: 9px !important;
-        font-weight: 600 !important;
-        white-space: nowrap !important;
-        position: relative !important;
-        overflow: hidden !important;
-        min-height: 20px !important;
-        flex-shrink: 0 !important;
-        border-radius: 3px !important;
-        min-width: 40px !important;
-      }
-
-      .location-action-btn::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: transparent;
-        border-radius: 9px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-      }
-
-      .location-action-btn:hover {
-        transform: translateY(-2px) scale(1.02) !important;
-        border-color: rgba(102, 126, 234, 0.4) !important;
-        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25) !important;
-        color: white !important;
-      }
-
-      .location-action-btn:hover::before {
-        opacity: 0;
-      }
-
-      .location-action-btn .material-icons {
-        font-size: 16px !important;
-      }
-
-      /* Light theme compatibility for location tools */
-      .light-theme .location-action-btn {
-        color: rgba(15, 23, 42, 0.7) !important;
-      }
-
-      .light-theme .location-tools-inline {
-        background: transparent !important;
-        border-top: none !important;
-      }
-
-      /* Light theme compatibility for time presets */
-      .light-theme .time-presets-mini {
-        background: transparent !important;
-        border-top: none !important;
-      }
-
-      .light-theme .preset-mini-btn {
-        color: rgba(15, 23, 42, 0.7) !important;
-      }
-
-      /* Time Card - Vertical layout with buttons at bottom */
-      .time-card-expanded {
-        display: flex !important;
-        flex-direction: row !important;
-        gap: 16px !important;
-        padding: 10px 14px !important;
-        min-height: 44px !important;
-        position: relative !important;
-        align-items: center !important;
-      }
-
-      .time-card-main {
-        display: flex !important;
-        align-items: center !important;
-        gap: 16px !important;
-        flex: 1 !important;
-        justify-content: flex-start !important;
-        margin: 0 !important;
-        padding: 0 !important;
-      }
-
-      .time-presets-mini {
-        display: flex;
-        gap: 0;
-        flex-shrink: 0;
-        background: rgba(255, 255, 255, 0.05);
-        border-top: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 1px 0px;
-        border-radius: 0 0 10px 0;
-        align-self: flex-end;
-        width: auto;
-        margin-top: 0px;
-        margin-right: 0px;
-        position: absolute;
-        bottom: 0;
-        right: 0;
-      }
-
-      .preset-mini-btn {
-        padding: 3px 6px !important;
-        font-size: 9px !important;
-        font-weight: 600 !important;
-        border: none !important;
-        background: transparent !important;
-        color: rgba(255, 255, 255, 0.7) !important;
-        border-radius: 3px !important;
-        cursor: pointer !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        text-align: center !important;
-        line-height: 1.1 !important;
-        position: relative !important;
-        overflow: hidden !important;
-        min-height: 20px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        flex: none !important;
-        margin: 0px !important;
-        min-width: 28px !important;
-      }
-
-      .preset-mini-btn::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.8) 0%,
-          rgba(118, 75, 162, 0.8) 100%
-        );
-        border-radius: 9px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        z-index: -1;
-      }
-
-      .preset-mini-btn:hover {
-        transform: translateY(-2px) scale(1.02) !important;
-        border-color: rgba(102, 126, 234, 0.4) !important;
-        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.25) !important;
-      }
-
-      .preset-mini-btn:hover::before {
-        opacity: 1;
-      }
-
-      .preset-mini-btn:hover,
-      .preset-mini-btn.active {
-        color: white !important;
-      }
-
-      .preset-mini-btn.active::before {
-        opacity: 1;
-      }
-
-      .preset-mini-btn.active {
-        transform: translateY(-1px) scale(1.01) !important;
-        border-color: rgba(102, 126, 234, 0.6) !important;
-        box-shadow: 0 2px 12px rgba(102, 126, 234, 0.3) !important;
-      }
-
-      /* Tool Sections */
-      .location-tools {
-        margin: 16px 0;
-        padding: 16px;
-        background: var(--surface-secondary, rgba(255, 255, 255, 0.02));
-        border-radius: 12px;
-        border: 1px solid var(--border-secondary, rgba(255, 255, 255, 0.1));
-      }
-
-      .preset-section-title {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin: 0 0 12px 0;
-        font-size: 14px;
-        font-weight: 600;
-        color: var(--text-primary, #ffffff);
-      }
-
-      .preset-section-title .material-icons {
-        font-size: 18px;
-        color: var(--primary-400, #64b5f6);
-      }
-
-      .tool-buttons {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 8px;
-      }
-
-      .tool-btn {
-        padding: 10px 12px !important;
-        font-size: 13px !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        gap: 6px !important;
-        transition: all 0.2s ease !important;
-        border-radius: 8px !important;
-      }
-
-      .tool-btn .material-icons {
-        font-size: 16px !important;
-      }
-
-      .tool-btn:hover {
-        transform: translateY(-1px) !important;
-        box-shadow: 0 4px 12px rgba(33, 150, 243, 0.2) !important;
-      }
-
-      /* Dark theme support */
-      .dark-theme .location-tools {
-        background: var(--surface-secondary, rgba(255, 255, 255, 0.05));
-        border-color: var(--border-secondary, rgba(255, 255, 255, 0.1));
-      }
-
-      .dark-theme .preset-mini-btn {
-        background: var(--surface-primary, rgba(255, 255, 255, 0.02)) !important;
-        border-color: var(--border-secondary, rgba(255, 255, 255, 0.1)) !important;
-      }
-
-      .search-suggestions {
-        position: fixed !important;
-        top: auto !important;
-        bottom: 25px !important;
-        left: auto !important;
-        right: 8px !important;
-        background: linear-gradient(
-          135deg,
-          rgba(30, 30, 60, 0.95) 0%,
-          rgba(25, 25, 55, 0.98) 100%
-        ) !important;
-        backdrop-filter: blur(16px) saturate(140%) brightness(1.1) !important;
-        -webkit-backdrop-filter: blur(16px) saturate(140%) brightness(1.1) !important;
-        border: 1px solid rgba(255, 255, 255, 0.2) !important;
-        border-radius: 12px !important;
-        max-height: 200px;
-        overflow-y: auto;
-        z-index: 1000000 !important;
-        display: none;
-        box-shadow:
-          0 12px 40px rgba(0, 0, 0, 0.4),
-          inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
-        width: 250px !important;
-        min-width: 250px !important;
-      }
-
-      .search-suggestions.active {
-        display: block;
-      }
-
-      .suggestion-item {
-        padding: 12px 16px;
-        cursor: pointer;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .suggestion-item:hover {
-        background: var(--surface-primary, rgba(255, 255, 255, 0.05));
-        border-left: 3px solid var(--primary-500, #2196f3);
-        padding-left: 13px; /* Compensate for border */
-      }
-
-      .suggestion-item.map-preview-active {
-        background: rgba(33, 150, 243, 0.1);
-        border-left: 3px solid var(--primary-500, #2196f3);
-        padding-left: 13px;
-      }
-
-      .suggestion-item:last-child {
-        border-bottom: none;
-      }
-
-      .suggestion-item .material-icons {
-        font-size: 18px;
-        color: var(--primary-400, #64b5f6);
-      }
-
-      .suggestion-content {
-        flex: 1;
-      }
-
-      .suggestion-name {
-        font-size: 14px;
-        font-weight: 500;
-        color: var(--text-primary, #ffffff);
-      }
-
-      .suggestion-details {
-        font-size: 12px;
-        color: var(--text-secondary, #888);
-      }
-
-      /* Result Count Badge */
-      .result-count-badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 8px;
-        background: var(--primary-500, #2196f3);
-        color: white;
-        font-size: 11px;
-        font-weight: 600;
-        border-radius: 12px;
-        margin-left: 8px;
-      }
-
-      .result-count-badge .material-icons {
-        font-size: 14px;
-      }
-
-      /* Responsive design */
-      @media (max-width: 480px) {
-        .tool-buttons {
-          grid-template-columns: 1fr;
-        }
-
-        .tool-btn {
-          padding: 12px 16px !important;
-          font-size: 14px !important;
-        }
-
-        .quick-location-search {
-          margin: 12px 0;
-          padding: 12px;
-        }
-
-        .location-search-input {
-          padding: 10px 12px;
-          font-size: 16px; /* Prevent zoom on iOS */
-        }
-
-        /* Location card responsive - already uses column layout */
-        .location-tools-inline {
-          gap: 6px;
-        }
-
-        .location-action-btn {
-          padding: 6px 8px !important;
-          font-size: 10px !important;
-        }
-
-        /* Mini preset buttons responsive */
-        .time-card-expanded {
-          flex-direction: column !important;
-          align-items: stretch !important;
-          gap: 8px !important;
-        }
-
-        .time-presets-mini {
-          margin-left: 0 !important;
-          width: 100% !important;
-          grid-template-columns: 1fr 1fr 1fr 1fr !important;
-          gap: 6px;
-          justify-items: center;
-        }
-
-        .preset-mini-btn {
-          padding: 6px 8px !important;
-          font-size: 11px !important;
-          min-width: 32px !important;
-        }
-      }
-
-      /* Debug test - simple red background to verify class is applied */
-      .dropdown-active {
-        background: red !important;
-      }
-
-      /* Enhanced Dropdown Active State Styling */
-      .search-summary-interface .search-summary-item.dropdown-active {
-        /* Enhanced active state with modern glassmorphism design */
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.2) 0%,
-          rgba(118, 75, 162, 0.15) 100%
-        ) !important;
-        backdrop-filter: blur(12px) !important;
-        -webkit-backdrop-filter: blur(12px) !important;
-        transform: translateX(4px) translateY(-2px) !important;
-        box-shadow:
-          0 8px 32px rgba(102, 126, 234, 0.25),
-          inset 0 1px 0 rgba(255, 255, 255, 0.2),
-          0 0 0 1px rgba(102, 126, 234, 0.3) !important;
-        border-radius: 12px !important;
-        border: 1px solid rgba(102, 126, 234, 0.4) !important;
-        position: relative !important;
-        z-index: 999998 !important;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
-      }
-
-      .search-summary-interface .search-summary-item.dropdown-active:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.3) 0%,
-          rgba(118, 75, 162, 0.25) 100%
-        ) !important;
-        transform: translateX(6px) translateY(-3px) !important;
-        box-shadow:
-          0 12px 40px rgba(102, 126, 234, 0.35),
-          inset 0 1px 0 rgba(255, 255, 255, 0.3),
-          0 0 0 1px rgba(102, 126, 234, 0.5) !important;
-        border: 1px solid rgba(102, 126, 234, 0.6) !important;
-      }
-
-      .search-summary-interface .search-summary-item.dropdown-active::after {
-        content: '⚡' !important;
-        position: absolute !important;
-        right: 16px !important;
-        top: 50% !important;
-        transform: translateY(-50%) !important;
-        font-size: 16px !important;
-        color: rgba(102, 126, 234, 0.9) !important;
-        text-shadow: 0 0 8px rgba(102, 126, 234, 0.6) !important;
-        z-index: 2 !important;
-        animation: pulse-glow 2s infinite ease-in-out !important;
-      }
-
-      @keyframes pulse-glow {
-        0%,
-        100% {
-          opacity: 0.8;
-          text-shadow: 0 0 8px rgba(102, 126, 234, 0.6);
-        }
-        50% {
-          opacity: 1;
-          text-shadow: 0 0 16px rgba(102, 126, 234, 0.9);
-        }
-      }
-
-      /* Collection Details Modal - Hide by default and prevent scrolling */
-      .collection-details-modal-overlay {
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        right: 0 !important;
-        bottom: 0 !important;
-        background: rgba(0, 0, 0, 0.8) !important;
-        backdrop-filter: blur(8px) !important;
-        -webkit-backdrop-filter: blur(8px) !important;
-        z-index: 10000 !important;
-        display: none !important; /* Hidden by default */
-        justify-content: center !important;
-        align-items: center !important;
-        overflow: hidden !important; /* Prevent scrolling */
-      }
-
-      .collection-details-modal-overlay.active {
-        display: flex !important;
-      }
-
-      /* Prevent body scrolling when modal is open */
-      body.modal-open {
-        overflow: hidden !important;
-        height: 100vh !important;
-      }
-
-      /* Modal dialog styling */
-      .collection-details-modal-dialog {
-        background: var(--surface-primary, #1e1e1e) !important;
-        border-radius: 12px !important;
-        max-width: 800px !important;
-        max-height: 90vh !important;
-        width: 90% !important;
-        overflow-y: auto !important;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-      }
-
-      /* Modal header */
-      .collection-details-modal-header {
-        padding: 20px !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-        display: flex !important;
-        justify-content: space-between !important;
-        align-items: center !important;
-      }
-
-      /* Modal body */
-      .collection-details-modal-body {
-        padding: 20px !important;
-        color: var(--text-primary, #ffffff) !important;
-      }
-
-      /* Modal footer */
-      .collection-details-modal-footer {
-        padding: 20px !important;
-        border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
-        display: flex !important;
-        justify-content: flex-end !important;
-      }
-    </style>
   </head>
   <body>
     <div class="app-container">
       <!-- Sidebar -->
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-          <h1 id="app-logo" style="cursor: pointer" title="Return to Homepage">
+          <h1 id="app-logo" class="app-logo" title="Return to Homepage">
             <i class="material-icons">satellite_alt</i> <span>STAC Explorer</span>
           </h1>
           <div>
@@ -2203,9 +295,8 @@
               <div class="header-actions">
                 <!-- Deck.gl Status Indicator - Hidden, functionality moved to settings -->
                 <div
-                  class="search-history-dropdown"
+                  class="search-history-dropdown hidden"
                   id="header-search-history"
-                  style="display: none"
                 >
                   <button
                     id="header-search-history-btn"
@@ -2217,12 +308,11 @@
                 </div>
                 <button
                   id="smart-filters-btn"
-                  class="header-action-btn"
+                  class="header-action-btn visible"
                   title="Data Filters"
-                  style="display: block"
                 >
                   <i class="material-icons">tune</i>
-                  <span id="filter-count-badge" class="filter-badge" style="display: none">0</span>
+                  <span id="filter-count-badge" class="filter-badge">0</span>
                 </button>
                 <button
                   id="load-stac-btn"
@@ -2243,9 +333,6 @@
                     data-field="collection"
                   >
                     <div class="source-card-main">
-                      <div class="search-summary-icon">
-                        <i class="material-icons">public</i>
-                      </div>
                       <div class="search-summary-content">
                         <div class="search-summary-label">SOURCE:</div>
                         <div class="search-summary-value">Select Source</div>
@@ -2261,9 +348,6 @@
                     data-field="location"
                   >
                     <div class="location-card-main">
-                      <div class="search-summary-icon">
-                        <i class="material-icons">place</i>
-                      </div>
                       <div class="search-summary-content">
                         <div class="search-summary-label">LOCATION:</div>
                         <div class="search-summary-value">
@@ -2276,26 +360,16 @@
                               value=""
                             />
                           </div>
+                          <button
+                            id="draw-bbox-inline"
+                            class="location-action-btn"
+                            title="Draw Area on Map"
+                          >
+                            <i class="material-icons">crop_free</i>
+                            Draw
+                          </button>
                         </div>
                       </div>
-                    </div>
-                    <div class="location-tools-inline">
-                      <button
-                        id="draw-bbox-inline"
-                        class="location-action-btn"
-                        title="Draw Area on Map"
-                      >
-                        <i class="material-icons">crop_free</i>
-                        Draw
-                      </button>
-                      <button
-                        id="from-view-inline"
-                        class="location-action-btn"
-                        title="Use Current Map View"
-                      >
-                        <i class="material-icons">visibility</i>
-                        From View
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -2307,9 +381,6 @@
                     data-field="date"
                   >
                     <div class="time-card-main">
-                      <div class="search-summary-icon">
-                        <i class="material-icons">schedule</i>
-                      </div>
                       <div class="search-summary-content">
                         <div class="search-summary-label">TIME:</div>
                         <div class="search-summary-value">
@@ -2408,40 +479,6 @@
                         </div>
                       </div>
                     </div>
-                    <div class="time-presets-mini">
-                      <button
-                        id="preset-last-7-days"
-                        class="preset-mini-btn"
-                        data-days="7"
-                        title="Last 7 Days"
-                      >
-                        7D
-                      </button>
-                      <button
-                        id="preset-last-30-days"
-                        class="preset-mini-btn"
-                        data-days="30"
-                        title="Last 30 Days"
-                      >
-                        30D
-                      </button>
-                      <button
-                        id="preset-this-year"
-                        class="preset-mini-btn"
-                        data-year="current"
-                        title="This Year"
-                      >
-                        2025
-                      </button>
-                      <button
-                        id="preset-2024"
-                        class="preset-mini-btn"
-                        data-year="2024"
-                        title="2024"
-                      >
-                        2024
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
@@ -2455,7 +492,7 @@
               </div>
 
               <!-- Hidden form inputs for compatibility with existing components -->
-              <div style="display: none">
+              <div class="hidden">
                 <!-- Hidden card structures for component compatibility -->
                 <div id="location-card">
                   <div class="search-card-body">
@@ -2485,21 +522,21 @@
                 <input type="date" id="date-start" class="form-control" />
                 <input type="date" id="date-end" class="form-control" />
                 <!-- Legacy cloud cover controls - hidden in favor of smart filter system -->
-                <input type="checkbox" id="cloud-cover-enabled" style="display: none" />
+                <input type="checkbox" id="cloud-cover-enabled" class="hidden-checkbox" />
                 <input
                   type="range"
                   id="cloud-cover"
                   min="0"
                   max="100"
                   value="20"
-                  style="display: none"
+                  class="hidden"
                 />
-                <span id="cloud-cover-value" style="display: none">20%</span>
+                <span id="cloud-cover-value" class="hidden">20%</span>
                 <input type="text" id="custom-catalog-url" class="form-control" />
                 <input type="text" id="collections" class="form-control" />
                 <button id="connect-catalog-btn">Connect</button>
                 <div id="custom-catalog-container"></div>
-                <button id="criteria-draw-bbox-btn">Draw Area</button>
+                <button id="criteria-draw-bbox-btn" class="js-hidden">Draw Area</button>
                 <button id="collection-info-btn">Info</button>
                 <button id="preset-2024">2024</button>
                 <button id="summary-search-btn">Search</button>
@@ -2558,7 +595,7 @@
         </div>
 
         <!-- Settings Panel (hidden by default) -->
-        <div id="settings-panel" class="settings-panel" style="display: none">
+        <div id="settings-panel" class="settings-panel">
           <div class="settings-header">
             <h2><i class="material-icons">settings</i> Settings</h2>
             <button class="settings-close-btn" id="settings-close-btn" title="Close Settings">
@@ -2616,31 +653,16 @@
                   </div>
                 </div>
                 <div class="setting-control">
-                  <div style="display: flex; gap: 8px; align-items: center">
+                  <div class="flex-gap-8">
                     <input
                       type="url"
                       id="custom-catalog-url"
-                      class="settings-input"
+                      class="settings-input custom-catalog-url-input"
                       placeholder="https://example.com/stac"
-                      style="
-                        flex: 1;
-                        padding: 8px 12px;
-                        border: 1px solid var(--border-primary, #d1d5db);
-                        border-radius: 6px;
-                        font-size: 14px;
-                      "
                     />
                     <button
                       id="add-custom-catalog-btn"
-                      style="
-                        padding: 8px 16px;
-                        background: var(--primary-color, #667eea);
-                        color: white;
-                        border: none;
-                        border-radius: 6px;
-                        cursor: pointer;
-                        font-size: 14px;
-                      "
+                      class="add-custom-catalog-btn"
                     >
                       Add
                     </button>
@@ -2665,7 +687,7 @@
         </div>
 
         <!-- Browse Collections Panel (hidden by default) -->
-        <div id="browse-collections-panel" class="browse-collections-panel" style="display: none">
+        <div id="browse-collections-panel" class="browse-collections-panel">
           <div class="panel-header">
             <h2><i class="material-icons">dataset</i> Browse Collections</h2>
             <button
@@ -3210,6 +1232,7 @@
 
     <!-- Direct fix for the Draw Bounding Box button -->
     <script>
+      console.log('🟢 SCRIPT BLOCK STARTED - JavaScript is working');
       // Wait for the application to be fully loaded
       document.addEventListener('DOMContentLoaded', function () {
         // Wait a bit more to ensure all components are initialized
@@ -3224,14 +1247,18 @@
 
             // Add a new event listener
             newBtn.addEventListener('click', function () {
+              console.log('🎯 Hidden Draw button clicked!');
               if (window.stacExplorer && window.stacExplorer.mapManager) {
+                console.log('✅ Map manager found, starting drawing mode');
                 // Access the map manager directly
                 const mapManager = window.stacExplorer.mapManager;
 
                 // Start drawing mode
+                console.log('🖊️ Calling startDrawingBbox()');
                 mapManager.startDrawingBbox();
               } else {
-                console.error('Map manager not available');
+                console.error('❌ Map manager not available');
+                console.log('🔍 window.stacExplorer:', window.stacExplorer);
               }
             });
           } else {
@@ -3255,7 +1282,31 @@
           setupSourcePresetButtons();
 
           // Set up visible drawing and info tools
+          console.log('🚀 About to call setupVisibleTools()');
           setupVisibleTools();
+          console.log('✅ setupVisibleTools() called');
+          
+          // Manual fallback test
+          console.log('🔧 Trying manual button setup...');
+          const manualBtn = document.getElementById('draw-bbox-inline');
+          if (manualBtn) {
+            console.log('✅ Manual button found, adding direct listener');
+            
+            // Test programmatic click
+            window.testDrawButtonClick = function() {
+              console.log('🧪 Testing programmatic click');
+              manualBtn.click();
+            };
+            
+            manualBtn.onclick = function() {
+              console.log('🎉 MANUAL CLICK WORKED!');
+              alert('Draw button clicked manually!');
+            };
+            
+            console.log('🧪 Added window.testDrawButtonClick() function for testing');
+          } else {
+            console.log('❌ Manual button not found');
+          }
         }, 1000); // Wait 1 second to ensure everything is loaded
       });
 
@@ -3472,87 +1523,58 @@
         const inlineDrawBtn = document.getElementById('draw-bbox-inline');
         const hiddenDrawBtn = document.getElementById('criteria-draw-bbox-btn');
 
+        console.log('🔧 Setting up visible tools...');
+        console.log('🔍 Inline draw button found:', !!inlineDrawBtn);
+        console.log('🔍 Hidden draw button found:', !!hiddenDrawBtn);
+
         if (inlineDrawBtn && hiddenDrawBtn) {
-          inlineDrawBtn.addEventListener('click', function (e) {
-            e.stopPropagation(); // Prevent triggering the parent card click
+          console.log('✅ Both buttons found, setting up event listener');
+          
+          // Define the click handler function
+          const drawClickHandler = function (e) {
+            console.log('👆 DRAW BUTTON CLICK INTERCEPTED!', e);
+            console.log('👆 Event target:', e.target);
+            console.log('👆 Current target:', e.currentTarget);
+            
+            try {
+              e.preventDefault(); // Prevent default behavior
+              e.stopPropagation(); // Prevent triggering the parent card click
+              e.stopImmediatePropagation(); // Stop all other handlers
 
-            // Trigger the hidden button's functionality
-            hiddenDrawBtn.click();
-
-            // Visual feedback
-            this.style.background = 'var(--primary-500, #2196F3)';
-            this.style.color = 'white';
-            setTimeout(() => {
-              this.style.background = '';
-              this.style.color = '';
-            }, 2000);
-          });
-        }
-
-        // Inline from view button in location card
-        const inlineFromViewBtn = document.getElementById('from-view-inline');
-
-        if (inlineFromViewBtn) {
-          inlineFromViewBtn.addEventListener('click', function (e) {
-            e.stopPropagation(); // Prevent triggering the parent card click
-
-            // Get current map bounds
-            if (
-              window.stacExplorer &&
-              window.stacExplorer.mapManager &&
-              window.stacExplorer.mapManager.map
-            ) {
-              const map = window.stacExplorer.mapManager.map;
-              const bounds = map.getBounds();
-
-              // Convert to bbox format: [west, south, east, north]
-              const bbox = [
-                bounds.getWest(),
-                bounds.getSouth(),
-                bounds.getEast(),
-                bounds.getNorth(),
-              ];
-
-              // Format to reasonable precision (6 decimal places)
-              const bboxString = bbox.map(coord => coord.toFixed(6)).join(',');
-
-              // Update the bbox input field
-              const bboxInput = document.getElementById('bbox-input');
-              if (bboxInput) {
-                bboxInput.value = bboxString;
-
-                // Trigger input event to notify other components
-                bboxInput.dispatchEvent(new Event('input', { bubbles: true }));
-
-                // Show success notification if available
-                if (window.stacExplorer && window.stacExplorer.notificationService) {
-                  window.stacExplorer.notificationService.showNotification(
-                    'Location set from current map view',
-                    'success'
-                  );
-                }
-              }
+              // Trigger the hidden button's functionality
+              console.log('🎯 Triggering hidden button click');
+              console.log('🎯 Hidden button element:', hiddenDrawBtn);
+              hiddenDrawBtn.click();
 
               // Visual feedback
+              console.log('🎨 Applying visual feedback');
               this.style.background = 'var(--primary-500, #2196F3)';
               this.style.color = 'white';
               setTimeout(() => {
                 this.style.background = '';
                 this.style.color = '';
+                console.log('🎨 Visual feedback reset');
               }, 2000);
-            } else {
-              console.error('❌ Map manager not available');
-
-              // Show error notification if available
-              if (window.stacExplorer && window.stacExplorer.notificationService) {
-                window.stacExplorer.notificationService.showNotification(
-                  'Map not ready. Please wait for map to load.',
-                  'warning'
-                );
-              }
+              
+              return false; // Additional prevention
+            } catch (error) {
+              console.error('❌ Error in click handler:', error);
             }
-          });
+          };
+          
+          // Add multiple event listeners with different approaches
+          inlineDrawBtn.addEventListener('click', drawClickHandler, true); // Capture phase
+          inlineDrawBtn.addEventListener('click', drawClickHandler, false); // Bubble phase
+          inlineDrawBtn.onclick = drawClickHandler; // DOM0 event handler
+          
+          // Set tabindex to make it focusable and handle other events
+          inlineDrawBtn.setAttribute('tabindex', '0');
+          
+          console.log('✅ Multiple event listeners added to inline draw button');
+        } else {
+          console.error('❌ Could not find both draw buttons');
         }
+
       }
 
       // Enhanced Search Interface Management
@@ -3596,6 +1618,8 @@
           // Import the beautiful GeocodingService
           const { defaultGeocodingService } = await import('/js/utils/GeocodingService.js');
           geocodingService = defaultGeocodingService;
+          // Make it globally available
+          window.geocodingService = defaultGeocodingService;
 
           // Initialize map preview functionality
           initializeMapPreview();
@@ -3604,8 +1628,12 @@
             '❌ Failed to load GeocodingService, falling back to simple implementation'
           );
           geocodingService = null;
+          window.geocodingService = null;
         }
       }
+
+      // Make the function globally available
+      window.initializeGeocodingService = initializeGeocodingService;
 
       // Initialize map preview functionality
       function initializeMapPreview() {
@@ -4183,6 +2211,14 @@
 
       // Initialize everything when page loads
       document.addEventListener('DOMContentLoaded', function () {
+        console.log('📄 DOM Content Loaded');
+        
+        // Test if buttons exist immediately
+        const testInlineBtn = document.getElementById('draw-bbox-inline');
+        const testHiddenBtn = document.getElementById('criteria-draw-bbox-btn');
+        console.log('🧪 Early test - Inline button exists:', !!testInlineBtn);
+        console.log('🧪 Early test - Hidden button exists:', !!testHiddenBtn);
+        
         // Initialize the beautiful geocoding service first
         initializeGeocodingService();
 
@@ -4578,8 +2614,8 @@
                             color: white;
                         `;
               item.innerHTML = `
-                            <div style="font-size: 13px; font-weight: 500; color: #ffffff;">${result.shortName || result.name || result.display_name}</div>
-                            <div style="font-size: 11px; color: #aaaaaa; margin-top: 2px;">${result.type || 'Location'}</div>
+                            <div class="search-result-name">${result.shortName || result.name || result.display_name}</div>
+                            <div class="search-result-type">${result.type || 'Location'}</div>
                         `;
 
               item.addEventListener('click', () => {
@@ -4796,8 +2832,8 @@
     </script>
 
     <!-- STAC Item Load Modal -->
-    <div id="stac-load-modal" class="modal" style="display: none">
-      <div class="modal-content" style="max-width: 600px; width: 90vw">
+    <div id="stac-load-modal" class="modal">
+      <div class="modal-content">
         <div class="modal-header">
           <h3><i class="material-icons">file_download</i> Load STAC Item</h3>
           <button class="modal-close" id="stac-modal-close">
@@ -4866,7 +2902,7 @@
         height: 100%;
         background: rgba(0, 0, 0, 0.6);
         z-index: 10000;
-        display: flex;
+        display: none;
         align-items: center;
         justify-content: center;
         backdrop-filter: blur(4px);
@@ -5480,29 +3516,6 @@
         line-height: 1.2;
       }
 
-      /* Dark theme adjustments for modern date dropdown */
-      .dark-theme .date-dropdown-modern {
-        background: var(--surface-elevated, #2a2a2a);
-        border-color: var(--border-primary, rgba(255, 255, 255, 0.1));
-      }
-
-      .dark-theme .date-preset-btn-modern {
-        background: var(--surface-primary, #333333);
-        border-color: var(--border-secondary, rgba(255, 255, 255, 0.08));
-      }
-
-      .dark-theme .date-preset-btn-modern:hover {
-        border-color: var(--primary-400, rgba(102, 126, 234, 0.4));
-        background: var(--surface-hover, #3a3a3a);
-      }
-
-      .dark-theme .preset-title {
-        color: var(--text-primary, #ffffff);
-      }
-
-      .dark-theme .preset-desc {
-        color: var(--text-secondary, #a0a0a0);
-      }
 
       /* Mini Location Input Styling (matching mini date inputs) */
       .mini-location-input-container {
@@ -5547,6 +3560,97 @@
         color: var(--text-secondary, #aaaaaa);
         font-size: 11px;
       }
+
+      /* Force draw button to match input field height */
+      #draw-bbox-inline.location-action-btn {
+        height: 28px !important;
+        min-height: 28px !important;
+        max-height: 28px !important;
+        padding: 2px 6px !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 9px !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        vertical-align: top !important;
+        align-self: flex-start !important;
+      }
+
+      #draw-bbox-inline.location-action-btn .material-icons {
+        font-size: 12px !important;
+        line-height: 1 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+
+      /* Force location search value to be horizontal */
+      .location-card-main .search-summary-value {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+        width: 100% !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+        margin-top: 0 !important;
+      }
+
+      /* Prevent preset buttons from triggering parent clicks */
+      .time-presets-mini {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 10 !important;
+      }
+
+      .preset-mini-btn {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 11 !important;
+      }
+
+      /* Force source card to be one line */
+      .source-card-main .search-summary-content {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 8px !important;
+      }
+
+      /* Remove bottom padding/margin from search rows */
+      .search-summary-row {
+        margin-bottom: 0px !important;
+      }
+
+      .search-summary-interface {
+        padding-bottom: 0px !important;
+      }
+    </style>
+
+    <script>
+      // Prevent preset buttons from triggering parent dropdown
+      document.addEventListener('DOMContentLoaded', function() {
+        const presetContainer = document.querySelector('.time-presets-mini');
+        if (presetContainer) {
+          presetContainer.addEventListener('click', function(e) {
+            e.stopPropagation();
+          });
+        }
+        
+        // Add event listener to prevent time card clicks on preset buttons
+        const presetButtons = document.querySelectorAll('.preset-mini-btn');
+        presetButtons.forEach(button => {
+          button.addEventListener('click', function(e) {
+            e.stopPropagation();
+            // Don't prevent default - let preset functionality work
+          }, true); // Use capture phase
+        });
+      });
+    </script>
+
+    <style>
 
       /* Location Results Dropdown */
       .location-results-dropdown {
@@ -5627,90 +3731,8 @@
       /* Light theme adjustments */
       /* Light theme styles are now the default - no overrides needed */
 
-      /* Dark theme adjustments for date inputs */
-      .dark-theme .mini-date-input {
-        background: #2a2a2a !important;
-        border: 1px solid #404040 !important;
-        color: #ffffff !important;
-      }
 
-      .dark-theme .mini-date-input:focus {
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
-        background: #333333 !important;
-      }
 
-      .dark-theme .mini-date-input:hover {
-        border-color: #555555 !important;
-        background: #333333 !important;
-      }
-
-      .dark-theme .mini-date-input.error {
-        border-color: #dc3545 !important;
-        background-color: #4a1a1a !important;
-      }
-
-      /* Light theme adjustments for location input */
-      .light-theme .mini-location-input {
-        background: #ffffff !important;
-        border: 1px solid #d1d5db !important;
-        color: #1f2937 !important;
-      }
-
-      .light-theme .mini-location-input:focus {
-        outline: none !important;
-        border-color: #667eea !important;
-        box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2) !important;
-        background: #f9fafb !important;
-      }
-
-      .light-theme .mini-location-input:hover {
-        border-color: #9ca3af !important;
-        background: #f9fafb !important;
-      }
-
-      .light-theme .mini-location-input::placeholder {
-        color: #6b7280 !important;
-      }
-
-      /* Enhanced light theme compatibility for location search dropdown */
-      body.light-theme .search-suggestions,
-      .light-theme .search-suggestions {
-        background: rgba(255, 255, 255, 0.98) !important;
-        border: 1px solid rgba(0, 0, 0, 0.12) !important;
-        color: #1a1a1a !important;
-      }
-
-      body.light-theme .suggestion-item,
-      .light-theme .suggestion-item {
-        color: #1a1a1a !important;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
-      }
-
-      body.light-theme .suggestion-item:hover,
-      .light-theme .suggestion-item:hover {
-        background: linear-gradient(
-          135deg,
-          rgba(102, 126, 234, 0.08) 0%,
-          rgba(118, 75, 162, 0.04) 100%
-        ) !important;
-        color: #1a1a1a !important;
-      }
-
-      body.light-theme .suggestion-name,
-      .light-theme .suggestion-name {
-        color: #1a1a1a !important;
-      }
-
-      body.light-theme .suggestion-details,
-      .light-theme .suggestion-details {
-        color: #64748b !important;
-      }
-
-      body.light-theme .suggestion-item .material-icons,
-      .light-theme .suggestion-item .material-icons {
-        color: rgba(102, 126, 234, 0.8) !important;
-      }
 
       /* Dark theme adjustments - only apply when NOT in light theme */
     </style>
@@ -5729,8 +3751,8 @@
     </div>
 
     <!-- Settings Modal -->
-    <div id="settings-modal" class="modal-overlay" style="display: none">
-      <div class="modal-dialog" style="max-width: 500px; width: 90vw">
+    <div id="settings-modal" class="modal-overlay">
+      <div class="modal-dialog">
         <div class="modal-header">
           <h3><i class="material-icons">settings</i> Settings</h3>
           <button class="modal-close" id="settings-modal-close">
@@ -5794,7 +3816,7 @@
     </div>
 
     <!-- Smart Filter System Modal -->
-    <div id="smart-filters-modal" class="modal-overlay filter-modal" style="display: none">
+    <div id="smart-filters-modal" class="modal-overlay filter-modal">
       <div class="modal-dialog filter-modal-dialog">
         <div class="modal-header">
           <h3><i class="material-icons">tune</i> Data Filters</h3>

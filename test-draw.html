@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Draw Button Test</title>
+</head>
+<body>
+    <button id="draw-bbox-inline" style="padding: 10px; background: blue; color: white;">
+        Draw Button Test
+    </button>
+
+    <script>
+        console.log('🟢 TEST SCRIPT STARTED');
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('📄 DOM LOADED');
+            
+            const btn = document.getElementById('draw-bbox-inline');
+            console.log('🔍 Button found:', !!btn);
+            
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    console.log('👆 BUTTON CLICKED!');
+                    alert('Draw button test successful!');
+                });
+                console.log('✅ Event listener added');
+            }
+        });
+    </script>
+</body>
+</html>

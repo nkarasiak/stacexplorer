@@ -1,0 +1,154 @@
+<!-- STAC Item Load Modal -->
+<div id="stac-load-modal" class="modal" style="display: none">
+  <div class="modal-content" style="max-width: 600px; width: 90vw">
+    <div class="modal-header">
+      <h3><i class="material-icons">file_download</i> Load STAC Item</h3>
+      <button class="modal-close" id="stac-modal-close">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="load-method-tabs">
+        <button id="load-url-tab" class="tab-btn active">
+          <i class="material-icons">link</i>
+          From URL
+        </button>
+        <button id="load-json-tab" class="tab-btn">
+          <i class="material-icons">code</i>
+          From JSON
+        </button>
+      </div>
+
+      <!-- URL Load Tab -->
+      <div id="url-load-content" class="tab-content active">
+        <div class="form-group">
+          <label for="stac-item-url-modal">STAC Item URL</label>
+          <input
+            type="url"
+            id="stac-item-url-modal"
+            placeholder="https://example.com/path/to/item.json"
+          />
+          <div class="form-help">💡 Paste a direct link to a STAC item JSON file</div>
+        </div>
+        <div class="form-actions">
+          <button id="load-url-btn-modal" class="md-btn md-btn-primary">
+            <i class="material-icons">download</i>
+            Load from URL
+          </button>
+        </div>
+      </div>
+
+      <!-- JSON Load Tab -->
+      <div id="json-load-content" class="tab-content">
+        <div class="form-group">
+          <label for="stac-item-json-modal">STAC Item JSON</label>
+          <textarea
+            id="stac-item-json-modal"
+            placeholder="Paste your STAC item JSON here..."
+            rows="10"
+          ></textarea>
+          <div class="form-help">💡 Paste the complete STAC item JSON content</div>
+        </div>
+        <div class="form-actions">
+          <button id="load-json-btn-modal" class="md-btn md-btn-primary">
+            <i class="material-icons">upload</i>
+            Load from JSON
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search History Dropdown Portal (outside all containers to avoid clipping) -->
+<div id="header-search-history-menu" class="history-menu">
+  <div class="history-header">
+    <span>Recent Searches</span>
+    <button id="header-clear-history-btn" class="clear-history-btn" title="Clear History">
+      <i class="material-icons">delete</i>
+    </button>
+  </div>
+  <div id="header-search-history-list" class="history-list">
+    <div class="history-empty">No search history yet</div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-modal" class="modal-overlay" style="display: none">
+  <div class="modal-dialog" style="max-width: 500px; width: 90vw">
+    <div class="modal-header">
+      <h3><i class="material-icons">settings</i> Settings</h3>
+      <button class="modal-close" id="settings-modal-close">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-section">
+        <h4><i class="material-icons">palette</i> Appearance</h4>
+        <div class="setting-item">
+          <div class="setting-content">
+            <div class="setting-label">Theme</div>
+            <div class="setting-description">Choose your preferred color theme</div>
+          </div>
+          <div class="setting-control">
+            <select id="theme-selector" class="theme-selector">
+              <option value="auto">Auto (System)</option>
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h4><i class="material-icons">speed</i> Performance</h4>
+        <div class="setting-item">
+          <div class="setting-content">
+            <div class="setting-label">GPU Acceleration</div>
+            <div class="setting-description">
+              Use Deck.gl for hardware-accelerated rendering when possible
+            </div>
+          </div>
+          <div class="setting-control">
+            <label class="toggle-switch">
+              <input type="checkbox" id="gpu-acceleration-toggle" checked />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+        <div class="setting-status" id="gpu-status-display">
+          <i class="material-icons">info</i>
+          <span id="gpu-status-text">Checking GPU acceleration status...</span>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h4><i class="material-icons">storage</i> Data Catalogs</h4>
+        <div class="setting-description-section">
+          <p>
+            Enable or disable data catalogs for search. Disabled catalogs won't appear in
+            collection dropdowns.
+          </p>
+        </div>
+
+        <!-- Collection toggles populated dynamically from collections.json -->
+        <div id="catalog-toggles-modal-container"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Smart Filter System Modal -->
+<div id="smart-filters-modal" class="modal-overlay filter-modal" style="display: none">
+  <div class="modal-dialog filter-modal-dialog">
+    <div class="modal-header">
+      <h3><i class="material-icons">tune</i> Data Filters</h3>
+      <button class="modal-close" id="filters-modal-close">
+        <i class="material-icons">close</i>
+      </button>
+    </div>
+    <div class="modal-body" id="smart-filters-container">
+      <!-- FilterManager will populate this -->
+    </div>
+  </div>
+</div>

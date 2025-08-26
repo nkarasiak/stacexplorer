@@ -824,23 +824,6 @@
   }
 }
 
-/* =================================================================
-   DEBUG AND FALLBACK INDICATORS
-   ================================================================= */
-
-.inline-dropdown-container .fallback-indicator {
-  background: linear-gradient(45deg, #ff9800, #f57c00) !important;
-  color: white !important;
-  padding: 6px 12px !important;
-  font-size: 12px !important;
-  font-weight: 700 !important;
-  text-align: center !important;
-  border-radius: 6px 6px 0 0 !important;
-  z-index: 1000 !important;
-  position: relative !important;
-  letter-spacing: 0.5px !important;
-  text-transform: uppercase !important;
-}
 
 /* =================================================================
    ACTIVE STATE FIXES FOR TRIGGER ELEMENTS
